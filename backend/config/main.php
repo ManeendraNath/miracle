@@ -1,5 +1,7 @@
 <?php
 
+use \yii\web\Request;
+
 $params = array_merge(
     require __DIR__ . '/../../common/config/params.php',
     require __DIR__ . '/../../common/config/params-local.php',
@@ -7,6 +9,7 @@ $params = array_merge(
     require __DIR__ . '/params-local.php'
 );
 
+$baseUrl = str_replace('/backend/web', '', (new Request)->getBaseUrl());
 return [
     'id' => 'app-backend',
     'basePath' => dirname(__DIR__),
@@ -16,6 +19,10 @@ return [
     'components' => [
         'request' => [
             'csrfParam' => '_csrf-backend',
+            'baseUrl' => $baseUrl,
+            'class' => 'common\components\Request',
+            'web' => '/backend/web',
+            'adminUrl' => '/admin'
         ],
         'user' => [
             'identityClass' => \common\models\User::class,
@@ -38,14 +45,22 @@ return [
         'errorHandler' => [
             'errorAction' => 'site/error',
         ],
-        /*
         'urlManager' => [
+            'baseUrl' => $baseUrl,
             'enablePrettyUrl' => true,
             'showScriptName' => false,
             'rules' => [
+                '<controller:[\w\-]+>/<id:\d+>' => '<controller>/view',
+                '<controller:[\w\-]+>/<action:[\w\-]+>/<id:\d+>' => '<controller>/<action>',
+                '<controller:[\w\-]+>/<action:[\w\-]+' => '<controller>/<action>',
             ],
         ],
-        */
     ],
     'params' => $params,
+    'defaultRoute' => 'auth/login',
+    'container' => [
+        'definitions' => [
+            \yii\widgets\LinkPager::class => \yii\bootstrap5\LinkPager::class,
+        ],
+    ],
 ];

@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 <p align="center">
     <picture>
         <source media="(prefers-color-scheme: dark)" srcset="https://www.yiiframework.com/image/design/logo/yii3_full_for_dark.svg">
@@ -257,3 +258,6 @@ composer tests
 ## License
 
 [![License](https://img.shields.io/badge/License-BSD--3--Clause-brightgreen.svg?style=for-the-badge&logo=opensourceinitiative&logoColor=white&labelColor=555555)](LICENSE.md)
+=======
+# miracle
+>>>>>>> 8abc9c03a22c9ec9a467a8d39c64510f7b0feddb

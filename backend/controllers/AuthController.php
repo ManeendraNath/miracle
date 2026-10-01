@@ -74,7 +74,7 @@ class AuthController extends Controller
     public function actionLogin()
     {
         if (!Yii::$app->user->isGuest) {
-            return $this->redirect(Url::base() . '/admin/dashboard/');
+            return $this->redirect(['dashboard/index']);
         }
         $this->layout = 'blank';
 
@@ -83,7 +83,7 @@ class AuthController extends Controller
         if ($model->load(Yii::$app->request->post())) {
             // 1. Check what data was loaded into the model
             if ($model->login()) {
-                return $this->goBack();
+                return $this->redirect(['dashboard/index']);
             } else {
                 // 2. If login fails, print out the exact validation errors (e.g., "Incorrect username or password.")
                 echo "<pre>Login Validation Errors: "; print_r($model->getErrors()); echo "</pre>";
@@ -106,6 +106,6 @@ class AuthController extends Controller
     public function actionLogout()
     {
         Yii::$app->user->logout();
-        return $this->redirect(Url::base() . '/admin/auth/login');
+        return $this->redirect(Url::base() . '/auth/login');
     }
 }

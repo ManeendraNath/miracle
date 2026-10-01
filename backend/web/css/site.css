@@ -257,3 +257,42 @@ a.desc:after {
         max-width: 50%;
     }
 }
+:root {
+    --brand-primary: #00a3e0;   /* Dynamic Cyan / Sky Blue from your logo core */
+    --brand-accent: #dc2626;    /* Crimson Red orbit ring from your logo */
+    --brand-dark: #0f172a;      /* Deep Slate Blue backgrounds */
+    --brand-light: #f8fafc;     /* Crisp white text containers */
+}
+
+/* Custom premium buttons mapping your logo styling */
+.btn-brand-cyan {
+    background-color: var(--brand-primary) !important;
+    color: #ffffff !important;
+    border: none !important;
+    transition: all 0.3s ease;
+}
+.btn-brand-cyan:hover {
+    background-color: #0284c7 !important;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 163, 224, 0.3);
+}
+
+.btn-brand-outline {
+    border: 2px solid var(--brand-accent) !important;
+    color: var(--brand-accent) !important;
+    background: transparent !important;
+    transition: all 0.3s ease;
+}
+.btn-brand-outline:hover {
+    background-color: var(--brand-accent) !important;
+    color: #ffffff !important;
+}
+
+.card-brand-highlight {
+    border-top: 4px solid var(--brand-primary) !important;
+}
+
+.card-brand-premium {
+    border: 2px solid var(--brand-accent) !important;
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%) !important;
+}

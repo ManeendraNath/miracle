@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace frontend\controllers;
 
 use common\models\LoginForm;
+use common\models\AuditRequest;
 use frontend\models\ContactForm;
 use frontend\models\PasswordResetRequestForm;
 use frontend\models\ResendVerificationEmailForm;
@@ -27,12 +28,14 @@ use yii\web\Response;
  */
 class SiteController extends Controller
 {
+
     public function __construct(
-        $id,
-        $module,
-        private readonly MailerInterface $mailer,
-        $config = [],
-    ) {
+            $id,
+            $module,
+            private readonly MailerInterface $mailer,
+            $config = [],
+    )
+    {
         parent::__construct($id, $module, $config);
     }
 
@@ -113,7 +116,7 @@ class SiteController extends Controller
         $model->password = '';
 
         return $this->render('login', [
-            'model' => $model,
+                    'model' => $model,
         ]);
     }
 
@@ -130,33 +133,52 @@ class SiteController extends Controller
     }
 
     /**
-     * Displays contact page.
-     *
-     * @return string|Response
+     * Action handling standard text messages.
      */
-    public function actionContact(): string|Response
+    public function actionContact()
     {
         $model = new ContactForm();
-
         if ($model->load(Yii::$app->request->post()) && $model->validate()) {
-            $sent = $model->sendEmail(
-                $this->mailer,
-                Yii::$app->params['adminEmail'],
-                Yii::$app->params['senderEmail'],
-                Yii::$app->params['senderName'],
-            );
+            $adminEmail = CustomYii::getSetting('email_1', 'info@miraclewebtechnologies.com');
 
-            if ($sent) {
-                Yii::$app->session->setFlash('success', 'Thank you for contacting us. We will respond to you as soon as possible.');
-            } else {
-                Yii::$app->session->setFlash('error', 'There was an error sending your message.');
-            }
+            Yii::$app->mailer->compose()
+                    ->setTo($adminEmail)
+                    ->setFrom([$model->email => $model->name])
+                    ->setSubject('📥 General Contact Form: ' . $model->subject)
+                    ->setTextBody($model->body)
+                    ->send();
 
+            Yii::$app->session->setFlash('success', 'Thank you for contacting us. We will respond shortly.');
             return $this->refresh();
         }
 
         return $this->render('contact', [
-            'model' => $model,
+                    'model' => $model,
+        ]);
+    }
+
+    /**
+     * Action handling high-end infrastructure audits data storage.
+     */
+    public function actionAudit()
+    {
+        $model = new AuditRequest();
+        if ($model->load(Yii::$app->request->post()) && $model->save()) {
+            $adminEmail = CustomYii::getSetting('email_1', 'info@miraclewebtechnologies.com');
+
+            Yii::$app->mailer->compose()
+                    ->setTo($adminEmail)
+                    ->setFrom([$model->email => $model->name])
+                    ->setSubject('⚡ CRITICAL LOGS: New Inbound Systems Audit Request')
+                    ->setTextBody("New Lead Received!\n\nName: {$model->name}\nFramework: {$model->current_framework}\nEnvironment: {$model->hosting_environment}")
+                    ->send();
+
+            Yii::$app->session->setFlash('success', 'Your system matrix data has been securely logged. Our engineers are reviewing your case.');
+            return $this->refresh();
+        }
+
+        return $this->render('audit', [
+                    'model' => $model,
         ]);
     }
 
@@ -180,10 +202,10 @@ class SiteController extends Controller
         $model = new SignupForm();
 
         $signed = $model->load(Yii::$app->request->post()) && $model->signup(
-            $this->mailer,
-            Yii::$app->params['supportEmail'],
-            Yii::$app->name,
-        );
+                        $this->mailer,
+                        Yii::$app->params['supportEmail'],
+                        Yii::$app->name,
+                );
 
         if ($signed) {
             Yii::$app->session->setFlash('success', 'Thank you for registration. Please check your inbox for verification email.');
@@ -191,7 +213,7 @@ class SiteController extends Controller
         }
 
         return $this->render('signup', [
-            'model' => $model,
+                    'model' => $model,
         ]);
     }
 
@@ -206,9 +228,9 @@ class SiteController extends Controller
 
         if ($model->load(Yii::$app->request->post()) && $model->validate()) {
             $sent = $model->sendEmail(
-                $this->mailer,
-                Yii::$app->params['supportEmail'],
-                Yii::$app->name,
+                    $this->mailer,
+                    Yii::$app->params['supportEmail'],
+                    Yii::$app->name,
             );
 
             if ($sent) {
@@ -221,7 +243,7 @@ class SiteController extends Controller
         }
 
         return $this->render('requestPasswordResetToken', [
-            'model' => $model,
+                    'model' => $model,
         ]);
     }
 
@@ -247,7 +269,7 @@ class SiteController extends Controller
         }
 
         return $this->render('resetPassword', [
-            'model' => $model,
+                    'model' => $model,
         ]);
     }
 
@@ -286,9 +308,9 @@ class SiteController extends Controller
 
         if ($model->load(Yii::$app->request->post()) && $model->validate()) {
             $sent = $model->sendEmail(
-                $this->mailer,
-                Yii::$app->params['supportEmail'],
-                Yii::$app->name,
+                    $this->mailer,
+                    Yii::$app->params['supportEmail'],
+                    Yii::$app->name,
             );
 
             if ($sent) {
@@ -300,7 +322,7 @@ class SiteController extends Controller
         }
 
         return $this->render('resendVerificationEmail', [
-            'model' => $model,
+                    'model' => $model,
         ]);
     }
 }

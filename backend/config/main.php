@@ -12,8 +12,10 @@ $params = array_merge(
 $baseUrl = str_replace('/backend/web', '', (new Request)->getBaseUrl());
 return [
     'id' => 'app-backend',
+    'name' => \common\components\CustomYii::APPLICATION_NAME,
     'basePath' => dirname(__DIR__),
     'controllerNamespace' => 'backend\controllers',
+    'homeUrl' => '/admin/dashboard',
     'bootstrap' => ['log'],
     'modules' => [],
     'components' => [
@@ -25,7 +27,7 @@ return [
             'adminUrl' => '/admin'
         ],
         'user' => [
-            'identityClass' => \common\models\User::class,
+            'identityClass' => backend\models\Admin::class,
             'enableAutoLogin' => true,
             'identityCookie' => ['name' => '_identity-backend', 'httpOnly' => true],
         ],
@@ -57,7 +59,7 @@ return [
         ],
     ],
     'params' => $params,
-    'defaultRoute' => 'auth/login',
+    'defaultRoute' => 'admin/dashboard/index',
     'container' => [
         'definitions' => [
             \yii\widgets\LinkPager::class => \yii\bootstrap5\LinkPager::class,

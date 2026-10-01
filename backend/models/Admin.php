@@ -17,7 +17,7 @@ namespace backend\models;
  * @property integer $updated_at
  * @property string $password write-only password
  */
-class Admin extends \common\models\User
+class Admin extends \common\models\Admin
 {
     
 }

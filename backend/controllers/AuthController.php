@@ -79,8 +79,16 @@ class AuthController extends Controller
         $this->layout = 'blank';
 
         $model = new LoginForm();
-        if ($model->load(Yii::$app->request->post()) && $model->login()) {
-            return $this->goBack();
+        $model->load(Yii::$app->request->post());
+        if ($model->load(Yii::$app->request->post())) {
+            // 1. Check what data was loaded into the model
+            if ($model->login()) {
+                return $this->goBack();
+            } else {
+                // 2. If login fails, print out the exact validation errors (e.g., "Incorrect username or password.")
+                echo "<pre>Login Validation Errors: "; print_r($model->getErrors()); echo "</pre>";
+                die;
+            }
         }
 
         $model->password = '';

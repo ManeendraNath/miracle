@@ -27,7 +27,7 @@ class SiteController extends Controller
                 'class' => AccessControl::class,
                 'rules' => [
                     [
-                        'actions' => ['login', 'error'],
+                        'actions' => ['login', 'error', 'demo'],
                         'allow' => true,
                     ],
                     [
@@ -104,4 +104,12 @@ class SiteController extends Controller
 
         return $this->goHome();
     }
+
+    public function actionDemo()
+{
+    // Re-enable the layout wrapper so Yii's Asset bundle injects everything perfectly
+    $this->layout = 'main';
+    return $this->render('index');
+}
+
 }

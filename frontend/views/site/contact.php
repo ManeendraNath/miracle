@@ -1,142 +1,37 @@
 <?php
-
-declare(strict_types=1);
-
-/** @var yii\web\View $this */
-/** @var yii\bootstrap5\ActiveForm $form */
-/** @var \frontend\models\ContactForm $model */
-
 use yii\bootstrap5\ActiveForm;
 use yii\bootstrap5\Html;
-use yii\captcha\Captcha;
 
-$this->title = 'Contact us';
-$this->params['breadcrumbs'][] = $this->title;
-$this->params['meta_description'] = 'Get in touch with us. Send us a message using the contact form.';
-$this->params['meta_keywords'] = 'yii, yii2, contact, support, feedback';
-$htmlIcon = <<<HTML
-{label}<div class="input-group"><span class="input-group-text" aria-hidden="true">%s</span>{input}</div>{error}{hint}
-HTML;
-$labelOptions = ['class' => 'form-label fw-semibold small'];
+$this->title = 'Contact General Inquiries | Miracle Web Technologies';
 ?>
-<div class="site-contact d-flex align-items-center justify-content-center py-5">
-    <div class="card border-0 overflow-hidden login-split-card login-split-card-wide">
-        <div class="row g-0">
+<div class="site-contact container py-5" style="font-family: 'Inter', sans-serif;">
+    <div class="p-5 text-white mb-4 shadow-sm" style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); border-radius: 0.75rem;">
+        <h1 class="fw-bold m-0">Let's Connect</h1>
+        <p class="mt-2 mb-0 opacity-75">Send a quick message to our account executives for partnerships, pricing, or custom proposals.</p>
+    </div>
 
-            <!-- Brand panel -->
-            <div class="col-md-4 d-none d-md-flex login-brand-panel text-white">
-                <div class="d-flex flex-column justify-content-between p-4 p-lg-5 w-100">
-                    <div>
-                        <?= Html::img(
-                            Yii::getAlias('@web/images/yii3_full_white_for_dark.svg'),
-                            [
-                                'alt' => 'Yii Framework',
-                                'class' => 'mb-4',
-                                'height' => 40,
-                            ],
-                        ) ?>
+    <div class="row g-4">
+        <div class="col-lg-7">
+            <div class="card border-0 shadow-sm p-4 bg-white" style="border-radius: 0.75rem;">
+                <?php $form = ActiveForm::begin(['id' => 'contact-form']); ?>
+                    <?= $form->field($model, 'name')->textInput(['class' => 'form-control py-2']) ?>
+                    <?= $form->field($model, 'email')->textInput(['class' => 'form-control py-2']) ?>
+                    <?= $form->field($model, 'subject')->textInput(['class' => 'form-control py-2']) ?>
+                    <?= $form->field($model, 'body')->textarea(['rows' => 4, 'class' => 'form-control'])->label('Your Message') ?>
+                    <div class="form-group text-end mt-4">
+                        <?= Html::submitButton('Send Secure Message ✓', ['class' => 'btn btn-lg fw-bold text-white px-5', 'style' => 'background-color: #00a3e0 !important; border-radius: 0.5rem;']) ?>
                     </div>
-                    <div>
-                        <h2 class="fw-bold mb-3 login-brand-title">
-                            Get In<br>Touch
-                        </h2>
-                        <p class="opacity-75 mb-0 login-brand-text">
-                            Have a question or business inquiry? We would love to hear from you.
-                        </p>
-                    </div>
+                <?php ActiveForm::end(); ?>
+            </div>
+        </div>
+        <div class="col-lg-5">
+            <div class="card border-0 shadow-sm p-4 text-white h-100" style="background-color: #1e293b; border-radius: 0.75rem; border-left: 5px solid #dc2626 !important;">
+                <h4 class="fw-bold text-white mb-3">Enterprise Channels</h4>
+                <p class="small text-slate-300">Are you looking to scale an application or provision isolated hosting servers? Skip this line and deploy our direct analysis workflow.</p>
+                <div class="mt-4">
+                    <?= Html::a('Deploy Infrastructure Questionnaire ⚡', ['site/audit'], ['class' => 'btn w-100 fw-bold py-3 text-white', 'style' => 'background-color: #dc2626 !important; border-radius: 0.5rem;']) ?>
                 </div>
             </div>
-
-            <!-- Form panel -->
-            <div class="col-md-8">
-                <div class="p-4 p-lg-5">
-                    <div class="text-center mb-4">
-                        <div class="d-md-none mb-3">
-                            <?= Html::img(
-                                Yii::getAlias('@web/images/yii3_full_black_for_light.svg'),
-                                [
-                                    'alt' => 'Yii Framework',
-                                    'class' => 'login-mobile-logo',
-                                    'height' => 36,
-                                ]
-                            ) ?>
-                        </div>
-                        <h1 class="h3 fw-bold mb-1"><?= Html::encode($this->title) ?></h1>
-                        <p class="text-body-secondary small">Fill out the form below and we will get back to you</p>
-                    </div>
-
-                    <?php $form = ActiveForm::begin(['id' => 'contact-form']); ?>
-
-                    <div class="row">
-                        <div class="col-sm-6 mb-3">
-                            <?= $form->field($model, 'name', [
-                                'options' => ['class' => 'mb-0'],
-                                'template' => sprintf($htmlIcon, '&#128100;'),
-                                'inputOptions' => [
-                                    'class' => 'form-control',
-                                    'placeholder' => 'Name',
-                                    'autofocus' => true,
-                                ],
-                            ])->label('Your Name', $labelOptions) ?>
-                        </div>
-
-                        <div class="col-sm-6 mb-3">
-                            <?= $form->field($model, 'email', [
-                                'options' => ['class' => 'mb-0'],
-                                'template' => sprintf($htmlIcon, '&#9993;'),
-                                'inputOptions' => [
-                                    'class' => 'form-control',
-                                    'placeholder' => 'email@example.com',
-                                ],
-                            ])->label('Your Email', $labelOptions) ?>
-                        </div>
-                    </div>
-
-                    <div class="mb-3">
-                        <?= $form->field($model, 'subject', [
-                            'options' => ['class' => 'mb-0'],
-                            'template' => sprintf($htmlIcon, '&#128172;'),
-                            'inputOptions' => [
-                                'class' => 'form-control',
-                                'placeholder' => 'Subject',
-                            ],
-                        ])->label('Subject', $labelOptions) ?>
-                    </div>
-
-                    <div class="mb-3">
-                        <?= $form->field($model, 'body', [
-                            'options' => ['class' => 'mb-0'],
-                            'template' => '{label}{input}{error}{hint}',
-                            'inputOptions' => [
-                                'class' => 'form-control',
-                                'placeholder' => 'Your message...',
-                            ],
-                        ])->textarea()->label('Message', $labelOptions) ?>
-                    </div>
-
-                    <div class="d-flex align-items-center gap-3 flex-wrap">
-                        <?= $form->field($model, 'verifyCode', [
-                            'enableLabel' => false,
-                            'options' => ['class' => ''],
-                            'inputOptions' => ['aria-label' => 'Verification code'],
-                        ])->widget(Captcha::class, [
-                            'template' => '<div class="d-flex align-items-center gap-2">{image}{input}</div>',
-                        ]) ?>
-
-                        <?= Html::submitButton(
-                            'Submit',
-                            [
-                                'class' => 'btn login-btn text-white px-4 ms-auto',
-                                'name' => 'contact-button',
-                            ],
-                        ) ?>
-                    </div>
-
-                    <?php ActiveForm::end(); ?>
-
-                </div>
-            </div>
-
         </div>
     </div>
 </div>

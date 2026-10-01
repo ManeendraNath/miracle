@@ -12,13 +12,15 @@
         "irc": "ircs://irc.libera.chat:6697/yii",
         "source": "https://github.com/yiisoft/yii2"
     },
-    "minimum-stability": "stable",
+    "minimum-stability": "dev",
     "require": {
         "php": ">=8.2",
         "yiisoft/yii2": "~2.0.54",
         "yiisoft/yii2-bootstrap5": "~2.0.2",
         "yiisoft/yii2-symfonymailer": "~2.0.3",
-        "vlucas/phpdotenv": "^5.7"
+        "vlucas/phpdotenv": "^5.7",
+        "rmrevin/yii2-fontawesome": "~3.5",
+        "hail812/yii2-adminlte3": "^1.1"
     },
     "require-dev": {
         "codeception/c3": "^2.8",
@@ -55,6 +57,11 @@
     },
     "repositories": [
         {
+            "name": "packagist.org",
+            "type": "composer",
+            "url": "https://packagist.org"
+        },
+        {
             "type": "composer",
             "url": "https://asset-packagist.org"
         }
@@ -64,5 +71,6 @@
         "cs-fix": "./vendor/bin/phpcbf",
         "static": "./vendor/bin/phpstan --memory-limit=-1",
         "tests": "./vendor/bin/codecept run --env php-builtin"
-    }
+    },
+    "prefer-stable": true
 }

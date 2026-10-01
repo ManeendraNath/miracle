@@ -4,29 +4,32 @@ declare(strict_types=1);
 
 /** @var yii\web\View $this */
 
+use hail812\adminlte3\assets\AdminLteAsset;
+use hail812\adminlte3\assets\PluginAsset;
 use yii\helpers\Html;
 
 $this->title = 'Dashboard';
 $username = Yii::$app->user->identity?->username;
+
+// This forces Yii to automatically publish and load all AdminLTE 3 CSS, JS, and Plugins
+AdminLteAsset::register($this);
+
+// Automatically hooks up FontAwesome Icons, jQuery overlays, and Bootstrap styles
+PluginAsset::register($this, ['fontawesome']);
 ?>
-<div class="site-index">
-    <!-- Welcome banner -->
-    <div class="dashboard-banner text-white rounded-4 p-4 p-lg-5 mb-4">
-        <div class="row align-items-center">
-            <div class="col-lg-8">
-                <h1 class="fw-bold mb-2">Welcome back, <?= Html::encode($username) ?></h1>
-                <p class="opacity-75 mb-0">
-                    This is your administration panel. Manage your application from here.
-                </p>
+
+<div class="row">
+    <div class="col-lg-3 col-6">
+        <!-- Small Box Widget example from the Theme -->
+        <div class="small-box bg-info">
+            <div class="inner">
+                <h3>150</h3>
+                <p>New Orders</p>
             </div>
-            <div class="col-lg-4 text-lg-end mt-3 mt-lg-0">
-                <?= Html::img(
-                    Yii::getAlias('@web/images/yii3_full_white_for_dark.svg'),
-                    [
-                        'alt' => 'Yii Framework', 'height' => 48,
-                    ],
-                ) ?>
+            <div class="icon">
+                <i class="fas fa-shopping-cart"></i>
             </div>
+            <a href="#" class="small-box-footer">More info <i class="fas fa-arrow-circle-right"></i></a>
         </div>
     </div>
 </div>

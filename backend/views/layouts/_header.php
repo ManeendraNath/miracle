@@ -11,16 +11,16 @@ use yii\helpers\Html;
 $items = [
     [
         'label' => 'Home',
-        'url' => ['/site/index'],
+        'url' => ['/admin/dashboard'],
     ],
     [
         'label' => 'Login',
-        'url' => ['/site/login'],
+        'url' => ['/admin/auth/login'],
         'visible' => Yii::$app->user->isGuest,
     ],
     [
         'label' => 'Logout (' . Html::encode(Yii::$app->user->identity?->username) . ')',
-        'url' => ['/site/logout'],
+        'url' => ['/admin/auth/logout'],
         'linkOptions' => [
             'data-method' => 'post',
             'class' => 'logout',
@@ -42,14 +42,6 @@ $items = [
             'options' => ['class' => 'navbar-nav me-auto'],
             'encodeLabels' => false,
             'items' => $items,
-        ],
-    ) ?>
-    <?= Html::button(
-        '&#127769;',
-        [
-            'id' => 'theme-toggle',
-            'class' => 'btn btn-link nav-link fs-5',
-            'aria-label' => 'Switch to dark mode',
         ],
     ) ?>
     <?php NavBar::end() ?>

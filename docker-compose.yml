@@ -1,5 +1,4 @@
 services:
-
   frontend:
     build: frontend
     ports:
@@ -22,15 +21,11 @@ services:
 
   mysql:
     image: mysql:8.0
+    container_name: miracle-yii-stack-mysql-1
+    ports:
+      - "3307:3306"
     environment:
-      - MYSQL_ROOT_PASSWORD=verysecret
-      - MYSQL_DATABASE=yii2advanced
-      - MYSQL_USER=yii2advanced
-      - MYSQL_PASSWORD=secret
-
-  #pgsql:
-  #  image: postgres:16
-  #  environment:
-  #    - POSTGRES_DB=yii2advanced
-  #    - POSTGRES_USER=yii2advanced
-  #    - POSTGRES_PASSWORD=secret
+      MYSQL_ROOT_PASSWORD: verysecret
+      MYSQL_DATABASE: miracle
+    volumes:
+      - ./mysql_data:/var/lib/mysql

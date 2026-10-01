@@ -17,6 +17,8 @@ $this->render('_head');
 <head>
     <?php $this->head() ?>
     <title><?= Html::encode($this->title) ?></title>
+    <link rel="shortcut icon" href="<?= Yii::$app->request->baseUrl ?>/favicon.ico" type="image/x-icon" />
+<link rel="icon" href="<?= Yii::$app->request->baseUrl ?>/favicon.ico" type="image/x-icon" />
 </head>
 <body class="d-flex flex-column h-100">
 <?php $this->beginBody() ?>

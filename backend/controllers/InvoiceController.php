@@ -2,8 +2,16 @@
 
 namespace backend\controllers;
 
+use Yii;
+use yii\web\Controller;
 use yii\filters\AccessControl;
-class InvoiceController extends \yii\web\Controller
+use yii\web\NotFoundHttpException;
+use common\models\Invoice;
+
+/**
+ * InvoiceController handles administrative client transaction rendering gates.
+ */
+class InvoiceController extends Controller
 {
     /**
      * {@inheritdoc}
@@ -27,26 +35,47 @@ class InvoiceController extends \yii\web\Controller
             ],
         ];
     }
-    
-    public function actionIndex()
+
+    /**
+     * Renders an individual dynamic invoice profile screen with automated tax math tracking.
+     */
+    public function actionView(string $number)
     {
-        return $this->render('index');
-    }
-    
-    public function actionCreate()
-    {
-        return $this->render('create');
+        $model = Invoice::find()->where(['invoice_number' => $number])->with('invoiceItems')->one();
+        
+        if ($model === null) {
+            throw new NotFoundHttpException('The specified billing invoice reference could not be located.');
+        }
+
+        // 📊 RUN HIGH-PRECISION REVENUE MATHEMATICS FORMULAS
+        $subtotal = 0.00;
+        foreach ($model->invoiceItems as $item) {
+            $subtotal += (float) $item->total_price;
+        }
+
+        $discountedSubtotal = $subtotal - (float) $model->discount_amount;
+
+        // Dynamic multi-tier Indian GST matrices extra calculations blocks
+        $cgstAmount = $discountedSubtotal * ((float) $model->cgst_percent / 100);
+        $sgstAmount = $discountedSubtotal * ((float) $model->sgst_percent / 100);
+        $igstAmount = $discountedSubtotal * ((float) $model->igst_percent / 100);
+        
+        $grandTotal = $discountedSubtotal + $cgstAmount + $sgstAmount + $igstAmount;
+
+        return $this->renderPartial('view', [
+            'model' => $model,
+            'subtotal' => $subtotal,
+            'cgstAmount' => $cgstAmount,
+            'sgstAmount' => $sgstAmount,
+            'igstAmount' => $igstAmount,
+            'grandTotal' => $grandTotal,
+        ]);
     }
     
     public function actionDownload()
     {
         $this->layout = 'blank';
         return $this->render('invoice');
-    }
-    
-    public function actionview()
-    {
-        return $this->render('view');
     }
 
 }

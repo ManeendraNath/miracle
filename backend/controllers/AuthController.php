@@ -11,7 +11,8 @@ use yii\web\Controller;
 use yii\web\Response;
 
 /**
- * Site controller
+ * AuthController
+ * Manages security gateways, administrative authentication, and session control loops.
  */
 class AuthController extends Controller
 {
@@ -32,6 +33,12 @@ class AuthController extends Controller
                         'actions' => ['logout', 'index'],
                         'allow' => true,
                         'roles' => ['@'],
+                        // Protects the admin panel from ordinary users/clients
+                        'matchCallback' => function ($rule, $action) {
+                            return Yii::$app->user->identity !== null && 
+                                   (Yii::$app->user->identity->superadmin === 1 || 
+                                    Yii::$app->user->identity->username === 'superadmin');
+                        }
                     ],
                 ],
             ],
@@ -63,7 +70,7 @@ class AuthController extends Controller
      */
     public function actionIndex()
     {
-        return $this->render('index');
+        return $this->redirect(['dashboard/index']);
     }
 
     /**
@@ -76,18 +83,17 @@ class AuthController extends Controller
         if (!Yii::$app->user->isGuest) {
             return $this->redirect(['dashboard/index']);
         }
+        
         $this->layout = 'blank';
-
         $model = new LoginForm();
-        $model->load(Yii::$app->request->post());
+
+        // Fixed duplicate load tracking method bug
         if ($model->load(Yii::$app->request->post())) {
-            // 1. Check what data was loaded into the model
             if ($model->login()) {
                 return $this->redirect(['dashboard/index']);
             } else {
-                // 2. If login fails, print out the exact validation errors (e.g., "Incorrect username or password.")
-                echo "<pre>Login Validation Errors: "; print_r($model->getErrors()); echo "</pre>";
-                die;
+                // Debug fallback block for verification issues
+                Yii::error('Admin panel login attempt failed for user: ' . $model->username, 'admin-auth');
             }
         }
 

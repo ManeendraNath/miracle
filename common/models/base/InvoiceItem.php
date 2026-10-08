@@ -9,9 +9,11 @@ use Yii;
  *
  * @property int $id
  * @property int $invoice_id
+ * @property int|null $item_type 1 : domain, 2 :hosting, 3 : maintenance, 4 : custom
+ * @property int|null $item_id Maps to the primary key of the domain/hosting/maintenance assets
  * @property string $category
  * @property string $description
- * @property string|null $duration_quantity
+ * @property int $quantity
  * @property float $unit_price
  * @property float $total_price
  *
@@ -35,12 +37,14 @@ class InvoiceItem extends \yii\db\ActiveRecord
     public function rules()
     {
         return [
-            [['duration_quantity'], 'default', 'value' => '1 Year'],
+            [['item_id'], 'default', 'value' => null],
+            [['item_type'], 'default', 'value' => 4],
+            [['quantity'], 'default', 'value' => 1],
             [['invoice_id', 'category', 'description', 'unit_price', 'total_price'], 'required'],
-            [['invoice_id'], 'integer'],
+            [['invoice_id', 'item_type', 'item_id', 'quantity'], 'integer'],
             [['description'], 'string'],
             [['unit_price', 'total_price'], 'number'],
-            [['category', 'duration_quantity'], 'string', 'max' => 100],
+            [['category'], 'string', 'max' => 100],
             [['invoice_id'], 'exist', 'skipOnError' => true, 'targetClass' => Invoice::class, 'targetAttribute' => ['invoice_id' => 'id']],
         ];
     }
@@ -53,9 +57,11 @@ class InvoiceItem extends \yii\db\ActiveRecord
         return [
             'id' => 'ID',
             'invoice_id' => 'Invoice ID',
+            'item_type' => 'Item Type',
+            'item_id' => 'Item ID',
             'category' => 'Category',
             'description' => 'Description',
-            'duration_quantity' => 'Duration Quantity',
+            'quantity' => 'Quantity',
             'unit_price' => 'Unit Price',
             'total_price' => 'Total Price',
         ];

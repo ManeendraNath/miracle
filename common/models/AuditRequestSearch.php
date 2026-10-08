@@ -18,7 +18,7 @@ class AuditRequestSearch extends AuditRequest
     {
         return [
             [['id', 'created_at', 'updated_at'], 'integer'],
-            [['name', 'email', 'company_url', 'current_framework', 'hosting_environment', 'message', 'status'], 'safe'],
+            [['name', 'email', 'phone', 'company_url', 'current_framework', 'hosting_environment', 'message', 'status', 'user_ip'], 'safe'],
         ];
     }
 
@@ -66,11 +66,13 @@ class AuditRequestSearch extends AuditRequest
 
         $query->andFilterWhere(['like', 'name', $this->name])
             ->andFilterWhere(['like', 'email', $this->email])
+            ->andFilterWhere(['like', 'phone', $this->phone])
             ->andFilterWhere(['like', 'company_url', $this->company_url])
             ->andFilterWhere(['like', 'current_framework', $this->current_framework])
             ->andFilterWhere(['like', 'hosting_environment', $this->hosting_environment])
             ->andFilterWhere(['like', 'message', $this->message])
-            ->andFilterWhere(['like', 'status', $this->status]);
+            ->andFilterWhere(['like', 'status', $this->status])
+            ->andFilterWhere(['like', 'user_ip', $this->user_ip]);
 
         return $dataProvider;
     }

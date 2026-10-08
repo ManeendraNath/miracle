@@ -17,7 +17,8 @@ class DomainsSearch extends Domains
     public function rules()
     {
         return [
-            [['id'], 'integer'],
+            [['id', 'user_id', 'status', 'created_at', 'updated_at'], 'integer'],
+            [['domain_url', 'registrar', 'registered_date', 'current_expiry_date'], 'safe'],
         ];
     }
 
@@ -59,7 +60,16 @@ class DomainsSearch extends Domains
         // grid filtering conditions
         $query->andFilterWhere([
             'id' => $this->id,
+            'user_id' => $this->user_id,
+            'registered_date' => $this->registered_date,
+            'current_expiry_date' => $this->current_expiry_date,
+            'status' => $this->status,
+            'created_at' => $this->created_at,
+            'updated_at' => $this->updated_at,
         ]);
+
+        $query->andFilterWhere(['like', 'domain_url', $this->domain_url])
+            ->andFilterWhere(['like', 'registrar', $this->registrar]);
 
         return $dataProvider;
     }

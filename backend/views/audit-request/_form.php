@@ -16,6 +16,8 @@ use yii\widgets\ActiveForm;
 
     <?= $form->field($model, 'email')->textInput(['maxlength' => true]) ?>
 
+    <?= $form->field($model, 'phone')->textInput(['maxlength' => true]) ?>
+
     <?= $form->field($model, 'company_url')->textInput(['maxlength' => true]) ?>
 
     <?= $form->field($model, 'current_framework')->textInput(['maxlength' => true]) ?>
@@ -24,7 +26,9 @@ use yii\widgets\ActiveForm;
 
     <?= $form->field($model, 'message')->textarea(['rows' => 6]) ?>
 
-    <?= $form->field($model, 'status')->textInput(['maxlength' => true]) ?>
+    <?= $form->field($model, 'status')->dropDownList([ 'Pending' => 'Pending', 'In_Review' => 'In Review', 'Contacted' => 'Contacted', 'Closed' => 'Closed', ], ['prompt' => '']) ?>
+
+    <?= $form->field($model, 'user_ip')->textInput(['maxlength' => true]) ?>
 
     <?= $form->field($model, 'created_at')->textInput() ?>
 

@@ -21,15 +21,19 @@ use yii\widgets\ActiveForm;
 
     <?= $form->field($model, 'email') ?>
 
+    <?= $form->field($model, 'phone') ?>
+
     <?= $form->field($model, 'company_url') ?>
 
-    <?= $form->field($model, 'current_framework') ?>
+    <?php // echo $form->field($model, 'current_framework') ?>
 
     <?php // echo $form->field($model, 'hosting_environment') ?>
 
     <?php // echo $form->field($model, 'message') ?>
 
     <?php // echo $form->field($model, 'status') ?>
+
+    <?php // echo $form->field($model, 'user_ip') ?>
 
     <?php // echo $form->field($model, 'created_at') ?>
 

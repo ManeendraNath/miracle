@@ -17,6 +17,11 @@ use Yii;
  * @property int $created_at
  * @property int $updated_at
  * @property string|null $verification_token
+ *
+ * @property Domains[] $domains
+ * @property Hosting[] $hostings
+ * @property Invoice[] $invoices
+ * @property Maintenance[] $maintenances
  */
 class User extends \yii\db\ActiveRecord
 {
@@ -65,6 +70,46 @@ class User extends \yii\db\ActiveRecord
             'updated_at' => 'Updated At',
             'verification_token' => 'Verification Token',
         ];
+    }
+
+    /**
+     * Gets query for [[Domains]].
+     *
+     * @return \yii\db\ActiveQuery
+     */
+    public function getDomains()
+    {
+        return $this->hasMany(Domains::class, ['user_id' => 'id']);
+    }
+
+    /**
+     * Gets query for [[Hostings]].
+     *
+     * @return \yii\db\ActiveQuery
+     */
+    public function getHostings()
+    {
+        return $this->hasMany(Hosting::class, ['user_id' => 'id']);
+    }
+
+    /**
+     * Gets query for [[Invoices]].
+     *
+     * @return \yii\db\ActiveQuery
+     */
+    public function getInvoices()
+    {
+        return $this->hasMany(Invoice::class, ['user_id' => 'id']);
+    }
+
+    /**
+     * Gets query for [[Maintenances]].
+     *
+     * @return \yii\db\ActiveQuery
+     */
+    public function getMaintenances()
+    {
+        return $this->hasMany(Maintenance::class, ['user_id' => 'id']);
     }
 
 }

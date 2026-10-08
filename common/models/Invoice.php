@@ -29,6 +29,9 @@ class Invoice extends base\Invoice
     {
         return [
             TimestampBehavior::class,
+            [
+                'class' => \common\components\behaviors\InvoiceAutomatedRenewalBehavior::class,
+            ],
         ];
     }
 }

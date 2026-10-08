@@ -17,6 +17,22 @@ use yii\widgets\ActiveForm;
 
     <?= $form->field($model, 'id') ?>
 
+    <?= $form->field($model, 'user_id') ?>
+
+    <?= $form->field($model, 'domain_url') ?>
+
+    <?= $form->field($model, 'registrar') ?>
+
+    <?= $form->field($model, 'registered_date') ?>
+
+    <?php // echo $form->field($model, 'current_expiry_date') ?>
+
+    <?php // echo $form->field($model, 'status') ?>
+
+    <?php // echo $form->field($model, 'created_at') ?>
+
+    <?php // echo $form->field($model, 'updated_at') ?>
+
     <div class="form-group">
         <?= Html::submitButton('Search', ['class' => 'btn btn-primary']) ?>
         <?= Html::resetButton('Reset', ['class' => 'btn btn-outline-secondary']) ?>

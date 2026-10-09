@@ -126,6 +126,12 @@ use yii\helpers\Html;
                         'active' => Yii::$app->controller->id === 'admin'
                     ],
                     [
+                        'label' => 'Cron Run Logs', 
+                        'icon' => 'terminal', 
+                        'url' => ['/admin/cron-log'],
+                        'active' => Yii::$app->controller->id === 'admin' && Yii::$app->controller->action->id === 'cron-log'
+                    ],
+                    [
                         'label' => 'Site Global Settings', 
                         'icon' => 'sliders-h', 
                         'url' => ['/site-setting/index'],

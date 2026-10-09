@@ -95,6 +95,46 @@ class AdminController extends BaseController
     }
 
     /**
+     * Reads background execution ledger logging streams and tracks automated metrics.
+     */
+    public function actionCronLog()
+    {
+        $logPath = '/home/rpocncwk/miracle/console/runtime/logs/cron.log';
+        $logLines = [];
+        $metrics = ['success' => 0, 'warnings' => 0, 'errors' => 0];
+
+        if (file_exists($logPath)) {
+            // Read last 150 lines from your server's log file safely
+            $fileData = file($logPath);
+            $slicedData = array_slice($fileData, -150);
+            
+            foreach ($slicedData as $line) {
+                $lineText = trim($line);
+                if (empty($lineText)) continue;
+
+                // Dynamically compile metrics parameters using word signature sweeps
+                if (stripos($lineText, 'Successfully dispatched') !== false || stripos($lineText, 'complete') !== false) {
+                    $metrics['success']++;
+                } elseif (stripos($lineText, 'Skipping') !== false || stripos($lineText, 'warning') !== false) {
+                    $metrics['warnings']++;
+                } elseif (stripos($lineText, 'error') !== false || stripos($lineText, 'failed') !== false) {
+                    $metrics['errors']++;
+                }
+
+                $logLines[] = $lineText;
+            }
+        } else {
+            $logLines[] = "System tracking ledger log file is not initialized yet. Run your cPanel cron tasks to populate data paths.";
+        }
+
+        return $this->render('cron-log', [
+            'logLines' => array_reverse($logLines), // Newest log activities appear at the top
+            'metrics' => $metrics,
+            'logPath' => $logPath
+        ]);
+    }
+    
+    /**
      * Deletes an existing Admin model.
      * If deletion is successful, the browser will be redirected to the 'index' page.
      * @param int $id System ID Reference

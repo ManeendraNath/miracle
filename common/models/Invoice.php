@@ -34,4 +34,32 @@ class Invoice extends base\Invoice
             ],
         ];
     }
+
+    /**
+     * SERVER-SIDE AUTOMATED REVENUE MATHEMATICS PROTOCOL
+     * Intercepts incoming form data and recalculates balances securely before writing to database.
+     */
+    public function beforeValidate()
+    {
+        if (parent::beforeValidate()) {
+            $subtotal = (float) $this->subtotal_amount;
+            $discount = (float) $this->discount_amount;
+
+            $netTaxable = $subtotal - $discount;
+            if ($netTaxable < 0) {
+                $netTaxable = 0.00;
+            }
+
+            // Extract percentages out of validation request inputs
+            $cgst = $netTaxable * ((float) $this->cgst_percent / 100);
+            $sgst = $netTaxable * ((float) $this->sgst_percent / 100);
+            $igst = $netTaxable * ((float) $this->igst_percent / 100);
+
+            // Dynamically lock down total payable field securely
+            $this->total_payable = number_format(($netTaxable + $cgst + $sgst + $igst), 2, '.', '');
+
+            return true;
+        }
+        return false;
+    }
 }

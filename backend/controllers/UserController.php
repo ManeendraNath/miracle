@@ -4,46 +4,18 @@ namespace backend\controllers;
 
 use common\models\User;
 use common\models\UserSearch;
-use yii\web\Controller;
-use yii\web\NotFoundHttpException;
-use yii\filters\VerbFilter;
 
-/**
- * UserController implements the CRUD actions for User model.
- */
-class UserController extends Controller
+class UserController extends BaseController
 {
-    /**
-     * @inheritDoc
-     */
-    public function behaviors()
-    {
-        return array_merge(
-            parent::behaviors(),
-            [
-                'verbs' => [
-                    'class' => VerbFilter::className(),
-                    'actions' => [
-                        'delete' => ['POST'],
-                    ],
-                ],
-            ]
-        );
-    }
 
-    /**
-     * Lists all User models.
-     *
-     * @return string
-     */
     public function actionIndex()
     {
         $searchModel = new UserSearch();
         $dataProvider = $searchModel->search($this->request->queryParams);
 
         return $this->render('index', [
-            'searchModel' => $searchModel,
-            'dataProvider' => $dataProvider,
+                    'searchModel' => $searchModel,
+                    'dataProvider' => $dataProvider,
         ]);
     }
 
@@ -68,10 +40,14 @@ class UserController extends Controller
     public function actionCreate()
     {
         $model = new User();
+        // Set default role scenarios if missing
+        if ($this->request->isPost && $model->load($this->request->post())) {
+            $model->setPassword($this->request->post('password_input'));
+            $model->generateAuthKey();
+            $model->status = User::STATUS_ACTIVE;
 
-        if ($this->request->isPost) {
-            if ($model->load($this->request->post()) && $model->save()) {
-                return $this->redirect(['view', 'id' => $model->id]);
+            if ($model->save()) {
+                return $this->redirect(['index']);
             }
         } else {
             $model->loadDefaultValues();
@@ -98,7 +74,7 @@ class UserController extends Controller
         }
 
         return $this->render('update', [
-            'model' => $model,
+                    'model' => $model,
         ]);
     }
 

@@ -7,33 +7,14 @@ namespace backend\controllers;
 use Yii;
 use common\models\AuditRequest;
 use common\models\AuditRequestSearch;
-use yii\web\Controller;
-use yii\filters\AccessControl;
 use yii\web\NotFoundHttpException;
 use yii\web\ForbiddenHttpException;
 
 /**
  * LeadController manages incoming customer infrastructure audit requirements records.
  */
-class LeadController extends Controller
+class LeadController extends BaseController
 {
-    /**
-     * {@inheritdoc}
-     */
-    public function behaviors(): array
-    {
-        return [
-            'access' => [
-                'class' => AccessControl::class,
-                'rules' => [
-                    [
-                        'allow' => true,
-                        'roles' => ['@'], // Must be logged in as an administrator
-                    ],
-                ],
-            ],
-        ];
-    }
 
     /**
      * Lists all corporate audit request records.

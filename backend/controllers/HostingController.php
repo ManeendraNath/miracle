@@ -4,32 +4,13 @@ namespace backend\controllers;
 
 use common\models\Hosting;
 use common\models\HostingSearch;
-use yii\web\Controller;
 use yii\web\NotFoundHttpException;
-use yii\filters\VerbFilter;
 
 /**
  * HostingController implements the CRUD actions for Hosting model.
  */
-class HostingController extends Controller
+class HostingController extends BaseController
 {
-    /**
-     * @inheritDoc
-     */
-    public function behaviors()
-    {
-        return array_merge(
-            parent::behaviors(),
-            [
-                'verbs' => [
-                    'class' => VerbFilter::className(),
-                    'actions' => [
-                        'delete' => ['POST'],
-                    ],
-                ],
-            ]
-        );
-    }
 
     /**
      * Lists all Hosting models.

@@ -4,32 +4,13 @@ namespace backend\controllers;
 
 use common\models\Maintenance;
 use common\models\MaintenanceSearch;
-use yii\web\Controller;
 use yii\web\NotFoundHttpException;
-use yii\filters\VerbFilter;
 
 /**
  * MaintenanceController implements the CRUD actions for Maintenance model.
  */
-class MaintenanceController extends Controller
+class MaintenanceController extends BaseController
 {
-    /**
-     * @inheritDoc
-     */
-    public function behaviors()
-    {
-        return array_merge(
-            parent::behaviors(),
-            [
-                'verbs' => [
-                    'class' => VerbFilter::className(),
-                    'actions' => [
-                        'delete' => ['POST'],
-                    ],
-                ],
-            ]
-        );
-    }
 
     /**
      * Lists all Maintenance models.

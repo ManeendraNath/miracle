@@ -15,24 +15,26 @@ class BaseController extends Controller
             'access' => [
                 'class' => AccessControl::class,
                 'denyCallback' => function ($rule, $action) {
-                    // Send unauthorized or guest users straight to your custom auth/login page route
-                    return Yii::$app->response->redirect(['auth/login']);
+                    if (Yii::$app->user->isGuest) {
+                        return Yii::$app->response->redirect(['/auth/login']);
+                    }
+                    Yii::$app->user->logout();
+                    Yii::$app->session->setFlash('error', 'Unauthorized administrator role portfolio.');
+                    return Yii::$app->response->redirect(['/auth/login']);
                 },
                 'rules' => [
                     [
                         'allow' => true,
                         'roles' => ['@'],
                         'matchCallback' => function ($rule, $action) {
-    $user = Yii::$app->user->identity;
-    if ($user === null) {
-        return false;
-    }
-    
-    // ✅ DYNAMIC ROLE CHECK: Matches your actual 'role' column values exactly
-    return (isset($user->role) && strtolower($user->role) === 'superadmin') || 
-           strtolower($user->username) === 'superadmin';
-}
-
+                            $user = Yii::$app->user->identity;
+                            if ($user === null) {
+                                return false;
+                            }
+                            // DYNAMIC ROLE CHECK: Matches your actual 'role' database strings perfectly
+                            return (isset($user->role) && strtolower($user->role) === 'superadmin') || 
+                                   strtolower($user->username) === 'superadmin';
+                        }
                     ],
                 ],
             ],

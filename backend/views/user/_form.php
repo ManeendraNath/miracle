@@ -12,12 +12,33 @@ use yii\widgets\ActiveForm;
 
     <?php $form = ActiveForm::begin(); ?>
 
-    <?= $form->field($model, 'status')->textInput() ?>
-
-    <div class="form-group">
-        <?= Html::submitButton('Save', ['class' => 'btn btn-success']) ?>
+    <div class="row">
+        <div class="col-md-6"><?= $form->field($model, 'username')->textInput(['maxlength' => true]) ?></div>
+        <div class="col-md-6"><?= $form->field($model, 'email')->input('email') ?></div>
     </div>
 
-    <?php ActiveForm::end(); ?>
+    <div class="row mt-3">
+        <div class="col-md-6">
+            <div class="form-group field-user-password_input required">
+                <label class="control-label">Account Password</label>
+                <?= Html::input('password', 'password_input', '', ['class' => 'form-control', 'required' => true]) ?>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <!-- Checking your existing schema variable column settings -->
+            <?=
+            $form->field($model, 'role')->dropDownList([
+                'Client' => 'Standard Client / Customer',
+                'Superadmin' => 'Administrative Controller'
+                    ], ['class' => 'form-control custom-select'])
+            ?>
+        </div>
+    </div>
+
+    <div class="form-group mt-4 text-right">
+    <?= Html::submitButton('<i class="fas fa-save mr-1"></i> Register System Account', ['class' => 'btn btn-success px-4']) ?>
+    </div>
+
+<?php ActiveForm::end(); ?>
 
 </div>

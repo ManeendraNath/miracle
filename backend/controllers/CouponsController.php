@@ -4,32 +4,13 @@ namespace backend\controllers;
 
 use common\models\Coupons;
 use common\models\CouponsSearch;
-use yii\web\Controller;
 use yii\web\NotFoundHttpException;
-use yii\filters\VerbFilter;
 
 /**
  * CouponsController implements the CRUD actions for Coupons model.
  */
-class CouponsController extends Controller
+class CouponsController extends BaseController
 {
-    /**
-     * @inheritDoc
-     */
-    public function behaviors()
-    {
-        return array_merge(
-            parent::behaviors(),
-            [
-                'verbs' => [
-                    'class' => VerbFilter::className(),
-                    'actions' => [
-                        'delete' => ['POST'],
-                    ],
-                ],
-            ]
-        );
-    }
 
     /**
      * Lists all Coupons models.

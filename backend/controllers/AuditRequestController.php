@@ -4,32 +4,13 @@ namespace backend\controllers;
 
 use common\models\AuditRequest;
 use common\models\AuditRequestSearch;
-use yii\web\Controller;
 use yii\web\NotFoundHttpException;
-use yii\filters\VerbFilter;
 
 /**
  * AuditRequestController implements the CRUD actions for AuditRequest model.
  */
-class AuditRequestController extends Controller
+class AuditRequestController extends BaseController
 {
-    /**
-     * @inheritDoc
-     */
-    public function behaviors()
-    {
-        return array_merge(
-            parent::behaviors(),
-            [
-                'verbs' => [
-                    'class' => VerbFilter::className(),
-                    'actions' => [
-                        'delete' => ['POST'],
-                    ],
-                ],
-            ]
-        );
-    }
 
     /**
      * Lists all AuditRequest models.

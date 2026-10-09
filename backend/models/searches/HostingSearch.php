@@ -1,15 +1,15 @@
 <?php
 
-namespace common\models;
+namespace backend\models\searches;
 
 use yii\base\Model;
 use yii\data\ActiveDataProvider;
-use common\models\AuditRequest;
+use common\models\Hosting;
 
 /**
- * AuditRequestSearch represents the model behind the search form of `common\models\AuditRequest`.
+ * HostingSearch represents the model behind the search form of `common\models\Hosting`.
  */
-class AuditRequestSearch extends AuditRequest
+class HostingSearch extends Hosting
 {
     /**
      * {@inheritdoc}
@@ -17,8 +17,8 @@ class AuditRequestSearch extends AuditRequest
     public function rules()
     {
         return [
-            [['id', 'created_at', 'updated_at'], 'integer'],
-            [['name', 'email', 'phone', 'company_url', 'current_framework', 'hosting_environment', 'message', 'status', 'user_ip'], 'safe'],
+            [['id', 'user_id', 'status', 'created_at', 'updated_at'], 'integer'],
+            [['primary_domain', 'cpanel_ip', 'cpanel_username', 'cpanel_password', 'current_expiry_date'], 'safe'],
         ];
     }
 
@@ -41,7 +41,7 @@ class AuditRequestSearch extends AuditRequest
      */
     public function search($params, $formName = null)
     {
-        $query = AuditRequest::find();
+        $query = Hosting::find();
 
         // add conditions that should always apply here
 
@@ -60,19 +60,17 @@ class AuditRequestSearch extends AuditRequest
         // grid filtering conditions
         $query->andFilterWhere([
             'id' => $this->id,
+            'user_id' => $this->user_id,
+            'current_expiry_date' => $this->current_expiry_date,
+            'status' => $this->status,
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
         ]);
 
-        $query->andFilterWhere(['like', 'name', $this->name])
-            ->andFilterWhere(['like', 'email', $this->email])
-            ->andFilterWhere(['like', 'phone', $this->phone])
-            ->andFilterWhere(['like', 'company_url', $this->company_url])
-            ->andFilterWhere(['like', 'current_framework', $this->current_framework])
-            ->andFilterWhere(['like', 'hosting_environment', $this->hosting_environment])
-            ->andFilterWhere(['like', 'message', $this->message])
-            ->andFilterWhere(['like', 'status', $this->status])
-            ->andFilterWhere(['like', 'user_ip', $this->user_ip]);
+        $query->andFilterWhere(['like', 'primary_domain', $this->primary_domain])
+            ->andFilterWhere(['like', 'cpanel_ip', $this->cpanel_ip])
+            ->andFilterWhere(['like', 'cpanel_username', $this->cpanel_username])
+            ->andFilterWhere(['like', 'cpanel_password', $this->cpanel_password]);
 
         return $dataProvider;
     }

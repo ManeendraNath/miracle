@@ -1,24 +1,24 @@
 <?php
 
-namespace common\models;
+namespace backend\models\searches;
 
 use yii\base\Model;
 use yii\data\ActiveDataProvider;
-use common\models\Domains;
+use common\models\Admin;
 
 /**
- * DomainsSearch represents the model behind the search form of `common\models\Domains`.
+ * AdminSearch represents the model behind the search form of `common\models\Admin`.
  */
-class DomainsSearch extends Domains
+class AdminSearch extends Admin
 {
     /**
      * {@inheritdoc}
      */
-    public function rules()
+    public function rules(): array
     {
         return [
-            [['id', 'user_id', 'status', 'created_at', 'updated_at'], 'integer'],
-            [['domain_url', 'registrar', 'registered_date', 'current_expiry_date'], 'safe'],
+            [['id', 'status', 'created_at', 'updated_at'], 'integer'],
+            [['username', 'email', 'role'], 'safe'],
         ];
     }
 
@@ -41,7 +41,7 @@ class DomainsSearch extends Domains
      */
     public function search($params, $formName = null)
     {
-        $query = Domains::find();
+        $query = Admin::find();
 
         // add conditions that should always apply here
 
@@ -60,16 +60,14 @@ class DomainsSearch extends Domains
         // grid filtering conditions
         $query->andFilterWhere([
             'id' => $this->id,
-            'user_id' => $this->user_id,
-            'registered_date' => $this->registered_date,
-            'current_expiry_date' => $this->current_expiry_date,
             'status' => $this->status,
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
         ]);
 
-        $query->andFilterWhere(['like', 'domain_url', $this->domain_url])
-            ->andFilterWhere(['like', 'registrar', $this->registrar]);
+        $query->andFilterWhere(['like', 'username', $this->username])
+            ->andFilterWhere(['like', 'email', $this->email])
+            ->andFilterWhere(['like', 'role', $this->role]);
 
         return $dataProvider;
     }

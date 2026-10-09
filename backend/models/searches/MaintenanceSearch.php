@@ -1,24 +1,24 @@
 <?php
 
-namespace common\models;
+namespace backend\models\searches;
 
 use yii\base\Model;
 use yii\data\ActiveDataProvider;
-use common\models\Admin;
+use common\models\Maintenance;
 
 /**
- * AdminSearch represents the model behind the search form of `common\models\Admin`.
+ * MaintenanceSearch represents the model behind the search form of `common\models\Maintenance`.
  */
-class AdminSearch extends Admin
+class MaintenanceSearch extends Maintenance
 {
     /**
      * {@inheritdoc}
      */
-    public function rules(): array
+    public function rules()
     {
         return [
-            [['id', 'status', 'created_at', 'updated_at'], 'integer'],
-            [['username', 'email', 'auth_key', 'password_hash', 'password_reset_token', 'role'], 'safe'],
+            [['id', 'user_id', 'status', 'created_at', 'updated_at'], 'integer'],
+            [['website_url', 'start_date', 'current_expiry_date'], 'safe'],
         ];
     }
 
@@ -41,7 +41,7 @@ class AdminSearch extends Admin
      */
     public function search($params, $formName = null)
     {
-        $query = Admin::find();
+        $query = Maintenance::find();
 
         // add conditions that should always apply here
 
@@ -60,17 +60,15 @@ class AdminSearch extends Admin
         // grid filtering conditions
         $query->andFilterWhere([
             'id' => $this->id,
+            'user_id' => $this->user_id,
+            'start_date' => $this->start_date,
+            'current_expiry_date' => $this->current_expiry_date,
             'status' => $this->status,
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
         ]);
 
-        $query->andFilterWhere(['like', 'username', $this->username])
-            ->andFilterWhere(['like', 'email', $this->email])
-            ->andFilterWhere(['like', 'auth_key', $this->auth_key])
-            ->andFilterWhere(['like', 'password_hash', $this->password_hash])
-            ->andFilterWhere(['like', 'password_reset_token', $this->password_reset_token])
-            ->andFilterWhere(['like', 'role', $this->role]);
+        $query->andFilterWhere(['like', 'website_url', $this->website_url]);
 
         return $dataProvider;
     }

@@ -62,4 +62,26 @@ class Invoice extends base\Invoice
         }
         return false;
     }
+
+    /**
+     * 🛡️ AUTOMATED COMPLIANCE VERIFIER RELATIONAL LINK
+     * Safely maps the billing record directly to the main system user account model
+     */
+    public function getUser()
+    {
+        return $this->hasOne(User::class, ['id' => 'user_id']);
+    }
+
+    /**
+     * 🔒 PRODUCTION INVOICE PROTECTION GATEKEEPER
+     * Throws an instant denial if a customer account has been suspended by an administrator
+     */
+    public function checkClientAccess()
+    {
+        // Traverses the relational user object data matrix fields context
+        if ($this->user !== null && (int) $this->user->status !== User::STATUS_ACTIVE) {
+            throw new ForbiddenHttpException('Access Denied. The associated client profile account has been suspended or locked.');
+        }
+        return true;
+    }
 }

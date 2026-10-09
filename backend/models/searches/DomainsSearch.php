@@ -1,15 +1,15 @@
 <?php
 
-namespace common\models;
+namespace backend\models\searches;
 
 use yii\base\Model;
 use yii\data\ActiveDataProvider;
-use common\models\Maintenance;
+use common\models\Domains;
 
 /**
- * MaintenanceSearch represents the model behind the search form of `common\models\Maintenance`.
+ * DomainsSearch represents the model behind the search form of `common\models\Domains`.
  */
-class MaintenanceSearch extends Maintenance
+class DomainsSearch extends Domains
 {
     /**
      * {@inheritdoc}
@@ -18,7 +18,7 @@ class MaintenanceSearch extends Maintenance
     {
         return [
             [['id', 'user_id', 'status', 'created_at', 'updated_at'], 'integer'],
-            [['website_url', 'start_date', 'current_expiry_date'], 'safe'],
+            [['domain_url', 'registrar', 'registered_date', 'current_expiry_date'], 'safe'],
         ];
     }
 
@@ -41,7 +41,7 @@ class MaintenanceSearch extends Maintenance
      */
     public function search($params, $formName = null)
     {
-        $query = Maintenance::find();
+        $query = Domains::find();
 
         // add conditions that should always apply here
 
@@ -61,14 +61,15 @@ class MaintenanceSearch extends Maintenance
         $query->andFilterWhere([
             'id' => $this->id,
             'user_id' => $this->user_id,
-            'start_date' => $this->start_date,
+            'registered_date' => $this->registered_date,
             'current_expiry_date' => $this->current_expiry_date,
             'status' => $this->status,
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
         ]);
 
-        $query->andFilterWhere(['like', 'website_url', $this->website_url]);
+        $query->andFilterWhere(['like', 'domain_url', $this->domain_url])
+            ->andFilterWhere(['like', 'registrar', $this->registrar]);
 
         return $dataProvider;
     }

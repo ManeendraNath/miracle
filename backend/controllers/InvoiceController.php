@@ -45,6 +45,9 @@ class InvoiceController extends BaseController
             throw new NotFoundHttpException('The specified billing invoice reference could not be located.');
         }
 
+        // 🚀 RUN SECURITY ENFORCEMENT CHECK: Blocks views instantly if client status !== 10
+        $model->checkClientAccess();
+    
         // Run calculations or load related item matrices
         $subtotal = (float) $model->subtotal_amount;
         $discountedSubtotal = $subtotal - (float) $model->discount_amount;

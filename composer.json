@@ -20,7 +20,8 @@
         "yiisoft/yii2-symfonymailer": "~2.0.3",
         "vlucas/phpdotenv": "^5.7",
         "rmrevin/yii2-fontawesome": "~3.5",
-        "hail812/yii2-adminlte3": "^1.1"
+        "hail812/yii2-adminlte3": "^1.1",
+        "kartik-v/yii2-date-range": "dev-master"
     },
     "require-dev": {
         "codeception/c3": "^2.8",

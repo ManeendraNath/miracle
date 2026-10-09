@@ -7,12 +7,51 @@ use yii\behaviors\TimestampBehavior;
 
 trait BaseIdentity
 {
-    public static function getRoleSuperAdmin(): string { return 'Superadmin'; }
-    public static function getRoleAdmin(): string { return 'Admin'; }
-    public static function getRoleManager(): string { return 'Manager'; }
-    public static function getStatusActive(): int { return 10; }
-    public static function getStatusInactive(): int { return 9; }
-    public static function getStatusDeleted(): int { return 0; }
+
+    public static function getRoleSuperAdmin(): string
+    {
+        return 'Superadmin';
+    }
+
+    public static function getRoleAdmin(): string
+    {
+        return 'Admin';
+    }
+
+    public static function getRoleManager(): string
+    {
+        return 'Manager';
+    }
+
+    public static function getStatusInactive(): int
+    {
+        return 0;
+    }
+
+    public static function getStatusActive(): int
+    {
+        return 1;
+    }
+
+    public static function getStatusSuspended(): int
+    {
+        return 2;
+    }
+
+    public static function getStatusDeleted(): int
+    {
+        return 3;
+    }
+
+    public static function getStatuses(): array
+    {
+        return [
+            self::getStatusInactive() => 'Inactive',
+            self::getStatusActive() => 'Active',
+            self::getStatusSuspended() => 'Suspended',
+            self::getStatusDeleted() => 'Deleted',
+        ];
+    }
 
     /**
      * Shared baseline status validation rules configuration array layer.
@@ -94,8 +133,8 @@ trait BaseIdentity
         }
 
         return static::findOne([
-            'password_reset_token' => $token,
-            'status' => self::getStatusActive(),
+                    'password_reset_token' => $token,
+                    'status' => self::getStatusActive(),
         ]);
     }
 
@@ -108,8 +147,8 @@ trait BaseIdentity
     public static function findByVerificationToken(string $token): static|null
     {
         return static::findOne([
-            'verification_token' => $token,
-            'status' => self::getStatusInactive(),
+                    'verification_token' => $token,
+                    'status' => self::getStatusInactive(),
         ]);
     }
 

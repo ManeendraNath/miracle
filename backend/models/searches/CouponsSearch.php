@@ -1,6 +1,6 @@
 <?php
 
-namespace common\models;
+namespace backend\models\searches;
 
 use yii\base\Model;
 use yii\data\ActiveDataProvider;

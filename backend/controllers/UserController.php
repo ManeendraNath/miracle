@@ -2,6 +2,7 @@
 
 namespace backend\controllers;
 
+use Yii;
 use common\models\User;
 use common\models\UserSearch;
 
@@ -18,7 +19,30 @@ class UserController extends BaseController
                     'dataProvider' => $dataProvider,
         ]);
     }
+/**
+     * ⚡ SECURE ONE-CLICK USER ACTIVATION TOGGLE
+     * Switches the profile status between Active (10) and Inactive (0) dynamically.
+     */
+    public function actionToggleStatus($id)
+    {
+        $model = $this->findModel($id);
+        if ($model === null) {
+            throw new NotFoundHttpException('The requested client profile account does not exist.');
+        }
 
+        // Standard Yii2 Advanced template state statuses (Active = 10, Inactive = 0)
+        if ((int)$model->status === User::STATUS_ACTIVE) {
+            $model->status = User::STATUS_INACTIVE;
+            Yii::$app->session->setFlash('warning', "Account for profile '{$model->username}' has been suspended successfully.");
+        } else {
+            $model->status = User::STATUS_ACTIVE;
+            Yii::$app->session->setFlash('success', "Account for profile '{$model->username}' has been activated and unlocked successfully!");
+        }
+
+        $model->save(false); // Bypasses password validation restrictions during simple status toggles
+        return $this->redirect(['index']);
+    }
+    
     /**
      * Displays a single User model.
      * @param int $id System ID Reference
@@ -47,6 +71,7 @@ class UserController extends BaseController
             $model->status = User::STATUS_ACTIVE;
 
             if ($model->save()) {
+                Yii::$app->session->setFlash('success', 'New client profile generated successfully.');
                 return $this->redirect(['index']);
             }
         } else {
@@ -70,7 +95,8 @@ class UserController extends BaseController
         $model = $this->findModel($id);
 
         if ($this->request->isPost && $model->load($this->request->post()) && $model->save()) {
-            return $this->redirect(['view', 'id' => $model->id]);
+            Yii::$app->session->setFlash('success', 'Client profile updated successfully.');
+                return $this->redirect(['view', 'id' => $model->id]);
         }
 
         return $this->render('update', [
@@ -88,7 +114,7 @@ class UserController extends BaseController
     public function actionDelete($id)
     {
         $this->findModel($id)->delete();
-
+        Yii::$app->session->setFlash('success', 'Client profile deleted successfully.');
         return $this->redirect(['index']);
     }
 

@@ -14,7 +14,7 @@ class UserSearch extends User
     /**
      * {@inheritdoc}
      */
-    public function rules()
+    public function rules(): array
     {
         return [
             [['id', 'status', 'created_at', 'updated_at'], 'integer'],

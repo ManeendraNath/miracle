@@ -4,13 +4,13 @@ use yii\helpers\Html;
 ?>
 
 <aside class="main-sidebar sidebar-dark-primary elevation-4">
-    <!-- Brand Logo Displays Link safely pointing to your new home dashboard route -->
+    <!-- Brand Logo Displays Link -->
     <a href="<?= Url::to(['/dashboard/index']) ?>" class="brand-link">
         <img src="<?=$assetDir?>/img/AdminLTELogo.png" alt="AdminLTE Logo" class="brand-image img-circle elevation-3" style="opacity: .8">
         <span class="brand-text font-weight-light">Miracle Console</span>
     </a>
 
-    <!-- Sidebar Core Workspace Wrapper -->
+    <!-- Sidebar Wrapper -->
     <div class="sidebar">
         <!-- Sidebar User Profile Details Panel -->
         <div class="user-panel mt-3 pb-3 mb-3 d-flex">
@@ -38,9 +38,10 @@ use yii\helpers\Html;
         <nav class="mt-2">
             <?php
             echo \hail812\adminlte\widgets\Menu::widget([
+                'options' => ['class' => 'nav nav-pills nav-sidebar flex-column', 'data-widget' => 'treeview', 'role' => 'menu', 'data-accordion' => 'false'],
                 'items' => [
                     // =====================================================================
-                    // 🚀 ACTIVE BUSINESS PRODUCTION ACTIONS (Your Real Modules)
+                    // 🚀 1. CORE WORKSPACE & CRM MONITORING
                     // =====================================================================
                     ['label' => 'CORE WORKSPACE', 'header' => true],
                     [
@@ -50,16 +51,85 @@ use yii\helpers\Html;
                         'active' => Yii::$app->controller->id === 'dashboard'
                     ],
                     [
+                        'label' => 'Audit Requests', 
+                        'icon' => 'id-card', 
+                        'url' => ['/audit-request/index'],
+                        'active' => Yii::$app->controller->id === 'audit-request'
+                    ],
+                    [
+                        'label' => 'Inbound Leads CRM', 
+                        'icon' => 'envelope-open-text', 
+                        'url' => ['/lead/index'],
+                        'active' => Yii::$app->controller->id === 'lead'
+                    ],
+
+                    // =====================================================================
+                    // 💰 2. FINANCIAL FINANCE & MARKETING OPERATIONS
+                    // =====================================================================
+                    ['label' => 'FINANCE & MARKETING', 'header' => true],
+                    [
                         'label' => 'Manage Invoices', 
                         'icon' => 'file-invoice-dollar', 
                         'url' => ['/invoice/index'],
                         'active' => Yii::$app->controller->id === 'invoice'
                     ],
                     [
-                        'label' => 'Admin Accounts', 
+                        'label' => 'Transaction Ledger', 
+                        'icon' => 'chart-line', 
+                        'url' => ['/transaction/index'],
+                        'active' => Yii::$app->controller->id === 'transaction'
+                    ],
+                    [
+                        'label' => 'Promo Coupons', 
+                        'icon' => 'tags', 
+                        'url' => ['/coupons/index'],
+                        'active' => Yii::$app->controller->id === 'coupons'
+                    ],
+
+                    // =====================================================================
+                    // 🌐 3. INFRASTRUCTURE & ACTIVE CLIENT ASSETS
+                    // =====================================================================
+                    ['label' => 'INFRASTRUCTURE ASSETS', 'header' => true],
+                    [
+                        'label' => 'Domains Registry', 
+                        'icon' => 'globe', 
+                        'url' => ['/domains/index'],
+                        'active' => Yii::$app->controller->id === 'domains'
+                    ],
+                    [
+                        'label' => 'Web Hosting Arrays', 
+                        'icon' => 'cloud', 
+                        'url' => ['/hosting/index'],
+                        'active' => Yii::$app->controller->id === 'hosting'
+                    ],
+                    [
+                        'label' => 'Maintenance (AMC)', 
+                        'icon' => 'tools', 
+                        'url' => ['/maintenance/index'],
+                        'active' => Yii::$app->controller->id === 'maintenance'
+                    ],
+
+                    // =====================================================================
+                    // 👥 4. USER ACCESS MANAGEMENT CONTROL
+                    // =====================================================================
+                    ['label' => 'USER ACCESS CONTROL', 'header' => true],
+                    [
+                        'label' => 'Client Users Directory', 
+                        'icon' => 'users', 
+                        'url' => ['/user/index'],
+                        'active' => Yii::$app->controller->id === 'user'
+                    ],
+                    [
+                        'label' => 'Admin Accounts Panel', 
                         'icon' => 'users-cog', 
                         'url' => ['/admin/index'],
                         'active' => Yii::$app->controller->id === 'admin'
+                    ],
+                    [
+                        'label' => 'Site Global Settings', 
+                        'icon' => 'sliders-h', 
+                        'url' => ['/site-setting/index'],
+                        'active' => Yii::$app->controller->id === 'site-setting'
                     ],
 
                     // =====================================================================
@@ -112,5 +182,4 @@ use yii\helpers\Html;
         </nav>
         <!-- /.sidebar-menu -->
     </div>
-    <!-- /.sidebar -->
 </aside>

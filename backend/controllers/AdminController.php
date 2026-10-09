@@ -74,8 +74,19 @@ class AdminController extends BaseController
     {
         $model = $this->findModel($id);
 
-        if ($this->request->isPost && $model->load($this->request->post()) && $model->save()) {
-            return $this->redirect(['view', 'id' => $model->id]);
+        if ($this->request->isPost && $model->load($this->request->post())) {
+            $newPassword = $this->request->post('new_password_string');
+            
+            // Cryptographic Hashing Protocol: Only update if a new password string is supplied
+            if (!empty($newPassword)) {
+                $model->setPassword($newPassword);
+                $model->generateAuthKey();
+            }
+
+            if ($model->save()) {
+                Yii::$app->session->setFlash('success', 'Administrative security profile parameters updated perfectly.');
+                return $this->redirect(['view', 'id' => $model->id]);
+            }
         }
 
         return $this->render('update', [

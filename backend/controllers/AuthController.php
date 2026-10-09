@@ -8,6 +8,7 @@ use yii\filters\VerbFilter;
 use yii\filters\AccessControl;
 use yii\helpers\Url;
 use yii\web\Controller;
+use yii\web\ErrorAction;
 use yii\web\Response;
 
 /**
@@ -24,8 +25,8 @@ class AuthController extends Controller
     {
         return [
             'access' => [
-                'class' => \yii\filters\AccessControl::class,
-                // 🛡️ Safe fallback handler: Bounces unauthorized requests cleanly back to the login screen
+                'class' => AccessControl::class,
+                // Safe fallback handler: Bounces unauthorized requests cleanly back to the login screen
                 'denyCallback' => function ($rule, $action) {
                     if (Yii::$app->user->isGuest) {
                         return Yii::$app->response->redirect(['/auth/login']);
@@ -36,12 +37,12 @@ class AuthController extends Controller
                 },
                 'rules' => [
                     [
-                        // 🔓 ALLOW public access to the login screen and error handler page
+                        // ALLOW public access to the login screen and error handler page
                         'actions' => ['login', 'error'],
                         'allow' => true,
                     ],
                     [
-                        // 🔒 RESTRICT sensitive execution links exclusively to verified Superadmins
+                        // RESTRICT sensitive execution links exclusively to verified Superadmins
                         'actions' => ['logout', 'index'],
                         'allow' => true,
                         'roles' => ['@'], // Must be logged in
@@ -50,15 +51,14 @@ class AuthController extends Controller
                             if ($user === null) {
                                 return false;
                             }
-                            // ✅ Matches your exact database layout ('role' column contains 'Superadmin')
-                            return (isset($user->role) && strtolower($user->role) === 'superadmin') ||
-                            strtolower($user->username) === 'superadmin';
+                            // Matches your exact database layout ('role' column contains 'Superadmin')
+                            return (isset($user->role) && strtolower($user->role) === 'superadmin') || strtolower($user->username) === 'superadmin';
                         }
                     ],
                 ],
             ],
             'verbs' => [
-                'class' => \yii\filters\VerbFilter::class,
+                'class' => VerbFilter::class,
                 'actions' => [
                     'logout' => ['post'],
                 ],
@@ -73,19 +73,9 @@ class AuthController extends Controller
     {
         return [
             'error' => [
-                'class' => 'yii\web\ErrorAction',
+                'class' => ErrorAction::class,
             ],
         ];
-    }
-
-    /**
-     * Displays homepage.
-     *
-     * @return string
-     */
-    public function actionIndex()
-    {
-        return $this->redirect(['dashboard/index']);
     }
 
     /**

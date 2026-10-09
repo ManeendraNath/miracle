@@ -13,8 +13,6 @@ $this->params['breadcrumbs'][] = $this->title;
 ?>
 <div class="coupons-view">
 
-    <h1><?= Html::encode($this->title) ?></h1>
-
     <p>
         <?= Html::a('Update', ['update', 'coupon_id' => $model->coupon_id], ['class' => 'btn btn-primary']) ?>
         <?= Html::a('Delete', ['delete', 'coupon_id' => $model->coupon_id], [

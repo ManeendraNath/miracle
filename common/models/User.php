@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace common\models;
 
+use yii\helpers\ArrayHelper;
 use yii\web\IdentityInterface;
 
 /**

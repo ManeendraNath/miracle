@@ -74,7 +74,7 @@ class InvoiceController extends BaseController
 
         if ($this->request->isPost) {
             if ($model->load($this->request->post()) && $model->save()) {
-                if (($client = \common\models\User::findOne($model->user_id)) !== null) {
+                if (($client = User::findOne($model->user_id)) !== null) {
                     $this->sendEmail($client, $model);
                 }
                 // Redirect cleanly using the newly generated alphanumeric invoice field parameters
@@ -137,22 +137,41 @@ class InvoiceController extends BaseController
 
     private function sendEmail($client, $model)
     {
-        Yii::$app->mailer->compose()
+        // Compile the financial variables matrix parameters
+        $subtotal = (float) $model->subtotal_amount;
+        $discountedSubtotal = $subtotal - (float) $model->discount_amount;
+        $cgstAmount = $discountedSubtotal * ((float) $model->cgst_percent / 100);
+        $sgstAmount = $discountedSubtotal * ((float) $model->sgst_percent / 100);
+        $igstAmount = $discountedSubtotal * ((float) $model->igst_percent / 100);
+        $grandTotal = $discountedSubtotal + $cgstAmount + $sgstAmount + $igstAmount;
+
+        // 📁 Generate HTML Stream context using your polished printable view canvas
+        $htmlContent = $this->renderPartial('view', [
+            'model' => $model,
+            'subtotal' => $subtotal,
+            'cgstAmount' => $cgstAmount,
+            'sgstAmount' => $sgstAmount,
+            'igstAmount' => $igstAmount,
+            'grandTotal' => $grandTotal,
+        ]);
+        // Construct and bundle the message package safely
+        $message = Yii::$app->mailer->compose()
                 ->setFrom([Yii::$app->params['adminEmail'] ?? 'admin@miraclewebtechnologies.com' => 'Miracle Billing'])
                 ->setTo($client->email)
-                ->setSubject('New Billing Invoice Issued: #' . $model->invoice_number)
+                ->setSubject('Official Billing Statement Issued: #' . $model->invoice_number)
                 ->setHtmlBody("
-                        <h3>Hello " . Html::encode($model->client_name) . ",</h3>
-                        <p>A new invoice has been generated for your account profile.</p>
-                        <ul>
-                            <li><strong>Invoice Number:</strong> {$model->invoice_number}</li>
-                            <li><strong>Total Amount Payable:</strong> ₹" . number_format($model->total_payable, 2) . "</li>
-                            <li><strong>Due Date:</strong> {$model->due_date}</li>
-                        </ul>
-                        <p>You can review and settle your invoice statement balance at any time on our online platform portal.</p>
-                        <br>
-                        <p>Thank you,<br><strong>Miracle Web Technologies Team</strong></p>
-                    ")
-                ->send();
+                        <h3>Hello " . \yii\helpers\Html::encode($model->client_name) . ",</h3>
+                        <p>Please find attached your official billing statement invoice reference record #<strong>{$model->invoice_number}</strong> for your corporate service portfolio files.</p>
+                        <p>Thank you for choosing <strong>Miracle Web Technologies</strong>.</p>
+                    ");
+
+        // 📎 ATTACH PDF GENERATION DATA STREAM NATIVELY
+        // Attach the printable HTML content layout directly as a responsive invoice asset file
+        $message->attachContent($htmlContent, [
+            'fileName' => 'Invoice_' . $model->invoice_number . '.html',
+            'contentType' => 'text/html',
+        ]);
+
+        $message->send();
     }
 }

@@ -497,3 +497,99 @@ $this->title = 'Miracle Corporate Control Center';
     <!-- /.row -->
 </div>
 <!-- /.container-fluid -->
+<?php
+// Secure JSON encoding of dynamic database tracking data matrices arrays
+$labelsJson = json_encode($metrics['chartLabels']);
+$dataThisYearJson = json_encode($metrics['chartDataThisYear']);
+$dataLastYearJson = json_encode($metrics['chartDataLastYear']);
+
+$chartScript = <<< JS
+$(function () {
+  'use strict'
+
+  var ticksStyle = {
+    fontColor: '#495057',
+    fontStyle: 'bold'
+  }
+
+  var mode = 'index'
+  var intersect = true
+
+  var \$salesChart = $('#sales-chart')
+  
+  // Wipe out any old pre-existing mock instance settings to prevent hover conflicts
+  if (window.mySalesChartInstance) {
+      window.mySalesChartInstance.destroy();
+  }
+
+  window.mySalesChartInstance = new Chart(\$salesChart, {
+    type: 'bar', // Using grouped bar/line configuration overlays for high performance aesthetics
+    data: {
+      labels: {$labelsJson},
+      datasets: [
+        {
+          backgroundColor: '#007bff',
+          borderColor: '#007bff',
+          data: {$dataThisYearJson},
+          label: 'Current Cycle'
+        },
+        {
+          backgroundColor: '#ced4da',
+          borderColor: '#ced4da',
+          data: {$dataLastYearJson},
+          label: 'Prior Cycle'
+        }
+      ]
+    },
+    options: {
+      maintainAspectRatio: false,
+      tooltips: {
+        mode: mode,
+        intersect: intersect,
+        callbacks: {
+            label: function(tooltipItem, data) {
+                return data.datasets[tooltipItem.datasetIndex].label + ": ₹" + tooltipItem.yLabel.toLocaleString('en-IN');
+            }
+        }
+      },
+      hover: {
+        mode: mode,
+        intersect: intersect
+      },
+      legend: {
+        display: true,
+        position: 'top'
+      },
+      scales: {
+        yAxes: [{
+          gridLines: {
+            display: true,
+            lineWidth: '4px',
+            color: 'rgba(0, 0, 0, .05)',
+            zeroLineColor: 'transparent'
+          },
+          ticks: $.extend({
+            beginAtZero: true,
+            callback: function (value) {
+              if (value >= 1000) {
+                value /= 1000
+                value += 'k'
+              }
+              return '₹' + value
+            }
+          }, ticksStyle)
+        }],
+        xAxes: [{
+          display: true,
+          gridLines: {
+            display: false
+          },
+          ticks: ticksStyle
+        }]
+      }
+    }
+  })
+})
+JS;
+$this->registerJs($chartScript);
+?>

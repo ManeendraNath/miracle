@@ -18,18 +18,20 @@ return [
     'homeUrl' => '/admin/dashboard',
     'bootstrap' => ['log'],
     'modules' => [],
+    'defaultRoute' => 'auth/login',
     'components' => [
         'request' => [
             'csrfParam' => '_csrf-backend',
-            'baseUrl' => $baseUrl,
-            'class' => 'common\components\Request',
-            'web' => '/backend/web',
-            'adminUrl' => '/admin'
+            //'baseUrl' => $baseUrl,
+            //'class' => 'common\components\Request',
+            //'web' => '/backend/web',
+            //'adminUrl' => '/admin'
         ],
         'user' => [
             'identityClass' => backend\models\Admin::class,
             'enableAutoLogin' => true,
             'identityCookie' => ['name' => '_identity-backend', 'httpOnly' => true],
+            'loginUrl' => ['/auth/login'],
         ],
         'session' => [
             // this is the name of the session cookie used for login on the backend
@@ -45,7 +47,7 @@ return [
             ],
         ],
         'errorHandler' => [
-            'errorAction' => 'site/error',
+            'errorAction' => 'auth/error',
         ],
         'urlManager' => [
             'baseUrl' => $baseUrl,

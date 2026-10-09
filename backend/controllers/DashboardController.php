@@ -3,6 +3,9 @@
 namespace backend\controllers;
 
 use yii\filters\AccessControl;
+use common\models\AuditRequest;
+use common\models\Invoice;
+use common\models\Transaction;
 
 class DashboardController extends BaseController
 {

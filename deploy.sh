@@ -18,28 +18,40 @@ cp -r /home/rpocncwk/repositories/miracle/common /home/rpocncwk/miracle/
 cp -r /home/rpocncwk/repositories/miracle/console /home/rpocncwk/miracle/
 
 # 4. Sync web public asset folders directly into your public entry domains
-# 👇 FIXED: Uses rsync to safely skip index.php so your production paths are NEVER overwritten
 echo "🌐 Syncing public web roots..."
-rsync -av --exclude='index.php' /home/rpocncwk/repositories/miracle/frontend/web/ /home/rpocncwk/public_html/
-rsync -av --exclude='index.php' /home/rpocncwk/repositories/miracle/backend/web/ /home/rpocncwk/public_html/admin/
+cp -r /home/rpocncwk/repositories/miracle/frontend/web/. /home/rpocncwk/public_html/
+cp -r /home/rpocncwk/repositories/miracle/backend/web/. /home/rpocncwk/public_html/admin/
 
-# 5. 👇 ADDED FOR FUTURE: Explicitly ensure your custom assets are mirrored cleanly
+# 5. 🛠️ AUTOMATED PRODUCTION PATH PATCHING (Ensures index files point to core folder)
+echo "🔧 Hardening production index file entry paths..."
+sed -i "s|/../../vendor/|/../miracle/vendor/|g" /home/rpocncwk/public_html/index.php
+sed -i "s|/../../common/|/../miracle/common/|g" /home/rpocncwk/public_html/index.php
+sed -i "s|/../config/|/../miracle/frontend/config/|g" /home/rpocncwk/public_html/index.php
+
+sed -i "s|/../../vendor/|/../../miracle/vendor/|g" /home/rpocncwk/public_html/admin/index.php
+sed -i "s|/../../common/|/../../miracle/common/|g" /home/rpocncwk/public_html/admin/index.php
+sed -i "s|/../config/|/../../miracle/backend/config/|g" /home/rpocncwk/public_html/admin/index.php
+
+# 6. Explicitly ensure your custom assets are mirrored cleanly
 echo "🎨 Refreshing layout design folders..."
-cp -r /home/rpocncwk/miracle/frontend/web/css /home/rpocncwk/public_html/
-cp -r /home/rpocncwk/miracle/frontend/web/js /home/rpocncwk/public_html/
-if [ -d "/home/rpocncwk/miracle/frontend/web/fonts" ]; then
-    cp -r /home/rpocncwk/miracle/frontend/web/fonts /home/rpocncwk/public_html/
+if [ -d "/home/rpocncwk/miracle/frontend/web/css" ]; then
+    cp -r /home/rpocncwk/miracle/frontend/web/css/. /home/rpocncwk/public_html/css/ 2>/dev/null || cp -r /home/rpocncwk/miracle/frontend/web/css /home/rpocncwk/public_html/
 fi
 
-# 6. Automatically run database schema migrations (For new tables/columns)
+# 7. Automatically run database schema migrations (For new tables/columns)
 echo "🗄️ Running database migrations..."
 cd /home/rpocncwk/miracle || exit
 php yii migrate/up --interactive=0
 
-# 7. Flush production layout and routing memory cache maps immediately
-echo "🧹 Flushing application layout caches..."
+# 8. 🧹 CLEAN OUT CORRUPTED METADATA AND REBUILD LIVE PACKAGES
+echo "🧹 Flushing dynamic asset and runtime caches..."
+rm -rf /home/rpocncwk/public_html/assets/*
+rm -rf /home/rpocncwk/public_html/admin/assets/*
 rm -rf /home/rpocncwk/miracle/frontend/runtime/cache/*
 rm -rf /home/rpocncwk/miracle/backend/runtime/cache/*
 
-echo "✅ Deployment completed successfully! Your live site is up to date."
+# Ensure asset directories have strict, open write access for background scripts
+chmod -R 777 /home/rpocncwk/public_html/assets
+chmod -R 777 /home/rpocncwk/public_html/admin/assets
 
+echo "✅ Deployment completed successfully! Your live site is up to date."

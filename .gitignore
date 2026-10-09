@@ -50,6 +50,7 @@ package-lock.json
 # =====================================================================
 # Ignore local container database data pools, keep orchestration config intact
 /docker/mysql_data/
+/mysql_data/
 !/docker/docker-compose.yml
 !/docker/Dockerfile
 /.vagrant/

@@ -16,40 +16,55 @@ use yii\web\Response;
  */
 class AuthController extends Controller
 {
+
     /**
      * {@inheritdoc}
      */
     public function behaviors()
-    {
-        return [
-            'access' => [
-                'class' => AccessControl::class,
-                'rules' => [
-                    [
-                        'actions' => ['login', 'error'],
-                        'allow' => true,
-                    ],
-                    [
-                        'actions' => ['logout', 'index'],
-                        'allow' => true,
-                        'roles' => ['@'],
-                        // Protects the admin panel from ordinary users/clients
-                        'matchCallback' => function ($rule, $action) {
-                            return Yii::$app->user->identity !== null && 
-                                   (Yii::$app->user->identity->superadmin === 1 || 
-                                    Yii::$app->user->identity->username === 'superadmin');
+{
+    return [
+        /*'access' => [
+            'class' => AccessControl::class,
+            // Redirects users who fail the access validation check safely back to login
+            'denyCallback' => function ($rule, $action) {
+                if (Yii::$app->user->isGuest) {
+                    return Yii::$app->response->redirect(['auth/login']);
+                }
+                Yii::$app->user->logout();
+                Yii::$app->session->setFlash('error', 'Unauthorized administrator role.');
+                return Yii::$app->response->redirect(['auth/login']);
+            },
+            'rules' => [
+                [
+                    // 🔓 ALLOW public access to the login and error views
+                    'actions' => ['login', 'error'],
+                    'allow' => true,
+                    'roles' => ['?'], // Guest access only
+                ],
+                [
+                    // 🔒 ONLY allow logged-in accounts to call logout and index
+                    'actions' => ['logout', 'index'],
+                    'allow' => true,
+                    'roles' => ['@'], 
+                    'matchCallback' => function ($rule, $action) {
+                        $user = Yii::$app->user->identity;
+                        if ($user === null) {
+                            return false;
                         }
-                    ],
+                        return (isset($user->role) && strtolower($user->role) === 'superadmin') || 
+                               strtolower($user->username) === 'superadmin';
+                    }
                 ],
             ],
-            'verbs' => [
-                'class' => VerbFilter::class,
-                'actions' => [
-                    'logout' => ['post'],
-                ],
+        ],*/
+        'verbs' => [
+            'class' => VerbFilter::class,
+            'actions' => [
+                'logout' => ['post'],
             ],
-        ];
-    }
+        ],
+    ];
+}
 
     /**
      * {@inheritdoc}
@@ -83,7 +98,7 @@ class AuthController extends Controller
         if (!Yii::$app->user->isGuest) {
             return $this->redirect(['dashboard/index']);
         }
-        
+
         $this->layout = 'blank';
         $model = new LoginForm();
 
@@ -100,7 +115,7 @@ class AuthController extends Controller
         $model->password = '';
 
         return $this->render('login', [
-            'model' => $model,
+                    'model' => $model,
         ]);
     }
 

@@ -187,7 +187,7 @@ $this->title = 'Dashboard Overview Panel';
                         </div>
                     </div>
                     
-                    <!-- Line 2: Public Site Newsletter Subscribers Inventory -->
+                    <!-- Line 2: Public Site Newsletter Subscribers Inventory
                     <div class="d-flex justify-content-between align-items-center border-bottom py-3">
                         <div class="d-flex align-items-center">
                             <div class="text-info fs-4 me-3"><i class="fas fa-users-cog fa-fw"></i></div>
@@ -197,11 +197,11 @@ $this->title = 'Dashboard Overview Panel';
                             </div>
                         </div>
                         <div class="text-end">
-                            <span class="fs-5 fw-bold text-dark"><?= number_format(\common\models\Subscribers::find()->count()) ?></span>
+                            <span class="fs-5 fw-bold text-dark"><?php //echo number_format(\common\models\Subscribers::find()->count()); ?></span>
                         </div>
-                    </div>
+                    </div> -->
                     
-                    <!-- Line 3: Internal General Help Support Ticketing Communications -->
+                    <!-- Line 3: Internal General Help Support Ticketing Communications
                     <div class="d-flex justify-content-between align-items-center py-3">
                         <div class="d-flex align-items-center">
                             <div class="text-secondary fs-4 me-3"><i class="fas fa-comments-dollar fa-fw"></i></div>
@@ -211,9 +211,9 @@ $this->title = 'Dashboard Overview Panel';
                             </div>
                         </div>
                         <div class="text-end">
-                            <span class="fs-5 fw-bold text-dark"><?= number_format(\common\models\Messages::find()->count()) ?> Threads</span>
+                            <span class="fs-5 fw-bold text-dark"><?php //echo number_format(\common\models\Messages::find()->count()); ?> Threads</span>
                         </div>
-                    </div>
+                    </div> -->
 
                 </div>
             </div>

@@ -23,10 +23,16 @@ class BaseController extends Controller
                         'allow' => true,
                         'roles' => ['@'],
                         'matchCallback' => function ($rule, $action) {
-                            return Yii::$app->user->identity !== null && 
-                                   (Yii::$app->user->identity->superadmin === 1 || 
-                                    Yii::$app->user->identity->username === 'superadmin');
-                        },
+    $user = Yii::$app->user->identity;
+    if ($user === null) {
+        return false;
+    }
+    
+    // ✅ DYNAMIC ROLE CHECK: Matches your actual 'role' column values exactly
+    return (isset($user->role) && strtolower($user->role) === 'superadmin') || 
+           strtolower($user->username) === 'superadmin';
+}
+
                     ],
                 ],
             ],

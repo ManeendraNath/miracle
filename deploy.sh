@@ -32,11 +32,6 @@ sed -i "s|/../../vendor/|/../../miracle/vendor/|g" /home/rpocncwk/public_html/ad
 sed -i "s|/../../common/|/../../miracle/common/|g" /home/rpocncwk/public_html/admin/index.php
 sed -i "s|/../config/|/../../miracle/backend/config/|g" /home/rpocncwk/public_html/admin/index.php
 
-# 5.5 Run composer dependency sync block to install new calendar range pickers extensions automatically
-echo "📦 Installing newly registered framework extensions..."
-cd /home/rpocncwk/miracle || exit
-composer install --no-dev --prefer-dist --no-interaction --optimize-autoloader
-
 # 6. Explicitly ensure your custom assets are mirrored cleanly
 echo "🎨 Refreshing layout design folders..."
 if [ -d "/home/rpocncwk/miracle/frontend/web/css" ]; then

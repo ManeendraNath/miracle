@@ -6,7 +6,7 @@ use Yii;
 use yii\base\Model;
 
 /**
- * Login form
+ * Login form processing configuration parameters.
  */
 class LoginForm extends Model
 {
@@ -23,11 +23,8 @@ class LoginForm extends Model
     public function rules()
     {
         return [
-            // username and password are both required
             [['username', 'password'], 'required'],
-            // rememberMe must be a boolean value
             ['rememberMe', 'boolean'],
-            // password is validated by validatePassword()
             ['password', 'validatePassword'],
         ];
     }
@@ -44,7 +41,6 @@ class LoginForm extends Model
         if (!$this->hasErrors()) {
             $user = $this->getUser();
             if (!$user || !$user->validatePassword($this->password)) {
-                echo "<pre>"; print_r([$user, $this->password]); echo "</pre>";die;
                 $this->addError($attribute, 'Incorrect username or password.');
             }
         }
@@ -60,7 +56,6 @@ class LoginForm extends Model
         if ($this->validate()) {
             return Yii::$app->user->login($this->getUser(), $this->rememberMe ? 3600 * 24 * 30 : 0);
         }
-        
         return false;
     }
 

@@ -38,7 +38,7 @@ class Admin extends \yii\db\ActiveRecord
         return [
             [['password_reset_token'], 'default', 'value' => null],
             [['role'], 'default', 'value' => 'Manager'],
-            [['status'], 'default', 'value' => 10],
+            [['status'], 'default', 'value' => 1],
             [['username', 'email', 'auth_key', 'password_hash', 'created_at', 'updated_at'], 'required'],
             [['status', 'created_at', 'updated_at'], 'integer'],
             [['username', 'email', 'password_hash', 'password_reset_token'], 'string', 'max' => 255],

@@ -39,7 +39,7 @@ class Admin extends base\Admin implements IdentityInterface
             ['role', 'default', 'value' => self::getRoleManager()],
             ['role', 'in', 'range' => [self::getRoleSuperAdmin(), self::getRoleAdmin(), self::getRoleManager()]],
             ['status', 'default', 'value' => self::getStatusInactive()],
-            ['status', 'in', 'range' => [self::getStatusActive(), self::getStatusInactive(), self::getStatusDeleted()]],
+            ['status', 'in', 'range' => [self::getStatuses()]],
         ]);
         return ArrayHelper::merge(parent::rules(), $rules);
     }

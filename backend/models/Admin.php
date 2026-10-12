@@ -3,7 +3,7 @@
 namespace backend\models;
 
 /**
- * User model
+ * Admin model extending common modular infrastructure.
  *
  * @property integer $id
  * @property string $username
@@ -19,5 +19,5 @@ namespace backend\models;
  */
 class Admin extends \common\models\Admin
 {
-    
+
 }

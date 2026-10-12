@@ -1,56 +1,46 @@
 RewriteEngine On
 RewriteBase /
 
-# ======================================================================
-# 1. SECURE GATEWAY: BLOCK DIRECT BROWSING TO SENSITIVE CORE FILES
-# ======================================================================
-RewriteRule ^\.env$ - [F,L]
+# ============================================================
+# 1. SECURITY
+# ============================================================
 
+# Block environment files
 <FilesMatch "^\.env">
-    Order allow,deny
-    Deny from all
+    Require all denied
 </FilesMatch>
 
-# ======================================================================
-# 2. ADMINISTRATIVE TIERS: BACKEND REWRITES & STYLING (PLACED ON TOP)
-# ======================================================================
-# Force a clean trailing slash if someone types just "/admin"
+# Block direct public access
+RewriteRule ^(?:backend|frontend|common|console|vendor*environments)(?:/|$) - [F,L]
+
+# ============================================================
+# 2. BACKEND
+# Public URL:  /admin/...
+# Internal:    /backend/web/...
+# ============================================================
+
+# Normalize /admin -> /admin/
 RewriteRule ^admin$ admin/ [R=301,L]
 
-# Route all admin design assets to the backend web folder immediately
-RewriteRule ^admin/assets/(.*)$ backend/web/assets/$1 [L]
-RewriteRule ^admin/css/(.*)$ backend/web/css/$1 [L]
-RewriteRule ^admin/js/(.*)$ backend/web/js/$1 [L]
-RewriteRule ^admin/images/(.*)$ backend/web/images/$1 [L]
+# Serve existing backend files/directories
+RewriteCond %{DOCUMENT_ROOT}/backend/web/$1 -f [OR]
+RewriteCond %{DOCUMENT_ROOT}/backend/web/$1 -d
+RewriteRule ^admin/(.*)$ backend/web/$1 [L]
 
-# Route clean URLs (controllers/actions) to backend/web/index.php
-RewriteCond %{REQUEST_URI} ^/admin/
-RewriteCond %{REQUEST_FILENAME} !-f
-RewriteCond %{REQUEST_FILENAME} !-d
-RewriteRule ^admin/(.*)$ backend/web/index.php/$1 [L]
+# Everything else under /admin goes through Yii
+RewriteRule ^admin(?:/.*)?$ backend/web/index.php [L]
 
-# ======================================================================
-# 3. PUBLIC TIERS: FRONTEND REWRITES & STYLING
-# ======================================================================
-# Route frontend asset folders directly to the frontend web folder
-RewriteRule ^assets/(.*)$ frontend/web/assets/$1 [L]
-RewriteRule ^css/(.*)$ frontend/web/css/$1 [L]
-RewriteRule ^js/(.*)$ frontend/web/js/$1 [L]
-RewriteRule ^images/(.*)$ frontend/web/images/$1 [L]
 
-# Pass other real files directly if they exist
-RewriteCond %{REQUEST_URI} !^/backend/web/
-RewriteCond %{REQUEST_URI} !^/frontend/web/
-RewriteCond %{REQUEST_FILENAME} -f
+# ============================================================
+# 3. FRONTEND
+# Public URL:  /...
+# Internal:    /frontend/web/...
+# ============================================================
+
+# Serve existing frontend files/directories
+RewriteCond %{DOCUMENT_ROOT}/frontend/web/$1 -f [OR]
+RewriteCond %{DOCUMENT_ROOT}/frontend/web/$1 -d
 RewriteRule ^(.*)$ frontend/web/$1 [L]
 
-# Route clean frontend controller actions directly to frontend/web/index.php
-RewriteCond %{REQUEST_URI} !^/admin/
-RewriteCond %{REQUEST_URI} !^/backend/web/
-RewriteCond %{REQUEST_URI} !^/frontend/web/
-RewriteCond %{REQUEST_FILENAME} !-f
-RewriteCond %{REQUEST_FILENAME} !-d
-RewriteRule ^(.*)$ frontend/web/index.php/$1 [L]
-
-# Baseline home directory mapping fallback
-RewriteRule ^$ frontend/web/index.php [L]
+# Everything else goes through Yii
+RewriteRule ^.*$ frontend/web/index.php [L]

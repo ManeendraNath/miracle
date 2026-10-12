@@ -49,7 +49,7 @@ class m260918_000001_create_admin_table extends Migration
                 'auth_key' => Yii::$app->security->generateRandomString(),
                 'password_hash' => Yii::$app->security->generatePasswordHash('Maneendra@123'),
                 'role' => 'Superadmin',
-                'status' => 10,
+                'status' => 1,
                 'created_at' => time(),
                 'updated_at' => time(),
             ]);

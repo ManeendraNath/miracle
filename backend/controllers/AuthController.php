@@ -37,23 +37,22 @@ class AuthController extends Controller
                 },
                 'rules' => [
                     [
-                        // ALLOW public access to the login screen and error handler page
                         'actions' => ['login', 'error'],
                         'allow' => true,
                     ],
                     [
-                        // RESTRICT sensitive execution links exclusively to verified Superadmins
-                        'actions' => ['logout', 'index'],
+                        'actions' => ['logout'],
                         'allow' => true,
-                        'roles' => ['@'], // Must be logged in
+                        'roles' => ['@'],
+                    ],
+                    [
+                        'actions' => ['index'],
+                        'allow' => true,
+                        'roles' => ['@'],
                         'matchCallback' => function ($rule, $action) {
                             $user = Yii::$app->user->identity;
-                            if ($user === null) {
-                                return false;
-                            }
-                            // Matches your exact database layout ('role' column contains 'Superadmin')
-                            return (isset($user->role) && strtolower($user->role) === 'superadmin') || strtolower($user->username) === 'superadmin';
-                        }
+                            return $user !== null && $user->isSuperAdmin();
+                        },
                     ],
                 ],
             ],

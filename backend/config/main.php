@@ -18,7 +18,6 @@ return [
     'modules' => [],
     
     'components' => [
-        // 👇 HIGH-SECURITY ENVELOPE: Kept completely isolated and unique to backend
         'request' => [
             'csrfParam' => '_csrf-backend',
             'csrfCookie' => [

@@ -11,7 +11,7 @@ RewriteBase /
 </FilesMatch>
 
 # Block direct public access
-RewriteRule ^(?:backend|frontend|common|console|vendor*environments)(?:/|$) - [F,L]
+RewriteRule ^(?:backend|frontend|common|console|vendor|environments)(?:/|$) - [F,L]
 
 # ============================================================
 # 2. BACKEND

@@ -3,8 +3,8 @@
 namespace backend\controllers;
 
 use Yii;
+use backend\models\searches\InvoiceSearch;
 use common\models\Invoice;
-use common\models\InvoiceSearch;
 use yii\web\NotFoundHttpException;
 use yii\helpers\ArrayHelper;
 use common\models\User;

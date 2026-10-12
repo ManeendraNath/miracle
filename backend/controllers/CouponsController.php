@@ -2,8 +2,8 @@
 
 namespace backend\controllers;
 
+use backend\models\searches\CouponsSearch;
 use common\models\Coupons;
-use common\models\CouponsSearch;
 use yii\web\NotFoundHttpException;
 
 /**

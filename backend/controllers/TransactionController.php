@@ -3,8 +3,8 @@
 namespace backend\controllers;
 
 use Yii;
+use backend\models\searches\TransactionSearch;
 use common\models\Transaction;
-use common\models\TransactionSearch;
 use yii\web\NotFoundHttpException;
 
 /**

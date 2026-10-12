@@ -2,8 +2,8 @@
 
 namespace backend\controllers;
 
+use backend\models\searches\AdminSearch;
 use common\models\Admin;
-use common\models\AdminSearch;
 use yii\web\NotFoundHttpException;
 
 /**

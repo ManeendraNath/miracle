@@ -2,8 +2,8 @@
 
 namespace backend\controllers;
 
+use backend\models\searches\HostingSearch;
 use common\models\Hosting;
-use common\models\HostingSearch;
 use yii\web\NotFoundHttpException;
 
 /**

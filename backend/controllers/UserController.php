@@ -3,8 +3,8 @@
 namespace backend\controllers;
 
 use Yii;
+use backend\models\searches\UserSearch;
 use common\models\User;
-use common\models\UserSearch;
 
 class UserController extends BaseController
 {
@@ -19,7 +19,8 @@ class UserController extends BaseController
                     'dataProvider' => $dataProvider,
         ]);
     }
-/**
+
+    /**
      * ⚡ SECURE ONE-CLICK USER ACTIVATION TOGGLE
      * Switches the profile status between Active (10) and Inactive (0) dynamically.
      */
@@ -30,8 +31,8 @@ class UserController extends BaseController
             throw new NotFoundHttpException('The requested client profile account does not exist.');
         }
 
-        // Standard Yii2 Advanced template state statuses (Active = 10, Inactive = 0)
-        if ((int)$model->status === User::STATUS_ACTIVE) {
+        // Standard Yii2 Advanced template state statuses (Active = 1, Inactive = 0)
+        if ((int) $model->status === User::STATUS_ACTIVE) {
             $model->status = User::STATUS_INACTIVE;
             Yii::$app->session->setFlash('warning', "Account for profile '{$model->username}' has been suspended successfully.");
         } else {
@@ -42,7 +43,7 @@ class UserController extends BaseController
         $model->save(false); // Bypasses password validation restrictions during simple status toggles
         return $this->redirect(['index']);
     }
-    
+
     /**
      * Displays a single User model.
      * @param int $id System ID Reference
@@ -52,7 +53,7 @@ class UserController extends BaseController
     public function actionView($id)
     {
         return $this->render('view', [
-            'model' => $this->findModel($id),
+                    'model' => $this->findModel($id),
         ]);
     }
 
@@ -79,7 +80,7 @@ class UserController extends BaseController
         }
 
         return $this->render('create', [
-            'model' => $model,
+                    'model' => $model,
         ]);
     }
 
@@ -96,7 +97,7 @@ class UserController extends BaseController
 
         if ($this->request->isPost && $model->load($this->request->post()) && $model->save()) {
             Yii::$app->session->setFlash('success', 'Client profile updated successfully.');
-                return $this->redirect(['view', 'id' => $model->id]);
+            return $this->redirect(['view', 'id' => $model->id]);
         }
 
         return $this->render('update', [

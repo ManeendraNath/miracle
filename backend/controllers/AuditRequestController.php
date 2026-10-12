@@ -2,8 +2,8 @@
 
 namespace backend\controllers;
 
+use backend\models\searches\AuditRequestSearch;
 use common\models\AuditRequest;
-use common\models\AuditRequestSearch;
 use yii\web\NotFoundHttpException;
 
 /**

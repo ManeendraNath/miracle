@@ -4,6 +4,7 @@ namespace backend\controllers;
 
 use Yii;
 use common\models\SiteSetting;
+
 /**
  * SiteSettingController implements the CRUD actions for SiteSetting model.
  */
@@ -28,8 +29,7 @@ class SiteSettingController extends BaseController
         }
 
         return $this->render('index', [
-            'model' => $model,
+                    'model' => $model,
         ]);
     }
-
 }

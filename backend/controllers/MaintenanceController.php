@@ -2,8 +2,8 @@
 
 namespace backend\controllers;
 
+use backend\models\searches\MaintenanceSearch;
 use common\models\Maintenance;
-use common\models\MaintenanceSearch;
 use yii\web\NotFoundHttpException;
 
 /**

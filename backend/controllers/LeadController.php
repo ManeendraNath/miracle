@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace backend\controllers;
 
 use Yii;
+use backend\models\searches\AuditRequestSearch;
 use common\models\AuditRequest;
-use common\models\AuditRequestSearch;
 use yii\web\NotFoundHttpException;
 use yii\web\ForbiddenHttpException;
 

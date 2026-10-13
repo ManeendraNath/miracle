@@ -773,7 +773,6 @@ rollback()
     # -----------------------------------------------------------------
 
     for FILE in \
-        yii \
         composer.json \
         composer.lock
     do
@@ -1191,15 +1190,15 @@ log "Deploying commit: $COMMIT"
 
 log "[3/15] Verifying Git security rules..."
 
-
 if git ls-files --error-unmatch .env >/dev/null 2>&1; then
-
     log "ERROR: .env is tracked by Git."
-
     exit 1
-
 fi
 
+if git ls-files --error-unmatch yii >/dev/null 2>&1; then
+    log "ERROR: Production Yii entry script must not be tracked by Git."
+    exit 1
+fi
 
 for FILE in \
     common/config/params-local.php \
@@ -1207,19 +1206,14 @@ for FILE in \
     backend/config/params-local.php \
     console/config/params-local.php
 do
-
     if git ls-files \
         --error-unmatch \
         "$FILE" \
         >/dev/null 2>&1; then
-
         log "ERROR: Production-only configuration tracked:"
         log "$FILE"
-
         exit 1
-
     fi
-
 done
 
 
@@ -1248,8 +1242,6 @@ REQUIRED_FILES=(
 
     "composer.json"
     "composer.lock"
-
-    "yii"
 
 )
 
@@ -1312,9 +1304,6 @@ if [ "$PHP_SYNTAX_FAILED" -ne 0 ]; then
     exit 1
 
 fi
-
-
-php -l "$REPO/yii" >/dev/null
 
 
 # =====================================================================
@@ -1396,7 +1385,6 @@ snapshot_application \
 # ---------------------------------------------------------------------
 
 for FILE in \
-    yii \
     composer.json \
     composer.lock
 do
@@ -1636,6 +1624,19 @@ if [ ! -f "$APP/.env" ] ||
     exit 1
 fi
 
+if [ ! -f "$APP/yii" ]; then
+    log "ERROR: Production Yii console entry script is missing:"
+    log "$APP/yii"
+    exit 1
+fi
+
+if [ ! -r "$APP/yii" ]; then
+    log "ERROR: Production Yii console entry script is unreadable:"
+    log "$APP/yii"
+    exit 1
+fi
+
+php -l "$APP/yii" >/dev/null
 
 # =====================================================================
 # 12. ROOT FILES + COMPOSER
@@ -1645,7 +1646,6 @@ log "[12/15] Installing dependencies..."
 
 
 for FILE in \
-    yii \
     composer.json \
     composer.lock
 do

@@ -1,57 +1,199 @@
 #!/bin/bash
 
-echo "🚀 Starting deployment sequence..."
+set -e
 
-# 1. Enter the hidden git repository tracker folder
-cd /home/rpocncwk/repositories/miracle || exit
+REPO="/home/rpocncwk/repositories/miracle"
+APP="/home/rpocncwk/miracle"
+PUBLIC="/home/rpocncwk/public_html"
 
-# 2. Pull the absolute latest code updates down from GitHub
-echo "📥 Fetching latest commits from GitHub..."
+echo "Starting deployment..."
+
+# ============================================================
+# 1. UPDATE GIT REPOSITORY
+# ============================================================
+
+echo "Fetching latest code..."
+
+cd "$REPO"
+
 git fetch origin
 git reset --hard origin/main
 
-# 3. Safely sync application folders to the live execution workspace
-echo "📂 Synchronizing project files..."
-cp -r /home/rpocncwk/repositories/miracle/frontend /home/rpocncwk/miracle/
-cp -r /home/rpocncwk/repositories/miracle/backend /home/rpocncwk/miracle/
-cp -r /home/rpocncwk/repositories/miracle/common /home/rpocncwk/miracle/
-cp -r /home/rpocncwk/repositories/miracle/console /home/rpocncwk/miracle/
 
-# 4. Sync web public asset folders directly into your public entry domains
-echo "🌐 Syncing public web roots..."
-cp -r /home/rpocncwk/repositories/miracle/frontend/web/. /home/rpocncwk/public_html/
-cp -r /home/rpocncwk/repositories/miracle/backend/web/. /home/rpocncwk/public_html/admin/
+# ============================================================
+# 2. SYNC APPLICATION CODE
+# ============================================================
 
-# 5. 🛠️ AUTOMATED PRODUCTION PATH PATCHING (Ensures index files point to core folder)
-echo "🔧 Hardening production index file entry paths..."
-sed -i "s|/../../vendor/|/../miracle/vendor/|g" /home/rpocncwk/public_html/index.php
-sed -i "s|/../../common/|/../miracle/common/|g" /home/rpocncwk/public_html/index.php
-sed -i "s|/../config/|/../miracle/frontend/config/|g" /home/rpocncwk/public_html/index.php
+echo "Synchronising application..."
 
-sed -i "s|/../../vendor/|/../../miracle/vendor/|g" /home/rpocncwk/public_html/admin/index.php
-sed -i "s|/../../common/|/../../miracle/common/|g" /home/rpocncwk/public_html/admin/index.php
-sed -i "s|/../config/|/../../miracle/backend/config/|g" /home/rpocncwk/public_html/admin/index.php
+mkdir -p "$APP"
 
-# 6. Explicitly ensure your custom assets are mirrored cleanly
-echo "🎨 Refreshing layout design folders..."
-if [ -d "/home/rpocncwk/miracle/frontend/web/css" ]; then
-    cp -r /home/rpocncwk/miracle/frontend/web/css/. /home/rpocncwk/public_html/css/ 2>/dev/null || cp -r /home/rpocncwk/miracle/frontend/web/css /home/rpocncwk/public_html/
-fi
+rsync -a --delete \
+    --exclude='runtime/' \
+    --exclude='web/assets/' \
+    "$REPO/frontend/" "$APP/frontend/"
 
-# 7. Automatically run database schema migrations (For new tables/columns)
-echo "🗄️ Running database migrations..."
-cd /home/rpocncwk/miracle || exit
+rsync -a --delete \
+    --exclude='runtime/' \
+    --exclude='web/assets/' \
+    "$REPO/backend/" "$APP/backend/"
+
+rsync -a --delete \
+    "$REPO/common/" "$APP/common/"
+
+rsync -a --delete \
+    "$REPO/console/" "$APP/console/"
+
+
+# ============================================================
+# 3. SYNC PROJECT FILES REQUIRED AT APPLICATION ROOT
+# ============================================================
+
+echo "Synchronising root application files..."
+
+cp "$REPO/yii" "$APP/yii"
+cp "$REPO/yii.bat" "$APP/yii.bat" 2>/dev/null || true
+cp "$REPO/composer.json" "$APP/composer.json"
+cp "$REPO/composer.lock" "$APP/composer.lock"
+
+
+# ============================================================
+# 4. COMPOSER DEPENDENCIES
+# ============================================================
+
+echo "Installing Composer dependencies..."
+
+cd "$APP"
+
+composer install \
+    --no-dev \
+    --prefer-dist \
+    --no-interaction \
+    --optimize-autoloader
+
+
+# ============================================================
+# 5. FRONTEND PUBLIC WEB ROOT
+#
+# Main cPanel domain is fixed to public_html, so only the
+# frontend public files need to be exposed there.
+# ============================================================
+
+echo "Synchronising frontend public files..."
+
+# Static/source web resources.
+# Generated /assets and production index.php are handled
+# separately below.
+
+rsync -a --delete \
+    --exclude='assets/' \
+    --exclude='index.php' \
+    --exclude='.htaccess' \
+    "$APP/frontend/web/" "$PUBLIC/"
+
+
+# ============================================================
+# 6. FRONTEND ENTRY POINT
+# ============================================================
+
+echo "Installing frontend entry point..."
+
+cat > "$PUBLIC/index.php" <<'PHP'
+<?php
+
+defined('YII_DEBUG') or define('YII_DEBUG', false);
+defined('YII_ENV') or define('YII_ENV', 'prod');
+
+require __DIR__ . '/../miracle/vendor/autoload.php';
+require __DIR__ . '/../miracle/vendor/yiisoft/yii2/Yii.php';
+require __DIR__ . '/../miracle/common/config/bootstrap.php';
+require __DIR__ . '/../miracle/frontend/config/bootstrap.php';
+
+$config = yii\helpers\ArrayHelper::merge(
+    require __DIR__ . '/../miracle/common/config/main.php',
+    require __DIR__ . '/../miracle/common/config/main-local.php',
+    require __DIR__ . '/../miracle/frontend/config/main.php',
+    require __DIR__ . '/../miracle/frontend/config/main-local.php'
+);
+
+(new yii\web\Application($config))->run();
+PHP
+
+
+# ============================================================
+# 7. FRONTEND HTACCESS
+# ============================================================
+
+echo "Installing frontend .htaccess..."
+
+cat > "$PUBLIC/.htaccess" <<'HTACCESS'
+RewriteEngine On
+
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+
+RewriteRule . index.php [L]
+HTACCESS
+
+
+# ============================================================
+# 8. ENSURE REQUIRED RUNTIME/ASSET DIRECTORIES EXIST
+# ============================================================
+
+echo "Preparing runtime directories..."
+
+mkdir -p \
+    "$APP/frontend/runtime/cache" \
+    "$APP/backend/runtime/cache" \
+    "$APP/frontend/web/assets" \
+    "$APP/backend/web/assets" \
+    "$PUBLIC/assets"
+
+
+# ============================================================
+# 9. DATABASE MIGRATION
+# ============================================================
+
+echo "Running database migrations..."
+
+cd "$APP"
+
 php yii migrate/up --interactive=0
 
-# 8. 🧹 CLEAN OUT CORRUPTED METADATA AND REBUILD LIVE PACKAGES
-echo "🧹 Flushing dynamic asset and runtime caches..."
-rm -rf /home/rpocncwk/public_html/assets/*
-rm -rf /home/rpocncwk/public_html/admin/assets/*
-rm -rf /home/rpocncwk/miracle/frontend/runtime/cache/*
-rm -rf /home/rpocncwk/miracle/backend/runtime/cache/*
 
-# Ensure asset directories have strict, open write access for background scripts
-chmod -R 777 /home/rpocncwk/public_html/assets
-chmod -R 777 /home/rpocncwk/public_html/admin/assets
+# ============================================================
+# 10. CLEAR APPLICATION CACHE
+# ============================================================
 
-echo "✅ Deployment completed successfully! Your live site is up to date."
+echo "Clearing runtime caches..."
+
+rm -rf "$APP/frontend/runtime/cache/"*
+rm -rf "$APP/backend/runtime/cache/"*
+
+
+# ============================================================
+# 11. CLEAR GENERATED ASSETS
+# ============================================================
+
+echo "Clearing generated assets..."
+
+rm -rf "$APP/frontend/web/assets/"*
+rm -rf "$APP/backend/web/assets/"*
+rm -rf "$PUBLIC/assets/"*
+
+
+# ============================================================
+# 12. PERMISSIONS
+# ============================================================
+
+echo "Updating writable-directory permissions..."
+
+chmod -R 775 \
+    "$APP/frontend/runtime" \
+    "$APP/backend/runtime" \
+    "$APP/frontend/web/assets" \
+    "$APP/backend/web/assets" \
+    "$PUBLIC/assets"
+
+
+echo "Deployment completed successfully."

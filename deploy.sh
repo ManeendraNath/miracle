@@ -46,20 +46,20 @@ log()
 
 assert_paths()
 {
-    [ "$REPO" = "/home/rpocncwk/repositories/miracle" ] || {
+    if [ "$REPO" != "/home/rpocncwk/repositories/miracle" ]; then
         log "ERROR: Unexpected repository path: $REPO"
         return 1
-    }
+    fi
 
-    [ "$APP" = "/home/rpocncwk/miracle" ] || {
+    if [ "$APP" != "/home/rpocncwk/miracle" ]; then
         log "ERROR: Unexpected application path: $APP"
         return 1
-    }
+    fi
 
-    [ "$PUBLIC" = "/home/rpocncwk/public_html" ] || {
+    if [ "$PUBLIC" != "/home/rpocncwk/public_html" ]; then
         log "ERROR: Unexpected public path: $PUBLIC"
         return 1
-    }
+    fi
 }
 
 
@@ -72,6 +72,28 @@ require_directory()
         log "$DIR"
         return 1
     fi
+}
+
+
+assert_safe_destination()
+{
+    local DEST="$1"
+
+    if [ -z "${DEST:-}" ] || [ "$DEST" = "/" ]; then
+        log "ERROR: Unsafe destination: ${DEST:-<empty>}"
+        return 1
+    fi
+
+    case "$DEST" in
+        "$APP"|"$APP/"*|"$PUBLIC"|"$PUBLIC/"*)
+            return 0
+            ;;
+        *)
+            log "ERROR: Destination is outside approved paths:"
+            log "$DEST"
+            return 1
+            ;;
+    esac
 }
 
 
@@ -100,12 +122,10 @@ require_commands()
         dirname \
         basename
     do
-
         if ! command -v "$CMD" >/dev/null 2>&1; then
             log "ERROR: Required command not found: $CMD"
             return 1
         fi
-
     done
 }
 
@@ -149,7 +169,6 @@ cleanup()
     trap - EXIT
 
     if [ "${KEEP_ROLLBACK:-0}" -eq 1 ]; then
-
         log ""
         log "Recovery workspace preserved:"
         log "${DEPLOY_TMP:-unknown}"
@@ -158,7 +177,6 @@ cleanup()
          [ -d "$DEPLOY_TMP" ]; then
 
         rm -rf -- "${DEPLOY_TMP:?}"
-
     fi
 
     exit "$EXIT_CODE"
@@ -187,38 +205,27 @@ http_status()
             --write-out "%{http_code}" \
             "$URL"
     )"; then
-
         printf '%s' "$STATUS"
-
     else
-
         printf '000'
-
     fi
 }
 
 
 # =====================================================================
-# SNAPSHOT APPLICATION
+# APPLICATION SNAPSHOT
 #
-# Used for:
+# Preserves runtime by intentionally excluding it from snapshot.
 #
-#   frontend
-#   backend
-#   console
-#
-# Preserved rather than snapshotted:
-#
-#   runtime/
-#   web/assets/
-#
-# Therefore console/runtime survives deployment and rollback.
+# web/assets is also not snapshotted because it is generated runtime
+# content and remains in place during deployment and rollback.
 # =====================================================================
 
 snapshot_application()
 {
     local SOURCE="$1"
     local DEST="$2"
+    local LIST_FILE
     local ITEM
     local NAME
 
@@ -226,94 +233,89 @@ snapshot_application()
 
     mkdir -p "$DEST"
 
+    LIST_FILE="$(mktemp "${DEPLOY_TMP:?}/snapshot.XXXXXX")"
+
+    if ! find "$SOURCE" \
+        -mindepth 1 \
+        -maxdepth 1 \
+        -print0 > "$LIST_FILE"; then
+
+        log "ERROR: Failed listing application source:"
+        log "$SOURCE"
+        return 1
+    fi
 
     while IFS= read -r -d '' ITEM
     do
-
         NAME="$(basename "$ITEM")"
 
         case "$NAME" in
-
             runtime|web)
                 continue
                 ;;
-
         esac
-
 
         cp -a -- "$ITEM" "$DEST/"
 
-    done < <(
-        find "$SOURCE" \
-            -mindepth 1 \
-            -maxdepth 1 \
-            -print0
-    )
-
-
-    # web/ is optional for console.
+    done < "$LIST_FILE"
 
     if [ -d "$SOURCE/web" ]; then
-
         mkdir -p "$DEST/web"
+
+        : > "$LIST_FILE"
+
+        if ! find "$SOURCE/web" \
+            -mindepth 1 \
+            -maxdepth 1 \
+            -print0 > "$LIST_FILE"; then
+
+            log "ERROR: Failed listing web directory:"
+            log "$SOURCE/web"
+            return 1
+        fi
 
         while IFS= read -r -d '' ITEM
         do
-
             NAME="$(basename "$ITEM")"
 
             if [ "$NAME" = "assets" ]; then
                 continue
             fi
 
-
             cp -a -- "$ITEM" "$DEST/web/"
 
-        done < <(
-            find "$SOURCE/web" \
-                -mindepth 1 \
-                -maxdepth 1 \
-                -print0
-        )
-
+        done < "$LIST_FILE"
     fi
+
+    rm -f -- "$LIST_FILE"
 }
 
 
 # =====================================================================
-# DEPLOY APPLICATION
+# APPLICATION DEPLOYMENT
 #
-# Deploy all source directories automatically.
+# Used for:
+#   frontend
+#   backend
+#   console
 #
-# Preserve:
-#
+# Preserves:
 #   runtime/
 #   web/
 #
-# This means future directories such as:
-#
-#   services/
-#   components/
-#   validators/
-#   modules/
-#   controllers/
-#
-# require no deploy-script change.
+# Web directories are handled separately.
 # =====================================================================
 
 deploy_application()
 {
     local SOURCE="$1"
     local DEST="$2"
+    local LIST_FILE
     local ITEM
     local NAME
 
     require_directory "$SOURCE"
-
-    if [ -z "${DEST:-}" ] || [ "$DEST" = "/" ]; then
-        log "ERROR: Unsafe deployment destination: ${DEST:-<empty>}"
-        return 1
-    fi
+    assert_safe_destination "$DEST"
 
     mkdir -p "$DEST"
 
@@ -324,52 +326,52 @@ deploy_application()
         ! -name "web" \
         -exec rm -rf -- {} +
 
+    LIST_FILE="$(mktemp "${DEPLOY_TMP:?}/deploy-app.XXXXXX")"
+
+    if ! find "$SOURCE" \
+        -mindepth 1 \
+        -maxdepth 1 \
+        -print0 > "$LIST_FILE"; then
+
+        log "ERROR: Failed listing deployment source:"
+        log "$SOURCE"
+        return 1
+    fi
 
     while IFS= read -r -d '' ITEM
     do
-
         NAME="$(basename "$ITEM")"
 
-
         case "$NAME" in
-
             runtime|web)
                 continue
                 ;;
-
         esac
-
 
         cp -a -- "$ITEM" "$DEST/"
 
-    done < <(
-        find "$SOURCE" \
-            -mindepth 1 \
-            -maxdepth 1 \
-            -print0
-    )
+    done < "$LIST_FILE"
+
+    rm -f -- "$LIST_FILE"
 }
 
 
 # =====================================================================
-# DEPLOY WEB
+# WEB DEPLOYMENT
 #
-# Preserve generated Yii web/assets.
+# Generated Yii assets are preserved.
 # =====================================================================
 
 deploy_web()
 {
     local SOURCE="$1"
     local DEST="$2"
+    local LIST_FILE
     local ITEM
     local NAME
 
     require_directory "$SOURCE"
-
-    if [ -z "${DEST:-}" ] || [ "$DEST" = "/" ]; then
-        log "ERROR: Unsafe web deployment destination: ${DEST:-<empty>}"
-        return 1
-    fi
+    assert_safe_destination "$DEST"
 
     mkdir -p "$DEST/assets"
 
@@ -379,26 +381,31 @@ deploy_web()
         ! -name "assets" \
         -exec rm -rf -- {} +
 
+    LIST_FILE="$(mktemp "${DEPLOY_TMP:?}/deploy-web.XXXXXX")"
+
+    if ! find "$SOURCE" \
+        -mindepth 1 \
+        -maxdepth 1 \
+        -print0 > "$LIST_FILE"; then
+
+        log "ERROR: Failed listing web source:"
+        log "$SOURCE"
+        return 1
+    fi
 
     while IFS= read -r -d '' ITEM
     do
-
         NAME="$(basename "$ITEM")"
-
 
         if [ "$NAME" = "assets" ]; then
             continue
         fi
 
-
         cp -a -- "$ITEM" "$DEST/"
 
-    done < <(
-        find "$SOURCE" \
-            -mindepth 1 \
-            -maxdepth 1 \
-            -print0
-    )
+    done < "$LIST_FILE"
+
+    rm -f -- "$LIST_FILE"
 }
 
 
@@ -410,6 +417,7 @@ build_public_manifest()
 {
     local SOURCE="$1"
     local MANIFEST="$2"
+    local LIST_FILE
     local ITEM
     local NAME
 
@@ -417,45 +425,41 @@ build_public_manifest()
 
     : > "$MANIFEST"
 
+    LIST_FILE="$(mktemp "${DEPLOY_TMP:?}/public-source.XXXXXX")"
+
+    if ! find "$SOURCE" \
+        -mindepth 1 \
+        -maxdepth 1 \
+        -print0 > "$LIST_FILE"; then
+
+        log "ERROR: Failed building public source list:"
+        log "$SOURCE"
+        return 1
+    fi
 
     while IFS= read -r -d '' ITEM
     do
-
         NAME="$(basename "$ITEM")"
 
-
         case "$NAME" in
-
             index.php|.htaccess|assets|favicon.ico)
                 continue
                 ;;
-
         esac
-
 
         case "$NAME" in
-
             *$'\n'*)
-
                 log "ERROR: Unsupported newline in frontend/web filename:"
-
                 printf '%q\n' "$NAME"
-
                 return 1
                 ;;
-
         esac
-
 
         printf '%s\n' "$NAME" >> "$MANIFEST"
 
-    done < <(
-        find "$SOURCE" \
-            -mindepth 1 \
-            -maxdepth 1 \
-            -print0
-    )
+    done < "$LIST_FILE"
 
+    rm -f -- "$LIST_FILE"
 
     sort -u -o "$MANIFEST" "$MANIFEST"
 }
@@ -485,34 +489,23 @@ restore_params()
 {
     local RELATIVE="$1"
     local TEMPLATE="$2"
-    local SAVED="$DEPLOY_TMP/params/$RELATIVE"
+    local SAVED
 
+    SAVED="$DEPLOY_TMP/params/$RELATIVE"
 
     if [ -f "$SAVED" ]; then
-
         mkdir -p "$(dirname "$APP/$RELATIVE")"
-
         cp -a -- "$SAVED" "$APP/$RELATIVE"
-
         return 0
-
     fi
-
 
     if [ -f "$REPO/$TEMPLATE" ]; then
-
         mkdir -p "$(dirname "$APP/$RELATIVE")"
-
-        cp -a -- \
-            "$REPO/$TEMPLATE" \
-            "$APP/$RELATIVE"
-
+        cp -a -- "$REPO/$TEMPLATE" "$APP/$RELATIVE"
         return 0
-
     fi
 
-
-    log "ERROR: Cannot restore required configuration:"
+    log "ERROR: Cannot restore required production configuration:"
     log "$RELATIVE"
 
     return 1
@@ -520,7 +513,7 @@ restore_params()
 
 
 # =====================================================================
-# APPLICATION HEALTH CHECK
+# HEALTH CHECK
 # =====================================================================
 
 verify_application()
@@ -529,36 +522,26 @@ verify_application()
     local BACKEND_STATUS
     local BACKEND_LOGIN_STATUS
 
-
     FRONTEND_STATUS="$(http_status "$FRONTEND_URL")"
-
     BACKEND_STATUS="$(http_status "$BACKEND_URL")"
-
     BACKEND_LOGIN_STATUS="$(http_status "$BACKEND_LOGIN_URL")"
-
 
     log "Frontend HTTP status     : $FRONTEND_STATUS"
     log "Backend HTTP status      : $BACKEND_STATUS"
     log "Backend login HTTP status: $BACKEND_LOGIN_STATUS"
 
-
     if [ "$FRONTEND_STATUS" != "200" ]; then
         return 1
     fi
 
-
     if [ "$BACKEND_STATUS" != "200" ] &&
        [ "$BACKEND_STATUS" != "302" ]; then
-
         return 1
-
     fi
-
 
     if [ "$BACKEND_LOGIN_STATUS" != "200" ]; then
         return 1
     fi
-
 
     return 0
 }
@@ -574,35 +557,23 @@ rollback()
     local FILE
     local ITEM
     local NAME
-
+    local ROLLBACK_PUBLIC_LIST
 
     if [ "$ROLLBACK_IN_PROGRESS" -eq 1 ]; then
-
         log "ERROR: Rollback already in progress."
-
         KEEP_ROLLBACK=1
-
         return 1
-
     fi
-
 
     if [ "$ROLLBACK_AVAILABLE" -ne 1 ]; then
-
         log "ERROR: No rollback snapshot available."
-
         return 1
-
     fi
-
 
     ROLLBACK_IN_PROGRESS=1
 
-
     trap - ERR INT TERM HUP
-
     set +e
-
 
     log ""
     log "=========================================="
@@ -615,33 +586,24 @@ rollback()
     # -----------------------------------------------------------------
 
     if [ -d "$ROLLBACK_DIR/common" ]; then
-
         rm -rf -- "${APP:?}/common"
-
 
         if ! cp -a -- \
             "$ROLLBACK_DIR/common" \
             "$APP/common"; then
 
             log "ERROR: Failed restoring common."
-
             ROLLBACK_OK=0
-
         fi
 
     else
-
         log "ERROR: common rollback snapshot missing."
-
         ROLLBACK_OK=0
-
     fi
 
 
     # -----------------------------------------------------------------
     # FRONTEND
-    #
-    # runtime and generated assets remain untouched.
     # -----------------------------------------------------------------
 
     if [ -d "$ROLLBACK_DIR/frontend" ]; then
@@ -651,9 +613,7 @@ rollback()
             "$APP/frontend"; then
 
             ROLLBACK_OK=0
-
         fi
-
 
         if [ -d "$ROLLBACK_DIR/frontend/web" ]; then
 
@@ -662,24 +622,17 @@ rollback()
                 "$APP/frontend/web"; then
 
                 ROLLBACK_OK=0
-
             fi
-
         fi
 
     else
-
         log "ERROR: frontend rollback snapshot missing."
-
         ROLLBACK_OK=0
-
     fi
 
 
     # -----------------------------------------------------------------
     # BACKEND
-    #
-    # runtime and generated assets remain untouched.
     # -----------------------------------------------------------------
 
     if [ -d "$ROLLBACK_DIR/backend" ]; then
@@ -689,9 +642,7 @@ rollback()
             "$APP/backend"; then
 
             ROLLBACK_OK=0
-
         fi
-
 
         if [ -d "$ROLLBACK_DIR/backend/web" ]; then
 
@@ -700,38 +651,19 @@ rollback()
                 "$APP/backend/web"; then
 
                 ROLLBACK_OK=0
-
             fi
-
         fi
 
     else
-
         log "ERROR: backend rollback snapshot missing."
-
         ROLLBACK_OK=0
-
     fi
 
 
     # -----------------------------------------------------------------
     # CONSOLE
     #
-    # IMPORTANT:
-    #
-    # Uses deploy_application instead of rm -rf console.
-    #
-    # Therefore:
-    #
-    #   console/controllers  restored
-    #   console/models       restored
-    #   console/migrations   restored
-    #   console/components   restored
-    #   console/config       restored
-    #
-    # while:
-    #
-    #   console/runtime      preserved
+    # console/runtime remains untouched.
     # -----------------------------------------------------------------
 
     if [ -d "$ROLLBACK_DIR/console" ]; then
@@ -741,11 +673,8 @@ rollback()
             "$APP/console"; then
 
             log "ERROR: Failed restoring console."
-
             ROLLBACK_OK=0
-
         fi
-
 
         if [ -d "$ROLLBACK_DIR/console/web" ]; then
 
@@ -754,29 +683,25 @@ rollback()
                 "$APP/console/web"; then
 
                 ROLLBACK_OK=0
-
             fi
-
         fi
 
     else
-
         log "ERROR: console rollback snapshot missing."
-
         ROLLBACK_OK=0
-
     fi
 
 
     # -----------------------------------------------------------------
     # ROOT FILES
+    #
+    # Production yii is intentionally not modified.
     # -----------------------------------------------------------------
 
     for FILE in \
         composer.json \
         composer.lock
     do
-
         if [ -f "$ROLLBACK_DIR/root/$FILE" ]; then
 
             if ! cp -a -- \
@@ -784,18 +709,14 @@ rollback()
                 "$APP/$FILE"; then
 
                 log "ERROR: Failed restoring $FILE."
-
                 ROLLBACK_OK=0
-
             fi
-
         fi
-
     done
 
 
     # -----------------------------------------------------------------
-    # PUBLIC FILES
+    # REMOVE MANAGED PUBLIC FILES
     # -----------------------------------------------------------------
 
     if [ -f "$DEPLOY_TMP/public-union.manifest" ]; then
@@ -803,40 +724,49 @@ rollback()
         while IFS= read -r NAME
         do
             [ -n "$NAME" ] || continue
+
             rm -rf -- "${PUBLIC:?}/${NAME:?}"
+
         done < "$DEPLOY_TMP/public-union.manifest"
-
-    fi
-
-
-    if [ -d "$ROLLBACK_DIR/public-managed" ]; then
-
-        while IFS= read -r -d '' ITEM
-        do
-
-            NAME="$(basename "$ITEM")"
-
-
-            if ! cp -a -- \
-                "$ITEM" \
-                "$PUBLIC/$NAME"; then
-
-                ROLLBACK_OK=0
-
-            fi
-
-        done < <(
-            find "$ROLLBACK_DIR/public-managed" \
-                -mindepth 1 \
-                -maxdepth 1 \
-                -print0
-        )
-
     fi
 
 
     # -----------------------------------------------------------------
-    # SPECIAL PUBLIC FILES
+    # RESTORE MANAGED PUBLIC FILES
+    # -----------------------------------------------------------------
+
+    if [ -d "$ROLLBACK_DIR/public-managed" ]; then
+
+        ROLLBACK_PUBLIC_LIST="${DEPLOY_TMP:?}/rollback-public.list"
+
+        if ! find "$ROLLBACK_DIR/public-managed" \
+            -mindepth 1 \
+            -maxdepth 1 \
+            -print0 > "$ROLLBACK_PUBLIC_LIST"; then
+
+            log "ERROR: Failed listing rollback public files."
+            ROLLBACK_OK=0
+
+        else
+
+            while IFS= read -r -d '' ITEM
+            do
+                NAME="$(basename "$ITEM")"
+
+                if ! cp -a -- \
+                    "$ITEM" \
+                    "$PUBLIC/$NAME"; then
+
+                    ROLLBACK_OK=0
+                fi
+
+            done < "$ROLLBACK_PUBLIC_LIST"
+        fi
+    fi
+
+
+    # -----------------------------------------------------------------
+    # RESTORE SPECIAL PUBLIC FILES
     # -----------------------------------------------------------------
 
     for ITEM in \
@@ -861,13 +791,12 @@ rollback()
 
 
     # -----------------------------------------------------------------
-    # COMPOSER
+    # COMPOSER ROLLBACK
     # -----------------------------------------------------------------
 
     if [ -f "$APP/composer.lock" ]; then
 
         log "Restoring previous Composer dependencies..."
-
 
         if ! (
             cd "$APP"
@@ -879,17 +808,12 @@ rollback()
         ); then
 
             log "ERROR: Composer rollback failed."
-
             ROLLBACK_OK=0
-
         fi
 
     else
-
         log "ERROR: Previous composer.lock unavailable."
-
         ROLLBACK_OK=0
-
     fi
 
 
@@ -903,7 +827,6 @@ rollback()
 
     mkdir -p "$APP/frontend/web/assets"
     mkdir -p "$APP/backend/web/assets"
-
 
     chmod -R 775 "$APP/frontend/runtime" ||
         ROLLBACK_OK=0
@@ -926,18 +849,16 @@ rollback()
     # -----------------------------------------------------------------
 
     if [ "$DATABASE_MAY_HAVE_CHANGED" -eq 1 ]; then
-
         log ""
         log "WARNING:"
         log "Database migration processing had started."
         log "Database migrations were NOT automatically rolled back."
         log "Review migration state manually."
-
     fi
 
 
     # -----------------------------------------------------------------
-    # VERIFY CONSOLE AFTER ROLLBACK
+    # VERIFY CONSOLE
     # -----------------------------------------------------------------
 
     if ! (
@@ -946,31 +867,23 @@ rollback()
     ); then
 
         log "ERROR: Yii console failed after rollback."
-
         ROLLBACK_OK=0
-
     fi
 
 
     # -----------------------------------------------------------------
-    # HEALTH CHECK
+    # VERIFY WEB APPLICATION
     # -----------------------------------------------------------------
 
     log ""
     log "Checking restored application..."
 
-
     if ! verify_application; then
-
         log "ERROR: Restored application failed health checks."
-
         ROLLBACK_OK=0
-
     fi
 
-
     ROLLBACK_IN_PROGRESS=0
-
 
     if [ "$ROLLBACK_OK" -eq 1 ]; then
 
@@ -982,12 +895,9 @@ rollback()
         log "=========================================="
 
         return 0
-
     fi
 
-
     KEEP_ROLLBACK=1
-
 
     log ""
     log "=========================================="
@@ -997,7 +907,6 @@ rollback()
     log ""
     log "Recovery workspace preserved:"
     log "$DEPLOY_TMP"
-
 
     return 1
 }
@@ -1013,11 +922,8 @@ on_error()
     local LINE="$1"
     local COMMAND="$2"
 
-
     trap - ERR INT TERM HUP
-
     set +e
-
 
     log ""
     log "=========================================="
@@ -1028,16 +934,13 @@ on_error()
     log "Command  : $COMMAND"
     log "Exit code: $EXIT_CODE"
 
-
     if [ "$DEPLOY_STARTED" -eq 1 ] &&
        [ "$ROLLBACK_AVAILABLE" -eq 1 ]; then
 
         if ! rollback; then
             KEEP_ROLLBACK=1
         fi
-
     fi
-
 
     exit "$EXIT_CODE"
 }
@@ -1051,11 +954,8 @@ on_signal()
 {
     local SIGNAL="$1"
 
-
     trap - ERR INT TERM HUP
-
     set +e
-
 
     log ""
     log "=========================================="
@@ -1064,45 +964,35 @@ on_signal()
 
     log "Signal: $SIGNAL"
 
-
     if [ "$DEPLOY_STARTED" -eq 1 ] &&
        [ "$ROLLBACK_AVAILABLE" -eq 1 ]; then
 
         if ! rollback; then
             KEEP_ROLLBACK=1
         fi
-
     fi
 
-
     case "$SIGNAL" in
-
         SIGINT)
             exit 130
             ;;
-
         SIGTERM)
             exit 143
             ;;
-
         SIGHUP)
             exit 129
             ;;
-
         *)
             exit 1
             ;;
-
     esac
 }
 
 
 trap 'on_error "$LINENO" "$BASH_COMMAND"' ERR
-
 trap 'on_signal SIGINT' INT
 trap 'on_signal SIGTERM' TERM
 trap 'on_signal SIGHUP' HUP
-
 trap cleanup EXIT
 
 
@@ -1121,46 +1011,50 @@ log "=========================================="
 
 log "[1/15] Running preflight checks..."
 
-
 require_commands
-
 assert_paths
-
 acquire_lock
-
 create_workspace
-
 
 require_directory "$REPO"
 require_directory "$APP"
 require_directory "$PUBLIC"
 
-
 if [ ! -d "$REPO/.git" ]; then
-
-    log "ERROR: Invalid Git deployment repository."
-
+    log "ERROR: Invalid Git deployment repository:"
+    log "$REPO"
     exit 1
-
 fi
-
 
 if [ ! -f "$APP/.env" ]; then
-
-    log "ERROR: Production .env is missing."
-
+    log "ERROR: Production .env is missing:"
+    log "$APP/.env"
     exit 1
-
 fi
-
 
 if [ ! -r "$APP/.env" ]; then
-
-    log "ERROR: Production .env is unreadable."
-
+    log "ERROR: Production .env is unreadable:"
+    log "$APP/.env"
     exit 1
-
 fi
+
+# ---------------------------------------------------------------------
+# Production yii is deliberately not Git-managed.
+# ---------------------------------------------------------------------
+
+if [ ! -f "$APP/yii" ]; then
+    log "ERROR: Production Yii console entry script is missing:"
+    log "$APP/yii"
+    exit 1
+fi
+
+if [ ! -r "$APP/yii" ]; then
+    log "ERROR: Production Yii console entry script is unreadable:"
+    log "$APP/yii"
+    exit 1
+fi
+
+php -l "$APP/yii" >/dev/null
 
 
 # =====================================================================
@@ -1169,17 +1063,12 @@ fi
 
 log "[2/15] Fetching latest release..."
 
-
 cd "$REPO"
 
-
 git fetch origin
-
 git reset --hard origin/main
 
-
 COMMIT="$(git rev-parse --short HEAD)"
-
 
 log "Deploying commit: $COMMIT"
 
@@ -1210,7 +1099,8 @@ do
         --error-unmatch \
         "$FILE" \
         >/dev/null 2>&1; then
-        log "ERROR: Production-only configuration tracked:"
+
+        log "ERROR: Production-only configuration is tracked:"
         log "$FILE"
         exit 1
     fi
@@ -1218,14 +1108,12 @@ done
 
 
 # =====================================================================
-# 4. VALIDATE RELEASE STRUCTURE
+# 4. VALIDATE RELEASE
 # =====================================================================
 
 log "[4/15] Validating release structure..."
 
-
 REQUIRED_FILES=(
-
     "common/config/main.php"
     "common/config/main-local.php"
 
@@ -1242,86 +1130,74 @@ REQUIRED_FILES=(
 
     "composer.json"
     "composer.lock"
-
 )
-
 
 for FILE in "${REQUIRED_FILES[@]}"
 do
-
     if [ ! -f "$REPO/$FILE" ]; then
-
         log "ERROR: Required release file missing:"
         log "$FILE"
-
         exit 1
-
     fi
-
 done
 
 
 # =====================================================================
-# 5. PHP SYNTAX
+# 5. PHP SYNTAX CHECK
+#
+# Uses an explicit temporary list instead of process substitution.
 # =====================================================================
 
 log "[5/15] Checking PHP syntax..."
 
-
 PHP_SYNTAX_FAILED=0
+PHP_LIST="${DEPLOY_TMP:?}/php-files.list"
 
+if ! find \
+    "$REPO/common" \
+    "$REPO/frontend" \
+    "$REPO/backend" \
+    "$REPO/console" \
+    -type f \
+    -name "*.php" \
+    ! -path "*/runtime/*" \
+    ! -path "*/web/assets/*" \
+    -print0 > "$PHP_LIST"; then
+
+    log "ERROR: Failed to build PHP syntax-check file list."
+    exit 1
+fi
 
 while IFS= read -r -d '' FILE
 do
-
     if ! php -l "$FILE" >/dev/null; then
-
         log "ERROR: PHP syntax error:"
         log "$FILE"
 
         PHP_SYNTAX_FAILED=1
-
     fi
 
-done < <(
-    find \
-        "$REPO/common" \
-        "$REPO/frontend" \
-        "$REPO/backend" \
-        "$REPO/console" \
-        -type f \
-        -name "*.php" \
-        ! -path "*/runtime/*" \
-        ! -path "*/web/assets/*" \
-        -print0
-)
-
+done < "$PHP_LIST"
 
 if [ "$PHP_SYNTAX_FAILED" -ne 0 ]; then
-
     log "ERROR: Release contains PHP syntax errors."
-
     exit 1
-
 fi
 
 
 # =====================================================================
-# 6. PUBLIC MANIFESTS
+# 6. BUILD PUBLIC MANIFESTS
 # =====================================================================
 
 log "[6/15] Building public manifests..."
-
 
 build_public_manifest \
     "$APP/frontend/web" \
     "$DEPLOY_TMP/public-old.manifest"
 
-
 build_public_manifest \
     "$REPO/frontend/web" \
     "$DEPLOY_TMP/public-new.manifest"
-
 
 cat \
     "$DEPLOY_TMP/public-old.manifest" \
@@ -1331,49 +1207,38 @@ cat \
 
 
 # =====================================================================
-# 7. ROLLBACK SNAPSHOT
+# 7. CREATE ROLLBACK SNAPSHOT
 # =====================================================================
 
 log "[7/15] Creating rollback snapshot..."
 
-
 mkdir -p "$ROLLBACK_DIR/root"
-
 mkdir -p "$ROLLBACK_DIR/public-managed"
-
 mkdir -p "$ROLLBACK_DIR/public-special"
-
 
 cp -a -- \
     "$APP/common" \
     "$ROLLBACK_DIR/common"
 
 
-# ---------------------------------------------------------------------
-# FRONTEND SNAPSHOT
-# ---------------------------------------------------------------------
+# Frontend: runtime and web/assets excluded.
 
 snapshot_application \
     "$APP/frontend" \
     "$ROLLBACK_DIR/frontend"
 
 
-# ---------------------------------------------------------------------
-# BACKEND SNAPSHOT
-# ---------------------------------------------------------------------
+# Backend: runtime and web/assets excluded.
 
 snapshot_application \
     "$APP/backend" \
     "$ROLLBACK_DIR/backend"
 
 
-# ---------------------------------------------------------------------
-# CONSOLE SNAPSHOT
+# Console:
 #
-# console/runtime is intentionally NOT copied.
-#
-# It remains untouched throughout deployment.
-# ---------------------------------------------------------------------
+# controllers/config/models/migrations/etc are snapshotted.
+# console/runtime is deliberately excluded.
 
 snapshot_application \
     "$APP/console" \
@@ -1382,21 +1247,21 @@ snapshot_application \
 
 # ---------------------------------------------------------------------
 # ROOT FILES
+#
+# Production yii is intentionally not snapshotted because this deploy
+# never changes it.
 # ---------------------------------------------------------------------
 
 for FILE in \
     composer.json \
     composer.lock
 do
-
     if [ -f "$APP/$FILE" ]; then
 
         cp -a -- \
             "$APP/$FILE" \
             "$ROLLBACK_DIR/root/$FILE"
-
     fi
-
 done
 
 
@@ -1406,9 +1271,7 @@ done
 
 while IFS= read -r NAME
 do
-
     [ -n "$NAME" ] || continue
-
 
     if [ -e "$PUBLIC/$NAME" ] ||
        [ -L "$PUBLIC/$NAME" ]; then
@@ -1416,7 +1279,6 @@ do
         cp -a -- \
             "$PUBLIC/$NAME" \
             "$ROLLBACK_DIR/public-managed/$NAME"
-
     fi
 
 done < "$DEPLOY_TMP/public-union.manifest"
@@ -1432,16 +1294,13 @@ for ITEM in \
     assets \
     favicon.ico
 do
-
     if [ -e "$PUBLIC/$ITEM" ] ||
        [ -L "$PUBLIC/$ITEM" ]; then
 
         cp -a -- \
             "$PUBLIC/$ITEM" \
             "$ROLLBACK_DIR/public-special/$ITEM"
-
     fi
-
 done
 
 
@@ -1449,36 +1308,30 @@ ROLLBACK_AVAILABLE=1
 
 
 # =====================================================================
-# 8. PRESERVE PARAMS
+# 8. PRESERVE PRODUCTION CONFIGURATION
 # =====================================================================
 
 log "[8/15] Preserving production configuration..."
 
-
 mkdir -p "$DEPLOY_TMP/params/common/config"
-
 mkdir -p "$DEPLOY_TMP/params/frontend/config"
-
 mkdir -p "$DEPLOY_TMP/params/backend/config"
-
 mkdir -p "$DEPLOY_TMP/params/console/config"
-
 
 preserve_params \
     "common/config/params-local.php"
 
-
 preserve_params \
     "frontend/config/params-local.php"
-
 
 preserve_params \
     "backend/config/params-local.php"
 
-
 preserve_params \
     "console/config/params-local.php"
 
+
+# From this point onward, failures trigger application rollback.
 
 DEPLOY_STARTED=1
 
@@ -1503,12 +1356,14 @@ cp -a -- \
 
 # ---------------------------------------------------------------------
 # FRONTEND
+#
+# frontend/runtime preserved.
+# frontend/web/assets preserved.
 # ---------------------------------------------------------------------
 
 deploy_application \
     "$REPO/frontend" \
     "$APP/frontend"
-
 
 deploy_web \
     "$REPO/frontend/web" \
@@ -1517,12 +1372,14 @@ deploy_web \
 
 # ---------------------------------------------------------------------
 # BACKEND
+#
+# backend/runtime preserved.
+# backend/web/assets preserved.
 # ---------------------------------------------------------------------
 
 deploy_application \
     "$REPO/backend" \
     "$APP/backend"
-
 
 deploy_web \
     "$REPO/backend/web" \
@@ -1532,60 +1389,52 @@ deploy_web \
 # ---------------------------------------------------------------------
 # CONSOLE
 #
-# This deploys:
+# Deploys:
 #
-#   controllers/
-#   migrations/
-#   models/
-#   components/
-#   config/
-#   commands/
-#   modules/
+#   controllers
+#   migrations
+#   config
+#   models
+#   services
+#   components
+#   modules
+#   commands
 #   etc.
 #
-# while preserving:
+# Preserves:
 #
-#   console/runtime/
+#   console/runtime
 # ---------------------------------------------------------------------
 
 deploy_application \
     "$REPO/console" \
     "$APP/console"
 
-
-# Console normally has no web directory.
-# If your repository has one, deploy it safely.
-
 if [ -d "$REPO/console/web" ]; then
 
     deploy_web \
         "$REPO/console/web" \
         "$APP/console/web"
-
 fi
 
 
 # =====================================================================
-# 10. RESTORE PRODUCTION PARAMETERS
+# 10. RESTORE PRODUCTION CONFIGURATION
 # =====================================================================
 
 log "[10/15] Restoring production configuration..."
-
 
 restore_params \
     "common/config/params-local.php" \
     "environments/prod/common/config/params-local.php"
 
-
 restore_params \
     "frontend/config/params-local.php" \
     "environments/prod/frontend/config/params-local.php"
 
-
 restore_params \
     "backend/config/params-local.php" \
     "environments/prod/backend/config/params-local.php"
-
 
 restore_params \
     "console/config/params-local.php" \
@@ -1624,41 +1473,32 @@ if [ ! -f "$APP/.env" ] ||
     exit 1
 fi
 
-if [ ! -f "$APP/yii" ]; then
-    log "ERROR: Production Yii console entry script is missing:"
-    log "$APP/yii"
-    exit 1
-fi
+if [ ! -f "$APP/yii" ] ||
+   [ ! -r "$APP/yii" ]; then
 
-if [ ! -r "$APP/yii" ]; then
-    log "ERROR: Production Yii console entry script is unreadable:"
-    log "$APP/yii"
+    log "ERROR: Production Yii entry script missing or unreadable."
     exit 1
 fi
 
 php -l "$APP/yii" >/dev/null
 
+
 # =====================================================================
-# 12. ROOT FILES + COMPOSER
+# 12. COMPOSER
 # =====================================================================
 
 log "[12/15] Installing dependencies..."
-
 
 for FILE in \
     composer.json \
     composer.lock
 do
-
     cp -a -- \
         "$REPO/$FILE" \
         "$APP/$FILE"
-
 done
 
-
 cd "$APP"
-
 
 composer install \
     --prefer-dist \
@@ -1672,34 +1512,42 @@ composer install \
 
 log "[13/15] Verifying Yii console..."
 
-
 mkdir -p "$APP/console/runtime"
 
 chmod -R 775 "$APP/console/runtime"
-
 
 php yii help >/dev/null
 
 
 # =====================================================================
-# 14. PUBLIC ROOT + MIGRATIONS
+# 14. PUBLIC ROOT + DATABASE MIGRATIONS
 # =====================================================================
 
 log "[14/15] Updating frontend public root..."
 
 
+# ---------------------------------------------------------------------
+# Remove only files managed by old/new frontend releases.
+#
+# Unrelated public_html content remains untouched.
+# ---------------------------------------------------------------------
+
 while IFS= read -r NAME
 do
     [ -n "$NAME" ] || continue
+
     rm -rf -- "${PUBLIC:?}/${NAME:?}"
+
 done < "$DEPLOY_TMP/public-union.manifest"
 
 
+# ---------------------------------------------------------------------
+# Copy new managed frontend files.
+# ---------------------------------------------------------------------
+
 while IFS= read -r NAME
 do
-
     [ -n "$NAME" ] || continue
-
 
     cp -a -- \
         "$APP/frontend/web/$NAME" \
@@ -1714,60 +1562,44 @@ done < "$DEPLOY_TMP/public-new.manifest"
 
 CURRENT_ASSET_LINK=""
 
-
 if [ -L "$PUBLIC/assets" ]; then
-
-    CURRENT_ASSET_LINK="$(
-        readlink "$PUBLIC/assets" || true
-    )"
-
+    CURRENT_ASSET_LINK="$(readlink "$PUBLIC/assets" || true)"
 fi
-
 
 if [ ! -L "$PUBLIC/assets" ] ||
    [ "$CURRENT_ASSET_LINK" != "$EXPECTED_ASSET_LINK" ]; then
 
     rm -rf -- "${PUBLIC:?}/assets"
 
-
     ln -s \
         "$EXPECTED_ASSET_LINK" \
         "$PUBLIC/assets"
-
 fi
 
 
 # ---------------------------------------------------------------------
-# FAVICON
+# FAVICON SYMLINK
 # ---------------------------------------------------------------------
 
 CURRENT_FAVICON_LINK=""
 
-
 if [ -L "$PUBLIC/favicon.ico" ]; then
-
-    CURRENT_FAVICON_LINK="$(
-        readlink "$PUBLIC/favicon.ico" || true
-    )"
-
+    CURRENT_FAVICON_LINK="$(readlink "$PUBLIC/favicon.ico" || true)"
 fi
-
 
 if [ ! -L "$PUBLIC/favicon.ico" ] ||
    [ "$CURRENT_FAVICON_LINK" != "$EXPECTED_FAVICON_LINK" ]; then
 
     rm -rf -- "${PUBLIC:?}/favicon.ico"
 
-
     ln -s \
         "$EXPECTED_FAVICON_LINK" \
         "$PUBLIC/favicon.ico"
-
 fi
 
 
 # ---------------------------------------------------------------------
-# PRODUCTION INDEX
+# PRODUCTION FRONTEND ENTRY POINT
 # ---------------------------------------------------------------------
 
 cat > "$PUBLIC/index.php" <<'PHP'
@@ -1778,7 +1610,6 @@ defined('YII_ENV') or define('YII_ENV', 'prod');
 
 require __DIR__ . '/../miracle/vendor/autoload.php';
 require __DIR__ . '/../miracle/vendor/yiisoft/yii2/Yii.php';
-
 require __DIR__ . '/../miracle/common/config/bootstrap.php';
 require __DIR__ . '/../miracle/frontend/config/bootstrap.php';
 
@@ -1806,22 +1637,24 @@ RewriteCond %{REQUEST_FILENAME} !-d
 RewriteRule . index.php [L]
 HTACCESS
 
-
 php -l "$PUBLIC/index.php" >/dev/null
 
 
 # ---------------------------------------------------------------------
-# DATABASE MIGRATION
+# DATABASE MIGRATIONS
+#
+# Flag is set BEFORE migration execution because some migrations may
+# succeed before a subsequent migration fails.
+#
+# Database migrations are deliberately NOT automatically reversed by
+# application rollback.
 # ---------------------------------------------------------------------
 
 log "Running database migrations..."
 
-
 cd "$APP"
 
-
 DATABASE_MAY_HAVE_CHANGED=1
-
 
 php yii migrate/up --interactive=0
 
@@ -1832,42 +1665,30 @@ php yii migrate/up --interactive=0
 
 log "Preparing writable directories..."
 
-
 mkdir -p "$APP/frontend/runtime"
-
 mkdir -p "$APP/backend/runtime"
-
 mkdir -p "$APP/console/runtime"
 
 mkdir -p "$APP/frontend/web/assets"
-
 mkdir -p "$APP/backend/web/assets"
 
-
 chmod -R 775 "$APP/frontend/runtime"
-
 chmod -R 775 "$APP/backend/runtime"
-
 chmod -R 775 "$APP/console/runtime"
 
 chmod -R 775 "$APP/frontend/web/assets"
-
 chmod -R 775 "$APP/backend/web/assets"
 
 
 # =====================================================================
-# 15. HEALTH CHECK
+# 15. FINAL HEALTH CHECK
 # =====================================================================
 
 log "[15/15] Running production health checks..."
 
-
 if ! verify_application; then
-
     log "ERROR: Production health check failed."
-
     exit 1
-
 fi
 
 
@@ -1877,6 +1698,7 @@ fi
 
 log "Verifying console after deployment..."
 
+cd "$APP"
 
 php yii help >/dev/null
 
@@ -1886,9 +1708,7 @@ php yii help >/dev/null
 # =====================================================================
 
 DEPLOY_STARTED=0
-
 KEEP_ROLLBACK=0
-
 
 log ""
 log "=========================================="

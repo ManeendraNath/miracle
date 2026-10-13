@@ -50,7 +50,7 @@ if (YII_ENV_DEV) {
                 'trim',
                 explode(
                     ',',
-                    $_ENV['GII_ALLOWED_IPS'] ?? '127.0.0.1,::1'
+                    $_ENV['GII_ALLOWED_IPS'] ?? '127.0.0.1,::1,172.*'
                 )
             )
         ),

@@ -11,6 +11,9 @@ use common\models\AuditRequest;
  */
 class AuditRequestSearch extends AuditRequest
 {
+    // Transient placeholder to handle the composite range string text
+    public $date_range;
+    
     /**
      * {@inheritdoc}
      */
@@ -18,7 +21,7 @@ class AuditRequestSearch extends AuditRequest
     {
         return [
             [['id', 'created_at', 'updated_at'], 'integer'],
-            [['name', 'email', 'phone', 'company_url', 'current_framework', 'hosting_environment', 'message', 'status', 'user_ip'], 'safe'],
+            [['name', 'email', 'phone', 'company_url', 'current_framework', 'hosting_environment', 'message', 'status', 'user_ip', 'date_range'], 'safe'],
         ];
     }
 
@@ -74,6 +77,12 @@ class AuditRequestSearch extends AuditRequest
             ->andFilterWhere(['like', 'status', $this->status])
             ->andFilterWhere(['like', 'user_ip', $this->user_ip]);
 
+        // 📅 DYNAMIC DATE RANGE FILTERING LOGIC
+        if (!empty($this->date_range) && strpos($this->date_range, ' - ') !== false) {
+            list($start_date, $end_date) = explode(' - ', $this->date_range);
+            // Formats search against your core database 'created_at' or 'due_date' timestamp rows safely
+            $query->andFilterWhere(['between', 'DATE(created_at)', $start_date, $end_date]);
+        }
         return $dataProvider;
     }
 }

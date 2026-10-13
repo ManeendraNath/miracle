@@ -11,10 +11,7 @@ $this->title = 'Financial Transactions Ledger';
 $this->params['breadcrumbs'][] = $this->title;
 ?>
 <div class="transaction-index container-fluid pt-3">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1 class="h3 mb-0 text-gray-800"><?= Html::encode($this->title) ?></h1>
-    </div>
-
+    
     <div class="card shadow-sm border-0">
         <div class="card-body p-0">
             <?=

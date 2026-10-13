@@ -2,19 +2,28 @@
 
 namespace backend\models\searches;
 
+use yii\base\Model;
 use yii\data\ActiveDataProvider;
 use common\models\Transaction;
 
+/**
+ * TransactionSearch represents the model behind the search form of `common\models\Transaction`.
+ */
 class TransactionSearch extends Transaction
 {
+
+    // Transient placeholder to handle the composite range string text
     public $date_range;
 
+    /**
+     * {@inheritdoc}
+     */
     public function rules()
     {
         return [
-            [['id', 'gateway_id'], 'integer'],
-            [['transaction_reference', 'status', 'date_range'], 'safe'],
-            [['amount'], 'number'],
+            [['id', 'invoice_id', 'gateway_id', 'paid_at', 'created_at', 'updated_at'], 'integer'],
+            [['gateway_payment_id', 'gateway_order_id', 'status', 'user_payment_notes', 'payment_receipt_file', 'raw_payload', 'date_range'], 'safe'],
+            [['amount', 'gateway_fee'], 'number'],
         ];
     }
 
@@ -39,9 +48,10 @@ class TransactionSearch extends Transaction
     {
         $query = Transaction::find();
 
+        // add conditions that should always apply here
+
         $dataProvider = new ActiveDataProvider([
             'query' => $query,
-            'sort' => ['defaultOrder' => ['id' => SORT_DESC]],
         ]);
 
         $this->load($params, $formName);
@@ -52,18 +62,30 @@ class TransactionSearch extends Transaction
             return $dataProvider;
         }
 
+        // grid filtering conditions
         $query->andFilterWhere([
             'id' => $this->id,
+            'invoice_id' => $this->invoice_id,
             'gateway_id' => $this->gateway_id,
-            'status' => $this->status,
+            'amount' => $this->amount,
+            'gateway_fee' => $this->gateway_fee,
+            'paid_at' => $this->paid_at,
+            'created_at' => $this->created_at,
+            'updated_at' => $this->updated_at,
         ]);
 
-        $query->andFilterWhere(['like', 'transaction_reference', $this->transaction_reference]);
+        $query->andFilterWhere(['like', 'gateway_payment_id', $this->gateway_payment_id])
+                ->andFilterWhere(['like', 'gateway_order_id', $this->gateway_order_id])
+                ->andFilterWhere(['like', 'status', $this->status])
+                ->andFilterWhere(['like', 'user_payment_notes', $this->user_payment_notes])
+                ->andFilterWhere(['like', 'payment_receipt_file', $this->payment_receipt_file])
+                ->andFilterWhere(['like', 'raw_payload', $this->raw_payload]);
 
-        // 📅 DATE RANGE INTERCEPTOR FOR TRANSACTIONS (paid_at boundaries check)
+        // 📅 DYNAMIC DATE RANGE FILTERING LOGIC
         if (!empty($this->date_range) && strpos($this->date_range, ' - ') !== false) {
             list($start_date, $end_date) = explode(' - ', $this->date_range);
-            $query->andFilterWhere(['between', 'DATE(FROM_UNIXTIME(paid_at))', $start_date, $end_date]);
+            // Formats search against your core database 'created_at' or 'due_date' timestamp rows safely
+            $query->andFilterWhere(['between', 'DATE(created_at)', $start_date, $end_date]);
         }
 
         return $dataProvider;

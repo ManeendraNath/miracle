@@ -15,6 +15,18 @@ AdminLteAsset::register($this);
 // Automatically hooks up FontAwesome Icons, jQuery overlays, and Bootstrap styles
 PluginAsset::register($this, ['fontawesome']);
 
+// Chart.js is shipped with AdminLTE but is not loaded automatically.
+$chartJsUrl = Yii::$app->assetManager->publish('@vendor/almasaeed2010/adminlte/plugins/chart.js/Chart.min.js')[1];
+
+$this->registerJsFile(
+        $chartJsUrl,
+        [
+            'depends' => [
+                \yii\web\JqueryAsset::class,
+            ],
+        ]
+);
+$adminLteDist = Yii::$app->assetManager->getPublishedUrl('@vendor/almasaeed2010/adminlte/dist');
 $this->title = 'Miracle Corporate Control Center';
 ?>
 
@@ -357,7 +369,7 @@ $this->title = 'Miracle Corporate Control Center';
                                     <tr>
                                         <td class="ps-4 py-3 fw-bold text-dark">
                                             <!-- 👇 FIXED: Uses dynamic $assetDir mapping pattern variables instead of broken raw strings paths -->
-                                            <img src="<?= $assetDir ?>/img/default-150x150.png" alt="Product Icon" class="img-circle img-size-32 mr-2">
+                                            <img src="<?= $adminLteDist ?>/img/default-150x150.png" alt="Product Icon" class="img-circle img-size-32 mr-2">
                                             <?= Html::encode($coupon['code']) ?>
                                         </td>
                                         <td class="text-primary font-weight-bold">
@@ -376,7 +388,7 @@ $this->title = 'Miracle Corporate Control Center';
                                 <!-- Fallback Placeholder Rows matching the structure if database entries are completely empty -->
                                 <tr>
                                     <td class="ps-4 py-3 text-dark font-weight-bold">
-                                        <img src="<?= $assetDir ?>/img/default-150x150.png" alt="Promo" class="img-circle img-size-32 mr-2">
+                                        <img src="<?= $adminLteDist ?>/img/default-150x150.png" alt="Promo" class="img-circle img-size-32 mr-2">
                                         DEMO_PROMO_CODE
                                     </td>
                                     <td class="text-muted font-weight-bold">₹500.00 Fixed Off</td>
@@ -384,7 +396,7 @@ $this->title = 'Miracle Corporate Control Center';
                                 </tr>
                                 <tr>
                                     <td class="ps-4 py-3 text-dark font-weight-bold">
-                                        <img src="<?= $assetDir ?>/img/default-150x150.png" alt="Promo" class="img-circle img-size-32 mr-2">
+                                        <img src="<?= $adminLteDist ?>/img/default-150x150.png" alt="Promo" class="img-circle img-size-32 mr-2">
                                         FESTIVE_SEASON_SALE
                                     </td>
                                     <td class="text-success font-weight-bold">15% Percent Off</td>

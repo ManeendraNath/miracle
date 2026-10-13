@@ -4,11 +4,9 @@ $config = [
     'components' => [
         'request' => [
             'cookieValidationKey' => $_ENV['BACKEND_COOKIE_VALIDATION_KEY'],
-            'baseUrl' => $_ENV['BACKEND_BASE_URL'] ?? '/admin',
         ],
 
         'urlManager' => [
-            'baseUrl' => $_ENV['BACKEND_BASE_URL'] ?? '/admin',
             'enablePrettyUrl' => true,
             'showScriptName' => false,
 
@@ -27,12 +25,10 @@ $config = [
         ],
 
         'assetManager' => [
-            'baseUrl' =>
-                ($_ENV['BACKEND_BASE_URL'] ?? '/admin') . '/assets',
-
+            'baseUrl' => '/assets',
             'basePath' => '@webroot/assets',
             'appendTimestamp' => true,
-            'linkAssets' => YII_ENV_DEV,
+            'linkAssets' => false,
         ],
     ],
 ];

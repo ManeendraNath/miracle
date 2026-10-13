@@ -1,9 +1,8 @@
 RewriteEngine On
-RewriteBase /
 
-# If a physical file or folder exists on disk, serve it directly (CSS, Images, JS)
+# Serve existing files and directories directly.
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
 
-# Otherwise, pass clean paths directly to index.php processing loop
-RewriteRule ^(.*)$ index.php [L]
+# Everything else goes through Yii.
+RewriteRule . index.php [L]

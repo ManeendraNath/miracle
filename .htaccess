@@ -1,46 +1,7 @@
-RewriteEngine On
-RewriteBase /
-
-# ============================================================
-# 1. SECURITY
-# ============================================================
-
-# Block environment files
-<FilesMatch "^\.env">
-    Require all denied
-</FilesMatch>
-
-# Block direct public access
-RewriteRule ^(?:backend|frontend|common|console|vendor|environments)(?:/|$) - [F,L]
-
-# ============================================================
-# 2. BACKEND
-# Public URL:  /admin/...
-# Internal:    /backend/web/...
-# ============================================================
-
-# Normalize /admin -> /admin/
-RewriteRule ^admin$ admin/ [R=301,L]
-
-# Serve existing backend files/directories
-RewriteCond %{DOCUMENT_ROOT}/backend/web/$1 -f [OR]
-RewriteCond %{DOCUMENT_ROOT}/backend/web/$1 -d
-RewriteRule ^admin/(.*)$ backend/web/$1 [L]
-
-# Everything else under /admin goes through Yii
-RewriteRule ^admin(?:/.*)?$ backend/web/index.php [L]
-
-
-# ============================================================
-# 3. FRONTEND
-# Public URL:  /...
-# Internal:    /frontend/web/...
-# ============================================================
-
-# Serve existing frontend files/directories
-RewriteCond %{DOCUMENT_ROOT}/frontend/web/$1 -f [OR]
-RewriteCond %{DOCUMENT_ROOT}/frontend/web/$1 -d
-RewriteRule ^(.*)$ frontend/web/$1 [L]
-
-# Everything else goes through Yii
-RewriteRule ^.*$ frontend/web/index.php [L]
+# No routing required here.
+#
+# Production document roots:
+# miraclewebtechnologies.com       -> frontend/web
+# admin.miraclewebtechnologies.com -> backend/web
+#
+# Routing is handled by the .htaccess file inside each web directory.

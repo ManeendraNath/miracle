@@ -21,7 +21,8 @@ return [
     'controllerNamespace' => 'frontend\controllers',
     'components' => [
         'assetManager' => [
-            'linkAssets' => true,
+            'linkAssets' => false,
+            'appendTimestamp' => true,
         ],
         'request' => [
             'csrfParam' => '_csrf-frontend',
@@ -57,7 +58,7 @@ return [
                 '<action>'=>'site/<action>', 
                 '<controller:[\w\-]+>/<id:\d+>' => '<controller>/view',
                 '<controller:[\w\-]+>/<action:[\w\-]+>/<id:\d+>' => '<controller>/<action>',
-                '<controller:[\w\-]+>/<action:[\w\-]+' => '<controller>/<action>',
+                '<controller:[\w\-]+>/<action:[\w\-]+>' => '<controller>/<action>',
                 'contact' => 'site/contact',
                 'audit' => 'site/audit',
             ],

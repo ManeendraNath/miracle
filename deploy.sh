@@ -803,6 +803,7 @@ rollback()
 
             composer install \
                 --prefer-dist \
+                --no-dev \
                 --no-interaction \
                 --optimize-autoloader
         ); then
@@ -1502,6 +1503,7 @@ cd "$APP"
 
 composer install \
     --prefer-dist \
+    --no-dev \
     --no-interaction \
     --optimize-autoloader
 

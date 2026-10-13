@@ -157,7 +157,7 @@ cleanup()
     elif [ -n "${DEPLOY_TMP:-}" ] &&
          [ -d "$DEPLOY_TMP" ]; then
 
-        rm -rf -- "$DEPLOY_TMP"
+        rm -rf -- "${DEPLOY_TMP:?}"
 
     fi
 
@@ -310,8 +310,12 @@ deploy_application()
 
     require_directory "$SOURCE"
 
-    mkdir -p "$DEST"
+    if [ -z "${DEST:-}" ] || [ "$DEST" = "/" ]; then
+        log "ERROR: Unsafe deployment destination: ${DEST:-<empty>}"
+        return 1
+    fi
 
+    mkdir -p "$DEST"
 
     find "$DEST" \
         -mindepth 1 \
@@ -362,8 +366,12 @@ deploy_web()
 
     require_directory "$SOURCE"
 
-    mkdir -p "$DEST/assets"
+    if [ -z "${DEST:-}" ] || [ "$DEST" = "/" ]; then
+        log "ERROR: Unsafe web deployment destination: ${DEST:-<empty>}"
+        return 1
+    fi
 
+    mkdir -p "$DEST/assets"
 
     find "$DEST" \
         -mindepth 1 \
@@ -460,16 +468,15 @@ build_public_manifest()
 preserve_params()
 {
     local RELATIVE="$1"
-    local SOURCE="$APP/$RELATIVE"
-    local DEST="$DEPLOY_TMP/params/$(dirname "$RELATIVE")"
+    local SOURCE
+    local DEST
 
+    SOURCE="$APP/$RELATIVE"
+    DEST="$DEPLOY_TMP/params/$(dirname "$RELATIVE")"
 
     if [ -f "$SOURCE" ]; then
-
         mkdir -p "$DEST"
-
         cp -a -- "$SOURCE" "$DEST/"
-
     fi
 }
 
@@ -609,7 +616,7 @@ rollback()
 
     if [ -d "$ROLLBACK_DIR/common" ]; then
 
-        rm -rf -- "$APP/common"
+        rm -rf -- "${APP:?}/common"
 
 
         if ! cp -a -- \
@@ -796,11 +803,8 @@ rollback()
 
         while IFS= read -r NAME
         do
-
             [ -n "$NAME" ] || continue
-
-            rm -rf -- "$PUBLIC/$NAME"
-
+            rm -rf -- "${PUBLIC:?}/${NAME:?}"
         done < "$DEPLOY_TMP/public-union.manifest"
 
     fi
@@ -842,9 +846,7 @@ rollback()
         assets \
         favicon.ico
     do
-
-        rm -rf -- "$PUBLIC/$ITEM"
-
+        rm -rf -- "${PUBLIC:?}/${ITEM:?}"
 
         if [ -e "$ROLLBACK_DIR/public-special/$ITEM" ] ||
            [ -L "$ROLLBACK_DIR/public-special/$ITEM" ]; then
@@ -854,11 +856,8 @@ rollback()
                 "$PUBLIC/$ITEM"; then
 
                 ROLLBACK_OK=0
-
             fi
-
         fi
-
     done
 
 
@@ -1507,7 +1506,7 @@ log "[9/15] Deploying application source..."
 # COMMON
 # ---------------------------------------------------------------------
 
-rm -rf -- "$APP/common"
+rm -rf -- "${APP:?}/common"
 
 cp -a -- \
     "$REPO/common" \
@@ -1611,45 +1610,30 @@ restore_params \
 
 log "[11/15] Verifying deployed configuration..."
 
-
 for FILE in \
-
     common/config/main-local.php \
     common/config/params-local.php \
-
     frontend/config/main-local.php \
     frontend/config/params-local.php \
-
     backend/config/main-local.php \
     backend/config/params-local.php \
-
     console/config/main-local.php \
     console/config/params-local.php
-
 do
-
     if [ ! -f "$APP/$FILE" ]; then
-
         log "ERROR: Required configuration missing:"
         log "$FILE"
-
         exit 1
-
     fi
 
-
     php -l "$APP/$FILE" >/dev/null
-
 done
-
 
 if [ ! -f "$APP/.env" ] ||
    [ ! -r "$APP/.env" ]; then
 
     log "ERROR: Production .env missing or unreadable."
-
     exit 1
-
 fi
 
 
@@ -1706,11 +1690,8 @@ log "[14/15] Updating frontend public root..."
 
 while IFS= read -r NAME
 do
-
     [ -n "$NAME" ] || continue
-
-    rm -rf -- "$PUBLIC/$NAME"
-
+    rm -rf -- "${PUBLIC:?}/${NAME:?}"
 done < "$DEPLOY_TMP/public-union.manifest"
 
 
@@ -1746,7 +1727,7 @@ fi
 if [ ! -L "$PUBLIC/assets" ] ||
    [ "$CURRENT_ASSET_LINK" != "$EXPECTED_ASSET_LINK" ]; then
 
-    rm -rf -- "$PUBLIC/assets"
+    rm -rf -- "${PUBLIC:?}/assets"
 
 
     ln -s \
@@ -1775,7 +1756,7 @@ fi
 if [ ! -L "$PUBLIC/favicon.ico" ] ||
    [ "$CURRENT_FAVICON_LINK" != "$EXPECTED_FAVICON_LINK" ]; then
 
-    rm -rf -- "$PUBLIC/favicon.ico"
+    rm -rf -- "${PUBLIC:?}/favicon.ico"
 
 
     ln -s \

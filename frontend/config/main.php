@@ -13,16 +13,6 @@ $params = array_merge(
 
 $baseUrl = str_replace('/frontend/web', '', (new Request())->getBaseUrl());
 
-/*
- * Local:
- *   FRONTEND_ASSET_PATH is empty/unset
- *   Yii publishes to @webroot/assets
- *
- * Production:
- *   FRONTEND_ASSET_PATH=/home/rpocncwk/public_html/assets
- */
-$frontendAssetPath = trim($_ENV['FRONTEND_ASSET_PATH'] ?? '');
-
 return [
     'id' => 'app-frontend',
     'basePath' => dirname(__DIR__),
@@ -34,7 +24,7 @@ return [
         // ASSETS
         // -----------------------------------------------------
         'assetManager' => [
-            'basePath' => $frontendAssetPath !== '' ? $frontendAssetPath : '@webroot/assets',
+            'basePath' => '@webroot/assets',
             'baseUrl' => '/assets',
             'linkAssets' => false,
             'appendTimestamp' => true,
@@ -72,10 +62,8 @@ return [
             'targets' => [
                 [
                     'class' => 'yii\log\FileTarget',
-                    'levels' => [
-                        'error',
-                        'warning',
-                    ],
+                    'levels' => ['error', 'warning'],
+                    'logVars' => [],
                 ],
             ],
         ],

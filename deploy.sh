@@ -6,13 +6,16 @@ REPO="/home/rpocncwk/repositories/miracle"
 APP="/home/rpocncwk/miracle"
 PUBLIC="/home/rpocncwk/public_html"
 
-echo "Starting deployment..."
+echo "=========================================="
+echo "Starting Miracle deployment..."
+echo "=========================================="
+
 
 # ============================================================
-# 1. UPDATE GIT REPOSITORY
+# 1. UPDATE DEPLOYMENT REPOSITORY
 # ============================================================
 
-echo "Fetching latest code..."
+echo "[1/9] Fetching latest code from GitHub..."
 
 cd "$REPO"
 
@@ -21,82 +24,276 @@ git reset --hard origin/main
 
 
 # ============================================================
-# 2. SYNC APPLICATION CODE
+# 2. ENSURE APPLICATION DIRECTORIES EXIST
 # ============================================================
 
-echo "Synchronising application..."
+echo "[2/9] Preparing application directories..."
 
-mkdir -p "$APP"
+mkdir -p "$APP/frontend"
+mkdir -p "$APP/backend"
+mkdir -p "$APP/common"
+mkdir -p "$APP/console"
 
-rsync -a --delete \
-    --exclude='runtime/' \
-    --exclude='web/assets/' \
-    "$REPO/frontend/" "$APP/frontend/"
+mkdir -p "$APP/frontend/runtime"
+mkdir -p "$APP/backend/runtime"
 
-rsync -a --delete \
-    --exclude='runtime/' \
-    --exclude='web/assets/' \
-    "$REPO/backend/" "$APP/backend/"
-
-rsync -a --delete \
-    "$REPO/common/" "$APP/common/"
-
-rsync -a --delete \
-    "$REPO/console/" "$APP/console/"
+mkdir -p "$APP/frontend/web/assets"
+mkdir -p "$APP/backend/web/assets"
 
 
 # ============================================================
-# 3. SYNC PROJECT FILES REQUIRED AT APPLICATION ROOT
+# 3. DEPLOY FRONTEND APPLICATION CODE
+#
+# Do NOT delete:
+#   frontend/runtime
+#   frontend/web/assets
+#
+# These are generated/writable directories.
 # ============================================================
 
-echo "Synchronising root application files..."
+echo "[3/9] Deploying frontend application..."
 
-cp "$REPO/yii" "$APP/yii"
-cp "$REPO/yii.bat" "$APP/yii.bat" 2>/dev/null || true
-cp "$REPO/composer.json" "$APP/composer.json"
-cp "$REPO/composer.lock" "$APP/composer.lock"
+for DIR in \
+    assets \
+    config \
+    controllers \
+    models \
+    views \
+    widgets
+do
+    if [ -d "$REPO/frontend/$DIR" ]; then
+
+        rm -rf "$APP/frontend/$DIR"
+        cp -a "$REPO/frontend/$DIR" "$APP/frontend/"
+
+    fi
+done
 
 
 # ============================================================
-# 4. COMPOSER DEPENDENCIES
+# 4. DEPLOY FRONTEND WEB SOURCE FILES
+#
+# Preserve:
+#   frontend/web/assets
+#
+# because Yii generates published assets there.
 # ============================================================
 
-echo "Installing Composer dependencies..."
+echo "[4/9] Deploying frontend web files..."
+
+find "$APP/frontend/web" \
+    -mindepth 1 \
+    -maxdepth 1 \
+    ! -name "assets" \
+    -exec rm -rf {} +
+
+for ITEM in "$REPO/frontend/web/"* "$REPO/frontend/web/".[!.]*; do
+
+    [ -e "$ITEM" ] || continue
+
+    NAME="$(basename "$ITEM")"
+
+    if [ "$NAME" = "assets" ]; then
+        continue
+    fi
+
+    cp -a "$ITEM" "$APP/frontend/web/"
+
+done
+
+
+# ============================================================
+# 5. DEPLOY BACKEND APPLICATION CODE
+#
+# Do NOT delete:
+#   backend/runtime
+#   backend/web/assets
+# ============================================================
+
+echo "[5/9] Deploying backend application..."
+
+for DIR in \
+    assets \
+    config \
+    controllers \
+    models \
+    views
+do
+    if [ -d "$REPO/backend/$DIR" ]; then
+
+        rm -rf "$APP/backend/$DIR"
+        cp -a "$REPO/backend/$DIR" "$APP/backend/"
+
+    fi
+done
+
+
+echo "Deploying backend web files..."
+
+find "$APP/backend/web" \
+    -mindepth 1 \
+    -maxdepth 1 \
+    ! -name "assets" \
+    -exec rm -rf {} +
+
+for ITEM in "$REPO/backend/web/"* "$REPO/backend/web/".[!.]*; do
+
+    [ -e "$ITEM" ] || continue
+
+    NAME="$(basename "$ITEM")"
+
+    if [ "$NAME" = "assets" ]; then
+        continue
+    fi
+
+    cp -a "$ITEM" "$APP/backend/web/"
+
+done
+
+
+# ============================================================
+# 6. DEPLOY COMMON + CONSOLE
+# ============================================================
+
+echo "[6/9] Deploying common and console code..."
+
+rm -rf "$APP/common"
+cp -a "$REPO/common" "$APP/common"
+
+rm -rf "$APP/console"
+cp -a "$REPO/console" "$APP/console"
+
+
+# ============================================================
+# COPY ROOT APPLICATION FILES
+#
+# IMPORTANT:
+# Do NOT copy .env.
+# Production .env stays only in:
+#   /home/rpocncwk/miracle/.env
+# ============================================================
+
+echo "Deploying root application files..."
+
+if [ -f "$REPO/yii" ]; then
+    cp -a "$REPO/yii" "$APP/yii"
+fi
+
+if [ -f "$REPO/yii.bat" ]; then
+    cp -a "$REPO/yii.bat" "$APP/yii.bat"
+fi
+
+if [ -f "$REPO/composer.json" ]; then
+    cp -a "$REPO/composer.json" "$APP/composer.json"
+fi
+
+if [ -f "$REPO/composer.lock" ]; then
+    cp -a "$REPO/composer.lock" "$APP/composer.lock"
+fi
+
+
+# ============================================================
+# 7. INSTALL COMPOSER DEPENDENCIES
+# ============================================================
+
+echo "[7/9] Installing Composer dependencies..."
 
 cd "$APP"
 
-composer install \
-    --no-dev \
-    --prefer-dist \
-    --no-interaction \
-    --optimize-autoloader
+if command -v composer >/dev/null 2>&1; then
+
+    composer install \
+        --no-dev \
+        --prefer-dist \
+        --no-interaction \
+        --optimize-autoloader
+
+else
+
+    echo "WARNING: composer command not found."
+    echo "Existing vendor directory will be used."
+
+fi
 
 
 # ============================================================
-# 5. FRONTEND PUBLIC WEB ROOT
+# 8. DEPLOY FRONTEND PUBLIC FILES
 #
-# Main cPanel domain is fixed to public_html, so only the
-# frontend public files need to be exposed there.
+# Main cPanel domain:
+#
+# miraclewebtechnologies.com
+#     -> /home/rpocncwk/public_html
+#
+# Backend is NOT deployed here anymore.
+#
+# admin.miraclewebtechnologies.com
+#     -> /home/rpocncwk/miracle/backend/web
 # ============================================================
 
-echo "Synchronising frontend public files..."
+echo "[8/9] Deploying frontend public files..."
 
-# Static/source web resources.
-# Generated /assets and production index.php are handled
-# separately below.
+mkdir -p "$PUBLIC/assets"
 
-rsync -a --delete \
-    --exclude='assets/' \
-    --exclude='index.php' \
-    --exclude='.htaccess' \
-    "$APP/frontend/web/" "$PUBLIC/"
+
+# ------------------------------------------------------------
+# CSS
+# ------------------------------------------------------------
+
+if [ -d "$APP/frontend/web/css" ]; then
+
+    rm -rf "$PUBLIC/css"
+    cp -a "$APP/frontend/web/css" "$PUBLIC/css"
+
+fi
+
+
+# ------------------------------------------------------------
+# Images
+# ------------------------------------------------------------
+
+if [ -d "$APP/frontend/web/images" ]; then
+
+    rm -rf "$PUBLIC/images"
+    cp -a "$APP/frontend/web/images" "$PUBLIC/images"
+
+fi
+
+
+# ------------------------------------------------------------
+# JavaScript
+# ------------------------------------------------------------
+
+if [ -d "$APP/frontend/web/js" ]; then
+
+    rm -rf "$PUBLIC/js"
+    cp -a "$APP/frontend/web/js" "$PUBLIC/js"
+
+fi
+
+
+# ------------------------------------------------------------
+# Favicon
+# ------------------------------------------------------------
+
+if [ -f "$APP/frontend/web/favicon.ico" ]; then
+    cp -a "$APP/frontend/web/favicon.ico" "$PUBLIC/favicon.ico"
+fi
+
+
+# ------------------------------------------------------------
+# robots.txt
+# ------------------------------------------------------------
+
+if [ -f "$APP/frontend/web/robots.txt" ]; then
+    cp -a "$APP/frontend/web/robots.txt" "$PUBLIC/robots.txt"
+fi
 
 
 # ============================================================
-# 6. FRONTEND ENTRY POINT
+# FRONTEND PRODUCTION ENTRY POINT
 # ============================================================
 
-echo "Installing frontend entry point..."
+echo "Creating production frontend index.php..."
 
 cat > "$PUBLIC/index.php" <<'PHP'
 <?php
@@ -121,10 +318,10 @@ PHP
 
 
 # ============================================================
-# 7. FRONTEND HTACCESS
+# FRONTEND .HTACCESS
 # ============================================================
 
-echo "Installing frontend .htaccess..."
+echo "Creating production frontend .htaccess..."
 
 cat > "$PUBLIC/.htaccess" <<'HTACCESS'
 RewriteEngine On
@@ -137,63 +334,53 @@ HTACCESS
 
 
 # ============================================================
-# 8. ENSURE REQUIRED RUNTIME/ASSET DIRECTORIES EXIST
+# 9. MIGRATIONS + CACHE + PERMISSIONS
 # ============================================================
 
-echo "Preparing runtime directories..."
-
-mkdir -p \
-    "$APP/frontend/runtime/cache" \
-    "$APP/backend/runtime/cache" \
-    "$APP/frontend/web/assets" \
-    "$APP/backend/web/assets" \
-    "$PUBLIC/assets"
-
-
-# ============================================================
-# 9. DATABASE MIGRATION
-# ============================================================
-
-echo "Running database migrations..."
+echo "[9/9] Running database migrations..."
 
 cd "$APP"
 
 php yii migrate/up --interactive=0
 
 
-# ============================================================
-# 10. CLEAR APPLICATION CACHE
-# ============================================================
-
-echo "Clearing runtime caches..."
+echo "Clearing Yii runtime caches..."
 
 rm -rf "$APP/frontend/runtime/cache/"*
 rm -rf "$APP/backend/runtime/cache/"*
 
 
-# ============================================================
-# 11. CLEAR GENERATED ASSETS
-# ============================================================
+# ------------------------------------------------------------
+# BACKEND ASSETS
+#
+# Safe to clear because admin subdomain points directly to:
+#   miracle/backend/web
+# ------------------------------------------------------------
 
-echo "Clearing generated assets..."
+echo "Clearing backend published assets..."
 
-rm -rf "$APP/frontend/web/assets/"*
 rm -rf "$APP/backend/web/assets/"*
-rm -rf "$PUBLIC/assets/"*
 
 
-# ============================================================
-# 12. PERMISSIONS
-# ============================================================
+# ------------------------------------------------------------
+# Writable directory permissions
+# ------------------------------------------------------------
 
-echo "Updating writable-directory permissions..."
+echo "Updating writable directory permissions..."
 
-chmod -R 775 \
-    "$APP/frontend/runtime" \
-    "$APP/backend/runtime" \
-    "$APP/frontend/web/assets" \
-    "$APP/backend/web/assets" \
-    "$PUBLIC/assets"
+chmod -R 775 "$APP/frontend/runtime"
+chmod -R 775 "$APP/backend/runtime"
+chmod -R 775 "$APP/frontend/web/assets"
+chmod -R 775 "$APP/backend/web/assets"
+chmod -R 775 "$PUBLIC/assets"
 
 
+echo "=========================================="
 echo "Deployment completed successfully."
+echo ""
+echo "Frontend:"
+echo "https://miraclewebtechnologies.com/"
+echo ""
+echo "Backend:"
+echo "https://admin.miraclewebtechnologies.com/"
+echo "=========================================="

@@ -1,5 +1,6 @@
 <?php
 
+use common\helpers\GridFilterHelper;
 use yii\helpers\Html;
 use yii\grid\GridView;
 
@@ -43,33 +44,38 @@ $this->params['breadcrumbs'][] = $this->title;
             ],
             [
                 'attribute' => 'source',
+                'label' => 'Lead Source',
                 'headerOptions' => ['class' => 'text-primary', 'style' => 'width: 180px;'],
-                // ADVANCED DROPDOWN SEARCH FILTER SELECTOR
-                'filter' => [
-                    'Google Search' => 'Google Search',
-                    'Social Media' => 'Social Media Referral',
-                    'Direct Client' => 'Direct/Inbound Call',
-                    'Frontend Request' => 'Website Audit Form'
-                ]
+                'filter' => GridFilterHelper::select2(
+                    $searchModel,
+                    'source',
+                    [
+                        'Google Search' => 'Google Search',
+                        'Social Media' => 'Social Media Referral',
+                        'Direct Client' => 'Direct/Inbound Call',
+                        'Frontend Request' => 'Website Audit Form'
+                    ],
+                    'All Sources'
+                ),
+                'format' => 'raw',
             ],
             [
-                'attribute' => 'date_range',
-                'label' => 'Capture Timeline Date',
-                'headerOptions' => ['class' => 'text-primary', 'style' => 'width: 250px;'],
-                'value' => function ($model) {
-                    return date('d M Y', strtotime($model->created_at));
+                'attribute' => 'created_at',
+                'label' => 'Created At',
+                'filter' => GridFilterHelper::dateRange(
+                        $searchModel,
+                        'created_at_range',
+                        'Created date'
+                ),
+                'value' => static function (User $model): string {
+                    return Yii::$app->formatter->asDatetime(
+                            $model->created_at,
+                            'php:d M Y, h:i A'
+                    );
                 },
-                // 📅 INTEGRATED ADAPTIVE GRAPHICAL DATE RANGE PICKER WIDGET
-                'filter' => \kartik\daterange\DateRangePicker::widget([
-                    'model' => $searchModel,
-                    'attribute' => 'date_range',
-                    'convertFormat' => true,
-                    'pluginOptions' => [
-                        'locale' => ['format' => 'Y-m-d', 'separator' => ' - '],
-                        'opens' => 'left'
-                    ],
-                    'options' => ['class' => 'form-control form-control-sm', 'placeholder' => 'Select range spread...']
-                ]),
+                'headerOptions' => [
+                    'style' => 'width: 220px;',
+                ],
             ],
             [
                 'class' => 'yii\grid\ActionColumn',

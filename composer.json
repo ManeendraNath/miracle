@@ -21,7 +21,8 @@
         "vlucas/phpdotenv": "^5.7",
         "rmrevin/yii2-fontawesome": "~3.5",
         "hail812/yii2-adminlte3": "^1.1",
-        "kartik-v/yii2-date-range": "dev-master"
+        "kartik-v/yii2-date-range": "dev-master",
+        "kartik-v/yii2-widget-select2": "^2.2"
     },
     "require-dev": {
         "codeception/c3": "^2.8",

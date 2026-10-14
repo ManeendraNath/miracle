@@ -2,27 +2,54 @@
 
 namespace backend\models\searches;
 
-use yii\data\ActiveDataProvider;
 use common\models\Lead;
+use yii\base\Model;
+use yii\data\ActiveDataProvider;
 
+/**
+ * LeadSearch represents the model behind the search form of `common\models\Lead`. 
+ */
 class LeadSearch extends Lead
 {
+    
+    use \common\models\traits\DateRangeSearchTrait;
 
-    public $date_range;
+    public ?string $created_at_range = null;
     public $search_keyword; // Handles universal searches across name/phone/email at once
 
+    /**
+     * {@inheritdoc}
+     */
     public function rules()
     {
         return [
-            [['id'], 'integer'],
+            [['id', 'created_at', 'updated_at'], 'integer'],
             [['lead_name', 'phone_number', 'source', 'status', 'date_range', 'search_keyword'], 'safe'],
         ];
     }
 
-    public function search($params)
+    /**
+     * {@inheritdoc}
+     */
+    public function scenarios()
+    {
+        // bypass scenarios() implementation in the parent class
+        return Model::scenarios();
+    }
+
+    /**
+     * Creates data provider instance with search query applied
+     *
+     * @param array $params
+     * @param string|null $formName Form name to be used into `->load()` method.
+     *
+     * @return ActiveDataProvider
+     */
+    public function search($params, $formName = null)
     {
         $query = Lead::find();
 
+        // add conditions that should always apply here 
         $dataProvider = new ActiveDataProvider([
             'query' => $query,
             'sort' => [
@@ -32,8 +59,10 @@ class LeadSearch extends Lead
             'pagination' => ['pageSize' => 15]
         ]);
 
-        $this->load($params);
+        $this->load($params, $formName);
         if (!$this->validate()) {
+            // uncomment the following line if you do not want to return any records when validation fails 
+            // $query->where('0=1'); 
             return $dataProvider;
         }
 
@@ -54,12 +83,12 @@ class LeadSearch extends Lead
         // 3. COLUMN BY COLUMN DATA GRID FIELDS FILTERS
         $query->andFilterWhere(['like', 'lead_name', $this->lead_name])
                 ->andFilterWhere(['like', 'phone_number', $this->phone_number])
+                ->andFilterWhere(['like', 'status', $this->status])
                 ->andFilterWhere(['like', 'source', $this->source]);
 
         // 📅 4. HIGH-PRECISION DATE RANGE CALENDAR PARAMETERS PICKER INTERCEPTOR
         if (!empty($this->date_range) && strpos($this->date_range, ' - ') !== false) {
-            list($start_date, $end_date) = explode(' - ', $this->date_range);
-            $query->andFilterWhere(['between', 'DATE(created_at)', $start_date, $end_date]);
+            $this->applyTimestampDateRange($query, 'lead.created_at', $this->date_range);
         }
 
         return $dataProvider;

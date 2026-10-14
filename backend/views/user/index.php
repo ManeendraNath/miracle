@@ -1,17 +1,18 @@
 <?php
-use yii\helpers\Html;
+
+use common\helpers\GridFilterHelper;
+use common\models\User;
 use yii\grid\GridView;
-use yii\helpers\Url;
+use yii\helpers\Html;
 
 /** @var yii\web\View $this */
 /** @var common\models\UserSearch $searchModel */
 /** @var yii\data\ActiveDataProvider $dataProvider */
-
 $this->title = 'Client Users Directory';
 $this->params['breadcrumbs'][] = $this->title;
 ?>
 <div class="user-index card card-outline card-primary p-4 shadow-sm">
-    
+
     <!-- Cleaned Header Wrapper Section (No Duplicate h1 elements) -->
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
@@ -20,7 +21,8 @@ $this->params['breadcrumbs'][] = $this->title;
         <?= Html::a('<i class="fas fa-user-plus mr-1"></i> Add New Client', ['create'], ['class' => 'btn btn-success px-4 rounded-pill shadow-sm']) ?>
     </div>
 
-    <?= GridView::widget([
+    <?=
+    GridView::widget([
         'dataProvider' => $dataProvider,
         'filterModel' => $searchModel, // Enables column data filters row
         'tableOptions' => ['class' => 'table table-striped table-hover align-middle border'],
@@ -36,7 +38,7 @@ $this->params['breadcrumbs'][] = $this->title;
                 'label' => 'Client Username',
                 'headerOptions' => ['class' => 'text-primary font-weight-bold'],
                 'format' => 'raw',
-                'value' => function($model) {
+                'value' => function ($model) {
                     return '<span class="font-weight-bold text-dark">' . Html::encode($model->username) . '</span>';
                 }
             ],
@@ -47,29 +49,80 @@ $this->params['breadcrumbs'][] = $this->title;
             ],
             [
                 'attribute' => 'status',
-                'label' => 'Account Status (Click to Toggle)',
-                'headerOptions' => ['class' => 'text-primary font-weight-bold', 'style' => 'width: 220px;'],
+                'label' => 'Account Status',
+                'filter' => GridFilterHelper::select2(
+                        $searchModel,
+                        'status',
+                        User::getStatuses(),
+                        'All Statuses'
+                ),
                 'format' => 'raw',
-                'value' => function($model) {
-                    $isActive = (int)$model->status === 10;
-                    $badge = $isActive ? 'badge-success' : 'badge-secondary';
-                    $icon = $isActive ? 'fa-user-check' : 'fa-user-slash';
-                    $text = $isActive ? 'Active / Unlocked' : 'Inactive / Suspended';
+                'value' => static function (User $model): string {
+                    $status = (int) $model->status;
+                    $statuses = User::getStatuses();
 
-                    // ⚡ Clickable Status Switch Link targeting the Toggle action endpoint
-                    return Html::a(
-                        "<i class='fas {$icon} mr-1'></i> {$text}",
-                        ['toggle-status', 'id' => $model->id],
-                        [
-                            'class' => "badge {$badge} p-2 text-decoration-none shadow-sm d-inline-block w-100 text-center",
-                            'title' => 'Click to alter status configuration privilege',
-                            'data' => [
-                                'confirm' => "Are you sure you want to change the active status for client account '{$model->username}'?",
-                                'method' => 'post',
-                            ],
-                        ]
+                    switch ($status) {
+                        case User::getStatusActive():
+                            $class = 'bg-success';
+                            break;
+
+                        case User::getStatusSuspended():
+                            $class = 'bg-warning text-dark';
+                            break;
+
+                        case User::getStatusDeleted():
+                            $class = 'bg-danger';
+                            break;
+
+                        default:
+                            $class = 'bg-secondary';
+                            break;
+                    }
+
+                    return Html::tag(
+                            'span',
+                            Html::encode($statuses[$status] ?? 'Unknown'),
+                            [
+                                'class' => 'badge ' . $class,
+                            ]
                     );
-                }
+                },
+            ],
+            [
+                'attribute' => 'created_at',
+                'label' => 'Created At',
+                'filter' => GridFilterHelper::dateRange(
+                        $searchModel,
+                        'created_at_range',
+                        'Created date'
+                ),
+                'value' => static function (User $model): string {
+                    return Yii::$app->formatter->asDatetime(
+                            $model->created_at,
+                            'php:d M Y, h:i A'
+                    );
+                },
+                'headerOptions' => [
+                    'style' => 'width: 220px;',
+                ],
+            ],
+            [
+                'attribute' => 'updated_at',
+                'label' => 'Updated At',
+                'filter' => GridFilterHelper::dateRange(
+                        $searchModel,
+                        'updated_at_range',
+                        'Updated date'
+                ),
+                'value' => static function (User $model): string {
+                    return Yii::$app->formatter->asDatetime(
+                            $model->updated_at,
+                            'php:d M Y, h:i A'
+                    );
+                },
+                'headerOptions' => [
+                    'style' => 'width: 220px;',
+                ],
             ],
             [
                 'class' => 'yii\grid\ActionColumn',
@@ -91,5 +144,6 @@ $this->params['breadcrumbs'][] = $this->title;
                 ],
             ],
         ],
-    ]); ?>
+    ]);
+    ?>
 </div>

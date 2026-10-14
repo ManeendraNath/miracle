@@ -1,11 +1,10 @@
 <?php
 
-namespace common\models;
+namespace common\models\traits;
 
 use Yii;
-use yii\behaviors\TimestampBehavior;
 
-trait BaseIdentity
+trait BaseIdentityTrait
 {
 
     public static function getRoleSuperAdmin(): string
@@ -62,17 +61,7 @@ trait BaseIdentity
     {
         return [
             ['status', 'default', 'value' => self::getStatusInactive()],
-            ['status', 'in', 'range' => [self::getStatusActive(), self::getStatusInactive(), self::getStatusDeleted()]],
-        ];
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function behaviors(): array
-    {
-        return [
-            TimestampBehavior::class,
+            ['status', 'in', 'range' => array_keys(self::getStatuses())],
         ];
     }
 

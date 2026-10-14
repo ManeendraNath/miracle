@@ -65,19 +65,22 @@ class UserController extends BaseController
     public function actionCreate()
     {
         $model = new User();
-        // Set default role scenarios if missing
-        if ($this->request->isPost && $model->load($this->request->post())) {
-            $model->setPassword($this->request->post('password_input'));
-            $model->generateAuthKey();
-            $model->status = User::STATUS_ACTIVE;
 
-            if ($model->save()) {
-                Yii::$app->session->setFlash('success', 'New client profile generated successfully.');
-                return $this->redirect(['index']);
-            }
-        } else {
-            $model->loadDefaultValues();
+        if (
+                $model->load(Yii::$app->request->post()) && $model->save()
+        ) {
+            Yii::$app->session->setFlash(
+                    'success',
+                    'User created successfully.'
+            );
+
+            return $this->redirect([
+                        'view',
+                        'id' => $model->id,
+            ]);
         }
+
+        $model->clearPlainPassword();
 
         return $this->render('create', [
                     'model' => $model,
@@ -94,11 +97,23 @@ class UserController extends BaseController
     public function actionUpdate($id)
     {
         $model = $this->findModel($id);
+        $model->clearPlainPassword();
 
-        if ($this->request->isPost && $model->load($this->request->post()) && $model->save()) {
-            Yii::$app->session->setFlash('success', 'Client profile updated successfully.');
-            return $this->redirect(['view', 'id' => $model->id]);
+        if (
+                $model->load(Yii::$app->request->post()) && $model->save()
+        ) {
+            Yii::$app->session->setFlash(
+                    'success',
+                    'User updated successfully.'
+            );
+
+            return $this->redirect([
+                        'view',
+                        'id' => $model->id,
+            ]);
         }
+
+        $model->clearPlainPassword();
 
         return $this->render('update', [
                     'model' => $model,

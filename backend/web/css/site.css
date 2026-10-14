@@ -401,3 +401,56 @@ body {
 .text-secondary {
     font-size: 13px;
 }
+
+/* User management form */
+.user-admin-form .card {
+    max-width: 900px;
+}
+
+.user-admin-form .form-label {
+    font-weight: 500;
+    margin-bottom: .4rem;
+}
+
+.user-admin-form .form-control,
+.user-admin-form .form-select {
+    min-height: 38px;
+}
+
+.user-admin-form .invalid-feedback {
+    font-size: 12px;
+}
+/* User details */
+.user-view .card {
+    overflow: hidden;
+}
+
+.user-view .card-header h5 {
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.user-view .card-header .text-muted {
+    font-size: 13px;
+}
+
+.user-view .detail-view {
+    font-size: 14px;
+}
+
+.user-view .detail-view th {
+    width: 220px;
+    font-weight: 500;
+    background-color: var(--bs-tertiary-bg);
+}
+
+.user-view .detail-view td,
+.user-view .detail-view th {
+    padding: .75rem 1rem;
+}
+
+.user-view .badge {
+    font-size: 12px;
+    font-weight: 500;
+    padding: .4rem .65rem;
+}

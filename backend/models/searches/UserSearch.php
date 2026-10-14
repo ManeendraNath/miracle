@@ -1,73 +1,122 @@
 <?php
 
+declare(strict_types=1);
+
 namespace backend\models\searches;
 
+use common\models\traits\DateRangeSearchTrait;
+use common\models\User;
 use yii\base\Model;
 use yii\data\ActiveDataProvider;
-use common\models\User;
 
 /**
- * UserSearch represents the model behind the search form of `common\models\User`.
+ * Search model for common\models\User.
  */
 class UserSearch extends User
 {
+    use DateRangeSearchTrait;
+
+    public ?string $created_at_range = null;
+
+    public ?string $updated_at_range = null;
+
     /**
      * {@inheritdoc}
      */
     public function rules(): array
     {
         return [
-            [['id', 'status', 'created_at', 'updated_at'], 'integer'],
-            [['username', 'email', 'role'], 'safe'],
+            [
+                ['id', 'status'],
+                'integer',
+            ],
+
+            [
+                [
+                    'username',
+                    'email',
+                    'created_at_range',
+                    'updated_at_range',
+                ],
+                'safe',
+            ],
         ];
     }
 
     /**
-     * {@inheritdoc}
+     * Search models intentionally bypass the parent model scenarios.
      */
-    public function scenarios()
+    public function scenarios(): array
     {
-        // bypass scenarios() implementation in the parent class
         return Model::scenarios();
     }
 
     /**
-     * Creates data provider instance with search query applied
-     *
-     * @param array $params
-     * @param string|null $formName Form name to be used into `->load()` method.
-     *
-     * @return ActiveDataProvider
+     * Build filtered User data provider.
      */
-    public function search($params, $formName = null)
-    {
+    public function search(
+        array $params,
+        ?string $formName = null
+    ): ActiveDataProvider {
         $query = User::find();
-
-        // add conditions that should always apply here
 
         $dataProvider = new ActiveDataProvider([
             'query' => $query,
+
+            'sort' => [
+                'defaultOrder' => [
+                    'id' => SORT_DESC,
+                ],
+            ],
+
+            'pagination' => [
+                'pageSize' => 20,
+            ],
         ]);
 
         $this->load($params, $formName);
 
         if (!$this->validate()) {
-            // uncomment the following line if you do not want to return any records when validation fails
-            // $query->where('0=1');
             return $dataProvider;
         }
 
-        // grid filtering conditions
+        /*
+         * Exact-value filters.
+         */
         $query->andFilterWhere([
             'id' => $this->id,
             'status' => $this->status,
-            'created_at' => $this->created_at,
-            'updated_at' => $this->updated_at,
         ]);
 
-        $query->andFilterWhere(['like', 'username', $this->username])
-            ->andFilterWhere(['like', 'email', $this->email])
-            ->andFilterWhere(['like', 'role', $this->verification_token]);
+        /*
+         * Text filters.
+         */
+        $query
+            ->andFilterWhere([
+                'like',
+                'username',
+                $this->username,
+            ])
+            ->andFilterWhere([
+                'like',
+                'email',
+                $this->email,
+            ]);
+
+        /*
+         * UNIX timestamp date-range filters.
+         */
+        $this->applyTimestampDateRange(
+            $query,
+            'user.created_at',
+            $this->created_at_range
+        );
+
+        $this->applyTimestampDateRange(
+            $query,
+            'user.updated_at',
+            $this->updated_at_range
+        );
 
         return $dataProvider;
     }

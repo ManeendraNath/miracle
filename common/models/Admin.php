@@ -1,7 +1,12 @@
 <?php
 
+declare(strict_types=1);
+
 namespace common\models;
 
+use common\models\traits\AutoTimestampTrait;
+use common\models\traits\BaseIdentityTrait;
+use common\models\traits\PasswordManagementTrait;
 use yii\helpers\ArrayHelper;
 use yii\web\IdentityInterface;
 
@@ -22,34 +27,70 @@ use yii\web\IdentityInterface;
 class Admin extends base\Admin implements IdentityInterface
 {
 
-    use \common\models\BaseIdentity;
+    use BaseIdentityTrait;
+    use AutoTimestampTrait;
+    use PasswordManagementTrait;
 
     /**
      * {@inheritdoc}
      */
     public function rules(): array
     {
-        $rules = ArrayHelper::merge($this->getBaseIdentityRules(), [
-            [['username', 'email', 'password_hash'], 'required'],
-            [['username', 'email'], 'unique'],
-            ['email', 'email'],
-            [['username', 'email', 'password_hash', 'role'], 'string', 'max' => 255],
+        $rules = ArrayHelper::merge(
+                $this->getBaseIdentityRules(),
+                $this->getPasswordRules(),
+                [
+                    [['username', 'email'], 'required'],
+                    [['username', 'email'], 'unique'],
+                    ['email', 'email'],
+                    [['username', 'email', 'role'], 'string', 'max' => 255],
+                    ['role', 'default', 'value' => self::getRoleManager()],
+                    ['role', 'in', 'range' => [
+                            self::getRoleSuperAdmin(),
+                            self::getRoleAdmin(),
+                            self::getRoleManager(),
+                        ],
+                    ],
+                ]
+        );
 
-            // Validate that assigned role falls within defined constraints
-            ['role', 'default', 'value' => self::getRoleManager()],
-            ['role', 'in', 'range' => [self::getRoleSuperAdmin(), self::getRoleAdmin(), self::getRoleManager()]],
-            ['status', 'default', 'value' => self::getStatusInactive()],
-            ['status', 'in', 'range' => [array_keys(self::getStatuses())]],
-        ]);
         return ArrayHelper::merge(parent::rules(), $rules);
     }
 
+    /**
+     * Prepare internally-managed fields before validation.
+     */
+    #[\Override]
+    public function beforeValidate(): bool
+    {
+        $this->prepareTimestampAttributes();
+        $this->preparePasswordAttributes();
+
+        return parent::beforeValidate();
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    #[\Override]
+    public function attributeLabels(): array
+    {
+        $attribute = [
+            'username' => 'Username',
+            'email' => 'Email Address',
+            'password' => $this->isNewRecord ? 'Password' : 'New Password',
+            'role' => 'Role',
+            'status' => 'Account Status',
+        ];
+        return ArrayHelper::merge(parent::attributeLabels(), $attribute);
+    }
+
     // ======================================================================
-    // ROLE ASSIGNMENT ENGINE CHECKERS
+    // ROLE ASSIGNMENT CHECKERS
     // ======================================================================
 
     /**
-     * Checks if current logged admin user possesses full root system permissions.
+     * Whether this administrator has the Superadmin role.
      */
     public function isSuperAdmin(): bool
     {
@@ -57,7 +98,7 @@ class Admin extends base\Admin implements IdentityInterface
     }
 
     /**
-     * Checks if current admin user possesses standard operational administration access.
+     * Whether this administrator has administrative access.
      */
     public function isAdmin(): bool
     {

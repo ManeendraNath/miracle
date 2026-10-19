@@ -176,11 +176,11 @@ $money = static function (float $amount): string {
                             </td>
 
                             <td class="text-end text-nowrap">
-                                <?= money($item->unit_price) ?>
+                                <?= $money($item->unit_price) ?>
                             </td>
 
                             <td class="text-end fw-semibold text-nowrap">
-                                <?= money($item->total_price) ?>
+                                <?= $money($item->total_price) ?>
                             </td>
 
                         </tr>
@@ -190,10 +190,7 @@ $money = static function (float $amount): string {
                 <?php else: ?>
 
                     <tr>
-                        <td
-                            colspan="5"
-                            class="text-center text-muted py-4"
-                            >
+                        <td colspan="5" class="text-center text-muted py-4">
                             No invoice items are available.
                         </td>
                     </tr>

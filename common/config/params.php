@@ -18,5 +18,12 @@ return [
             'sgst' => 9.00,
             'igst' => 18.00,
         ],
+        'payment' => [
+            'accountName' => $_ENV['BILLING_BANK_ACCOUNT_NAME'] ?? '',
+            'bankName' => $_ENV['BILLING_BANK_NAME'] ?? '',
+            'accountNumber' => $_ENV['BILLING_BANK_ACCOUNT_NUMBER'] ?? '',
+            'ifsc' => $_ENV['BILLING_BANK_IFSC'] ?? '',
+            'upiId' => $_ENV['BILLING_UPI_ID'] ?? '',
+        ],
     ],
 ];

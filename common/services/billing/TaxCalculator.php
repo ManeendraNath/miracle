@@ -14,6 +14,13 @@ final class TaxCalculator
             CustomerBillingProfile $profile
     ): array
     {
+        if (!(bool) $profile->is_gst_applicable) {
+            return [
+                'cgst' => 0.00,
+                'sgst' => 0.00,
+                'igst' => 0.00,
+            ];
+        }
         $billingConfig = Yii::$app->params['billing'] ?? [];
 
         $gstConfig = $billingConfig['gst'] ?? [];

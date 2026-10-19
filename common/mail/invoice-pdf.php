@@ -6,6 +6,12 @@ use yii\helpers\Html;
 $money = static function (float $amount): string {
     return 'INR ' . number_format($amount, 2);
 };
+$payment = Yii::$app->params['billing']['payment'] ?? [];
+$cgstAmount = round((float) $invoice->total_payable * 0, 2);
+$taxableAmount = max(0, round((float) $invoice->subtotal_amount - (float) $invoice->discount_amount, 2));
+$cgstAmount = round($taxableAmount * ((float) $invoice->cgst_percent / 100), 2);
+$sgstAmount = round($taxableAmount * ((float) $invoice->sgst_percent / 100), 2);
+$igstAmount = round($taxableAmount * ((float) $invoice->igst_percent / 100), 2);
 ?>
 
 <style>
@@ -64,6 +70,35 @@ $money = static function (float $amount): string {
         font-size: 12pt;
         font-weight: bold;
     }
+    .payment-box {
+        margin-top: 28px;
+        border: 1px solid #cbd5e1;
+        padding: 12px;
+        background: #f8fafc;
+    }
+
+    .payment-title {
+        font-size: 12pt;
+        font-weight: bold;
+        margin-bottom: 8px;
+        color: #0f172a;
+    }
+
+    .payment-details td {
+        padding: 3px 6px;
+    }
+
+    .payment-label {
+        font-weight: bold;
+        width: 32%;
+    }
+
+    .payment-note {
+        margin-top: 10px;
+        font-size: 9pt;
+        color: #475569;
+    }
+
 </style>
 
 <div class="header">
@@ -230,10 +265,13 @@ $money = static function (float $amount): string {
 </table>
 
 <table class="summary">
-    <tr>
-        <td width="65%"></td>
 
-        <td>Subtotal</td>
+    <tr>
+        <td width="60%"></td>
+
+        <td>
+            Subtotal
+        </td>
 
         <td class="right">
             <?=
@@ -245,24 +283,64 @@ $money = static function (float $amount): string {
         </td>
     </tr>
 
+    <tr>
+        <td></td>
+
+        <td>
+            Discount
+        </td>
+
+        <td class="right">
+            -
+            <?=
+            $money(
+                    (float)
+                    $invoice->discount_amount
+            )
+            ?>
+        </td>
+    </tr>
+
+    <tr>
+        <td></td>
+
+        <td>
+            Taxable Amount
+        </td>
+
+        <td class="right">
+            <?=
+            $money(
+                    $taxableAmount
+            )
+            ?>
+        </td>
+    </tr>
+
     <?php
     if (
-            (float)
-            $invoice->discount_amount > 0
+            (float) $invoice->cgst_percent > 0
     ):
         ?>
 
         <tr>
             <td></td>
 
-            <td>Discount</td>
+            <td>
+                CGST
+                (<?=
+                number_format(
+                        (float)
+                        $invoice->cgst_percent,
+                        2
+                )
+                ?>%)
+            </td>
 
             <td class="right">
-                -
                 <?=
                 $money(
-                        (float)
-                        $invoice->discount_amount
+                        $cgstAmount
                 )
                 ?>
             </td>
@@ -270,58 +348,74 @@ $money = static function (float $amount): string {
 
     <?php endif; ?>
 
-    <tr>
-        <td></td>
+    <?php
+    if (
+            (float) $invoice->sgst_percent > 0
+    ):
+        ?>
 
-        <td>CGST</td>
+        <tr>
+            <td></td>
 
-        <td class="right">
-            <?=
-            number_format(
-                    (float)
-                    $invoice->cgst_percent,
-                    2
-            )
-            ?>%
-        </td>
-    </tr>
+            <td>
+                SGST
+                (<?=
+                number_format(
+                        (float)
+                        $invoice->sgst_percent,
+                        2
+                )
+                ?>%)
+            </td>
 
-    <tr>
-        <td></td>
+            <td class="right">
+                <?=
+                $money(
+                        $sgstAmount
+                )
+                ?>
+            </td>
+        </tr>
 
-        <td>SGST</td>
+    <?php endif; ?>
 
-        <td class="right">
-            <?=
-            number_format(
-                    (float)
-                    $invoice->sgst_percent,
-                    2
-            )
-            ?>%
-        </td>
-    </tr>
+    <?php
+    if (
+            (float) $invoice->igst_percent > 0
+    ):
+        ?>
 
-    <tr>
-        <td></td>
+        <tr>
+            <td></td>
 
-        <td>IGST</td>
+            <td>
+                IGST
+                (<?=
+                number_format(
+                        (float)
+                        $invoice->igst_percent,
+                        2
+                )
+                ?>%)
+            </td>
 
-        <td class="right">
-            <?=
-            number_format(
-                    (float)
-                    $invoice->igst_percent,
-                    2
-            )
-            ?>%
-        </td>
-    </tr>
+            <td class="right">
+                <?=
+                $money(
+                        $igstAmount
+                )
+                ?>
+            </td>
+        </tr>
+
+    <?php endif; ?>
 
     <tr class="total">
         <td></td>
 
-        <td>Total Payable</td>
+        <td>
+            Total Payable
+        </td>
 
         <td class="right">
             <?=
@@ -335,13 +429,147 @@ $money = static function (float $amount): string {
 
     <tr>
         <td></td>
-        <td>Received</td>
-        <td class="right"><?= $money((float) $capturedAmount) ?></td>
+
+        <td>
+            Received
+        </td>
+
+        <td class="right">
+            <?=
+            $money(
+                    (float)
+                    $capturedAmount
+            )
+            ?>
+        </td>
     </tr>
 
     <tr>
         <td></td>
-        <td>Outstanding</td>
-        <td class="right"><?= $money((float) $outstandingAmount); ?></td>
+
+        <td>
+            Outstanding
+        </td>
+
+        <td class="right">
+            <?=
+            $money(
+                    (float)
+                    $outstandingAmount
+            )
+            ?>
+        </td>
     </tr>
+
 </table>
+
+<!-- MANUAL PAYMENT DETAIL -->
+<div class="payment-box">
+
+    <div class="payment-title">
+        Payment Details
+    </div>
+
+    <table class="payment-details">
+
+        <?php if (
+            !empty($payment['accountName'])
+        ): ?>
+
+            <tr>
+                <td class="payment-label">
+                    Account Name
+                </td>
+
+                <td>
+                    <?= Html::encode(
+                        $payment['accountName']
+                    ) ?>
+                </td>
+            </tr>
+
+        <?php endif; ?>
+
+        <?php if (
+            !empty($payment['bankName'])
+        ): ?>
+
+            <tr>
+                <td class="payment-label">
+                    Bank
+                </td>
+
+                <td>
+                    <?= Html::encode(
+                        $payment['bankName']
+                    ) ?>
+                </td>
+            </tr>
+
+        <?php endif; ?>
+
+        <?php if (
+            !empty($payment['accountNumber'])
+        ): ?>
+
+            <tr>
+                <td class="payment-label">
+                    Account Number
+                </td>
+
+                <td>
+                    <?= Html::encode(
+                        $payment['accountNumber']
+                    ) ?>
+                </td>
+            </tr>
+
+        <?php endif; ?>
+
+        <?php if (
+            !empty($payment['ifsc'])
+        ): ?>
+
+            <tr>
+                <td class="payment-label">
+                    IFSC
+                </td>
+
+                <td>
+                    <?= Html::encode(
+                        $payment['ifsc']
+                    ) ?>
+                </td>
+            </tr>
+
+        <?php endif; ?>
+
+        <?php if (
+            !empty($payment['upiId'])
+        ): ?>
+
+            <tr>
+                <td class="payment-label">
+                    UPI ID
+                </td>
+
+                <td>
+                    <?= Html::encode(
+                        $payment['upiId']
+                    ) ?>
+                </td>
+            </tr>
+
+        <?php endif; ?>
+
+    </table>
+
+    <div class="payment-note">
+        Please mention invoice
+        <?= Html::encode(
+            $invoice->invoice_number
+        ) ?>
+        in the payment reference or remarks.
+    </div>
+
+</div>

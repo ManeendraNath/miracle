@@ -91,16 +91,16 @@ $form->errorSummary(
 
         <div class="row">
             <div class="col-md-4">
-<?=
-        $form
-        ->field(
-                $model,
-                'city'
-        )
-        ->textInput([
-            'maxlength' => true,
-        ])
-?>
+                <?=
+                        $form
+                        ->field(
+                                $model,
+                                'city'
+                        )
+                        ->textInput([
+                            'maxlength' => true,
+                        ])
+                ?>
             </div>
 
             <div class="col-md-4">
@@ -117,31 +117,31 @@ $form->errorSummary(
             </div>
 
             <div class="col-md-4">
-        <?=
-                $form
-                ->field(
-                        $model,
-                        'state_code'
-                )
-                ->textInput([
-                    'maxlength' => true,
-                    'placeholder' =>
-                    'e.g. 07',
-                ])
-        ?>
-            </div>
-        </div>
-
                 <?=
                         $form
                         ->field(
                                 $model,
-                                'postal_code'
+                                'state_code'
                         )
                         ->textInput([
                             'maxlength' => true,
+                            'placeholder' =>
+                            'e.g. 07',
                         ])
                 ?>
+            </div>
+        </div>
+
+        <?=
+                $form
+                ->field(
+                        $model,
+                        'postal_code'
+                )
+                ->textInput([
+                    'maxlength' => true,
+                ])
+        ?>
 
         <div class="row">
             <div class="col-md-6">
@@ -158,42 +158,78 @@ $form->errorSummary(
             </div>
 
             <div class="col-md-6">
-        <?=
-                $form
-                ->field(
-                        $model,
-                        'pan'
-                )
-                ->textInput([
-                    'maxlength' => true,
-                ])
-        ?>
+                <?=
+                        $form
+                        ->field(
+                                $model,
+                                'pan'
+                        )
+                        ->textInput([
+                            'maxlength' => true,
+                        ])
+                ?>
             </div>
         </div>
 
+        <div class="row">
+            <div class="col-md-6">
+                <?=
+                        $form
+                        ->field(
+                                $model,
+                                'is_gst_applicable'
+                        )
+                        ->dropDownList([
+                            0 => 'No',
+                            1 => 'Yes',
+                        ])
+                ?>
+            </div>
+
+            <div class="col-md-6">
+                <?=
+                        $form
+                        ->field(
+                                $model,
+                                'default_discount_amount'
+                        )
+                        ->input(
+                                'number',
+                                [
+                                    'min' => 0,
+                                    'step' => '0.01',
+                                    'placeholder' => '0.00',
+                                ]
+                        )
+                        ->hint(
+                                'Fixed discount applied to automatically generated invoices.'
+                        )
+                ?>
+            </div>
+        </div>
     </div>
 
     <div class="card-footer">
-<?=
-Html::submitButton(
-        'Save Billing Profile',
-        [
-            'class' =>
-            'btn btn-primary px-4',
-        ]
-)
-?>
+        <?=
+        Html::submitButton(
+                'Save Billing Profile',
+                [
+                    'class' =>
+                    'btn btn-primary px-4',
+                ]
+        )
+        ?>
 
-<?=
-Html::a(
-        'Cancel',
-        ['index'],
-        [
-            'class' =>
-            'btn btn-outline-secondary',
-        ]
-)
-?>
+        <?=
+        Html::a(
+                'Cancel',
+                ['index'],
+                [
+                    'class' =>
+                    'btn btn-outline-secondary',
+                ]
+        )
+        ?>
     </div>
 </div>
 

@@ -1,89 +1,150 @@
 <?php
 
+use common\helpers\GridActionHelper;
 use common\helpers\GridFilterHelper;
-use yii\helpers\Html;
+use common\helpers\GridPaginationHelper;
+use common\helpers\GridViewHelper;
+use common\models\Lead;
 use yii\grid\GridView;
+use yii\helpers\Html;
 
 /** @var yii\web\View $this */
-/** @var backend\models\LeadSearch $searchModel */
+/** @var backend\models\searches\LeadSearch $searchModel */
 /** @var yii\data\ActiveDataProvider $dataProvider */
-$this->title = 'Inbound Leads CRM';
+$this->title = 'Leads';
 $this->params['breadcrumbs'][] = $this->title;
-?>
-<div class="lead-index card card-outline card-dark p-4 shadow-sm">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <div>
-            <small class="text-muted">Process incoming agency customer deals, pipeline opportunities windows, and context logs</small>
-        </div>
-        <?= Html::a('<i class="fas fa-plus-square mr-1"></i> Add Manual Lead', ['create'], ['class' => 'btn btn-dark px-4 rounded-pill shadow-sm font-weight-bold']) ?>
-    </div>
 
-    <?=
-    GridView::widget([
-        'dataProvider' => $dataProvider,
-        'filterModel' => $searchModel, // Mounts the advanced filter engine rows layout
-        'tableOptions' => ['class' => 'table table-striped table-hover align-middle border'],
-        'summaryOptions' => ['class' => 'text-muted small mb-3'],
-        'columns' => [
-            [
-                'class' => 'yii\grid\SerialColumn',
-                'header' => '#',
-                'headerOptions' => ['style' => 'width: 50px;', 'class' => 'text-primary'],
-            ],
-            [
-                'attribute' => 'lead_name',
-                'headerOptions' => ['class' => 'text-primary'],
-                'format' => 'raw',
-                'value' => function ($model) {
-                    return '<span class="font-weight-bold text-dark">' . Html::encode($model->lead_name) . '</span>';
-                }
-            ],
-            [
-                'attribute' => 'phone_number',
-                'headerOptions' => ['class' => 'text-primary', 'style' => 'width: 180px;']
-            ],
-            [
-                'attribute' => 'source',
-                'label' => 'Lead Source',
-                'headerOptions' => ['class' => 'text-primary', 'style' => 'width: 180px;'],
-                'filter' => GridFilterHelper::select2(
-                    $searchModel,
-                    'source',
-                    [
-                        'Google Search' => 'Google Search',
-                        'Social Media' => 'Social Media Referral',
-                        'Direct Client' => 'Direct/Inbound Call',
-                        'Frontend Request' => 'Website Audit Form'
-                    ],
-                    'All Sources'
-                ),
-                'format' => 'raw',
-            ],
-            [
-                'attribute' => 'created_at',
-                'label' => 'Created At',
-                'filter' => GridFilterHelper::dateRange(
-                        $searchModel,
-                        'created_at_range',
-                        'Created date'
-                ),
-                'value' => static function (User $model): string {
-                    return Yii::$app->formatter->asDatetime(
-                            $model->created_at,
-                            'php:d M Y, h:i A'
-                    );
-                },
-                'headerOptions' => [
-                    'style' => 'width: 220px;',
+/*
+ * Registers shared GridView functionality:
+ *
+ * - Bootstrap 5 tooltips
+ * - Dynamic records-per-page dropdown
+ */
+GridViewHelper::register($this);
+?>
+
+<div class="lead-index">
+
+    <div class="card card-outline card-primary shadow-sm">
+
+        <!-- Header -->
+        <div class="card-header">
+
+            <div class="d-flex justify-content-between align-items-center">
+
+                <div>
+                    <div class="text-muted small">
+                        Manage incoming client enquiries and lead sources.
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- Grid -->
+        <div class="card-body p-0">
+
+            <?=
+            GridView::widget([
+                'dataProvider' => $dataProvider,
+                'filterModel' => $searchModel,
+                /*
+                 * Shared:
+                 *
+                 * - summary
+                 * - records-per-page dropdown
+                 * - responsive table
+                 * - pager
+                 */
+                'layout' => GridPaginationHelper::gridLayout(),
+                'summaryOptions' => [
+                    'class' => 'text-muted small mb-0',
                 ],
-            ],
-            [
-                'class' => 'yii\grid\ActionColumn',
-                'header' => 'Control Box',
-                'headerOptions' => ['class' => 'text-primary text-center', 'style' => 'width: 100px;'],
-                'contentOptions' => ['class' => 'text-center'],
-            ],
-        ],
-    ]);
-    ?>
+                'tableOptions' => [
+                    'class' =>
+                    'table table-hover table-striped align-middle mb-0',
+                ],
+                'filterRowOptions' => [
+                    'class' => 'bg-light',
+                ],
+                'columns' => [
+                    /*
+                     * Serial Number
+                     */
+                    [
+                        'class' => 'yii\grid\SerialColumn',
+                        'header' => '#',
+                        'headerOptions' => [
+                            'style' => 'width: 60px;',
+                            'class' => 'text-center',
+                        ],
+                        'contentOptions' => ['class' => 'text-center text-muted'],
+                    ],
+                    /*
+                     * Lead Name
+                     */
+                    [
+                        'attribute' => 'lead_name',
+                        'label' => 'Lead',
+                        'format' => 'raw',
+                        'value' => static function (Lead $model): string {
+                            return Html::tag(
+                                    'span',
+                                    Html::encode($model->lead_name),
+                                    ['class' => 'fw-semibold text-dark']
+                            );
+                        },
+                        'headerOptions' => ['style' => 'min-width: 170px;'],
+                    ],
+                    /*
+                     * Phone Number
+                     */
+                    [
+                        'attribute' => 'phone_number',
+                        'label' => 'Phone',
+                        'value' => static function (Lead $model): string {
+                            return $model->phone_number ?: '-';
+                        },
+                        'headerOptions' => ['style' => 'min-width: 140px;'],
+                        'contentOptions' => ['class' => 'text-nowrap'],
+                    ],
+                    /*
+                     * Lead Source
+                     */
+                    [
+                        'attribute' => 'source',
+                        'label' => 'Source',
+                        'filter' => GridFilterHelper::select2($searchModel, 'source', Lead::getSources(), 'All Sources'),
+                        'value' => static function (Lead $model): string {
+                            return $model->source ?: '-';
+                        },
+                        'headerOptions' => ['style' => 'min-width: 180px;'],
+                    ],
+                    /*
+                     * Created Date
+                     *
+                     * created_at is a UNIX timestamp and the
+                     * SearchModel uses created_at_range.
+                     */
+                    [
+                        'attribute' => 'created_at',
+                        'label' => 'Created',
+                        'filter' => GridFilterHelper::dateRange($searchModel, 'created_at_range', 'Created date'),
+                        'value' => static function (Lead $model): string {
+                            return Yii::$app->formatter->asDatetime($model->created_at, 'php:d M Y, h:i A');
+                        },
+                        'headerOptions' => ['style' => 'min-width: 190px;'],
+                        'contentOptions' => ['class' => 'text-nowrap'],
+                    ],
+                    /*
+                     * Shared CRUD actions.
+                     */
+                    GridActionHelper::crudColumn(deleteMessage: 'Are you sure you want to delete this lead?'),
+                ],
+            ])
+            ?>
+        </div>
+    </div>
 </div>

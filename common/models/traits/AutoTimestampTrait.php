@@ -4,49 +4,65 @@ declare(strict_types=1);
 
 namespace common\models\traits;
 
-use yii\behaviors\TimestampBehavior;
-
 /**
- * Shared timestamp handling for application models whose generated
- * base models require created_at / updated_at during validation.
+ * Automatically manages created_at and updated_at UNIX timestamps.
  *
- * Generated base models remain untouched.
+ * This trait is intended for ActiveRecord models whose generated
+ * base-model validation rules require created_at / updated_at.
+ *
+ * Important:
+ * - Timestamps are populated when saving an ActiveRecord.
+ * - Calling validate() on a SearchModel must not create timestamps.
+ * - created_at is populated only for new records.
+ * - updated_at is refreshed on every save.
  *
  * @author trivedi
  */
 trait AutoTimestampTrait
 {
+    /**
+     * Flag indicating that the model is currently being saved.
+     */
+    private bool $_autoTimestampSaving = false;
 
     /**
-     * Adds automatic timestamp handling on insert/update.
+     * Marks the model as being saved before Yii starts validation.
+     *
+     * @param bool $runValidation
+     * @param array|null $attributeNames
+     *
+     * @return bool
      */
-    public function behaviors(): array
+    public function save($runValidation = true, $attributeNames = null)
     {
-        $behaviors = parent::behaviors();
-
-        $behaviors['timestamp'] = [
-            'class' => TimestampBehavior::class,
-            'createdAtAttribute' => 'created_at',
-            'updatedAtAttribute' => 'updated_at',
-        ];
-
-        return $behaviors;
+        $this->_autoTimestampSaving = true;
+        try {
+            return parent::save($runValidation, $attributeNames);
+        } finally {
+            $this->_autoTimestampSaving = false;
+        }
     }
 
     /**
-     * Generated base models may require these attributes
-     * during validation, so initialise them beforehand.
+     * Populate timestamps before validation only during save().
+     */
+    public function beforeValidate(): bool
+    {
+        if ($this->_autoTimestampSaving) {
+            $this->prepareTimestampAttributes();
+        }
+        return parent::beforeValidate();
+    }
+
+    /**
+     * Populate timestamp attributes.
      */
     protected function prepareTimestampAttributes(): void
     {
         $now = time();
-
         if ($this->isNewRecord && empty($this->created_at)) {
             $this->created_at = $now;
         }
-
-        if (empty($this->updated_at)) {
-            $this->updated_at = $now;
-        }
+        $this->updated_at = $now;
     }
 }

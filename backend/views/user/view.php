@@ -80,18 +80,6 @@ switch ((int) $model->status) {
                         ]
                     ) ?>
 
-                    <?= Html::a(
-                        'Delete',
-                        ['delete', 'id' => $model->id],
-                        [
-                            'class' => 'btn btn-danger',
-                            'data' => [
-                                'confirm' => 'Are you sure you want to delete this user?',
-                                'method' => 'post',
-                            ],
-                        ]
-                    ) ?>
-
                 </div>
 
             </div>

@@ -124,25 +124,6 @@ $this->params['breadcrumbs'][] = $this->title;
                     'style' => 'width: 220px;',
                 ],
             ],
-            [
-                'class' => 'yii\grid\ActionColumn',
-                'header' => 'Actions Panel',
-                'headerOptions' => ['class' => 'text-primary font-weight-bold text-center', 'style' => 'width: 100px;'],
-                'contentOptions' => ['class' => 'text-center'],
-                'template' => '{delete}',
-                'buttons' => [
-                    'delete' => function ($url, $model) {
-                        return Html::a('<i class="fas fa-trash-alt"></i>', ['delete', 'id' => $model->id], [
-                            'class' => 'btn btn-xs btn-outline-danger px-2 py-1 rounded',
-                            'title' => 'Permanently Erase Profile',
-                            'data' => [
-                                'confirm' => 'This action completely deletes this user from records. Proceed?',
-                                'method' => 'post',
-                            ],
-                        ]);
-                    },
-                ],
-            ],
         ],
     ]);
     ?>

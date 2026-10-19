@@ -9,6 +9,7 @@ use yii\filters\VerbFilter;
 
 class BaseController extends Controller
 {
+
     public function behaviors()
     {
         return [
@@ -32,8 +33,7 @@ class BaseController extends Controller
                                 return false;
                             }
                             // DYNAMIC ROLE CHECK: Matches your actual 'role' database strings perfectly
-                            return (isset($user->role) && strtolower($user->role) === 'superadmin') || 
-                                   strtolower($user->username) === 'superadmin';
+                            return isset($user->role) && strtolower((string) $user->role) === 'superadmin';
                         }
                     ],
                 ],
@@ -44,6 +44,8 @@ class BaseController extends Controller
                     'delete' => ['POST'],
                     'approve' => ['POST'],
                     'reject' => ['POST'],
+                    'cancel' => ['POST'],
+                    'resend-invoice' => ['POST'],
                 ],
             ],
         ];

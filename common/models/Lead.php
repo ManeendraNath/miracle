@@ -2,7 +2,6 @@
 
 namespace common\models;
 
-
 /**
  * This is the model class for table "lead".
  *
@@ -17,5 +16,13 @@ namespace common\models;
 class Lead extends base\Lead
 {
 
-
+    public static function getSources()
+    {
+        return [
+            'Google Search' => 'Google Search',
+            'Social Media' => 'Social Media Referral',
+            'Direct Client' => 'Direct / Inbound Call',
+            'Frontend Request' => 'Website Audit Form',
+        ];
+    }
 }

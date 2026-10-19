@@ -57,15 +57,7 @@ $this->params['breadcrumbs'][] = $this->title;
                 'headerOptions' => ['class' => 'text-primary font-weight-bold'],
                 'format' => 'email',
             ],
-            [
-                'attribute' => 'auth_key',
-                'label' => 'Persistent Cookie Validation Token',
-                'headerOptions' => ['class' => 'text-primary font-weight-bold'],
-                'format' => 'raw',
-                'value' => function($model) {
-                    return '<code class="text-xs text-muted">' . Html::encode(substr($model->auth_key, 0, 15)) . '...</code>';
-                }
-            ],
+            
             [
                 'class' => 'yii\grid\ActionColumn',
                 'header' => 'Actions Panel',

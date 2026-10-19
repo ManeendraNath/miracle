@@ -2,8 +2,10 @@
 
 namespace console\controllers;
 
+use Throwable;
 use Yii;
 use yii\console\Controller;
+use yii\console\ExitCode;
 use yii\helpers\Console;
 use yii\helpers\Html;
 use common\models\Domains;
@@ -12,9 +14,12 @@ use common\models\Maintenance;
 use common\models\InvoiceItem;
 use common\models\Invoice;
 use common\models\User;
+use common\services\billing\AutoBillingService;
+use common\services\billing\InvoiceDeliveryService;
 
 class CronController extends Controller
 {
+
     /**
      * Scans system databases infrastructure thresholds to dispatch expiry email notice warnings.
      * Command execution: php yii cron/check-expiries
@@ -57,14 +62,18 @@ class CronController extends Controller
     public function actionCheckInvoices()
     {
         $this->stdout("Commencing outstanding client invoice verification scan...\n", Console::FG_CYAN);
-        
+
         $tomorrow = date('Y-m-d', strtotime('+1 day'));
-        
+
         // Fetch all invoices that are Unpaid/Partially Paid and due precisely tomorrow
         $invoices = Invoice::find()
-            ->where(['status' => ['Unpaid', 'Partially_Paid']])
-            ->andWhere(['due_date' => $tomorrow])
-            ->all();
+                ->where(['status' => [
+    Invoice::STATUS_UNPAID,
+    Invoice::STATUS_PARTIALLY_PAID,
+]
+])
+                ->andWhere(['due_date' => $tomorrow])
+                ->all();
 
         if (empty($invoices)) {
             $this->stdout("No outstanding invoices due tomorrow ($tomorrow).\n", Console::FG_GREEN);
@@ -76,10 +85,10 @@ class CronController extends Controller
             $client = User::findOne($invoice->user_id);
             if ($client && !empty($client->email)) {
                 $sent = Yii::$app->mailer->compose()
-                    ->setFrom([Yii::$app->params['supportEmail'] => 'Miracle Web Technologies Billing'])
-                    ->setTo($client->email)
-                    ->setSubject("URGENT REMINDER: Invoice #{$invoice->invoice_number} is due tomorrow")
-                    ->setHtmlBody("
+                        ->setFrom([Yii::$app->params['supportEmail'] => 'Miracle Web Technologies Billing'])
+                        ->setTo($client->email)
+                        ->setSubject("URGENT REMINDER: Invoice #{$invoice->invoice_number} is due tomorrow")
+                        ->setHtmlBody("
                         <h3>Hello " . Html::encode($invoice->client_name) . ",</h3>
                         <p>This is an automated operational alert system reminder that your billing statement invoice <strong>#{$invoice->invoice_number}</strong> is due tomorrow (<strong>" . date('d M Y', strtotime($invoice->due_date)) . "</strong>).</p>
                         <ul>
@@ -90,7 +99,7 @@ class CronController extends Controller
                         <br>
                         <p>Regards,<br>Billing Team<br>Miracle Web Technologies</p>
                     ")
-                    ->send();
+                        ->send();
 
                 if ($sent) {
                     $count++;
@@ -110,13 +119,32 @@ class CronController extends Controller
         }
 
         // Defensive check block: Prevent redundant invoice spam alerts if they are already processing an existing payment renewal order
+        $itemType = match ($type) {
+            'domain' =>
+            InvoiceItem::TYPE_DOMAIN,
+            'hosting' =>
+            InvoiceItem::TYPE_HOSTING,
+            'maintenance' =>
+            InvoiceItem::TYPE_MAINTENANCE,
+            default =>
+            throw new \InvalidArgumentException(
+                    'Unsupported reminder service type.'
+            ),
+        };
+
         $alreadyInvoiced = InvoiceItem::find()
-                        ->joinWith('invoice')
-                        ->where([
-                            'item_type' => $type,
-                            'item_id' => $asset->id,
-                            'invoice.status' => 'Unpaid'
-                        ])->exists();
+                ->joinWith('invoice')
+                ->where([
+                    'invoice_item.item_type' =>
+                    $itemType,
+                    'invoice_item.item_id' =>
+                    $asset->id,
+                    'invoice.status' => [
+                        Invoice::STATUS_UNPAID,
+                        Invoice::STATUS_PARTIALLY_PAID,
+                    ],
+                ])
+                ->exists();
 
         if ($alreadyInvoiced) {
             $this->stdout("Skipping alert email notification for $type ($name). Unpaid invoice active.\n", Console::FG_YELLOW);
@@ -139,6 +167,121 @@ class CronController extends Controller
 
         if ($mail->send()) {
             $this->stdout("Successfully dispatched expiry reminder warning notice to {$user->email} for asset: $name\n", Console::FG_GREEN);
+        }
+    }
+
+    /**
+     * Generate automatic renewal invoices for:
+     *
+     * - Domains
+     * - Hosting
+     * - Maintenance
+     *
+     * Usage:
+     *
+     * php yii cron/run-billing
+     */
+    public function actionRunBilling(): int
+    {
+        $mutex = Yii::$app->mutex;
+
+        $lockName = 'miracle:auto-billing';
+
+        if (!$mutex->acquire(
+                        $lockName,
+                        0
+                )) {
+            $this->stdout(
+                    "Billing cron already running.\n",
+                    Console::FG_YELLOW
+            );
+
+            return ExitCode::OK;
+        }
+
+        try {
+            Yii::info(
+                    'Automatic billing cron started.',
+                    __METHOD__
+            );
+
+            $invoices = (new AutoBillingService())
+                    ->run();
+$deliveryService =
+    new InvoiceDeliveryService();
+
+foreach ($invoices as $invoice) {
+    try {
+        $deliveryService->send(
+            $invoice
+        );
+    } catch (\Throwable $e) {
+        Yii::error(
+            [
+                'message' =>
+                    'Automatic invoice email failed.',
+
+                'invoiceId' =>
+                    (int) $invoice->id,
+
+                'invoiceNumber' =>
+                    $invoice->invoice_number,
+
+                'error' =>
+                    $e->getMessage(),
+            ],
+            __METHOD__
+        );
+    }
+}
+            $count = count($invoices);
+
+            Yii::info(
+                    [
+                        'message' =>
+                        'Automatic billing completed.',
+                        'invoiceCount' =>
+                        $count,
+                    ],
+                    __METHOD__
+            );
+
+            $this->stdout(
+                    "Billing completed successfully. "
+                    . "Generated {$count} invoice(s).\n",
+                    Console::FG_GREEN
+            );
+
+            foreach ($invoices as $invoice) {
+                $this->stdout(
+                        sprintf(
+                                "%s | Client #%d | %.2f\n",
+                                $invoice->invoice_number,
+                                $invoice->user_id,
+                                $invoice->total_payable
+                        )
+                );
+            }
+
+            return ExitCode::OK;
+        } catch (\Throwable $e) {
+            Yii::error(
+                    $e,
+                    __METHOD__
+            );
+
+            $this->stderr(
+                    'Billing failed: '
+                    . $e->getMessage()
+                    . PHP_EOL,
+                    Console::FG_RED
+            );
+
+            return ExitCode::UNSPECIFIED_ERROR;
+        } finally {
+            $mutex->release(
+                    $lockName
+            );
         }
     }
 }

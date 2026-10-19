@@ -27,6 +27,7 @@ final class GridFilterHelper
                     'data' => $items,
                     'options' => [
                         'placeholder' => $placeholder,
+                        'class' => 'grid-filter-select',
                     ],
                     'pluginOptions' => [
                         'allowClear' => true,
@@ -38,14 +39,18 @@ final class GridFilterHelper
     /**
      * Reusable date-range GridView filter.
      */
-    public static function dateRange(Model $model, string $attribute, string $placeholder = 'Select date range'): string
+    public static function dateRange(
+            Model $model,
+            string $attribute,
+            string $placeholder = 'Select date range'
+    ): string
     {
         return DateRangePicker::widget([
                     'model' => $model,
                     'attribute' => $attribute,
                     'convertFormat' => true,
                     'options' => [
-                        'class' => 'form-control form-control-sm',
+                        'class' => 'form-control form-control-sm grid-filter-control',
                         'placeholder' => $placeholder,
                         'autocomplete' => 'off',
                     ],
@@ -71,9 +76,7 @@ function (event, picker) {
 JS,
                         'cancel.daterangepicker' => <<<'JS'
 function () {
-    $(this)
-        .val('')
-        .trigger('change');
+    $(this).val('').trigger('change');
 }
 JS,
                     ],

@@ -1,9 +1,20 @@
 <?php
 
+declare(strict_types=1);
+
+use yii\web\Cookie;
+
+$secureCookies = filter_var($_ENV['COOKIE_SECURE'] ?? false, FILTER_VALIDATE_BOOLEAN);
+
 $config = [
     'components' => [
         'request' => [
             'cookieValidationKey' => $_ENV['BACKEND_COOKIE_VALIDATION_KEY'],
+            'csrfCookie' => [
+                'httpOnly' => true,
+                'secure' => $secureCookies,
+                'sameSite' => Cookie::SAME_SITE_LAX
+            ]
         ],
 
         'urlManager' => [

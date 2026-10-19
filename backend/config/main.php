@@ -34,9 +34,6 @@ return [
         ],
         'session' => [
             'name' => 'advanced-backend',
-            'cookieParams' => [
-                'httpOnly' => true,
-            ],
         ],
         'log' => [
             'traceLevel' => YII_DEBUG ? 3 : 0,

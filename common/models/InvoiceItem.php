@@ -1,23 +1,25 @@
 <?php
 
+declare(strict_types=1);
+
 namespace common\models;
 
-use Yii;
-
-/**
- * This is the model class for table "invoice_item".
- *
- * @property int $id
- * @property int $invoice_id
- * @property string $category
- * @property string $description
- * @property string|null $duration_quantity
- * @property float $unit_price
- * @property float $total_price
- *
- * @property Invoice $invoice
- */
 class InvoiceItem extends base\InvoiceItem
 {
+    public const TYPE_DOMAIN = 1;
+    public const TYPE_HOSTING = 2;
+    public const TYPE_MAINTENANCE = 3;
+    public const TYPE_CUSTOM = 4;
+    public const TYPE_ARREARS = 5;
 
+    public static function getTypes(): array
+    {
+        return [
+            self::TYPE_DOMAIN => 'Domain',
+            self::TYPE_HOSTING => 'Hosting',
+            self::TYPE_MAINTENANCE => 'Maintenance',
+            self::TYPE_CUSTOM => 'Custom',
+            self::TYPE_ARREARS => 'Previous Outstanding',
+        ];
+    }
 }

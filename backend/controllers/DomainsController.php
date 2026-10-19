@@ -2,6 +2,7 @@
 
 namespace backend\controllers;
 
+use Yii;
 use backend\models\searches\DomainsSearch;
 use common\models\Domains;
 use yii\web\NotFoundHttpException;
@@ -20,11 +21,10 @@ class DomainsController extends BaseController
     public function actionIndex()
     {
         $searchModel = new DomainsSearch();
-        $dataProvider = $searchModel->search($this->request->queryParams);
-
+        $dataProvider = $searchModel->search(Yii::$app->request->queryParams);
         return $this->render('index', [
-            'searchModel' => $searchModel,
-            'dataProvider' => $dataProvider,
+                    'searchModel' => $searchModel,
+                    'dataProvider' => $dataProvider,
         ]);
     }
 
@@ -37,7 +37,7 @@ class DomainsController extends BaseController
     public function actionView($id)
     {
         return $this->render('view', [
-            'model' => $this->findModel($id),
+                    'model' => $this->findModel($id),
         ]);
     }
 
@@ -49,17 +49,16 @@ class DomainsController extends BaseController
     public function actionCreate()
     {
         $model = new Domains();
-
         if ($this->request->isPost) {
             if ($model->load($this->request->post()) && $model->save()) {
+                Yii::$app->session->setFlash('success', 'Domain created successfully.');
                 return $this->redirect(['view', 'id' => $model->id]);
             }
         } else {
             $model->loadDefaultValues();
         }
-
         return $this->render('create', [
-            'model' => $model,
+                    'model' => $model,
         ]);
     }
 
@@ -73,13 +72,12 @@ class DomainsController extends BaseController
     public function actionUpdate($id)
     {
         $model = $this->findModel($id);
-
         if ($this->request->isPost && $model->load($this->request->post()) && $model->save()) {
+            Yii::$app->session->setFlash('success', 'Domain updated successfully.');
             return $this->redirect(['view', 'id' => $model->id]);
         }
-
         return $this->render('update', [
-            'model' => $model,
+                    'model' => $model,
         ]);
     }
 
@@ -93,7 +91,7 @@ class DomainsController extends BaseController
     public function actionDelete($id)
     {
         $this->findModel($id)->delete();
-
+        Yii::$app->session->setFlash('success', 'Domain deleted successfully.');
         return $this->redirect(['index']);
     }
 
@@ -109,7 +107,6 @@ class DomainsController extends BaseController
         if (($model = Domains::findOne(['id' => $id])) !== null) {
             return $model;
         }
-
-        throw new NotFoundHttpException('The requested page does not exist.');
+        throw new NotFoundHttpException('The requested domain does not exist.');
     }
 }

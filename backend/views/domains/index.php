@@ -1,52 +1,160 @@
 <?php
-use yii\helpers\Html;
+
+use common\helpers\GridActionHelper;
+use common\helpers\GridFilterHelper;
+use common\helpers\GridPaginationHelper;
+use common\helpers\GridViewHelper;
+use common\models\Domains;
+use common\models\User;
 use yii\grid\GridView;
+use yii\helpers\ArrayHelper;
+use yii\helpers\Html;
 
 /** @var yii\web\View $this */
-/** @var common\models\DomainsSearch $searchModel */
+/** @var backend\models\searches\DomainsSearch $searchModel */
 /** @var yii\data\ActiveDataProvider $dataProvider */
-
 $this->title = 'Domains Registry';
 $this->params['breadcrumbs'][] = $this->title;
-?>
-<div class="domains-index card card-outline card-info p-4 shadow-sm">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <div>
-            <small class="text-muted">Monitor active client domain records, nameservers, registration dates, and upcoming expiries</small>
-        </div>
-        <?= Html::a('<i class="fas fa-globe mr-1"></i> Register Domain', ['create'], ['class' => 'btn btn-info px-4 rounded-pill shadow-sm']) ?>
-    </div>
 
-    <?= GridView::widget([
-        'dataProvider' => $dataProvider,
-        'filterModel' => $searchModel,
-        'tableOptions' => ['class' => 'table table-striped table-hover align-middle border'],
-        'summaryOptions' => ['class' => 'text-muted small mb-3'],
-        'columns' => [
-            ['class' => 'yii\grid\SerialColumn', 'headerOptions' => ['style' => 'width: 50px;', 'class' => 'text-primary']],
-            [
-                'attribute' => 'domain_name',
-                'format' => 'raw',
-                'headerOptions' => ['class' => 'text-primary'],
-                'value' => function($model) {
-                    return '<span class="text-dark font-weight-bold">' . Html::encode($model->domain_name) . '</span>';
-                }
-            ],
-            [
-                'attribute' => 'expiry_date',
-                'format' => ['date', 'php:d M Y'],
-                'headerOptions' => ['class' => 'text-primary']
-            ],
-            [
-                'attribute' => 'status',
-                'format' => 'raw',
-                'headerOptions' => ['class' => 'text-primary', 'style' => 'width: 120px;'],
-                'value' => function($model) {
-                    $isActive = (int)$model->status === 1;
-                    return '<span class="badge ' . ($isActive ? 'badge-success' : 'badge-danger') . ' px-2 py-1">' . ($isActive ? 'Live' : 'Expired') . '</span>';
-                }
-            ],
-            ['class' => 'yii\grid\ActionColumn', 'headerOptions' => ['class' => 'text-center', 'style' => 'width: 100px;'], 'contentOptions' => ['class' => 'text-center']],
-        ],
-    ]); ?>
+GridViewHelper::register($this);
+
+/*
+ * User list for the Client GridView filter.
+ *
+ * ID is submitted to DomainsSearch::user_id while the administrator
+ * sees a readable username/email instead of the database ID.
+ */
+$users = ArrayHelper::map(User::find()->orderBy(['username' => SORT_ASC])->all(), 'id', 'username');
+?>
+
+<div class="domains-index">
+    <div class="card card-outline card-primary shadow-sm">
+        <div class="card-header">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="text-muted small">
+                        Manage client domains, registrars,
+                        registration dates and expiry dates.
+                    </div>
+                </div>
+                <?=
+                Html::a(
+                        '<i class="fas fa-plus me-1"></i> Add Domain',
+                        ['create'],
+                        ['class' => 'btn btn-sm btn-primary']
+                )
+                ?>
+            </div>
+        </div>
+        <div class="card-body p-0">
+            <?=
+            GridView::widget([
+                'dataProvider' => $dataProvider,
+                'filterModel' => $searchModel,
+                'layout' => GridPaginationHelper::gridLayout(),
+                'summaryOptions' => ['class' => 'text-muted small mb-3'],
+                'tableOptions' => [
+                    'class' => 'table table-hover table-striped align-middle mb-0',
+                ],
+                'filterRowOptions' => ['class' => 'bg-dark'],
+                'columns' => [
+                    /*
+                     * Serial number
+                     */
+                    [
+                        'class' => 'yii\grid\SerialColumn',
+                        'header' => '#',
+                        'headerOptions' => ['style' => 'width: 60px;', 'class' => 'text-center'],
+                        'contentOptions' => ['class' => 'text-center text-muted'],
+                    ],
+                    /*
+                     * Client
+                     */
+                    [
+                        'attribute' => 'user_id',
+                        'label' => 'Client',
+                        'format' => 'raw',
+                        'value' => static function (Domains $model): string {
+                            if (!$model->user) {
+                                return '<span class="text-muted">-</span>';
+                            }
+                            $username = $model->user->username ?: 'Unknown';
+                            $email = $model->user->email ?: 'Email not available';
+                            return Html::tag(
+                                    'span',
+                                    Html::encode($username),
+                                    [
+                                        'class' => 'fw-semibold text-primary',
+                                        'title' => $email,
+                                        'data-bs-toggle' => 'tooltip',
+                                        'data-bs-placement' => 'top',
+                                        'style' => 'cursor: help;',
+                                    ]
+                            );
+                        },
+                        'filter' => GridFilterHelper::select2($searchModel, 'user_id', $users, 'All Clients'),
+                        'headerOptions' => ['style' => 'min-width: 150px; width: 170px;'],
+                        'contentOptions' => ['class' => 'text-nowrap'],
+                    ],
+                    /*
+                     * Domain Name
+                     */
+                    [
+                        'attribute' => 'domain_url',
+                        'format' => 'raw',
+                        'value' => static function (Domains $model): string {
+                            return Html::tag('span', Html::encode($model->domain_url), ['class' => 'fw-semibold text-dark']);
+                        },
+                        'headerOptions' => ['style' => 'min-width: 200px;'],
+                    ],
+                    /*
+                     * Registrar
+                     */
+                    [
+                        'attribute' => 'registered_date',
+                        'filter' => GridFilterHelper::dateRange($searchModel, 'registered_date_range', 'Registration dates'),
+                        'format' => ['date', 'php:d M Y'],
+                        'headerOptions' => ['style' => 'min-width: 200px;'],
+                        'contentOptions' => ['class' => 'text-nowrap'],
+                    ],
+                    /*
+                     * Expiry Date
+                     */
+                    [
+                        'attribute' => 'current_expiry_date',
+                        'filter' => GridFilterHelper::dateRange($searchModel, 'current_expiry_date_range', 'Expiry dates'),
+                        'format' => ['date', 'php:d M Y'],
+                        'headerOptions' => ['style' => 'min-width: 200px;'],
+                        'contentOptions' => ['class' => 'text-nowrap'],
+                    ],
+                    /*
+                     * Status
+                     */
+                    [
+                        'attribute' => 'status',
+                        'format' => 'raw',
+                        'filter' => GridFilterHelper::select2($searchModel, 'status', Domains::getStatuses(), 'All Statuses'),
+                        'value' => static function (Domains $model): string {
+                            $statuses = Domains::getStatuses();
+                            $label = $statuses[$model->status] ?? 'Unknown';
+                            $class = match ((int) $model->status) {
+                                Domains::STATUS_ACTIVE => 'bg-success',
+                                Domains::STATUS_INACTIVE => 'bg-secondary',
+                                Domains::STATUS_DELETED => 'bg-danger',
+                                default => 'bg-dark',
+                            };
+                            return Html::tag('span', Html::encode($label), ['class' => 'badge ' . $class]);
+                        },
+                        'headerOptions' => ['style' => 'width: 150px;'],
+                        'contentOptions' => ['class' => 'text-center'],
+                    ],
+                    /*
+                     * CRUD actions
+                     */
+                    GridActionHelper::crudColumn(deleteMessage: 'Are you sure you want to delete this domain?'),
+                ],
+            ])
+            ?>
+        </div>
+    </div>
 </div>

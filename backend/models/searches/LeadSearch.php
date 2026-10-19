@@ -2,6 +2,7 @@
 
 namespace backend\models\searches;
 
+use common\helpers\GridPaginationHelper;
 use common\models\Lead;
 use yii\base\Model;
 use yii\data\ActiveDataProvider;
@@ -11,7 +12,7 @@ use yii\data\ActiveDataProvider;
  */
 class LeadSearch extends Lead
 {
-    
+
     use \common\models\traits\DateRangeSearchTrait;
 
     public ?string $created_at_range = null;
@@ -52,11 +53,12 @@ class LeadSearch extends Lead
         // add conditions that should always apply here 
         $dataProvider = new ActiveDataProvider([
             'query' => $query,
-            'sort' => [
-                'defaultOrder' => ['id' => SORT_DESC], // Fresh hot customer requests float to top row
-                'attributes' => ['id', 'lead_name', 'created_at']
+            'pagination' => [
+                'pageSize' => GridPaginationHelper::getPageSize(),
             ],
-            'pagination' => ['pageSize' => 15]
+            'sort' => [
+                'defaultOrder' => ['id' => SORT_DESC],
+            ],
         ]);
 
         $this->load($params, $formName);
@@ -87,10 +89,9 @@ class LeadSearch extends Lead
                 ->andFilterWhere(['like', 'source', $this->source]);
 
         // 📅 4. HIGH-PRECISION DATE RANGE CALENDAR PARAMETERS PICKER INTERCEPTOR
-        if (!empty($this->date_range) && strpos($this->date_range, ' - ') !== false) {
-            $this->applyTimestampDateRange($query, 'lead.created_at', $this->date_range);
+        if (!empty($this->created_at_range) && strpos($this->created_at_range, ' - ') !== false) {
+            $this->applyTimestampDateRange($query, 'lead.created_at', $this->created_at_range);
         }
-
         return $dataProvider;
     }
 }

@@ -1,79 +1,279 @@
 <?php
 
+declare(strict_types=1);
+
 namespace frontend\controllers;
 
+use common\models\Transaction;
+use common\services\billing\PaymentProcessingService;
 use Yii;
+use yii\web\BadRequestHttpException;
 use yii\web\Controller;
 use yii\web\Response;
-use yii\web\BadRequestHttpException;
-use common\models\Invoice;
-use common\models\Transaction;
+use yii\web\ServerErrorHttpException;
 
-class WebhookController extends Controller
+final class WebhookController extends Controller
 {
 
-    // Disable CSRF token mapping matching blocks for external gateway API webhook triggers
     public $enableCsrfValidation = false;
 
-    /**
-     * Automated API callback capture junction endpoint for Razorpay payment triggers
-     * URL path route: https://yourdomain.com
-     */
-    public function actionRazorpay()
+    public function actionRazorpay(): array
     {
         Yii::$app->response->format = Response::FORMAT_JSON;
 
-        $secret = 'YOUR_RAZORPAY_WEBHOOK_SECRET_KEY_TOKEN'; // Set this matching your Razorpay settings profile dashboard
-        $postData = file_get_contents('php://input');
-        $signature = Yii::$app->request->headers->get('X-Razorpay-Signature');
+        $secret = $_ENV['RAZORPAY_WEBHOOK_SECRET'] ?? '';
 
-        // 1. Authenticate Hook Request Validity Security Signature Checklist Verification
-        if (empty($signature) || !$this->verifySignature($postData, $signature, $secret)) {
-            Yii::warning('Rejected fraud webhook event payload injection attempt on signatures.', 'webhook');
-            throw new BadRequestHttpException('Invalid execution signatures payload mapping keys.');
+        if ($secret === '') {
+            Yii::error(
+                    'Razorpay webhook secret is not configured.',
+                    __METHOD__
+            );
+
+            throw new ServerErrorHttpException(
+                            'Webhook is not configured.'
+                    );
         }
 
-        $payload = json_decode($postData, true);
-        if (isset($payload['event']) && $payload['event'] === 'payment.captured') {
+        $body = Yii::$app->request
+                ->getRawBody();
 
-            $paymentEntity = $payload['payload']['payment']['entity'];
-            $orderId = $paymentEntity['order_id']; // Matches Razorpay Order ID reference token
-            $paymentId = $paymentEntity['id'];     // Capture unique transaction code
-            // 2. Identify corresponding internal ledger transaction block row frame instance
-            $transaction = Transaction::findOne(['gateway_order_id' => $orderId]);
+        $signature = Yii::$app->request
+                ->headers
+                ->get(
+                        'X-Razorpay-Signature'
+                );
 
-            if ($transaction !== null && $transaction->status === 'Pending') {
+        if (
+                !is_string($signature) || $signature === '' || !$this->verifySignature(
+                        $body,
+                        $signature,
+                        $secret
+                )
+        ) {
+            Yii::warning(
+                    'Rejected Razorpay webhook with invalid signature.',
+                    __METHOD__
+            );
 
-                // Secure atomic execution data verification tracking metrics directly
-                $transaction->gateway_payment_id = $paymentId;
-                $transaction->status = 'Captured';
-                $transaction->paid_at = time();
-                $transaction->updated_at = time();
-                $transaction->raw_payload = $postData;
+            throw new BadRequestHttpException(
+                            'Invalid webhook signature.'
+                    );
+        }
 
-                if ($transaction->save(false)) {
-                    // Update parent master billing invoice target record
-                    $invoice = $transaction->invoice;
-                    if ($invoice !== null) {
-                        $invoice->status = 'Paid';
-                        $invoice->updated_at = time();
-                        $invoice->save(false); // Triggers the custom automated lifecycle extension behavior system
-                    }
+        try {
+            $payload = json_decode(
+                    $body,
+                    true,
+                    512,
+                    JSON_THROW_ON_ERROR
+            );
+        } catch (\JsonException $e) {
+            throw new BadRequestHttpException(
+                            'Invalid webhook payload.',
+                            0,
+                            $e
+                    );
+        }
 
-                    return ['status' => 'success', 'message' => 'Local database state re-aligned to captured transaction state.'];
-                }
+        if (
+                ($payload['event'] ?? null) !== 'payment.captured'
+        ) {
+            return [
+                'status' => 'ignored',
+            ];
+        }
+
+        $payment = $payload['payload']['payment']['entity'] ?? null;
+
+        if (!is_array($payment)) {
+            throw new BadRequestHttpException(
+                            'Payment information is missing.'
+                    );
+        }
+
+        $orderId = $payment['order_id'] ?? null;
+
+        $paymentId = $payment['id'] ?? null;
+
+        $amountMinor = $payment['amount'] ?? null;
+
+        $currency = $payment['currency'] ?? null;
+
+        if (
+                !is_string($orderId) || $orderId === '' || !is_string($paymentId) || $paymentId === '' || !is_int($amountMinor) || $amountMinor <= 0 || !is_string($currency)
+        ) {
+            throw new BadRequestHttpException(
+                            'Incomplete payment information.'
+                    );
+        }
+
+        if (
+                strtoupper($currency) !== 'INR'
+        ) {
+            throw new BadRequestHttpException(
+                            'Unexpected payment currency.'
+                    );
+        }
+
+        $dbTransaction = Yii::$app->db
+                ->beginTransaction();
+
+        try {
+            $transaction = Transaction::find()
+                    ->where([
+                        'gateway_order_id' =>
+                        $orderId,
+                    ])
+                    ->forUpdate()
+                    ->one();
+
+            if ($transaction === null) {
+                throw new BadRequestHttpException(
+                                'Payment transaction does not exist.'
+                        );
             }
-        }
 
-        return ['status' => 'ignored', 'message' => 'Event type callback execution signature validated but template skipped.'];
+            if (
+                    $transaction->status === Transaction::STATUS_CAPTURED
+            ) {
+                if (
+                        $transaction->gateway_payment_id !== $paymentId
+                ) {
+                    throw new BadRequestHttpException(
+                                    'Captured payment reference does not match.'
+                            );
+                }
+
+                $dbTransaction->commit();
+
+                return [
+                    'status' => 'success',
+                ];
+            }
+
+            if (
+                    $transaction->status !== Transaction::STATUS_PENDING
+            ) {
+                throw new BadRequestHttpException(
+                                'Payment transaction is not pending.'
+                        );
+            }
+
+            $expectedMinorAmount = (int) round(
+                            ((float) $transaction->amount) * 100
+                    );
+
+            if (
+                    $expectedMinorAmount !== $amountMinor
+            ) {
+                throw new BadRequestHttpException(
+                                'Payment amount does not match.'
+                        );
+            }
+
+            if (
+                    !empty(
+                            $transaction
+                            ->gateway_payment_id
+                    ) && $transaction
+                    ->gateway_payment_id !== $paymentId
+            ) {
+                throw new BadRequestHttpException(
+                                'Payment reference does not match.'
+                        );
+            }
+
+            $now = time();
+
+            $transaction->gateway_payment_id = $paymentId;
+
+            $transaction->status = Transaction::STATUS_CAPTURED;
+
+            $transaction->paid_at = $now;
+
+            $transaction->updated_at = $now;
+
+            if (!$transaction->save()) {
+                throw new \RuntimeException(
+                                'Captured payment could not be saved.'
+                        );
+            }
+
+            (new PaymentProcessingService())
+                    ->transactionChanged(
+                            $transaction,
+                            false
+                    );
+
+            $dbTransaction->commit();
+
+            return [
+                'status' => 'success',
+            ];
+        } catch (
+        BadRequestHttpException $e
+        ) {
+            if ($dbTransaction->isActive) {
+                $dbTransaction->rollBack();
+            }
+
+            Yii::warning(
+                    [
+                        'message' =>
+                        'Razorpay webhook rejected.',
+                        'orderId' =>
+                        $orderId,
+                        'paymentId' =>
+                        $paymentId,
+                        'error' =>
+                        $e->getMessage(),
+                    ],
+                    __METHOD__
+            );
+
+            throw $e;
+        } catch (\Throwable $e) {
+            if ($dbTransaction->isActive) {
+                $dbTransaction->rollBack();
+            }
+
+            Yii::error(
+                    [
+                        'message' =>
+                        'Razorpay webhook processing failed.',
+                        'orderId' =>
+                        $orderId,
+                        'paymentId' =>
+                        $paymentId,
+                        'error' =>
+                        $e->getMessage(),
+                    ],
+                    __METHOD__
+            );
+
+            throw new ServerErrorHttpException(
+                            'Payment processing failed.',
+                            0,
+                            $e
+                    );
+        }
     }
 
-    /**
-     * Helper verification function computing native HMAC SHA256 hashes directly
-     */
-    private function verifySignature($body, $signature, $secret)
+    private function verifySignature(
+            string $body,
+            string $signature,
+            string $secret
+    ): bool
     {
-        $expectedSignature = hash_hmac('sha256', $body, $secret);
-        return hash_equals($expectedSignature, $signature);
+        $expected = hash_hmac(
+                'sha256',
+                $body,
+                $secret
+        );
+
+        return hash_equals(
+                $expected,
+                $signature
+        );
     }
 }

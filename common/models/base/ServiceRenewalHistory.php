@@ -17,7 +17,9 @@ use Yii;
  * @property string $start_date Cycle coverage commencement date
  * @property string $end_date Calculated new expiry timestamp threshold
  * @property int $logged_at Timestamp of payment verification execution
+ * @property int|null $billing_event_id
  *
+ * @property BillingEvent $billingEvent
  * @property Invoice $invoice
  * @property Transaction $transaction
  */
@@ -45,14 +47,16 @@ class ServiceRenewalHistory extends \yii\db\ActiveRecord
     public function rules()
     {
         return [
-            [['invoice_id', 'transaction_id'], 'default', 'value' => null],
+            [['invoice_id', 'transaction_id', 'billing_event_id'], 'default', 'value' => null],
             [['renewal_period_months'], 'default', 'value' => 12],
             [['item_type', 'item_id', 'billed_amount', 'start_date', 'end_date', 'logged_at'], 'required'],
             [['item_type'], 'string'],
-            [['item_id', 'invoice_id', 'transaction_id', 'renewal_period_months', 'logged_at'], 'integer'],
+            [['item_id', 'invoice_id', 'transaction_id', 'renewal_period_months', 'logged_at', 'billing_event_id'], 'integer'],
             [['billed_amount'], 'number'],
             [['start_date', 'end_date'], 'safe'],
             ['item_type', 'in', 'range' => array_keys(self::optsItemType())],
+            [['billing_event_id'], 'unique'],
+            [['billing_event_id'], 'exist', 'skipOnError' => true, 'targetClass' => BillingEvent::class, 'targetAttribute' => ['billing_event_id' => 'id']],
             [['invoice_id'], 'exist', 'skipOnError' => true, 'targetClass' => Invoice::class, 'targetAttribute' => ['invoice_id' => 'id']],
             [['transaction_id'], 'exist', 'skipOnError' => true, 'targetClass' => Transaction::class, 'targetAttribute' => ['transaction_id' => 'id']],
         ];
@@ -74,7 +78,18 @@ class ServiceRenewalHistory extends \yii\db\ActiveRecord
             'start_date' => 'Start Date',
             'end_date' => 'End Date',
             'logged_at' => 'Logged At',
+            'billing_event_id' => 'Billing Event ID',
         ];
+    }
+
+    /**
+     * Gets query for [[BillingEvent]].
+     *
+     * @return \yii\db\ActiveQuery
+     */
+    public function getBillingEvent()
+    {
+        return $this->hasOne(BillingEvent::class, ['id' => 'billing_event_id']);
     }
 
     /**

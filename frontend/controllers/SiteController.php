@@ -104,7 +104,9 @@ class SiteController extends Controller
     public function actionLogin(): string|Response
     {
         if (!Yii::$app->user->isGuest) {
-            return $this->goHome();
+            return $this->redirect([
+    '/dashboard/index',
+]);
         }
 
         $model = new LoginForm();
@@ -163,23 +165,23 @@ class SiteController extends Controller
     public function actionAudit()
     {
         $model = new AuditRequest();
-        if ($model->load(Yii::$app->request->post()) && $model->save()) {
-            $adminEmail = CustomYii::getSetting('email_1', 'info@miraclewebtechnologies.com');
+        if ($model->load(Yii::$app->request->post())) {
+            $model->user_ip = Yii::$app->request->userIP;
+            if ($model->save()) {
+                $adminEmail = CustomYii::getSetting('email_1', 'info@miraclewebtechnologies.com');
 
-            Yii::$app->mailer->compose()
-                    ->setTo($adminEmail)
-                    ->setFrom([$model->email => $model->name])
-                    ->setSubject('⚡ CRITICAL LOGS: New Inbound Systems Audit Request')
-                    ->setTextBody("New Lead Received!\n\nName: {$model->name}\nFramework: {$model->current_framework}\nEnvironment: {$model->hosting_environment}")
-                    ->send();
+                Yii::$app->mailer->compose()
+                        ->setTo($adminEmail)
+                        ->setFrom([$model->email => $model->name])
+                        ->setSubject('CRITICAL LOGS: New Inbound Systems Audit Request')
+                        ->setTextBody("New Lead Received!\n\nName: {$model->name}\nFramework: {$model->current_framework}\nEnvironment: {$model->hosting_environment}")
+                        ->send();
 
-            Yii::$app->session->setFlash('success', 'Your system matrix data has been securely logged. Our engineers are reviewing your case.');
-            return $this->refresh();
+                Yii::$app->session->setFlash('success', 'Your system matrix data has been securely logged. Our engineers are reviewing your case.');
+                return $this->refresh();
+            }
         }
-
-        return $this->render('audit', [
-                    'model' => $model,
-        ]);
+        return $this->render('audit', ['model' => $model]);
     }
 
     /**

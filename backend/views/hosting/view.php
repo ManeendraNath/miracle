@@ -32,7 +32,7 @@ $this->params['breadcrumbs'][] = $this->title;
             'primary_domain',
             'cpanel_ip',
             'cpanel_username',
-            'cpanel_password',
+            //'cpanel_password',
             'current_expiry_date',
             'status',
             'created_at',

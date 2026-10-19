@@ -1,47 +1,134 @@
 <?php
+declare(strict_types=1);
 
+use common\models\Transaction;
 use yii\helpers\Html;
 use yii\widgets\ActiveForm;
 
-/** @var yii\web\View $this */
-/** @var common\models\Transaction $model */
-/** @var yii\widgets\ActiveForm $form */
+$form = ActiveForm::begin([
+    'id' =>
+    'transaction-form',
+        ]);
 ?>
 
-<div class="transaction-form">
+<?=
+$form->errorSummary(
+        $model,
+        [
+            'class' =>
+            'alert alert-danger',
+        ]
+)
+?>
 
-    <?php $form = ActiveForm::begin(); ?>
+<div class="card shadow-sm">
 
-    <?= $form->field($model, 'invoice_id')->textInput() ?>
-
-    <?= $form->field($model, 'gateway_id')->textInput() ?>
-
-    <?= $form->field($model, 'gateway_payment_id')->textInput(['maxlength' => true]) ?>
-
-    <?= $form->field($model, 'gateway_order_id')->textInput(['maxlength' => true]) ?>
-
-    <?= $form->field($model, 'amount')->textInput(['maxlength' => true]) ?>
-
-    <?= $form->field($model, 'gateway_fee')->textInput(['maxlength' => true]) ?>
-
-    <?= $form->field($model, 'status')->dropDownList([ 'Pending' => 'Pending', 'Authorized' => 'Authorized', 'Captured' => 'Captured', 'Failed' => 'Failed', 'Refunded' => 'Refunded', ], ['prompt' => '']) ?>
-
-    <?= $form->field($model, 'user_payment_notes')->textarea(['rows' => 6]) ?>
-
-    <?= $form->field($model, 'payment_receipt_file')->textInput(['maxlength' => true]) ?>
-
-    <?= $form->field($model, 'raw_payload')->textarea(['rows' => 6]) ?>
-
-    <?= $form->field($model, 'paid_at')->textInput() ?>
-
-    <?= $form->field($model, 'created_at')->textInput() ?>
-
-    <?= $form->field($model, 'updated_at')->textInput() ?>
-
-    <div class="form-group">
-        <?= Html::submitButton('Save', ['class' => 'btn btn-success']) ?>
+    <div class="card-header bg-light">
+        <strong>Payment Transaction</strong>
     </div>
 
-    <?php ActiveForm::end(); ?>
+    <div class="card-body">
+
+        <?=
+                $form
+                ->field(
+                        $model,
+                        'invoice_id'
+                )
+                ->input(
+                        'number',
+                        [
+                            'min' => 1,
+                        ]
+                )
+        ?>
+
+        <?=
+                $form
+                ->field(
+                        $model,
+                        'gateway_id'
+                )
+                ->dropDownList(
+                        [
+                            2 =>
+                            'Manual UPI / Bank Transfer',
+                        ],
+                        [
+                            'prompt' =>
+                            'Select Payment Method',
+                        ]
+                )
+        ?>
+
+        <?=
+                $form
+                ->field(
+                        $model,
+                        'gateway_payment_id'
+                )
+                ->textInput([
+                    'maxlength' => true,
+                    'placeholder' =>
+                    'UTR / Payment Reference Number',
+                ])
+        ?>
+
+        <?=
+                $form
+                ->field(
+                        $model,
+                        'amount'
+                )
+                ->input(
+                        'number',
+                        [
+                            'min' => '0.01',
+                            'step' => '0.01',
+                        ]
+                )
+        ?>
+
+        <?=
+                $form
+                ->field(
+                        $model,
+                        'user_payment_notes'
+                )
+                ->textarea([
+                    'rows' => 4,
+                    'placeholder' =>
+                    'Optional payment notes',
+                ])
+        ?>
+
+    </div>
+
+    <div class="card-footer">
+
+        <?=
+        Html::submitButton(
+                $model->isNewRecord ? 'Create Pending Transaction' : 'Update Transaction',
+                [
+                    'class' =>
+                    'btn btn-primary px-4',
+                ]
+        )
+        ?>
+
+<?=
+Html::a(
+        'Cancel',
+        ['index'],
+        [
+            'class' =>
+            'btn btn-outline-secondary',
+        ]
+)
+?>
+
+    </div>
 
 </div>
+
+<?php ActiveForm::end(); ?>

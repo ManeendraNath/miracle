@@ -24,12 +24,20 @@ use yii\bootstrap5\NavBar;
         // 💡 UPDATED ROUTE POINTER: Maps seamlessly onto our beautiful rule keys
         ['label' => 'Infrastructure Audit ⚡', 'url' => ['/site/audit'], 'linkOptions' => ['style' => 'font-weight: 600; color: #00a3e0 !important;']],
         ['label' => 'Reach Us', 'url' => ['/site/contact']],
-
     ];
 
     if (Yii::$app->user->isGuest) {
         $menuItems[] = ['label' => 'Portal Access', 'url' => ['/site/login'], 'linkOptions' => ['style' => 'font-weight: 500;']];
     } else {
+        $menuItems[] = [
+            'label' => 'Dashboard',
+            'url' => ['/dashboard/index'],
+        ];
+
+        $menuItems[] = [
+            'label' => 'My Invoices',
+            'url' => ['/invoice/index'],
+        ];
         $menuItems[] = '<li>'
                 . Html::beginForm(['/site/logout'], 'post', ['class' => 'd-inline'])
                 . Html::submitButton(

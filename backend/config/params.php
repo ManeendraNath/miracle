@@ -1,5 +1,5 @@
 <?php
 
-return [
-    'adminEmail' => 'admin@example.com',
-];
+declare(strict_types=1);
+
+return [];

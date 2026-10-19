@@ -1,11 +1,11 @@
 <?php
+
 use yii\helpers\Html;
 use yii\grid\GridView;
 
 /** @var yii\web\View $this */
 /** @var common\models\HostingSearch $searchModel */
 /** @var yii\data\ActiveDataProvider $dataProvider */
-
 $this->title = 'Hosting Subscriptions';
 $this->params['breadcrumbs'][] = $this->title;
 ?>
@@ -17,7 +17,8 @@ $this->params['breadcrumbs'][] = $this->title;
         <?= Html::a('<i class="fas fa-server mr-1"></i> Add Hosting Package', ['create'], ['class' => 'btn btn-success px-4 rounded-pill shadow-sm']) ?>
     </div>
 
-    <?= GridView::widget([
+    <?=
+    GridView::widget([
         'dataProvider' => $dataProvider,
         'filterModel' => $searchModel,
         'tableOptions' => ['class' => 'table table-striped table-hover align-middle border'],
@@ -25,24 +26,26 @@ $this->params['breadcrumbs'][] = $this->title;
         'columns' => [
             ['class' => 'yii\grid\SerialColumn', 'headerOptions' => ['style' => 'width: 50px;', 'class' => 'text-primary']],
             [
-                'attribute' => 'server_ip',
-                'headerOptions' => ['class' => 'text-primary'],
-                'value' => function($model) { return Html::encode($model->server_ip); }
+                'attribute' => 'primary_domain',
+                'label' => 'Primary Domain',
+                'format' => 'text',
             ],
             [
-                'attribute' => 'package_name',
-                'headerOptions' => ['class' => 'text-primary']
+                'attribute' => 'cpanel_ip',
+                'label' => 'cPanel IP',
+                'format' => 'text',
             ],
             [
                 'attribute' => 'status',
                 'format' => 'raw',
                 'headerOptions' => ['class' => 'text-primary', 'style' => 'width: 120px;'],
-                'value' => function($model) {
-                    $isActive = (int)$model->status === 1;
+                'value' => function ($model) {
+                    $isActive = (int) $model->status === 1;
                     return '<span class="badge ' . ($isActive ? 'badge-success' : 'badge-warning') . ' px-2 py-1">' . ($isActive ? 'Active' : 'Suspended') . '</span>';
                 }
             ],
             ['class' => 'yii\grid\ActionColumn', 'headerOptions' => ['class' => 'text-center', 'style' => 'width: 100px;'], 'contentOptions' => ['class' => 'text-center']],
         ],
-    ]); ?>
+    ]);
+    ?>
 </div>

@@ -16,8 +16,12 @@ use Yii;
  * @property int $quantity
  * @property float $unit_price
  * @property float $total_price
+ * @property int|null $source_invoice_id
+ * @property int|null $billing_event_id
  *
+ * @property BillingEvent $billingEvent
  * @property Invoice $invoice
+ * @property Invoice $sourceInvoice
  */
 class InvoiceItem extends \yii\db\ActiveRecord
 {
@@ -37,15 +41,18 @@ class InvoiceItem extends \yii\db\ActiveRecord
     public function rules()
     {
         return [
-            [['item_id'], 'default', 'value' => null],
+            [['item_id', 'source_invoice_id', 'billing_event_id'], 'default', 'value' => null],
             [['item_type'], 'default', 'value' => 4],
             [['quantity'], 'default', 'value' => 1],
             [['invoice_id', 'category', 'description', 'unit_price', 'total_price'], 'required'],
-            [['invoice_id', 'item_type', 'item_id', 'quantity'], 'integer'],
+            [['invoice_id', 'item_type', 'item_id', 'quantity', 'source_invoice_id', 'billing_event_id'], 'integer'],
             [['description'], 'string'],
             [['unit_price', 'total_price'], 'number'],
             [['category'], 'string', 'max' => 100],
+            [['billing_event_id'], 'unique'],
+            [['billing_event_id'], 'exist', 'skipOnError' => true, 'targetClass' => BillingEvent::class, 'targetAttribute' => ['billing_event_id' => 'id']],
             [['invoice_id'], 'exist', 'skipOnError' => true, 'targetClass' => Invoice::class, 'targetAttribute' => ['invoice_id' => 'id']],
+            [['source_invoice_id'], 'exist', 'skipOnError' => true, 'targetClass' => Invoice::class, 'targetAttribute' => ['source_invoice_id' => 'id']],
         ];
     }
 
@@ -64,7 +71,19 @@ class InvoiceItem extends \yii\db\ActiveRecord
             'quantity' => 'Quantity',
             'unit_price' => 'Unit Price',
             'total_price' => 'Total Price',
+            'source_invoice_id' => 'Source Invoice ID',
+            'billing_event_id' => 'Billing Event ID',
         ];
+    }
+
+    /**
+     * Gets query for [[BillingEvent]].
+     *
+     * @return \yii\db\ActiveQuery
+     */
+    public function getBillingEvent()
+    {
+        return $this->hasOne(BillingEvent::class, ['id' => 'billing_event_id']);
     }
 
     /**
@@ -75,6 +94,16 @@ class InvoiceItem extends \yii\db\ActiveRecord
     public function getInvoice()
     {
         return $this->hasOne(Invoice::class, ['id' => 'invoice_id']);
+    }
+
+    /**
+     * Gets query for [[SourceInvoice]].
+     *
+     * @return \yii\db\ActiveQuery
+     */
+    public function getSourceInvoice()
+    {
+        return $this->hasOne(Invoice::class, ['id' => 'source_invoice_id']);
     }
 
 }

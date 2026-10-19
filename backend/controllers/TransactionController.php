@@ -1,27 +1,39 @@
 <?php
 
+declare(strict_types=1);
+
 namespace backend\controllers;
 
-use Yii;
 use backend\models\searches\TransactionSearch;
 use common\models\Transaction;
+use common\services\billing\PaymentProcessingService;
+use Yii;
 use yii\web\NotFoundHttpException;
 
 /**
- * TransactionController implements the CRUD actions for Transaction model.
+ * TransactionController
+ *
+ * Handles transaction administration.
+ *
+ * Important:
+ * - Invoice payment status is NOT changed directly here.
+ * - PaymentProcessingService recalculates invoice status from
+ *   captured transactions.
+ * - Financial transaction records are never physically deleted.
  */
 class TransactionController extends BaseController
 {
 
     /**
-     * Lists all Transaction models.
-     *
-     * @return string
+     * Lists all transactions.
      */
     public function actionIndex()
     {
         $searchModel = new TransactionSearch();
-        $dataProvider = $searchModel->search($this->request->queryParams);
+
+        $dataProvider = $searchModel->search(
+                $this->request->queryParams
+        );
 
         return $this->render('index', [
                     'searchModel' => $searchModel,
@@ -30,12 +42,9 @@ class TransactionController extends BaseController
     }
 
     /**
-     * Displays a single Transaction model.
-     * @param int $id ID
-     * @return string
-     * @throws NotFoundHttpException if the model cannot be found
+     * Displays a single transaction.
      */
-    public function actionView($id)
+    public function actionView(int $id)
     {
         return $this->render('view', [
                     'model' => $this->findModel($id),
@@ -43,17 +52,57 @@ class TransactionController extends BaseController
     }
 
     /**
-     * Creates a new Transaction model.
-     * If creation is successful, the browser will be redirected to the 'view' page.
-     * @return string|\yii\web\Response
+     * Create a transaction.
+     *
+     * This supports:
+     * - Manual transactions
+     * - Bank deposits
+     * - UPI payments
+     * - Gateway transactions entered from admin
+     *
+     * If the transaction is created directly as Captured,
+     * invoice reconciliation happens immediately.
      */
     public function actionCreate()
     {
         $model = new Transaction();
 
-        if ($this->request->isPost) {
-            if ($model->load($this->request->post()) && $model->save()) {
-                return $this->redirect(['view', 'id' => $model->id]);
+        if (
+                $this->request->isPost && $model->load($this->request->post())
+        ) {
+            try {
+                $model->status = Transaction::STATUS_PENDING;
+
+                $model->paid_at = null;
+
+                $model->gateway_order_id = null;
+
+                $model->gateway_fee = 0.00;
+
+                $model->raw_payload = null;
+
+                $model->created_at = time();
+
+                $model->updated_at = time();
+
+                $this->saveAndProcessPayment($model);
+
+                Yii::$app->session->setFlash(
+                        'success',
+                        'Transaction created successfully.'
+                );
+
+                return $this->redirect([
+                            'view',
+                            'id' => $model->id,
+                ]);
+            } catch (\Throwable $e) {
+                Yii::error($e, __METHOD__);
+
+                Yii::$app->session->setFlash(
+                        'error',
+                        $e->getMessage()
+                );
             }
         } else {
             $model->loadDefaultValues();
@@ -65,18 +114,67 @@ class TransactionController extends BaseController
     }
 
     /**
-     * Updates an existing Transaction model.
-     * If update is successful, the browser will be redirected to the 'view' page.
-     * @param int $id ID
-     * @return string|\yii\web\Response
-     * @throws NotFoundHttpException if the model cannot be found
+     * Update an existing transaction.
+     *
+     * Any status/amount change causes invoice payment
+     * reconciliation.
      */
-    public function actionUpdate($id)
+    public function actionUpdate(int $id)
     {
         $model = $this->findModel($id);
 
-        if ($this->request->isPost && $model->load($this->request->post()) && $model->save()) {
-            return $this->redirect(['view', 'id' => $model->id]);
+        /*
+         * Captured/refunded financial records should not normally
+         * be edited through general CRUD.
+         *
+         * Captured payments should go through explicit financial
+         * workflows such as refund rather than arbitrary editing.
+         */
+        if (
+                in_array(
+                        $model->status,
+                        [
+                            Transaction::STATUS_CAPTURED,
+                            Transaction::STATUS_REFUNDED,
+                        ],
+                        true
+                )
+        ) {
+            Yii::$app->session->setFlash(
+                    'error',
+                    'Captured or refunded transactions '
+                    . 'cannot be edited through general transaction editing.'
+            );
+
+            return $this->redirect([
+                        'view',
+                        'id' => $model->id,
+            ]);
+        }
+
+        if (
+                $this->request->isPost && $model->load($this->request->post())
+        ) {
+            try {
+                $this->saveAndProcessPayment($model);
+
+                Yii::$app->session->setFlash(
+                        'success',
+                        'Transaction updated successfully.'
+                );
+
+                return $this->redirect([
+                            'view',
+                            'id' => $model->id,
+                ]);
+            } catch (\Throwable $e) {
+                Yii::error($e, __METHOD__);
+
+                Yii::$app->session->setFlash(
+                        'error',
+                        $e->getMessage()
+                );
+            }
         }
 
         return $this->render('update', [
@@ -85,80 +183,217 @@ class TransactionController extends BaseController
     }
 
     /**
-     * Action: Approve a user-submitted manual UPI payment reference
+     * Approve a user-submitted manual payment.
+     *
+     * IMPORTANT:
+     *
+     * This DOES NOT directly mark the invoice Paid.
+     *
+     * Instead:
+     *
+     * Transaction -> Captured
+     *      ↓
+     * PaymentProcessingService
+     *      ↓
+     * SUM(all Captured transactions)
+     *      ↓
+     * Unpaid / Partially_Paid / Paid
+     *      ↓
+     * Paid -> renewal fulfilment
      */
-    public function actionApprove($id)
+    public function actionApprove(int $id)
     {
-        $transaction = $this->findModel($id);
+        $model = $this->findModel($id);
 
-        if ($transaction->status === 'Pending') {
-            $transaction->status = 'Captured';
-            $transaction->paid_at = time();
-            $transaction->updated_at = time();
+        if (
+                $model->status !== Transaction::STATUS_PENDING
+        ) {
+            Yii::$app->session->setFlash(
+                    'warning',
+                    'Only pending transactions can be approved.'
+            );
 
-            if ($transaction->save(false)) {
-                // Find parent bill statement invoice layout block instance
-                $invoice = $transaction->invoice;
-                if ($invoice !== null) {
-                    $invoice->status = 'Paid';
-                    $invoice->updated_at = time();
-                    $invoice->save(false); // Triggers the automated renewal behavior system loop safely
-                }
-                Yii::$app->session->setFlash('success', 'UPI Transaction reference confirmed successfully. Account extended.');
-            } else {
-                Yii::$app->session->setFlash('error', 'Unable to complete verification check operations.');
-            }
+            return $this->redirect([
+                        'view',
+                        'id' => $model->id,
+            ]);
         }
 
-        return $this->redirect(['view', 'id' => $id]);
-    }
+        try {
+            $model->status = Transaction::STATUS_CAPTURED;
 
-    /**
-     * Action: Reject an invalid or fake manual transaction reference check string
-     */
-    public function actionReject($id)
-    {
-        $transaction = $this->findModel($id);
+            $model->paid_at = time();
 
-        if ($transaction->status === 'Pending') {
-            $transaction->status = 'Failed';
-            $transaction->updated_at = time();
+            $model->updated_at = time();
 
-            if ($transaction->save(false)) {
-                Yii::$app->session->setFlash('warning', 'Transaction verification proof has been marked as failed/rejected.');
-            }
+            $this->saveAndProcessPayment($model);
+
+            /*
+             * Reload so the view receives the final persisted state.
+             */
+            $model->refresh();
+
+            Yii::$app->session->setFlash(
+                    'success',
+                    'Payment confirmed successfully. '
+                    . 'The invoice payment status has been recalculated.'
+            );
+        } catch (\Throwable $e) {
+            Yii::error($e, __METHOD__);
+
+            Yii::$app->session->setFlash(
+                    'error',
+                    'Unable to approve transaction: '
+                    . $e->getMessage()
+            );
         }
 
-        return $this->redirect(['view', 'id' => $id]);
+        return $this->redirect([
+                    'view',
+                    'id' => $model->id,
+        ]);
     }
 
     /**
-     * Deletes an existing Transaction model.
-     * If deletion is successful, the browser will be redirected to the 'index' page.
-     * @param int $id ID
-     * @return \yii\web\Response
-     * @throws NotFoundHttpException if the model cannot be found
+     * Reject an invalid manual payment.
      */
-    public function actionDelete($id)
+    public function actionReject(int $id)
     {
-        $this->findModel($id)->delete();
+        $model = $this->findModel($id);
 
-        return $this->redirect(['index']);
+        if (
+                $model->status !== Transaction::STATUS_PENDING
+        ) {
+            Yii::$app->session->setFlash(
+                    'warning',
+                    'Only pending transactions can be rejected.'
+            );
+
+            return $this->redirect([
+                        'view',
+                        'id' => $model->id,
+            ]);
+        }
+
+        try {
+            $model->status = Transaction::STATUS_FAILED;
+
+            $model->paid_at = null;
+
+            $model->updated_at = time();
+
+            $this->saveAndProcessPayment($model);
+
+            Yii::$app->session->setFlash(
+                    'warning',
+                    'Transaction verification was rejected.'
+            );
+        } catch (\Throwable $e) {
+            Yii::error($e, __METHOD__);
+
+            Yii::$app->session->setFlash(
+                    'error',
+                    'Unable to reject transaction: '
+                    . $e->getMessage()
+            );
+        }
+
+        return $this->redirect([
+                    'view',
+                    'id' => $model->id,
+        ]);
     }
 
     /**
-     * Finds the Transaction model based on its primary key value.
-     * If the model is not found, a 404 HTTP exception will be thrown.
-     * @param int $id ID
-     * @return Transaction the loaded model
-     * @throws NotFoundHttpException if the model cannot be found
+     * Transactions are financial ledger records.
+     *
+     * Physical deletion is deliberately disabled.
      */
-    protected function findModel($id)
+    public function actionDelete(int $id)
     {
-        if (($model = Transaction::findOne(['id' => $id])) !== null) {
+        $model = $this->findModel($id);
+
+        Yii::$app->session->setFlash(
+                'error',
+                sprintf(
+                        'Transaction #%d cannot be deleted. '
+                        . 'Financial transactions must remain in the '
+                        . 'payment history.',
+                        $model->id
+                )
+        );
+
+        return $this->redirect([
+                    'view',
+                    'id' => $model->id,
+        ]);
+    }
+
+    /**
+     * Save transaction and synchronise the parent invoice.
+     *
+     * Both operations are atomic.
+     *
+     * If invoice reconciliation or renewal fulfilment fails,
+     * the transaction change is rolled back as well.
+     *
+     * @throws \Throwable
+     */
+    private function saveAndProcessPayment(
+            Transaction $model
+    ): void
+    {
+        $dbTransaction = Yii::$app->db->beginTransaction();
+
+        try {
+            if (!$model->save()) {
+                throw new \RuntimeException(
+                                'Transaction could not be saved: '
+                                . json_encode(
+                                        $model->errors,
+                                        JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE
+                                )
+                        );
+            }
+
+            /*
+             * false means:
+             *
+             * Do not start another DB transaction inside
+             * PaymentProcessingService because this method
+             * already owns the transaction.
+             */
+            (new PaymentProcessingService())
+                    ->transactionChanged(
+                            $model,
+                            false
+                    );
+
+            $dbTransaction->commit();
+        } catch (\Throwable $e) {
+            if ($dbTransaction->isActive) {
+                $dbTransaction->rollBack();
+            }
+
+            throw $e;
+        }
+    }
+
+    /**
+     * Find transaction.
+     */
+    protected function findModel(int $id): Transaction
+    {
+        $model = Transaction::findOne([
+            'id' => $id,
+        ]);
+
+        if ($model !== null) {
             return $model;
         }
 
-        throw new NotFoundHttpException('The requested page does not exist.');
+        throw new NotFoundHttpException(
+                        'The requested transaction does not exist.'
+                );
     }
 }

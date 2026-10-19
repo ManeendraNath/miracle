@@ -25,9 +25,21 @@ use Yii;
  * @property string|null $due_date
  * @property int $created_at
  * @property int $updated_at
+ * @property int|null $emailed_at
+ * @property int|null $billing_run_id
+ * @property string|null $client_city
+ * @property string|null $client_state
+ * @property string|null $client_state_code
+ * @property string|null $client_postal_code
+ * @property string|null $client_gstin
+ * @property string|null $client_pan
+ * @property string|null $place_of_supply
  *
+ * @property BillingEvent[] $billingEvents
+ * @property BillingRun $billingRun
  * @property Coupons $coupon
  * @property InvoiceItem[] $invoiceItems
+ * @property InvoiceItem[] $invoiceItems0
  * @property ServiceRenewalHistory[] $serviceRenewalHistories
  * @property Transaction[] $transactions
  * @property User $user
@@ -39,8 +51,9 @@ class Invoice extends \yii\db\ActiveRecord
      * ENUM field values
      */
     const STATUS_UNPAID = 'Unpaid';
-    const STATUS_PAID = 'Paid';
     const STATUS_PARTIALLY_PAID = 'Partially_Paid';
+    const STATUS_PAID = 'Paid';
+    const STATUS_CARRIED_FORWARD = 'Carried_Forward';
     const STATUS_CANCELLED = 'Cancelled';
     const STATUS_REFUNDED = 'Refunded';
 
@@ -58,19 +71,24 @@ class Invoice extends \yii\db\ActiveRecord
     public function rules()
     {
         return [
-            [['client_address_line_1', 'client_address_line_2', 'coupon_id', 'coupon_code', 'due_date'], 'default', 'value' => null],
+            [['client_address_line_1', 'client_address_line_2', 'coupon_id', 'coupon_code', 'due_date', 'emailed_at', 'billing_run_id', 'client_city', 'client_state', 'client_state_code', 'client_postal_code', 'client_gstin', 'client_pan', 'place_of_supply'], 'default', 'value' => null],
             [['total_payable'], 'default', 'value' => 0.00],
             [['sgst_percent'], 'default', 'value' => 9.00],
             [['status'], 'default', 'value' => 'Unpaid'],
             [['user_id', 'invoice_number', 'client_name', 'created_at', 'updated_at'], 'required'],
-            [['user_id', 'coupon_id', 'created_at', 'updated_at'], 'integer'],
+            [['user_id', 'coupon_id', 'created_at', 'updated_at', 'emailed_at', 'billing_run_id'], 'integer'],
             [['subtotal_amount', 'discount_amount', 'cgst_percent', 'sgst_percent', 'igst_percent', 'total_payable'], 'number'],
             [['status'], 'string'],
             [['due_date'], 'safe'],
-            [['invoice_number'], 'string', 'max' => 100],
+            [['invoice_number', 'client_city', 'client_state', 'place_of_supply'], 'string', 'max' => 100],
             [['client_name', 'client_address_line_1', 'client_address_line_2'], 'string', 'max' => 255],
             [['coupon_code'], 'string', 'max' => 32],
+            [['client_state_code', 'client_pan'], 'string', 'max' => 10],
+            [['client_postal_code'], 'string', 'max' => 20],
+            [['client_gstin'], 'string', 'max' => 15],
             ['status', 'in', 'range' => array_keys(self::optsStatus())],
+            [['invoice_number'], 'unique'],
+            [['billing_run_id'], 'exist', 'skipOnError' => true, 'targetClass' => BillingRun::class, 'targetAttribute' => ['billing_run_id' => 'id']],
             [['coupon_id'], 'exist', 'skipOnError' => true, 'targetClass' => Coupons::class, 'targetAttribute' => ['coupon_id' => 'coupon_id']],
             [['user_id'], 'exist', 'skipOnError' => true, 'targetClass' => User::class, 'targetAttribute' => ['user_id' => 'id']],
         ];
@@ -100,7 +118,36 @@ class Invoice extends \yii\db\ActiveRecord
             'due_date' => 'Due Date',
             'created_at' => 'Created At',
             'updated_at' => 'Updated At',
+            'emailed_at' => 'Emailed At',
+            'billing_run_id' => 'Billing Run ID',
+            'client_city' => 'Client City',
+            'client_state' => 'Client State',
+            'client_state_code' => 'Client State Code',
+            'client_postal_code' => 'Client Postal Code',
+            'client_gstin' => 'Client Gstin',
+            'client_pan' => 'Client Pan',
+            'place_of_supply' => 'Place Of Supply',
         ];
+    }
+
+    /**
+     * Gets query for [[BillingEvents]].
+     *
+     * @return \yii\db\ActiveQuery
+     */
+    public function getBillingEvents()
+    {
+        return $this->hasMany(BillingEvent::class, ['invoice_id' => 'id']);
+    }
+
+    /**
+     * Gets query for [[BillingRun]].
+     *
+     * @return \yii\db\ActiveQuery
+     */
+    public function getBillingRun()
+    {
+        return $this->hasOne(BillingRun::class, ['id' => 'billing_run_id']);
     }
 
     /**
@@ -121,6 +168,16 @@ class Invoice extends \yii\db\ActiveRecord
     public function getInvoiceItems()
     {
         return $this->hasMany(InvoiceItem::class, ['invoice_id' => 'id']);
+    }
+
+    /**
+     * Gets query for [[InvoiceItems0]].
+     *
+     * @return \yii\db\ActiveQuery
+     */
+    public function getInvoiceItems0()
+    {
+        return $this->hasMany(InvoiceItem::class, ['source_invoice_id' => 'id']);
     }
 
     /**
@@ -162,8 +219,9 @@ class Invoice extends \yii\db\ActiveRecord
     {
         return [
             self::STATUS_UNPAID => 'Unpaid',
-            self::STATUS_PAID => 'Paid',
             self::STATUS_PARTIALLY_PAID => 'Partially_Paid',
+            self::STATUS_PAID => 'Paid',
+            self::STATUS_CARRIED_FORWARD => 'Carried_Forward',
             self::STATUS_CANCELLED => 'Cancelled',
             self::STATUS_REFUNDED => 'Refunded',
         ];
@@ -193,6 +251,19 @@ class Invoice extends \yii\db\ActiveRecord
     /**
      * @return bool
      */
+    public function isStatusPartiallypaid()
+    {
+        return $this->status === self::STATUS_PARTIALLY_PAID;
+    }
+
+    public function setStatusToPartiallypaid()
+    {
+        $this->status = self::STATUS_PARTIALLY_PAID;
+    }
+
+    /**
+     * @return bool
+     */
     public function isStatusPaid()
     {
         return $this->status === self::STATUS_PAID;
@@ -206,14 +277,14 @@ class Invoice extends \yii\db\ActiveRecord
     /**
      * @return bool
      */
-    public function isStatusPartiallypaid()
+    public function isStatusCarriedforward()
     {
-        return $this->status === self::STATUS_PARTIALLY_PAID;
+        return $this->status === self::STATUS_CARRIED_FORWARD;
     }
 
-    public function setStatusToPartiallypaid()
+    public function setStatusToCarriedforward()
     {
-        $this->status = self::STATUS_PARTIALLY_PAID;
+        $this->status = self::STATUS_CARRIED_FORWARD;
     }
 
     /**

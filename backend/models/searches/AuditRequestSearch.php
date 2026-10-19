@@ -1,88 +1,82 @@
 <?php
 
+declare(strict_types=1);
+
 namespace backend\models\searches;
 
+use common\helpers\GridPaginationHelper;
+use common\models\AuditRequest;
+use common\models\traits\DateRangeSearchTrait;
 use yii\base\Model;
 use yii\data\ActiveDataProvider;
-use common\models\AuditRequest;
 
 /**
- * AuditRequestSearch represents the model behind the search form of `common\models\AuditRequest`.
+ * Search model for Audit Requests.
  */
 class AuditRequestSearch extends AuditRequest
 {
-    // Transient placeholder to handle the composite range string text
-    public $date_range;
-    
+    use DateRangeSearchTrait;
+
+    public ?string $created_at_range = null;
+
     /**
-     * {@inheritdoc}
+     * Search validation rules.
      */
-    public function rules()
+    public function rules(): array
     {
         return [
-            [['id', 'created_at', 'updated_at'], 'integer'],
-            [['name', 'email', 'phone', 'company_url', 'current_framework', 'hosting_environment', 'message', 'status', 'user_ip', 'date_range'], 'safe'],
+            [['id'], 'integer'],
+            [['name', 'email', 'phone', 'company_url', 'current_framework', 'hosting_environment', 'message', 'status', 'user_ip', 'created_at_range'], 'safe'],
         ];
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    public function scenarios()
+    public function scenarios(): array
     {
-        // bypass scenarios() implementation in the parent class
         return Model::scenarios();
     }
 
     /**
-     * Creates data provider instance with search query applied
-     *
-     * @param array $params
-     * @param string|null $formName Form name to be used into `->load()` method.
-     *
-     * @return ActiveDataProvider
+     * Build the Audit Request GridView provider.
      */
-    public function search($params, $formName = null)
-    {
+    public function search(array $params, ?string $formName = null): ActiveDataProvider {
         $query = AuditRequest::find();
-
-        // add conditions that should always apply here
 
         $dataProvider = new ActiveDataProvider([
             'query' => $query,
+            'pagination' => [
+                'pageSize' => GridPaginationHelper::getPageSize(),
+            ],
+            'sort' => [
+                'defaultOrder' => [
+                    'id' => SORT_DESC,
+                ],
+            ],
         ]);
 
         $this->load($params, $formName);
 
         if (!$this->validate()) {
-            // uncomment the following line if you do not want to return any records when validation fails
-            // $query->where('0=1');
             return $dataProvider;
         }
 
-        // grid filtering conditions
         $query->andFilterWhere([
-            'id' => $this->id,
-            'created_at' => $this->created_at,
-            'updated_at' => $this->updated_at,
+            'audit_request.id' => $this->id,
+            'audit_request.status' => $this->status,
         ]);
 
-        $query->andFilterWhere(['like', 'name', $this->name])
-            ->andFilterWhere(['like', 'email', $this->email])
-            ->andFilterWhere(['like', 'phone', $this->phone])
-            ->andFilterWhere(['like', 'company_url', $this->company_url])
-            ->andFilterWhere(['like', 'current_framework', $this->current_framework])
-            ->andFilterWhere(['like', 'hosting_environment', $this->hosting_environment])
-            ->andFilterWhere(['like', 'message', $this->message])
-            ->andFilterWhere(['like', 'status', $this->status])
-            ->andFilterWhere(['like', 'user_ip', $this->user_ip]);
+        $query
+            ->andFilterWhere(['like', 'audit_request.name', $this->name])
+            ->andFilterWhere(['like', 'audit_request.email', $this->email])
+            ->andFilterWhere(['like', 'audit_request.phone', $this->phone])
+            ->andFilterWhere(['like', 'audit_request.company_url', $this->company_url])
+            ->andFilterWhere(['like', 'audit_request.current_framework', $this->current_framework])
+            ->andFilterWhere(['like', 'audit_request.hosting_environment', $this->hosting_environment]);
 
-        // 📅 DYNAMIC DATE RANGE FILTERING LOGIC
-        if (!empty($this->date_range) && strpos($this->date_range, ' - ') !== false) {
-            list($start_date, $end_date) = explode(' - ', $this->date_range);
-            // Formats search against your core database 'created_at' or 'due_date' timestamp rows safely
-            $query->andFilterWhere(['between', 'DATE(created_at)', $start_date, $end_date]);
-        }
+        /*
+         * created_at is stored as UNIX timestamp.
+         */
+        $this->applyTimestampDateRange($query, 'audit_request.created_at', $this->created_at_range);
+
         return $dataProvider;
     }
 }

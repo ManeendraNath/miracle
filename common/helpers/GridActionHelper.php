@@ -42,7 +42,7 @@ final class GridActionHelper
                     ]
                 );
             },
-            'update' => static function (string $url): string {
+            'update' => static function (string|array $url): string {
                 return Html::a(
                     '<i class="fas fa-edit"></i>',
                     $url,
@@ -54,7 +54,7 @@ final class GridActionHelper
                     ]
                 );
             },
-            'delete' => static function (string $url) use ($deleteMessage): string {
+            'delete' => static function (string|array $url) use ($deleteMessage): string {
                 return Html::a(
                     '<i class="fas fa-trash"></i>',
                     $url,

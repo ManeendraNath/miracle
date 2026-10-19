@@ -12,7 +12,7 @@ $cgstAmount = round($taxableAmount * ((float) $model->cgst_percent / 100), 2);
 $sgstAmount = round($taxableAmount * ((float) $model->sgst_percent / 100), 2);
 $igstAmount = round($taxableAmount * ((float) $model->igst_percent / 100), 2);
 $totalTax = round($cgstAmount + $sgstAmount + $igstAmount, 2);
-$money = static function (float $amount): string {
+$money = static function (int|float|string|null $amount): string {
     return Yii::$app->formatter->asCurrency($amount, 'INR');
 };
 ?>

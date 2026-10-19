@@ -40,13 +40,10 @@ class InvoiceController extends BaseController
      */
     public function actionView(string $number)
     {
-        $model = is_numeric($number) ? Invoice::findOne((int) $number) : Invoice::findOne(['invoice_number' => $number]);
-
+        $model = $this->findModelByNumber($number);
         if ($model === null) {
             throw new NotFoundHttpException('The specified invoice could not be located.');
         }
-
-        $model->checkClientAccess();
         $paymentService = new InvoicePaymentService();
         $totals = $this->calculateDisplayTotals($model);
 
@@ -272,6 +269,15 @@ class InvoiceController extends BaseController
     protected function findModel(int $id): Invoice
     {
         $model = Invoice::findOne(['id' => $id]);
+        if ($model !== null) {
+            return $model;
+        }
+        throw new NotFoundHttpException('The requested invoice does not exist.');
+    }
+
+    private function findModelByNumber(string $number): Invoice
+    {
+        $model = Invoice::find()->with(['items', 'transactions'])->where(['invoice_number' => $number])->one();
         if ($model !== null) {
             return $model;
         }

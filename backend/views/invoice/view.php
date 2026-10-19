@@ -67,7 +67,7 @@ $this->title = 'Invoice #' . $model->invoice_number;
         </div>
     </div>
     <?php
-    $this->render('_invoice_content', ['model' => $model]);
+    $this->render('_invoice_content', ['model' => $model, 'capturedAmount' => $capturedAmount, 'outstandingAmount' => $outstandingAmount])
     ?>
 </div>
 

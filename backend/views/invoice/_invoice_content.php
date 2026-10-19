@@ -1,13 +1,20 @@
 <?php
+declare(strict_types=1);
 
 use common\models\Invoice;
 use common\models\InvoiceItem;
 use yii\helpers\Html;
 
-function amountwithSymbol($amount)
-{
+$subtotal = round((float) $model->subtotal_amount, 2);
+$discount = round((float) $model->discount_amount, 2);
+$taxableAmount = max(0, round($subtotal - $discount, 2));
+$cgstAmount = round($taxableAmount * ((float) $model->cgst_percent / 100), 2);
+$sgstAmount = round($taxableAmount * ((float) $model->sgst_percent / 100), 2);
+$igstAmount = round($taxableAmount * ((float) $model->igst_percent / 100), 2);
+$totalTax = round($cgstAmount + $sgstAmount + $igstAmount, 2);
+$money = static function (float $amount): string {
     return Yii::$app->formatter->asCurrency($amount, 'INR');
-}
+};
 ?>
 <!-- Main Printable Invoice Canvas Base Area -->
 <div class="invoice p-5 bg-white border rounded shadow-sm position-relative">
@@ -169,11 +176,11 @@ function amountwithSymbol($amount)
                             </td>
 
                             <td class="text-end text-nowrap">
-                                <?= amountwithSymbol($item->unit_price) ?>
+                                <?= money($item->unit_price) ?>
                             </td>
 
                             <td class="text-end fw-semibold text-nowrap">
-                                <?= amountwithSymbol($item->total_price) ?>
+                                <?= money($item->total_price) ?>
                             </td>
 
                         </tr>
@@ -205,71 +212,130 @@ function amountwithSymbol($amount)
             <div class="table-responsive">
                 <table class="table table-sm table-borderless text-sm text-dark">
                     <tr>
-                        <td class="text-muted py-1">Subtotal Gross:</td>
-                        <td class="text-end py-1 fw-bold"><?= amountwithSymbol(number_format($subtotal, 2)) ?></td>
+                        <td>
+                            Subtotal
+                        </td>
+
+                        <td class="text-end">
+                            <?=
+                            $money(
+                                    $subtotal
+                            )
+                            ?>
+                        </td>
                     </tr>
-                    <?php if ((float) $model->discount_amount > 0): ?>
-                        <tr class="text-danger">
-                            <td class="py-1">Discount Applied (<?= Html::encode($model->coupon_code) ?>):</td>
-                            <td class="text-end py-1 fw-bold">-<?= amountwithSymbol(number_format($model->discount_amount, 2)) ?></td>
+
+                    <tr>
+                        <td>
+                            Discount
+                        </td>
+
+                        <td class="text-end">
+                            -
+                            <?=
+                            $money(
+                                    $discount
+                            )
+                            ?>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td>
+                            Taxable Amount
+                        </td>
+
+                        <td class="text-end">
+                            <?=
+                            $money(
+                                    $taxableAmount
+                            )
+                            ?>
+                        </td>
+                    </tr>
+
+                    <?php
+                    if (
+                            (float) $model->cgst_percent > 0
+                    ):
+                        ?>
+
+                        <tr>
+                            <td>
+                                CGST
+                                (<?=
+                                number_format(
+                                        (float)
+                                        $model->cgst_percent,
+                                        2
+                                )
+                                ?>%)
+                            </td>
+
+                            <td class="text-end">
+                                <?=
+                                $money(
+                                        $cgstAmount
+                                )
+                                ?>
+                            </td>
+                        </tr>
+
+                    <?php endif; ?>
+
+                    <?php
+                    if (
+                            (float) $model->sgst_percent > 0
+                    ):
+                        ?>
+
+                        <tr>
+                            <td>
+                                SGST
+                                (<?=
+                                number_format(
+                                        (float)
+                                        $model->sgst_percent,
+                                        2
+                                )
+                                ?>%)
+                            </td>
+
+                            <td class="text-end">
+                                <?= $money($sgstAmount) ?>
+                            </td>
                         </tr>
                     <?php endif; ?>
 
-                    <!-- Indian GST Breaks -->
-                    <?php if ($cgstAmount > 0): ?>
+                    <?php if ((float) $model->igst_percent > 0): ?>
                         <tr>
-                            <td class="text-muted py-1">CGST (<?= (float) $model->cgst_percent ?>%):</td>
-                            <td class="text-end py-1"><?= amountwithSymbol(number_format($cgstAmount, 2)) ?></td>
-                        </tr>
-                    <?php endif; ?>
-                    <?php if ($sgstAmount > 0): ?>
-                        <tr>
-                            <td class="text-muted py-1">SGST (<?= (float) $model->sgst_percent ?>%):</td>
-                            <td class="text-end py-1"><?= amountwithSymbol(number_format($sgstAmount, 2)) ?></td>
-                        </tr>
-                    <?php endif; ?>
-                    <?php if ($igstAmount > 0): ?>
-                        <tr>
-                            <td class="text-muted py-1">IGST (<?= (float) $model->igst_percent ?>%):</td>
-                            <td class="text-end py-1"><?= amountwithSymbol(number_format($igstAmount, 2)) ?></td>
+                            <td>
+                                IGST (<?= number_format((float) $model->igst_percent, 2) ?>%)
+                            </td>
+                            <td class="text-end">
+                                <?= $money($igstAmount) ?>
+                            </td>
                         </tr>
                     <?php endif; ?>
 
-                    <tr class="border-top" style="font-size: 1.3rem;">
-                        <td class="fw-bold text-primary py-2">Grand Total:</td>
-                        <td class="text-end fw-bold text-success py-2"><?=
-                            amountwithSymbol($model->total_payable)
-                            ?></td>
+                    <tr class="fw-bold">
+                        <td>Grand Total</td>
+                        <td class="text-end">
+                            <?= $money((float) $model->total_payable) ?>
+                        </td>
                     </tr>
                     <tr>
-                        <td class="text-muted py-2">
-                            Payments Received:
-                        </td>
-
-                        <td class="text-end text-success fw-semibold py-2">
-
-                            <?= amountwithSymbol($capturedAmount) ?>
-
+                        <td>Payments Received</td>
+                        <td class="text-end">
+                            <?= $money((float) $capturedAmount) ?>
                         </td>
                     </tr>
-
-                    <?php if ($outstandingAmount > 0): ?>
-
-                        <tr>
-
-                            <td class="text-danger fw-semibold py-2">
-                                Outstanding:
-                            </td>
-
-                            <td class="text-end text-danger fw-bold py-2">
-
-                                <?= amountwithSymbol($outstandingAmount) ?>
-
-                            </td>
-
-                        </tr>
-
-                    <?php endif; ?>
+                    <tr>
+                        <td>Outstanding</td>
+                        <td class="text-end">
+                            <?= $money((float) $outstandingAmount) ?>
+                        </td>
+                    </tr>
                 </table>
             </div>
         </div>

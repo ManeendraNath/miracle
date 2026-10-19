@@ -17,66 +17,66 @@ final class GridActionHelper
         
     }
 
-    public static function crudColumn( string $template = '{view} {update} {delete}', string $deleteMessage = 'Are you sure you want to delete this record?'): array
-    {
-        return [
-            'class' => ActionColumn::class,
-            'header' => 'Actions',
-            'template' => $template,
-            'headerOptions' => [
-                'class' => 'text-center',
-                'style' => 'width: 135px;',
-            ],
-            'contentOptions' => [
-                'class' => 'text-center text-nowrap',
-            ],
-            'buttons' => [
-                'view' => static function (string $url): string {
-                    return Html::a(
-                            '<i class="fas fa-eye"></i>',
-                            $url,
-                            [
-                                'class' => 'btn btn-xs btn-outline-info',
-                                'title' => 'View',
-                                'data-bs-toggle' => 'tooltip',
-                                'data-bs-placement' => 'top',
-                            ]
-                    );
-                },
-                'update' => static function (string $url): string {
-                    return Html::a(
-                            '<i class="fas fa-edit"></i>',
-                            $url,
-                            [
-                                'class' => 'btn btn-xs btn-outline-primary',
-                                'title' => 'Update',
-                                'data-bs-toggle' => 'tooltip',
-                                'data-bs-placement' => 'top',
-                            ]
-                    );
-                },
-                'delete' => static function (string $url) use ($deleteMessage): string {
-                    return Html::a(
-                            '<i class="fas fa-trash"></i>',
-                            $url,
-                            [
-                                'class' => 'btn btn-xs btn-outline-danger',
-                                'title' => 'Delete',
-                                'data-bs-toggle' => 'tooltip',
-                                'data-bs-placement' => 'top',
-                                'data' => [
-                                    'confirm' => $deleteMessage,
-                                    'method' => 'post',
-                                ],
-                            ]
-                    );
-                },
-            ],
-            'urlCreator' => static function (string $action, $model): string {
-                return Url::to([$action, 'id' => $model->id]);
+    public static function crudColumn(string $template = '{view} {update} {delete}', string $deleteMessage = 'Are you sure you want to delete this record?', ?callable $urlCreator = null): array {
+    $column = [
+        'class' => ActionColumn::class,
+        'header' => 'Actions',
+        'template' => $template,
+        'headerOptions' => [
+            'class' => 'text-center',
+            'style' => 'width: 135px;',
+        ],
+        'contentOptions' => [
+            'class' => 'text-center text-nowrap',
+        ],
+        'buttons' => [
+            'view' => static function (string $url): string {
+                return Html::a(
+                    '<i class="fas fa-eye"></i>',
+                    $url,
+                    [
+                        'class' => 'btn btn-xs btn-outline-info',
+                        'title' => 'View',
+                        'data-bs-toggle' => 'tooltip',
+                        'data-bs-placement' => 'top',
+                    ]
+                );
             },
-        ];
+            'update' => static function (string $url): string {
+                return Html::a(
+                    '<i class="fas fa-edit"></i>',
+                    $url,
+                    [
+                        'class' => 'btn btn-xs btn-outline-primary',
+                        'title' => 'Update',
+                        'data-bs-toggle' => 'tooltip',
+                        'data-bs-placement' => 'top',
+                    ]
+                );
+            },
+            'delete' => static function (string $url) use ($deleteMessage): string {
+                return Html::a(
+                    '<i class="fas fa-trash"></i>',
+                    $url,
+                    [
+                        'class' => 'btn btn-xs btn-outline-danger',
+                        'title' => 'Delete',
+                        'data-bs-toggle' => 'tooltip',
+                        'data-bs-placement' => 'top',
+                        'data' => [
+                            'confirm' => $deleteMessage,
+                            'method' => 'post',
+                        ],
+                    ]
+                );
+            },
+        ],
+    ];
+    if ($urlCreator !== null) {
+        $column['urlCreator'] = $urlCreator;
     }
+    return $column;
+}
 
     /**
      * Registers Bootstrap 5 tooltips for GridView elements.

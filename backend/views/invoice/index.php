@@ -18,57 +18,30 @@ GridViewHelper::register($this);
 ?>
 
 <div class="invoice-index">
-
     <div class="card card-outline card-primary shadow-sm">
-
         <!-- Header -->
         <div class="card-header">
-
             <div class="d-flex justify-content-between align-items-center">
-
                 <div>
-                    <h3 class="card-title mb-1">
-                        Invoices
-                    </h3>
-
-                    <div class="text-muted small">
-                        Manage client invoices, payments and due dates.
-                    </div>
+                    <h3 class="card-title mb-1">Invoices</h3>
+                    <div class="text-muted small">Manage client invoices, payments and due dates.</div>
                 </div>
-
-                <?=
-                Html::a(
-                        '<i class="fas fa-plus me-1"></i> Create Invoice',
-                        ['create'],
-                        [
-                            'class' => 'btn btn-primary',
-                        ]
-                )
-                ?>
-
+                <?= Html::a('<i class="fas fa-plus me-1"></i> Create Invoice', ['create'], ['class' => 'btn btn-primary']) ?>
             </div>
-
         </div>
-
 
         <!-- Grid -->
         <div class="card-body p-0">
-
             <?=
             GridView::widget([
                 'dataProvider' => $dataProvider,
                 'filterModel' => $searchModel,
                 'layout' => GridPaginationHelper::gridLayout(),
-                'summaryOptions' => [
-                    'class' => 'text-muted small mb-0',
-                ],
+                'summaryOptions' => ['class' => 'text-muted small mb-0'],
                 'tableOptions' => [
-                    'class' =>
-                    'table table-hover table-striped align-middle mb-0',
+                    'class' => 'table table-hover table-striped align-middle mb-0'
                 ],
-                'filterRowOptions' => [
-                    'class' => 'bg-light',
-                ],
+                'filterRowOptions' => ['class' => 'bg-light'],
                 'columns' => [
                     /*
                      * Serial number.
@@ -91,29 +64,15 @@ GridViewHelper::register($this);
                         'attribute' => 'invoice_number',
                         'label' => 'Invoice',
                         'format' => 'raw',
-                        'value' => static function (
-                                Invoice $model
-                        ): string {
+                        'value' => static function (Invoice $model): string {
                             return Html::a(
-    Html::encode(
-        $model->invoice_number
-    ),
-    [
-        'view',
-        'number' => $model->invoice_number,
-    ],
-    [
-        'class' =>
-            'fw-semibold text-decoration-none',
-    ]
-);
+                                    Html::encode($model->invoice_number),
+                                    ['view', 'number' => $model->invoice_number],
+                                    ['class' => 'fw-semibold text-decoration-none']
+                            );
                         },
-                        'headerOptions' => [
-                            'style' => 'min-width: 150px;',
-                        ],
-                        'contentOptions' => [
-                            'class' => 'text-nowrap',
-                        ],
+                        'headerOptions' => ['style' => 'min-width: 150px;'],
+                        'contentOptions' => ['class' => 'text-nowrap'],
                     ],
                     /*
                      * Client snapshot.
@@ -129,34 +88,17 @@ GridViewHelper::register($this);
                         'attribute' => 'client_name',
                         'label' => 'Client',
                         'format' => 'raw',
-                        'value' => static function (
-                                Invoice $model
-                        ): string {
-                            $options = [
-                                'class' => 'fw-semibold text-dark',
-                            ];
-
-                            if (
-                                    isset($model->user) && $model->user && !empty($model->user->email)
-                            ) {
+                        'value' => static function (Invoice $model): string {
+                            $options = ['class' => 'fw-semibold text-dark'];
+                            if (isset($model->user) && $model->user && !empty($model->user->email)) {
                                 $options['title'] = $model->user->email;
-
                                 $options['data-bs-toggle'] = 'tooltip';
-
                                 $options['data-bs-placement'] = 'top';
-
                                 $options['style'] = 'cursor: help;';
                             }
-
-                            return Html::tag(
-                                    'span',
-                                    Html::encode($model->client_name),
-                                    $options
-                            );
+                            return Html::tag('span', Html::encode($model->client_name), $options);
                         },
-                        'headerOptions' => [
-                            'style' => 'min-width: 160px;',
-                        ],
+                        'headerOptions' => ['style' => 'min-width: 160px;'],
                     ],
                     /*
                      * Total Payable.
@@ -165,26 +107,15 @@ GridViewHelper::register($this);
                         'attribute' => 'total_payable',
                         'label' => 'Total',
                         'format' => 'raw',
-                        'value' => static function (
-                                Invoice $model
-                        ): string {
+                        'value' => static function (Invoice $model): string {
                             return Html::tag(
                                     'span',
-                                    Yii::$app->formatter->asCurrency(
-                                            $model->total_payable,
-                                            'INR'
-                                    ),
-                                    [
-                                        'class' => 'fw-semibold',
-                                    ]
+                                    Yii::$app->formatter->asCurrency($model->total_payable, 'INR'),
+                                    ['class' => 'fw-semibold']
                             );
                         },
-                        'headerOptions' => [
-                            'style' => 'min-width: 130px;',
-                        ],
-                        'contentOptions' => [
-                            'class' => 'text-nowrap text-end',
-                        ],
+                        'headerOptions' => ['style' => 'min-width: 130px;'],
+                        'contentOptions' => ['class' => 'text-nowrap text-end'],
                     ],
                     /*
                      * Invoice status.
@@ -192,52 +123,26 @@ GridViewHelper::register($this);
                     [
                         'attribute' => 'status',
                         'format' => 'raw',
-                        'filter' => GridFilterHelper::select2(
-                                $searchModel,
-                                'status',
-                                Invoice::getStatuses(),
-                                'All Statuses'
-                        ),
-                        'value' => static function (
-                                Invoice $model
-                        ): string {
+                        'filter' => GridFilterHelper::select2($searchModel, 'status', Invoice::getStatuses(), 'All Statuses'),
+                        'value' => static function (Invoice $model): string {
                             $class = match ($model->status) {
-
-                                Invoice::STATUS_UNPAID =>
-                                'bg-danger',
-                                Invoice::STATUS_PAID =>
-                                'bg-success',
-                                Invoice::STATUS_PARTIALLY_PAID =>
-                                'bg-warning text-dark',
-                                Invoice::STATUS_CARRIED_FORWARD =>
-                                'bg-secondary',
-                                Invoice::STATUS_CANCELLED =>
-                                'bg-dark',
-                                Invoice::STATUS_REFUNDED =>
-                                'bg-info text-dark',
-                                default =>
-                                'bg-secondary',
+                                Invoice::STATUS_UNPAID => 'bg-danger',
+                                Invoice::STATUS_PAID => 'bg-success',
+                                Invoice::STATUS_PARTIALLY_PAID => 'bg-warning text-dark',
+                                Invoice::STATUS_CARRIED_FORWARD => 'bg-secondary',
+                                Invoice::STATUS_CANCELLED => 'bg-dark',
+                                Invoice::STATUS_REFUNDED => 'bg-info text-dark',
+                                default => 'bg-secondary',
                             };
-
                             $label = Invoice::getStatuses()[$model->status] ?? $model->status;
-
                             return Html::tag(
                                     'span',
                                     Html::encode($label),
-                                    [
-                                        'class' =>
-                                        'badge '
-                                        . $class
-                                        . ' px-2 py-1',
-                                    ]
+                                    ['class' => 'badge ' . $class . ' px-2 py-1']
                             );
                         },
-                        'headerOptions' => [
-                            'style' => 'min-width: 155px;',
-                        ],
-                        'contentOptions' => [
-                            'class' => 'text-center',
-                        ],
+                        'headerOptions' => ['style' => 'min-width: 155px;'],
+                        'contentOptions' => ['class' => 'text-center'],
                     ],
                     /*
                      * Payment due date.
@@ -247,29 +152,15 @@ GridViewHelper::register($this);
                     [
                         'attribute' => 'due_date',
                         'label' => 'Due Date',
-                        'filter' => GridFilterHelper::dateRange(
-                                $searchModel,
-                                'due_date_range',
-                                'Due dates'
-                        ),
-                        'value' => static function (
-                                Invoice $model
-                        ): string {
+                        'filter' => GridFilterHelper::dateRange($searchModel, 'due_date_range', 'Due dates'),
+                        'value' => static function (Invoice $model): string {
                             if (!$model->due_date) {
                                 return '-';
                             }
-
-                            return Yii::$app->formatter->asDate(
-                                    $model->due_date,
-                                    'php:d M Y'
-                            );
+                            return Yii::$app->formatter->asDate($model->due_date, 'php:d M Y');
                         },
-                        'headerOptions' => [
-                            'style' => 'min-width: 190px;',
-                        ],
-                        'contentOptions' => [
-                            'class' => 'text-nowrap',
-                        ],
+                        'headerOptions' => ['style' => 'min-width: 190px;'],
+                        'contentOptions' => ['class' => 'text-nowrap'],
                     ],
                     /*
                      * Invoice creation date.
@@ -303,7 +194,15 @@ GridViewHelper::register($this);
                     /*
                      * Shared CRUD actions.
                      */
-                    GridActionHelper::crudColumn(template: '{view} {update}'),
+                    GridActionHelper::crudColumn(
+                            template: '{view} {update}',
+                            urlCreator: static function (string $action, Invoice $model): array {
+                                if ($action === 'view') {
+                                    return ['view', 'number' => $model->invoice_number];
+                                }
+                                return [$action, 'id' => $model->id];
+                            }
+                    ),
                 ],
             ])
             ?>

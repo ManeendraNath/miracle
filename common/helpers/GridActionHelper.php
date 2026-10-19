@@ -30,7 +30,7 @@ final class GridActionHelper
             'class' => 'text-center text-nowrap',
         ],
         'buttons' => [
-            'view' => static function (string $url): string {
+            'view' => static function (string|array $url): string {
                 return Html::a(
                     '<i class="fas fa-eye"></i>',
                     $url,

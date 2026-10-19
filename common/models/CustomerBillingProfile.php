@@ -22,7 +22,7 @@ namespace common\models;
  *
  * @property User $user
  */
-class CustomerBillingProfile extends CustomerBillingProfile
+class CustomerBillingProfile extends base\CustomerBillingProfile
 {
 
 }

@@ -109,11 +109,14 @@ $users = ArrayHelper::map(
 
             <!-- Dates -->
             <div class="row">
-                <div class="col-md-6">
+                <div class="col-md-4">
                     <?= $form->field($model, 'registered_date')->input('date') ?>
                 </div>
-                <div class="col-md-6">
+                <div class="col-md-4">
                     <?= $form->field($model, 'current_expiry_date')->input('date') ?>
+                </div>
+                <div class="col-md-4">
+                    <?= $form->field($model, 'renewal_base_amount')->textInput(['type' => 'number', 'min' => '0.01', 'step' => '0.01', 'placeholder' => 'Initial renewal amount']) ?>
                 </div>
             </div>
 

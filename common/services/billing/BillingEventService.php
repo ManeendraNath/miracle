@@ -83,14 +83,41 @@ final class BillingEventService
         );
 
         $existing = $this->findExisting(
-                $renewal,
-                $period['start'],
-                $period['end']
-        );
+    $renewal,
+    $period['start'],
+    $period['end']
+);
 
-        if ($existing !== null) {
-            return $existing;
+if ($existing !== null) {
+    if (
+        $existing->status ===
+        BillingEvent::STATUS_PENDING
+        && $existing->invoice_id === null
+        && (int) $existing->billing_run_id
+            !== $runId
+    ) {
+        $existing->billing_run_id =
+            $runId;
+
+        $existing->updated_at =
+            time();
+
+        if (!$existing->save(
+            false,
+            [
+                'billing_run_id',
+                'updated_at',
+            ]
+        )) {
+            throw new \RuntimeException(
+                'Pending billing event could not '
+                . 'be moved to the current billing run.'
+            );
         }
+    }
+
+    return $existing;
+}
 
         $price = $this->prices->calculate(
                 $renewal->itemType,

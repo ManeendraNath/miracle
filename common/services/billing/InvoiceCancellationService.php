@@ -28,12 +28,24 @@ final class InvoiceCancellationService
         $transaction = Yii::$app->db->beginTransaction();
 
         try {
-            $lockedInvoice = Invoice::find()
-                    ->where([
-                        'id' => $invoice->id,
-                    ])
-                    ->forUpdate()
-                    ->one();
+            $invoiceId = Yii::$app->db
+                    ->createCommand(
+                            '
+        SELECT id
+        FROM {{%invoice}}
+        WHERE id = :id
+        FOR UPDATE
+        '
+                    )
+                    ->bindValue(
+                            ':id',
+                            (int) $invoice->id
+                    )
+                    ->queryScalar();
+
+            $lockedInvoice = $invoiceId !== false ? Invoice::findOne(
+                            (int) $invoiceId
+                    ) : null;
 
             if ($lockedInvoice === null) {
                 throw new \RuntimeException(

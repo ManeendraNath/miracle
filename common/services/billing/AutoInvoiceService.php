@@ -65,16 +65,42 @@ final class AutoInvoiceService
         }
         $dbTransaction = Yii::$app->db->beginTransaction();
         try {
-            $events = BillingEvent::find()
-                    ->where([
-                        'billing_run_id' => $runId,
-                        'user_id' => $userId,
-                        'status' => BillingEvent::STATUS_PENDING,
-                        'invoice_id' => null,
-                    ])
-                    ->orderBy(['due_date' => SORT_ASC, 'id' => SORT_ASC])
-                    ->forUpdate()
-                    ->all();
+            $eventIds = Yii::$app->db
+    ->createCommand(
+        '
+        SELECT id
+        FROM {{%billing_event}}
+        WHERE billing_run_id = :runId
+          AND user_id = :userId
+          AND status = :status
+          AND invoice_id IS NULL
+        ORDER BY due_date ASC, id ASC
+        FOR UPDATE
+        '
+    )
+    ->bindValues([
+        ':runId' => $runId,
+        ':userId' => $userId,
+        ':status' =>
+            BillingEvent::STATUS_PENDING,
+    ])
+    ->queryColumn();
+
+if (!$eventIds) {
+    $dbTransaction->commit();
+
+    return null;
+}
+
+$events = BillingEvent::find()
+    ->where([
+        'id' => $eventIds,
+    ])
+    ->orderBy([
+        'due_date' => SORT_ASC,
+        'id' => SORT_ASC,
+    ])
+    ->all();
 
             if (!$events) {
                 $dbTransaction->commit();

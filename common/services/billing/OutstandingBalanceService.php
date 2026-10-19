@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace common\services\billing;
 
+use Yii;
 use common\models\Invoice;
 use common\models\InvoiceItem;
 
@@ -33,35 +34,51 @@ final class OutstandingBalanceService
                             'Target invoice must belong to a valid client.'
                     );
         }
-if ($targetInvoice->billing_run_id === null) {
-    throw new \LogicException(
-        'Automatic target invoice must belong to a billing run.'
-    );
-}
-        $sourceInvoices = Invoice::find()
-                ->where([
-                    'user_id' => $targetInvoice->user_id,
-                    'status' => [
-                        Invoice::STATUS_UNPAID,
-                        Invoice::STATUS_PARTIALLY_PAID,
-                    ],
+        if ($targetInvoice->billing_run_id === null) {
+            throw new \LogicException(
+                            'Automatic target invoice must belong to a billing run.'
+                    );
+        }
+        $sourceInvoiceIds = Yii::$app->db
+                ->createCommand(
+                        '
+        SELECT id
+        FROM {{%invoice}}
+        WHERE user_id = :userId
+          AND id <> :targetInvoiceId
+          AND status IN (:unpaid, :partiallyPaid)
+          AND (
+              billing_run_id IS NULL
+              OR billing_run_id <> :billingRunId
+          )
+        ORDER BY created_at ASC, id ASC
+        FOR UPDATE
+        '
+                )
+                ->bindValues([
+                    ':userId' =>
+                    (int) $targetInvoice->user_id,
+                    ':targetInvoiceId' =>
+                    (int) $targetInvoice->id,
+                    ':unpaid' =>
+                    Invoice::STATUS_UNPAID,
+                    ':partiallyPaid' =>
+                    Invoice::STATUS_PARTIALLY_PAID,
+                    ':billingRunId' =>
+                    (int) $targetInvoice
+                    ->billing_run_id,
                 ])
-                ->andWhere([
-                    '<>',
-                    'id',
-                    $targetInvoice->id,
-                ])
-                ->andWhere([
-                    'or',
-                    ['billing_run_id' => null],
-                    ['<>', 'billing_run_id', $targetInvoice->billing_run_id],
-                ])
-                ->orderBy([
-                    'created_at' => SORT_ASC,
-                    'id' => SORT_ASC,
-                ])
-                ->forUpdate()
-                ->all();
+                ->queryColumn();
+
+        $sourceInvoices = $sourceInvoiceIds ? Invoice::find()
+                        ->where([
+                            'id' => $sourceInvoiceIds,
+                        ])
+                        ->orderBy([
+                            'created_at' => SORT_ASC,
+                            'id' => SORT_ASC,
+                        ])
+                        ->all() : [];
 
         $transferredTotal = 0.00;
 

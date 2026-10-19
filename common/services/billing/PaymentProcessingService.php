@@ -33,12 +33,25 @@ final class PaymentProcessingService
         $dbTransaction = $useTransaction ? Yii::$app->db->beginTransaction() : null;
 
         try {
-            $invoice = Invoice::find()
-                    ->where([
-                        'id' => $paymentTransaction->invoice_id,
-                    ])
-                    ->forUpdate()
-                    ->one();
+            $invoiceId = Yii::$app->db
+                    ->createCommand(
+                            '
+        SELECT id
+        FROM {{%invoice}}
+        WHERE id = :id
+        FOR UPDATE
+        '
+                    )
+                    ->bindValue(
+                            ':id',
+                            (int) $paymentTransaction
+                            ->invoice_id
+                    )
+                    ->queryScalar();
+
+            $invoice = $invoiceId !== false ? Invoice::findOne(
+                            (int) $invoiceId
+                    ) : null;
 
             if ($invoice === null) {
                 throw new \RuntimeException(

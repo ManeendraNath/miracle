@@ -11,7 +11,7 @@ $this->title = 'Financial Transactions Ledger';
 $this->params['breadcrumbs'][] = $this->title;
 ?>
 <div class="transaction-index container-fluid pt-3">
-    
+
     <div class="card shadow-sm border-0">
         <div class="card-body p-0">
             <?=
@@ -26,10 +26,13 @@ $this->params['breadcrumbs'][] = $this->title;
                     ],
                     [
                         'attribute' => 'invoice_id',
-                        'label' => 'Invoice Ref',
+                        'label' => 'Invoice',
                         'format' => 'raw',
-                        'value' => function ($model) {
-                            return Html::a('#' . $model->invoice_id, ['invoice/view', 'id' => $model->invoice_id], ['class' => 'fw-bold']);
+                        'value' => static function (Transaction $model): string {
+                            if ($model->invoice === null) {
+                                return '-';
+                            }
+                            return Html::a(Html::encode($model->invoice->invoice_number), ['invoice/view', 'number' => $model->invoice->invoice_number]);
                         },
                     ],
                     [
@@ -108,32 +111,7 @@ $this->params['breadcrumbs'][] = $this->title;
                             'options' => ['class' => 'form-control form-control-sm', 'placeholder' => 'Filter Sales Spread...']
                         ]),
                     ],
-                    [
-                        'class' => 'yii\grid\ActionColumn',
-                        'header' => 'Actions Dashboard',
-                        'template' => '{view} {approve}',
-                        'buttons' => [
-                            'view' => function ($url, $model) {
-                                return Html::a('<i class="fas fa-eye text-primary"></i>', $url, [
-                                    'title' => 'Open Audit Profile',
-                                    'class' => 'btn btn-sm btn-light border me-1'
-                                ]);
-                            },
-                            'approve' => function ($url, $model) {
-                                if ($model->status === 'Pending' && $model->gateway_id == 2) {
-                                    return Html::a('<i class="fas fa-check text-success"></i>', ['approve', 'id' => $model->id], [
-                                                'title' => 'Quick Approve Reference',
-                                                'class' => 'btn btn-sm btn-light border',
-                                                'data' => [
-                                                    'confirm' => 'Verify this UPI reference and match account credits immediately?',
-                                                    'method' => 'post',
-                                                ],
-                                    ]);
-                                }
-                                return '';
-                            },
-                        ],
-                    ],
+                    GridActionHelper::crudColumn(template: '{view} {update}'),
                 ],
             ]);
             ?>

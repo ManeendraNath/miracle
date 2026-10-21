@@ -108,9 +108,7 @@ class TransactionController extends BaseController
             $model->loadDefaultValues();
         }
 
-        return $this->render('create', [
-                    'model' => $model,
-        ]);
+        return $this->render('create', ['model' => $model, 'invoiceList' => $this->getInvoiceList()]);
     }
 
     /**
@@ -130,56 +128,24 @@ class TransactionController extends BaseController
          * Captured payments should go through explicit financial
          * workflows such as refund rather than arbitrary editing.
          */
-        if (
-                in_array(
-                        $model->status,
-                        [
-                            Transaction::STATUS_CAPTURED,
-                            Transaction::STATUS_REFUNDED,
-                        ],
-                        true
-                )
-        ) {
-            Yii::$app->session->setFlash(
-                    'error',
-                    'Captured or refunded transactions '
-                    . 'cannot be edited through general transaction editing.'
-            );
-
-            return $this->redirect([
-                        'view',
-                        'id' => $model->id,
-            ]);
+        if (in_array($model->status, [Transaction::STATUS_CAPTURED, Transaction::STATUS_REFUNDED], true)) {
+            Yii::$app->session->setFlash('error', 'Captured or refunded transactions cannot be edited through general transaction editing.');
+            return $this->redirect(['view', 'id' => $model->id]);
         }
-
-        if (
-                $this->request->isPost && $model->load($this->request->post())
-        ) {
+        if ($model->status !== Transaction::STATUS_PENDING) {
+            throw new BadRequestHttpException('Only pending transactions can be modified.');
+        }
+        if ($this->request->isPost && $model->load($this->request->post())) {
             try {
                 $this->saveAndProcessPayment($model);
-
-                Yii::$app->session->setFlash(
-                        'success',
-                        'Transaction updated successfully.'
-                );
-
-                return $this->redirect([
-                            'view',
-                            'id' => $model->id,
-                ]);
+                Yii::$app->session->setFlash('success', 'Transaction updated successfully.');
+                return $this->redirect(['view', 'id' => $model->id]);
             } catch (\Throwable $e) {
                 Yii::error($e, __METHOD__);
-
-                Yii::$app->session->setFlash(
-                        'error',
-                        $e->getMessage()
-                );
+                Yii::$app->session->setFlash('error', $e->getMessage());
             }
         }
-
-        return $this->render('update', [
-                    'model' => $model,
-        ]);
+        return $this->render('update', ['model' => $model, 'invoiceList' => $this->getInvoiceList()]);
     }
 
     /**
@@ -328,6 +294,96 @@ class TransactionController extends BaseController
                     'id' => $model->id,
         ]);
     }
+
+    public function actionReceipt(
+    int $id
+) {
+    $model =
+        $this->findModel($id);
+
+    if (
+        empty(
+            $model->payment_receipt_file
+        )
+    ) {
+        throw new NotFoundHttpException(
+            'Payment receipt does not exist.'
+        );
+    }
+
+    $fileName =
+        basename(
+            (string)
+            $model->payment_receipt_file
+        );
+
+    $path =
+        Yii::getAlias(
+            '@common/runtime/payment-receipts/'
+            . $fileName
+        );
+
+    if (
+        !is_file($path)
+        || !is_readable($path)
+    ) {
+        throw new NotFoundHttpException(
+            'Payment receipt does not exist.'
+        );
+    }
+
+    return Yii::$app->response
+        ->sendFile(
+            $path,
+            'payment-receipt-'
+            . $model->id
+            . '.'
+            . pathinfo(
+                $fileName,
+                PATHINFO_EXTENSION
+            ),
+            [
+                'inline' =>
+                    true,
+            ]
+        );
+}
+
+private function getInvoiceList(): array
+{
+    $models =
+        Invoice::find()
+            ->where([
+                'status' => [
+                    Invoice::STATUS_UNPAID,
+                    Invoice::STATUS_PARTIALLY_PAID,
+                ],
+            ])
+            ->orderBy([
+                'created_at' =>
+                    SORT_DESC,
+            ])
+            ->all();
+
+    $list = [];
+
+    foreach ($models as $invoice) {
+        $list[
+            (int) $invoice->id
+        ] =
+            $invoice->invoice_number
+            . ' - '
+            . $invoice->client_name
+            . ' - '
+            . Yii::$app->formatter
+                ->asCurrency(
+                    $invoice->total_payable,
+                    'INR'
+                );
+    }
+
+    return $list;
+}
 
     /**
      * Save transaction and synchronise the parent invoice.

@@ -7,7 +7,6 @@ $money = static function (float $amount): string {
     return 'INR ' . number_format($amount, 2);
 };
 $payment = Yii::$app->params['billing']['payment'] ?? [];
-$cgstAmount = round((float) $invoice->total_payable * 0, 2);
 $taxableAmount = max(0, round((float) $invoice->subtotal_amount - (float) $invoice->discount_amount, 2));
 $cgstAmount = round($taxableAmount * ((float) $invoice->cgst_percent / 100), 2);
 $sgstAmount = round($taxableAmount * ((float) $invoice->sgst_percent / 100), 2);

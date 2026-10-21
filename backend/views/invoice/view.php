@@ -29,18 +29,18 @@ $this->title = 'Invoice #' . $model->invoice_number;
                 Html::a(
                         '<i class="fas fa-arrow-left me-1"></i> Back to Grid',
                         ['index'],
-                        ['class' => 'btn btn-secondary']
+                        ['class' => 'btn btn-sm btn-secondary']
                 )
                 ?>
                 <?php if ($model->status === Invoice::STATUS_UNPAID): ?>
-                    <?= Html::a('<i class="fas fa-edit me-1"></i> Update', ['update', 'id' => $model->id], ['class' => 'btn btn-outline-primary']) ?>
+                    <?= Html::a('<i class="fas fa-edit me-1"></i> Update', ['update', 'id' => $model->id], ['class' => 'btn btn-sm btn-outline-primary']) ?>
 
                     <?=
                     Html::a(
                             '<i class="fas fa-ban me-1"></i> Cancel Invoice',
                             ['cancel', 'id' => $model->id],
                             [
-                                'class' => 'btn btn-outline-danger',
+                                'class' => 'btn btn-sm btn-outline-danger',
                                 'data' => [
                                     'confirm' => 'Are you sure you want to cancel this invoice?',
                                     'method' => 'post',
@@ -53,7 +53,7 @@ $this->title = 'Invoice #' . $model->invoice_number;
                             'Resend Invoice',
                             ['resend-invoice', 'id' => $model->id],
                             [
-                                'class' => 'btn btn-outline-primary',
+                                'class' => 'btn btn-sm btn-outline-primary',
                                 'data' => [
                                     'method' => 'post',
                                     'confirm' => 'Send this invoice to the customer again?',
@@ -62,7 +62,7 @@ $this->title = 'Invoice #' . $model->invoice_number;
                     )
                     ?>
                 <?php endif; ?>
-                <button type="button" onclick="window.print();" class="btn btn-primary"><i class="fas fa-print me-1"></i> Print / Save PDF</button>
+                <button type="button" onclick="window.print();" class="btn btn-sm btn-primary"><i class="fas fa-print me-1"></i> Print / Save PDF</button>
             </div>
         </div>
     </div>

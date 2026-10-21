@@ -64,10 +64,87 @@ $this->params['breadcrumbs'][] = $model->invoice_number;
                     ]
             )
             ?>
+            <?php
+            if (
+                    in_array(
+                            $model->status,
+                            [
+                                Invoice::STATUS_UNPAID,
+                                Invoice::STATUS_PARTIALLY_PAID,
+                            ],
+                            true
+                    ) && $outstandingAmount > 0
+            ):
+                ?>
+
+                <?=
+                Html::a(
+                        'Submit Payment Proof',
+                        [
+                            'submit-payment',
+                            'number' =>
+                            $model->invoice_number,
+                        ],
+                        [
+                            'class' =>
+                            'btn btn-success',
+                        ]
+                )
+                ?>
+
+            <?php endif; ?>
         </div>
 
     </div>
+    <?php if ($pendingPayment !== null): ?>
 
+        <div class="alert alert-warning">
+
+            <strong>
+                Payment verification pending.
+            </strong>
+
+            <div>
+                Reference:
+                <?=
+                Html::encode(
+                        $pendingPayment
+                        ->gateway_payment_id
+                )
+                ?>
+            </div>
+
+        </div>
+
+    <?php
+    elseif (
+            in_array(
+                    $model->status,
+                    [
+                        Invoice::STATUS_UNPAID,
+                        Invoice::STATUS_PARTIALLY_PAID,
+                    ],
+                    true
+            ) && $outstandingAmount > 0
+    ):
+        ?>
+
+        <?=
+        Html::a(
+                'Submit Payment Proof',
+                [
+                    'submit-payment',
+                    'number' =>
+                    $model->invoice_number,
+                ],
+                [
+                    'class' =>
+                    'btn btn-success',
+                ]
+        )
+        ?>
+
+<?php endif; ?>
     <div class="card shadow-sm mb-4">
 
         <div class="card-body">
@@ -81,11 +158,11 @@ $this->params['breadcrumbs'][] = $model->invoice_number;
                     </h5>
 
                     <div class="fw-semibold">
-                        <?=
-                        Html::encode(
-                                $model->client_name
-                        )
-                        ?>
+<?=
+Html::encode(
+        $model->client_name
+)
+?>
                     </div>
 
                     <div>
@@ -196,26 +273,26 @@ $this->params['breadcrumbs'][] = $model->invoice_number;
 
                             <tr>
                                 <td>
-                                    <?=
-                                    Html::encode(
-                                            $item->category
-                                    )
-                                    ?>
+    <?=
+    Html::encode(
+            $item->category
+    )
+    ?>
                                 </td>
 
                                 <td>
-                                    <?=
-                                    Html::encode(
-                                            $item->description
-                                    )
-                                    ?>
+    <?=
+    Html::encode(
+            $item->description
+    )
+    ?>
                                 </td>
 
                                 <td class="text-end">
-                                    <?=
-                                    (int)
-                                    $item->quantity
-                                    ?>
+    <?=
+    (int)
+    $item->quantity
+    ?>
                                 </td>
 
                                 <td class="text-end">
@@ -297,7 +374,7 @@ $this->params['breadcrumbs'][] = $model->invoice_number;
                                 </td>
                             </tr>
 
-<?php endif; ?>
+                                <?php endif; ?>
 
                         <tr>
                             <th>Total</th>

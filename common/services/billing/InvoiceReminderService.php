@@ -13,7 +13,7 @@ use yii\db\IntegrityException;
 final class InvoiceReminderService
 {
 
-    private const REMINDER_DAYS = [30, 15, 7, 5, 3, 1, 0, -1, -3, -7, -15, -30];
+    private const REMINDER_DAYS = [30, 15, 7, 5, 4, 3, 2, 1, 0, -1, -3, -7, -15, -30];
 
     public function sendDueReminders(?DateTimeImmutable $today = null): int
     {

@@ -82,7 +82,7 @@ final class WebhookController extends Controller
                 throw new BadRequestHttpException('Payment transaction is not pending.');
             }
             $expectedMinorAmount = (int) round(((float) $transaction->amount) * 100);
-            
+
             if ($expectedMinorAmount !== $amountMinor) {
                 throw new BadRequestHttpException('Payment amount does not match.');
             }
@@ -100,6 +100,11 @@ final class WebhookController extends Controller
             }
             (new PaymentProcessingService())->transactionChanged($transaction, false);
             $dbTransaction->commit();
+            try {
+                (new PaymentConfirmationService())->send($transaction);
+            } catch (\Throwable $e) {
+                Yii::error(['message' => 'Razorpay payment was captured but confirmation email failed.', 'transactionId' => (int) $transaction->id, 'error' => $e->getMessage()], __METHOD__);
+            }
             return ['status' => 'success'];
         } catch (BadRequestHttpException $e) {
             if ($dbTransaction->isActive) {
@@ -112,7 +117,7 @@ final class WebhookController extends Controller
                 $dbTransaction->rollBack();
             }
             Yii::error(['message' => 'Razorpay webhook processing failed.', 'orderId' => $orderId, 'paymentId' => $paymentId, 'error' => $e->getMessage()], __METHOD__);
-            
+
             throw new ServerErrorHttpException('Payment processing failed.', 0, $e);
         }
     }

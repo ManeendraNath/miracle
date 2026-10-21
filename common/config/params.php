@@ -26,4 +26,5 @@ return [
             'upiId' => $_ENV['BILLING_UPI_ID'] ?? '',
         ],
     ],
+    'frontendBaseUrl' => rtrim($_ENV['FRONTEND_BASE_URL'] ?? '', '/'),
 ];

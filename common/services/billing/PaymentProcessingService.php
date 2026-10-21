@@ -36,11 +36,11 @@ final class PaymentProcessingService
             $invoiceId = Yii::$app->db
                     ->createCommand(
                             '
-        SELECT id
-        FROM {{%invoice}}
-        WHERE id = :id
-        FOR UPDATE
-        '
+                        SELECT id
+                        FROM {{%invoice}}
+                        WHERE id = :id
+                        FOR UPDATE
+                        '
                     )
                     ->bindValue(
                             ':id',
@@ -81,8 +81,8 @@ final class PaymentProcessingService
 
             // Recalculate from the complete captured-payment ledger.
             $this->paymentService->reconcile(
-                    $invoice
-            );
+                            $invoice
+                    );
 
             // Renewal fulfilment happens only after full payment.
             if (
@@ -108,10 +108,7 @@ final class PaymentProcessingService
                 $dbTransaction->rollBack();
             }
 
-            Yii::error(
-                    $e,
-                    __METHOD__
-            );
+            Yii::error(['message' => 'Payment processing failed.', 'transactionId' => (int) $paymentTransaction->id, 'invoiceId' => (int) $paymentTransaction->invoice_id, 'error' => $e->getMessage()], __METHOD__);
 
             throw $e;
         }

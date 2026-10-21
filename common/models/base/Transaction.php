@@ -19,6 +19,7 @@ use Yii;
  * @property string|null $payment_receipt_file File directory storage path path for uploaded snapshot proofs
  * @property string|null $raw_payload JSON dump for automated webhooks or error trace tracking
  * @property int|null $paid_at Timestamp of confirmation/capture check approval
+ * @property int|null $confirmation_emailed_at
  * @property int $created_at
  * @property int $updated_at
  *
@@ -51,16 +52,18 @@ class Transaction extends \yii\db\ActiveRecord
     public function rules()
     {
         return [
-            [['gateway_id', 'gateway_payment_id', 'gateway_order_id', 'user_payment_notes', 'payment_receipt_file', 'raw_payload', 'paid_at'], 'default', 'value' => null],
+            [['gateway_id', 'gateway_payment_id', 'gateway_order_id', 'user_payment_notes', 'payment_receipt_file', 'raw_payload', 'paid_at', 'confirmation_emailed_at'], 'default', 'value' => null],
             [['gateway_fee'], 'default', 'value' => 0.00],
             [['status'], 'default', 'value' => 'Pending'],
             [['invoice_id', 'amount', 'created_at', 'updated_at'], 'required'],
-            [['invoice_id', 'gateway_id', 'paid_at', 'created_at', 'updated_at'], 'integer'],
+            [['invoice_id', 'gateway_id', 'paid_at', 'confirmation_emailed_at', 'created_at', 'updated_at'], 'integer'],
             [['amount', 'gateway_fee'], 'number'],
             [['status', 'user_payment_notes', 'raw_payload'], 'string'],
             [['gateway_payment_id', 'gateway_order_id'], 'string', 'max' => 100],
             [['payment_receipt_file'], 'string', 'max' => 255],
             ['status', 'in', 'range' => array_keys(self::optsStatus())],
+            [['gateway_order_id'], 'unique'],
+            [['gateway_payment_id'], 'unique'],
             [['invoice_id'], 'exist', 'skipOnError' => true, 'targetClass' => Invoice::class, 'targetAttribute' => ['invoice_id' => 'id']],
         ];
     }
@@ -83,6 +86,7 @@ class Transaction extends \yii\db\ActiveRecord
             'payment_receipt_file' => 'Payment Receipt File',
             'raw_payload' => 'Raw Payload',
             'paid_at' => 'Paid At',
+            'confirmation_emailed_at' => 'Confirmation Emailed At',
             'created_at' => 'Created At',
             'updated_at' => 'Updated At',
         ];

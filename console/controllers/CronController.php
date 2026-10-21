@@ -16,6 +16,7 @@ use common\models\Invoice;
 use common\models\User;
 use common\services\billing\AutoBillingService;
 use common\services\billing\InvoiceDeliveryService;
+use common\services\billing\InvoiceReminderService;
 
 class CronController extends Controller
 {
@@ -68,10 +69,10 @@ class CronController extends Controller
         // Fetch all invoices that are Unpaid/Partially Paid and due precisely tomorrow
         $invoices = Invoice::find()
                 ->where(['status' => [
-    Invoice::STATUS_UNPAID,
-    Invoice::STATUS_PARTIALLY_PAID,
-]
-])
+                        Invoice::STATUS_UNPAID,
+                        Invoice::STATUS_PARTIALLY_PAID,
+                    ]
+                ])
                 ->andWhere(['due_date' => $tomorrow])
                 ->all();
 
@@ -207,33 +208,29 @@ class CronController extends Controller
 
             $invoices = (new AutoBillingService())
                     ->run();
-$deliveryService =
-    new InvoiceDeliveryService();
+            $deliveryService = new InvoiceDeliveryService();
 
-foreach ($invoices as $invoice) {
-    try {
-        $deliveryService->send(
-            $invoice
-        );
-    } catch (\Throwable $e) {
-        Yii::error(
-            [
-                'message' =>
-                    'Automatic invoice email failed.',
-
-                'invoiceId' =>
-                    (int) $invoice->id,
-
-                'invoiceNumber' =>
-                    $invoice->invoice_number,
-
-                'error' =>
-                    $e->getMessage(),
-            ],
-            __METHOD__
-        );
-    }
-}
+            foreach ($invoices as $invoice) {
+                try {
+                    $deliveryService->send(
+                            $invoice
+                    );
+                } catch (\Throwable $e) {
+                    Yii::error(
+                            [
+                                'message' =>
+                                'Automatic invoice email failed.',
+                                'invoiceId' =>
+                                (int) $invoice->id,
+                                'invoiceNumber' =>
+                                $invoice->invoice_number,
+                                'error' =>
+                                $e->getMessage(),
+                            ],
+                            __METHOD__
+                    );
+                }
+            }
             $count = count($invoices);
 
             Yii::info(
@@ -282,6 +279,36 @@ foreach ($invoices as $invoice) {
             $mutex->release(
                     $lockName
             );
+        }
+    }
+
+    public function actionPaymentReminders(): int
+    {
+        try {
+            $count = (new InvoiceReminderService())
+                    ->sendDueReminders();
+
+            $this->stdout(
+                    sprintf(
+                            "Payment reminders completed. Sent %d reminder(s).\n",
+                            $count
+                    )
+            );
+
+            return self::EXIT_CODE_NORMAL;
+        } catch (\Throwable $e) {
+            Yii::error(
+                    $e,
+                    __METHOD__
+            );
+
+            $this->stderr(
+                    'Payment reminders failed: '
+                    . $e->getMessage()
+                    . PHP_EOL
+            );
+
+            return self::EXIT_CODE_ERROR;
         }
     }
 }

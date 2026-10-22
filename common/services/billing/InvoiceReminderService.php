@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace common\services\billing;
 
+use common\models\CustomerPreference;
 use common\models\Invoice;
 use common\models\User;
 use DateTimeImmutable;
@@ -39,6 +40,10 @@ final class InvoiceReminderService
                 }
                 $daysUntilDue = (int) $today->diff($dueDate)->format('%r%a');
                 if (!in_array($daysUntilDue, self::REMINDER_DAYS, true)) {
+                    continue;
+                }
+                $preferences = CustomerPreference::forUser((int) $invoice->user_id);
+                if (!(bool) $preferences->payment_reminders) {
                     continue;
                 }
                 if ($this->sendReminder($invoice, $outstanding, $daysUntilDue)) {

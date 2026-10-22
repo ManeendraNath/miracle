@@ -6,7 +6,6 @@ use yii\widgets\DetailView;
 
 /** @var yii\web\View $this */
 /** @var common\models\User $model */
-
 $this->title = $model->username;
 
 $this->params['breadcrumbs'][] = [
@@ -64,22 +63,40 @@ switch ((int) $model->status) {
 
                 <div class="d-flex gap-2">
 
-                    <?= Html::a(
-                        'Back',
-                        ['index'],
-                        [
-                            'class' => 'btn btn-light border',
-                        ]
-                    ) ?>
+                    <?=
+                    Html::a(
+                            'Back',
+                            ['index'],
+                            [
+                                'class' => 'btn btn-light border',
+                            ]
+                    )
+                    ?>
 
-                    <?= Html::a(
-                        'Update',
-                        ['update', 'id' => $model->id],
-                        [
-                            'class' => 'btn btn-primary',
-                        ]
-                    ) ?>
-
+                    <?=
+                    Html::a(
+                            'Update',
+                            ['update', 'id' => $model->id],
+                            [
+                                'class' => 'btn btn-primary',
+                            ]
+                    )
+                    ?>
+                    <?=
+                    Html::a(
+                            '<i class="fas fa-shield-alt mr-1"></i> Login History',
+                            [
+                                '/user-login-history/index',
+                                'UserLoginHistorySearch' => [
+                                    'user_id' => $model->id,
+                                ],
+                            ],
+                            [
+                                'class' =>
+                                'btn btn-outline-secondary',
+                            ]
+                    )
+                    ?>
                 </div>
 
             </div>
@@ -88,7 +105,8 @@ switch ((int) $model->status) {
 
         <div class="card-body p-4">
 
-            <?= DetailView::widget([
+            <?=
+            DetailView::widget([
                 'model' => $model,
                 'options' => [
                     'class' => 'table table-bordered align-middle mb-0',
@@ -112,11 +130,11 @@ switch ((int) $model->status) {
                         'label' => 'Account Status',
                         'format' => 'raw',
                         'value' => Html::tag(
-                            'span',
-                            Html::encode($statusLabel),
-                            [
-                                'class' => 'badge ' . $statusClass,
-                            ]
+                                'span',
+                                Html::encode($statusLabel),
+                                [
+                                    'class' => 'badge ' . $statusClass,
+                                ]
                         ),
                     ],
                     [
@@ -136,7 +154,8 @@ switch ((int) $model->status) {
                         ],
                     ],
                 ],
-            ]) ?>
+            ])
+            ?>
 
         </div>
 

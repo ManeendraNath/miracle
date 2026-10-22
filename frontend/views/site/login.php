@@ -107,7 +107,7 @@ $labelOptions = ['class' => 'form-label fw-semibold small'];
                     <?php ActiveForm::end(); ?>
 
                     <div class="text-body-secondary text-center mt-3 small">
-                        <?= Html::a('Forgot your password?', ['site/request-password-reset']) ?>
+                        <?= Html::a('Forgot password?', ['site/request-password-reset']) ?>
                         <span class="mx-1">&middot;</span>
                         <?= Html::a('Resend verification email', ['site/resend-verification-email']) ?>
                     </div>

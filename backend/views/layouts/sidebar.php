@@ -64,6 +64,22 @@ use yii\helpers\Html;
                         'active' => Yii::$app->controller->id === 'lead'
                     ],
                     // =====================================================================
+                    // 🚀 1.1. CUSTOMER SUPPORT
+                    // =====================================================================
+                    ['label' => 'CUSTOMER SUPPORT', 'header' => true],
+                    [
+                        'label' => 'Support Requests',
+                        'icon' => 'headset',
+                        'url' => ['/support-ticket/index'],
+                        'active' => Yii::$app->controller->id === 'support-ticket',
+                    ],
+                    [
+                        'label' => 'Notification Preferences',
+                        'icon' => 'bell',
+                        'url' => ['/customer-preference/index'],
+                        'active' => Yii::$app->controller->id === 'customer-preference',
+                    ],
+                    // =====================================================================
                     // 💰 2. FINANCIAL FINANCE & MARKETING OPERATIONS
                     // =====================================================================
                     ['label' => 'FINANCE & MARKETING', 'header' => true],
@@ -113,6 +129,12 @@ use yii\helpers\Html;
                         'url' => ['/maintenance/index'],
                         'active' => Yii::$app->controller->id === 'maintenance'
                     ],
+                    [
+                        'label' => 'Renewal Monitoring',
+                        'icon' => 'calendar-check',
+                        'url' => ['/renewal-monitoring/index'],
+                        'active' => Yii::$app->controller->id === 'renewal-monitoring',
+                    ],
                     // =====================================================================
                     // 👥 4. USER ACCESS MANAGEMENT CONTROL
                     // =====================================================================
@@ -122,6 +144,12 @@ use yii\helpers\Html;
                         'icon' => 'users',
                         'url' => ['/user/index'],
                         'active' => Yii::$app->controller->id === 'user'
+                    ],
+                    [
+                        'label' => 'Login & Security History',
+                        'icon' => 'shield-alt',
+                        'url' => ['/user-login-history/index'],
+                        'active' => Yii::$app->controller->id === 'user-login-history',
                     ],
                     [
                         'label' => 'Admin Accounts Panel',

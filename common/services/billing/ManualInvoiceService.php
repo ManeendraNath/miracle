@@ -131,6 +131,7 @@ final class ManualInvoiceService
             }
             $this->numberService->assign($invoice);
             $transaction->commit();
+            (new NotificationService())->create((int) $invoice->user_id, 'invoice', 'New Invoice Generated', 'Invoice ' . $invoice->invoice_number . ' has been generated.', '/invoice/view?number=' . rawurlencode($invoice->invoice_number));
             return $invoice;
         } catch (\Throwable $e) {
             if ($transaction->isActive) {

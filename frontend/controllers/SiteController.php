@@ -6,6 +6,7 @@ namespace frontend\controllers;
 
 use common\models\LoginForm;
 use common\models\AuditRequest;
+use common\services\UserLoginHistoryService;
 use frontend\models\ContactForm;
 use frontend\models\PasswordResetRequestForm;
 use frontend\models\ResendVerificationEmailForm;
@@ -112,6 +113,7 @@ class SiteController extends Controller
         $model = new LoginForm();
 
         if ($model->load(Yii::$app->request->post()) && $model->login()) {
+            (new UserLoginHistoryService())->record((int) Yii::$app->user->id);
             return $this->goBack();
         }
 

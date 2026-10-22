@@ -5,6 +5,7 @@ namespace backend\controllers;
 use common\models\AuditRequest;
 use common\models\Coupons;
 use common\models\Invoice;
+use common\models\SupportTicket;
 use common\models\Transaction;
 use common\models\User;
 
@@ -103,8 +104,44 @@ class DashboardController extends BaseController
         $metrics['chartDataThisYear'] = $chartDataThisYear;
         $metrics['chartDataLastYear'] = $chartDataLastYear;
 
+        $openSupportTickets = (int)
+                        SupportTicket::find()
+                        ->where([
+                            'status' => [
+                                SupportTicket::STATUS_OPEN,
+                                SupportTicket::STATUS_IN_PROGRESS,
+                            ],
+                        ])
+                        ->count();
+
+        $highPrioritySupportTickets = (int)
+                        SupportTicket::find()
+                        ->where([
+                            'priority' =>
+                            SupportTicket::PRIORITY_HIGH,
+                            'status' => [
+                                SupportTicket::STATUS_OPEN,
+                                SupportTicket::STATUS_IN_PROGRESS,
+                            ],
+                        ])
+                        ->count();
+
+        $recentSupportTickets = SupportTicket::find()
+                ->with('user')
+                ->orderBy([
+                    'updated_at' =>
+                    SORT_DESC,
+                    'id' =>
+                    SORT_DESC,
+                ])
+                ->limit(5)
+                ->all();
+
         return $this->render('index', [
-                    'metrics' => $metrics
+                    'metrics' => $metrics,
+                    'openSupportTickets' => $openSupportTickets,
+                    'highPrioritySupportTickets' => $highPrioritySupportTickets,
+                    'recentSupportTickets' => $recentSupportTickets,
         ]);
     }
 

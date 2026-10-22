@@ -33,6 +33,202 @@ $this->title = 'Miracle Corporate Control Center';
 <div class="container-fluid mt-3">
     <!-- Row 1: High Visibility Metric Info Boxes -->
     <div class="row">
+        <div class="col-lg-3 col-6">
+
+    <div class="small-box bg-info">
+
+        <div class="inner">
+            <h3><?= (int) $openSupportTickets ?></h3>
+            <p>Open Support Requests</p>
+        </div>
+
+        <div class="icon">
+            <i class="fas fa-headset"></i>
+        </div>
+
+        <?= Html::a(
+            'Review Support',
+            ['/support-ticket/index'],
+            [
+                'class' => 'small-box-footer',
+            ]
+        ) ?>
+
+    </div>
+
+</div>
+
+<div class="col-lg-3 col-6">
+
+    <div class="small-box bg-danger">
+
+        <div class="inner">
+            <h3><?= (int) $highPrioritySupportTickets ?></h3>
+            <p>High Priority Support</p>
+        </div>
+
+        <div class="icon">
+            <i class="fas fa-exclamation-triangle"></i>
+        </div>
+
+        <?= Html::a(
+            'Review Priority Tickets',
+            [
+                '/support-ticket/index',
+                'SupportTicketSearch' => [
+                    'priority' => SupportTicket::PRIORITY_HIGH,
+                ],
+            ],
+            [
+                'class' => 'small-box-footer',
+            ]
+        ) ?>
+
+    </div>
+
+</div>
+        
+        <?php if (!empty($recentSupportTickets)): ?>
+
+    <div class="card card-outline card-info">
+
+        <div class="card-header">
+
+            <h3 class="card-title">
+                <i class="fas fa-headset mr-1"></i>
+                Recent Support Requests
+            </h3>
+
+            <div class="card-tools">
+                <?= Html::a(
+                    'View All',
+                    ['/support-ticket/index'],
+                    [
+                        'class' => 'btn btn-sm btn-outline-info',
+                    ]
+                ) ?>
+            </div>
+
+        </div>
+
+        <div class="card-body p-0">
+
+            <div class="table-responsive">
+
+                <table class="table table-hover mb-0">
+
+                    <thead>
+                    <tr>
+                        <th>Ticket</th>
+                        <th>Client</th>
+                        <th>Subject</th>
+                        <th>Priority</th>
+                        <th>Status</th>
+                        <th>Updated</th>
+                        <th></th>
+                    </tr>
+                    </thead>
+
+                    <tbody>
+
+                    <?php foreach ($recentSupportTickets as $ticket): ?>
+
+                        <tr>
+
+                            <td>
+                                <?= Html::encode(
+                                    $ticket->ticket_number
+                                ) ?>
+                            </td>
+
+                            <td>
+                                <?php if ($ticket->user): ?>
+
+                                    <span
+                                        title="<?= Html::encode(
+                                            $ticket->user->email
+                                        ) ?>"
+                                        data-toggle="tooltip"
+                                    >
+                                        <?= Html::encode(
+                                            $ticket->user->username
+                                        ) ?>
+                                    </span>
+
+                                <?php else: ?>
+
+                                    <span class="text-muted">
+                                        -
+                                    </span>
+
+                                <?php endif; ?>
+                            </td>
+
+                            <td>
+                                <?= Html::encode(
+                                    $ticket->subject
+                                ) ?>
+                            </td>
+
+                            <td>
+                                <?= Html::encode(
+                                    ucfirst(
+                                        (string) $ticket->priority
+                                    )
+                                ) ?>
+                            </td>
+
+                            <td>
+                                <?= Html::encode(
+                                    ucwords(
+                                        str_replace(
+                                            '_',
+                                            ' ',
+                                            (string) $ticket->status
+                                        )
+                                    )
+                                ) ?>
+                            </td>
+
+                            <td class="text-nowrap">
+                                <?= Yii::$app->formatter->asDatetime(
+                                    $ticket->updated_at,
+                                    'php:d M Y H:i'
+                                ) ?>
+                            </td>
+
+                            <td class="text-right">
+
+                                <?= Html::a(
+                                    '<i class="fas fa-comments"></i>',
+                                    [
+                                        '/support-ticket/view',
+                                        'number' => $ticket->ticket_number,
+                                    ],
+                                    [
+                                        'class' => 'btn btn-sm btn-outline-primary',
+                                        'title' => 'Open Conversation',
+                                        'data-toggle' => 'tooltip',
+                                    ]
+                                ) ?>
+
+                            </td>
+
+                        </tr>
+
+                    <?php endforeach; ?>
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        </div>
+
+    </div>
+
+<?php endif; ?>
         <!-- Box 1: Registered Customers -->
         <div class="col-lg-3 col-6">
             <div class="small-box bg-info shadow-sm">
@@ -128,11 +324,11 @@ $this->title = 'Miracle Corporate Control Center';
                         <div>
                             <?php if ($metrics['pendingUpiVerifications'] > 0): ?>
                                 <a href="<?= Url::to(['transaction/index', 'TransactionSearch' => ['status' => 'Pending', 'gateway_id' => 2]]) ?>" class="btn btn-sm btn-warning fw-bold px-3 position-relative animate-pulse">
-                                    <?= $metrics['pendingUpiVerifications'] ?> Review Required
+                                <?= $metrics['pendingUpiVerifications'] ?> Review Required
                                 </a>
-                            <?php else: ?>
+<?php else: ?>
                                 <span class="badge bg-success px-3 py-2 rounded-pill"><i class="fas fa-check me-1"></i> All Clear</span>
-                            <?php endif; ?>
+<?php endif; ?>
                         </div>
                     </div>
                 </div>
@@ -253,11 +449,11 @@ $this->title = 'Miracle Corporate Control Center';
                         <div class="text-end">
                             <?php if ($metrics['newInboundLeadsCount'] > 0): ?>
                                 <a href="<?= Url::to(['audit-request/index', 'AuditRequestSearch' => ['status' => 'Pending']]) ?>" class="badge bg-primary p-2 text-decoration-none fs-6 rounded">
-                                    <?= $metrics['newInboundLeadsCount'] ?> New Requests
+                                <?= $metrics['newInboundLeadsCount'] ?> New Requests
                                 </a>
-                            <?php else: ?>
+<?php else: ?>
                                 <span class="badge bg-light text-secondary p-2 border fs-6 rounded">0 Pending</span>
-                            <?php endif; ?>
+<?php endif; ?>
                         </div>
                     </div>
 
@@ -364,8 +560,8 @@ $this->title = 'Miracle Corporate Control Center';
                             </tr>
                         </thead>
                         <tbody>
-                            <?php if (!empty($metrics['recentCoupons'])): ?>
-                                <?php foreach ($metrics['recentCoupons'] as $coupon): ?>
+<?php if (!empty($metrics['recentCoupons'])): ?>
+    <?php foreach ($metrics['recentCoupons'] as $coupon): ?>
                                     <tr>
                                         <td class="ps-4 py-3 fw-bold text-dark">
                                             <!-- 👇 FIXED: Uses dynamic $assetDir mapping pattern variables instead of broken raw strings paths -->
@@ -378,13 +574,13 @@ $this->title = 'Miracle Corporate Control Center';
                                         <td class="text-center">
                                             <?php if (isset($coupon['status']) && (int) $coupon['status'] === 1): ?>
                                                 <span class="badge bg-success px-2 py-1">Active</span>
-                                            <?php else: ?>
+        <?php else: ?>
                                                 <span class="badge bg-secondary px-2 py-1">Paused</span>
-                                            <?php endif; ?>
+                                    <?php endif; ?>
                                         </td>
                                     </tr>
-                                <?php endforeach; ?>
-                            <?php else: ?>
+    <?php endforeach; ?>
+<?php else: ?>
                                 <!-- Fallback Placeholder Rows matching the structure if database entries are completely empty -->
                                 <tr>
                                     <td class="ps-4 py-3 text-dark font-weight-bold">
@@ -402,7 +598,7 @@ $this->title = 'Miracle Corporate Control Center';
                                     <td class="text-success font-weight-bold">15% Percent Off</td>
                                     <td class="text-center"><span class="badge bg-light text-secondary border px-2 py-1">System Preset Template</span></td>
                                 </tr>
-                            <?php endif; ?>
+<?php endif; ?>
                         </tbody>
                     </table>
                 </div>

@@ -164,6 +164,7 @@ final class InvoiceController extends Controller
                 throw new \RuntimeException('Payment submission could not be recorded: ' . json_encode($transaction->errors, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
             }
             $dbTransaction->commit();
+            (new NotificationService())->create((int) $invoice->user_id, 'payment', 'Payment Proof Submitted', 'Your payment proof for invoice ' . $invoice->invoice_number . ' is awaiting verification.', '/invoice/view?number=' . rawurlencode($invoice->invoice_number));
             Yii::$app->session->setFlash('success', 'Payment proof submitted successfully. ' . 'The payment is pending verification.');
             return $this->redirect(['view', 'number' => $invoice->invoice_number]);
         } catch (\Throwable $e) {

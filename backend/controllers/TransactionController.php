@@ -196,6 +196,7 @@ class TransactionController extends BaseController
         
         try {
             (new PaymentConfirmationService())->send($paymentTransaction);
+            (new NotificationService())->create((int) $paymentTransaction->invoice->user_id, 'payment', 'Payment Confirmed', 'Your payment for invoice ' . $paymentTransaction->invoice->invoice_number . ' has been confirmed.', '/invoice/view?number=' . rawurlencode($paymentTransaction->invoice->invoice_number));
             Yii::$app->session->setFlash('success', 'Payment approved and confirmation email sent.');
         } catch (\Throwable $e) {
             Yii::error(['message' => 'Payment was approved but confirmation email failed.', 'transactionId' => (int) $paymentTransaction->id, 'error' => $e->getMessage()], __METHOD__);

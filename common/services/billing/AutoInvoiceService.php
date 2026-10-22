@@ -223,6 +223,7 @@ final class AutoInvoiceService
         if (!$invoice->save()) {
             throw new \RuntimeException('Unable to create automatic invoice: ' . json_encode($invoice->errors, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
         }
+        (new NotificationService())->create((int) $invoice->user_id, 'invoice', 'New Invoice Generated', 'Invoice ' . $invoice->invoice_number . ' has been generated.', '/invoice/view?number=' . rawurlencode($invoice->invoice_number));
         return $invoice;
     }
 

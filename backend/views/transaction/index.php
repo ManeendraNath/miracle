@@ -1,14 +1,20 @@
 <?php
 
+use common\helpers\GridActionHelper;
+use common\helpers\GridFilterHelper;
+use common\helpers\GridPaginationHelper;
+use common\helpers\GridViewHelper;
+use common\models\Transaction;
 use yii\bootstrap5\Html;
 use yii\grid\GridView;
-use yii\helpers\Url;
 
 /** @var yii\web\View $this */
 /** @var common\models\TransactionSearch $searchModel */
 /** @var yii\data\ActiveDataProvider $dataProvider */
 $this->title = 'Financial Transactions Ledger';
 $this->params['breadcrumbs'][] = $this->title;
+
+GridViewHelper::register($this);
 ?>
 <div class="transaction-index container-fluid pt-3">
 
@@ -18,6 +24,7 @@ $this->params['breadcrumbs'][] = $this->title;
             GridView::widget([
                 'dataProvider' => $dataProvider,
                 'filterModel' => $searchModel,
+                'layout' => GridPaginationHelper::gridLayout(),
                 'tableOptions' => ['class' => 'table table-striped table-hover align-middle mb-0 text-center'],
                 'columns' => [
                     [
@@ -67,26 +74,22 @@ $this->params['breadcrumbs'][] = $this->title;
                         'attribute' => 'status',
                         'format' => 'raw',
                         'headerOptions' => ['style' => 'width: 160px;', 'class' => 'text-primary'],
-                        'value' => function ($model) {
-                            $status = strtolower($model->status);
-                            $badge = 'badge-secondary';
-                            if ($status === 'captured' || $status === 'success') {
-                                $badge = 'badge-success';
-                            }
-                            if ($status === 'pending') {
-                                $badge = 'badge-warning';
-                            }
-                            if ($status === 'failed') {
-                                $badge = 'badge-danger';
-                            }
-                            return '<span class="badge ' . $badge . ' px-3 py-2 text-uppercase d-block text-center">' . Html::encode($model->status) . '</span>';
+                        'value' => static function (Transaction $model): string {
+                            $status = strtolower((string) $model->status);
+                            $badge = match ($status) {
+                                'captured',
+                                'success' => 'bg-success',
+                                'pending' => 'bg-warning text-dark',
+                                'failed' => 'bg-danger',
+                                default => 'bg-secondary',
+                            };
+                            return Html::tag('span', Html::encode($model->status), ['class' => 'badge ' . $badge . ' px-2 py-1']);
                         },
-                        // DROPDOWN FILTER ACTIVATION
-                        'filter' => [
+                        'filter' => GridFilterHelper::select2($searchModel, 'status', [
                             'Pending' => 'Pending',
                             'Captured' => 'Captured',
-                            'Failed' => 'Failed'
-                        ],
+                            'Failed' => 'Failed',
+                                ], 'All Statuses'),
                     ],
                     [
                         'attribute' => 'created_at',
@@ -97,8 +100,15 @@ $this->params['breadcrumbs'][] = $this->title;
                         'attribute' => 'date_range',
                         'label' => 'Payment Date',
                         'headerOptions' => ['class' => 'text-primary font-weight-bold', 'style' => 'width: 260px;'],
-                        'value' => function ($model) {
-                            return !empty($model->paid_at) ? date('d-M-Y h:i A', $model->paid_at) : 'Awaiting Settlement';
+                        'value' => static function (Transaction $model): string {
+                            if (empty($model->paid_at)) {
+                                return 'Awaiting Settlement';
+                            }
+
+                            return Yii::$app->formatter->asDatetime(
+                                    $model->paid_at,
+                                    'php:d M Y, h:i A'
+                            );
                         },
                         'filter' => \kartik\daterange\DateRangePicker::widget([
                             'model' => $searchModel,

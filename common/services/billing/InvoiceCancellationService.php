@@ -20,166 +20,68 @@ final class InvoiceCancellationService
         
     }
 
-    public function cancel(
-            Invoice $invoice,
-            ?string $reason = null
-    ): void
+    public function cancel(Invoice $invoice, ?string $reason = null): void
     {
         $transaction = Yii::$app->db->beginTransaction();
-
         try {
-            $invoiceId = Yii::$app->db
-                    ->createCommand(
-                            '
-        SELECT id
-        FROM {{%invoice}}
-        WHERE id = :id
-        FOR UPDATE
-        '
-                    )
-                    ->bindValue(
-                            ':id',
-                            (int) $invoice->id
-                    )
-                    ->queryScalar();
-
-            $lockedInvoice = $invoiceId !== false ? Invoice::findOne(
-                            (int) $invoiceId
-                    ) : null;
-
+            $invoiceId = Yii::$app->db->createCommand('SELECT id FROM {{%invoice}} WHERE id = :id FOR UPDATE')->bindValue(':id', (int) $invoice->id)->queryScalar();
+            $lockedInvoice = $invoiceId !== false ? Invoice::findOne((int) $invoiceId) : null;
             if ($lockedInvoice === null) {
-                throw new \RuntimeException(
-                                'Invoice no longer exists.'
-                        );
+                throw new \RuntimeException('Invoice no longer exists.');
             }
 
-            if (
-                    $lockedInvoice->status ===
-                    Invoice::STATUS_CANCELLED
-            ) {
+            if ($lockedInvoice->status === Invoice::STATUS_CANCELLED) {
                 $transaction->commit();
-
                 return;
             }
 
-            if (
-                    $lockedInvoice->status ===
-                    Invoice::STATUS_CARRIED_FORWARD
-            ) {
-                throw new \DomainException(
-                                'A carried-forward invoice '
-                                . 'cannot be cancelled.'
-                        );
+            if ($lockedInvoice->status === Invoice::STATUS_CARRIED_FORWARD) {
+                throw new \DomainException('A carried-forward invoice cannot be cancelled.');
             }
 
-            $capturedAmount = $this->paymentService
-                    ->getCapturedAmount(
-                            (int) $lockedInvoice->id
-                    );
+            $capturedAmount = $this->paymentService->getCapturedAmount((int) $lockedInvoice->id);
 
             if ($capturedAmount > 0) {
-                throw new \DomainException(
-                                'An invoice with captured payments '
-                                . 'cannot be cancelled. '
-                                . 'Use the refund workflow instead.'
-                        );
+                throw new \DomainException('An invoice with captured payments cannot be cancelled. Use the refund workflow instead.');
             }
 
-            $hasArrears = InvoiceItem::find()
-                    ->where([
-                        'invoice_id' =>
-                        $lockedInvoice->id,
-                        'item_type' =>
-                        InvoiceItem::TYPE_ARREARS,
-                    ])
-                    ->exists();
+            $hasArrears = InvoiceItem::find()->where(['invoice_id' => $lockedInvoice->id, 'item_type' => InvoiceItem::TYPE_ARREARS])->exists();
 
             if ($hasArrears) {
-                throw new \DomainException(
-                                'An invoice containing carried-forward '
-                                . 'balances cannot be cancelled using '
-                                . 'the standard cancellation workflow.'
-                        );
+                throw new \DomainException('An invoice containing carried-forward balances cannot be cancelled using the standard cancellation workflow.');
             }
 
-            $hasFulfilledEvents = BillingEvent::find()
-                    ->where([
-                        'invoice_id' =>
-                        $lockedInvoice->id,
-                        'status' =>
-                        BillingEvent::STATUS_FULFILLED,
-                    ])
-                    ->exists();
+            $hasFulfilledEvents = BillingEvent::find()->where(['invoice_id' => $lockedInvoice->id, 'status' => BillingEvent::STATUS_FULFILLED])->exists();
 
             if ($hasFulfilledEvents) {
-                throw new \DomainException(
-                                'Invoice contains fulfilled renewals '
-                                . 'and cannot be cancelled.'
-                        );
+                throw new \DomainException('Invoice contains fulfilled renewals and cannot be cancelled.');
             }
 
-            $hasRenewalHistory = ServiceRenewalHistory::find()
-                    ->where([
-                        'invoice_id' =>
-                        $lockedInvoice->id,
-                    ])
-                    ->exists();
+            $hasRenewalHistory = ServiceRenewalHistory::find()->where(['invoice_id' => $lockedInvoice->id])->exists();
 
             if ($hasRenewalHistory) {
-                throw new \DomainException(
-                                'Invoice already has renewal history '
-                                . 'and cannot be cancelled.'
-                        );
+                throw new \DomainException('Invoice already has renewal history and cannot be cancelled.');
             }
 
             $now = time();
-
-            $notes = $reason !== null && trim($reason) !== '' ? mb_substr(
-                            trim($reason),
-                            0,
-                            500
-                    ) : 'Invoice cancelled.';
-
+            $notes = $reason !== null && trim($reason) !== '' ? mb_substr(trim($reason), 0, 500) : 'Invoice cancelled.';
             BillingEvent::updateAll(
+                    ['status' => BillingEvent::STATUS_CANCELLED, 'notes' => $notes, 'updated_at' => $now],
                     [
-                        'status' =>
-                        BillingEvent::STATUS_CANCELLED,
-                        'notes' =>
-                        $notes,
-                        'updated_at' =>
-                        $now,
-                    ],
-                    [
-                        'and',
+                        'and', ['invoice_id' => $lockedInvoice->id],
                         [
-                            'invoice_id' =>
-                            $lockedInvoice->id,
-                        ],
-                        [
-                            'status' => [
-                                BillingEvent::STATUS_PENDING,
-                                BillingEvent::STATUS_INVOICED,
-                            ],
+                            'status' => [BillingEvent::STATUS_PENDING, BillingEvent::STATUS_INVOICED],
                         ],
                     ]
             );
-
             $lockedInvoice->status = Invoice::STATUS_CANCELLED;
-
             $lockedInvoice->updated_at = $now;
-
-            if (!$lockedInvoice->save(
-                            false,
-                            [
-                                'status',
-                                'updated_at',
-                            ]
-                    )) {
-                throw new \RuntimeException(
-                                'Unable to cancel invoice.'
-                        );
+            if (!$lockedInvoice->save(false, ['status', 'updated_at'])) {
+                throw new \RuntimeException('Unable to cancel invoice.');
             }
-
+            if (!empty($lockedInvoice->coupon_code)) {
+                (new CouponService())->removeForInvoice((int) $invoice->id);
+            }
             $transaction->commit();
 
             $invoice->refresh();

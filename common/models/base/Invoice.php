@@ -37,9 +37,11 @@ use Yii;
  *
  * @property BillingEvent[] $billingEvents
  * @property BillingRun $billingRun
- * @property Coupons $coupon
+ * @property Coupon $coupon
+ * @property CouponRedemption $couponRedemption
  * @property InvoiceItem[] $invoiceItems
  * @property InvoiceItem[] $invoiceItems0
+ * @property InvoiceReminderLog[] $invoiceReminderLogs
  * @property ServiceRenewalHistory[] $serviceRenewalHistories
  * @property Transaction[] $transactions
  * @property User $user
@@ -89,7 +91,7 @@ class Invoice extends \yii\db\ActiveRecord
             ['status', 'in', 'range' => array_keys(self::optsStatus())],
             [['invoice_number'], 'unique'],
             [['billing_run_id'], 'exist', 'skipOnError' => true, 'targetClass' => BillingRun::class, 'targetAttribute' => ['billing_run_id' => 'id']],
-            [['coupon_id'], 'exist', 'skipOnError' => true, 'targetClass' => Coupons::class, 'targetAttribute' => ['coupon_id' => 'coupon_id']],
+            [['coupon_id'], 'exist', 'skipOnError' => true, 'targetClass' => Coupon::class, 'targetAttribute' => ['coupon_id' => 'id']],
             [['user_id'], 'exist', 'skipOnError' => true, 'targetClass' => User::class, 'targetAttribute' => ['user_id' => 'id']],
         ];
     }
@@ -157,7 +159,17 @@ class Invoice extends \yii\db\ActiveRecord
      */
     public function getCoupon()
     {
-        return $this->hasOne(Coupons::class, ['coupon_id' => 'coupon_id']);
+        return $this->hasOne(Coupon::class, ['id' => 'coupon_id']);
+    }
+
+    /**
+     * Gets query for [[CouponRedemption]].
+     *
+     * @return \yii\db\ActiveQuery
+     */
+    public function getCouponRedemption()
+    {
+        return $this->hasOne(CouponRedemption::class, ['invoice_id' => 'id']);
     }
 
     /**
@@ -178,6 +190,16 @@ class Invoice extends \yii\db\ActiveRecord
     public function getInvoiceItems0()
     {
         return $this->hasMany(InvoiceItem::class, ['source_invoice_id' => 'id']);
+    }
+
+    /**
+     * Gets query for [[InvoiceReminderLogs]].
+     *
+     * @return \yii\db\ActiveQuery
+     */
+    public function getInvoiceReminderLogs()
+    {
+        return $this->hasMany(InvoiceReminderLog::class, ['invoice_id' => 'id']);
     }
 
     /**

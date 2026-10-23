@@ -1,5 +1,6 @@
 <?php
 
+use common\models\SupportTicket;
 use hail812\adminlte3\assets\AdminLteAsset;
 use hail812\adminlte3\assets\PluginAsset;
 use yii\bootstrap5\Html;
@@ -540,14 +541,14 @@ $this->title = 'Miracle Corporate Control Center';
             </div>
             <!-- /.card -->
 
-            <!-- 🏷️ Widget Card F: Marketing Operations Promo Coupons Management Registry Grid -->
+            <!-- 🏷️ Widget Card F: Marketing Operations Promo Coupon Management Registry Grid -->
             <div class="card shadow-sm mb-4">
                 <div class="card-header border-0 bg-transparent py-3">
                     <div class="d-flex justify-content-between align-items-center">
                         <h3 class="card-title mb-0 fw-bold fs-5 text-secondary">
                             <i class="fas fa-tags text-warning me-2"></i>Active Promotional Campaigns
                         </h3>
-                        <a href="<?= Url::to(['coupons/index']) ?>" class="btn btn-sm btn-outline-warning px-3 rounded-pill">Manage Campaign</a>
+                        <a href="<?= Url::to(['coupon/index']) ?>" class="btn btn-sm btn-outline-warning px-3 rounded-pill">Manage Campaign</a>
                     </div>
                 </div>
                 <div class="card-body table-responsive p-0">
@@ -560,8 +561,8 @@ $this->title = 'Miracle Corporate Control Center';
                             </tr>
                         </thead>
                         <tbody>
-<?php if (!empty($metrics['recentCoupons'])): ?>
-    <?php foreach ($metrics['recentCoupons'] as $coupon): ?>
+<?php if (!empty($metrics['recentCoupon'])): ?>
+    <?php foreach ($metrics['recentCoupon'] as $coupon): ?>
                                     <tr>
                                         <td class="ps-4 py-3 fw-bold text-dark">
                                             <!-- 👇 FIXED: Uses dynamic $assetDir mapping pattern variables instead of broken raw strings paths -->

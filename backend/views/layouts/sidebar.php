@@ -102,10 +102,10 @@ use yii\helpers\Html;
                         'active' => Yii::$app->controller->id === 'transaction'
                     ],
                     [
-                        'label' => 'Promo Coupons',
+                        'label' => 'Promo Coupon',
                         'icon' => 'tags',
-                        'url' => ['/coupons/index'],
-                        'active' => Yii::$app->controller->id === 'coupons'
+                        'url' => ['/coupon/index'],
+                        'active' => Yii::$app->controller->id === 'coupon'
                     ],
                     // =====================================================================
                     // 🌐 3. INFRASTRUCTURE & ACTIVE CLIENT ASSETS

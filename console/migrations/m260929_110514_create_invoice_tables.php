@@ -30,7 +30,7 @@ class m260929_110514_create_invoice_tables extends Migration
                 'subtotal_amount' => $this->decimal(10, 2)->notNull()->defaultValue(0.00)->comment('Sum of all invoice items before taxes and discounts'),
                 
                 // Coupon & Discount System Implemented Fields
-                'coupon_id' => $this->integer(11)->defaultValue(null)->comment('Maintains historical link back to coupons reference table if available'),
+                'coupon_id' => $this->integer(11)->defaultValue(null)->comment('Maintains historical link back to coupon reference table if available'),
                 'coupon_code' => $this->string(32)->defaultValue(null)->comment('Preserves coupon name snapshot text at point-of-sale for audit permanence'),
                 'discount_amount' => $this->decimal(10, 2)->notNull()->defaultValue(0.00)->comment('Total mathematical deduction applied via code or flat reduction adjustment'),
                 

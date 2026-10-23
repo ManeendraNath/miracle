@@ -3,7 +3,7 @@
 namespace backend\controllers;
 
 use common\models\AuditRequest;
-use common\models\Coupons;
+use common\models\Coupon;
 use common\models\Invoice;
 use common\models\SupportTicket;
 use common\models\Transaction;
@@ -35,9 +35,9 @@ class DashboardController extends BaseController
         };
 
         // 📊 SAFE RETRIEVAL LOGIC FOR RECENT ACTIVE DATA ROWS
-        $recentCoupons = [];
-        if (class_exists('\common\models\Coupons')) {
-            $recentCoupons = Coupons::find()->orderBy(['coupon_id' => SORT_DESC])->limit(4)->asArray()->all();
+        $recentCoupon = [];
+        if (class_exists('\common\models\Coupon')) {
+            $recentCoupon = Coupon::find()->orderBy(['id' => SORT_DESC])->limit(4)->asArray()->all();
         }
         // Execute aggregated calculations utilizing the custom precision query scopes we configured
         $metrics = [
@@ -64,7 +64,7 @@ class DashboardController extends BaseController
             // 6. NEW ADDITIONS: CRM & AUDIENCE SUBSCRIBERS PIPELINE LEDGER
             'subscribersCount' => $getAssetCount('\common\models\Subscribers'),
             'supportMessagesCount' => $getAssetCount('\common\models\Messages'),
-            'recentCoupons' => $recentCoupons
+            'recentCoupon' => $recentCoupon
         ];
 
         // 🧮 6-MONTH MONTHLY CASHFLOW PROCESSING TREND LOGGER

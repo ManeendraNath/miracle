@@ -5,8 +5,6 @@ use yii\db\Migration;
 class m261006_165500_apply_project_foreign_keys extends Migration
 {
 
-    private $tableName = '{{%maintenance}}';
-
     public function up()
     {
         // 1. Link Service Assets back to their respective Owners (user table)
@@ -16,7 +14,7 @@ class m261006_165500_apply_project_foreign_keys extends Migration
 
         // 2. Link Master Invoices to Customers & Promo Systems
         $this->addForeignKey('fk-invoice-user_id', '{{%invoice}}', 'user_id', '{{%user}}', 'id', 'RESTRICT', 'CASCADE');
-        $this->addForeignKey('fk-invoice-coupon_id', '{{%invoice}}', 'coupon_id', '{{%coupons}}', 'coupon_id', 'SET NULL', 'CASCADE');
+        $this->addForeignKey('fk-invoice-coupon_id', '{{%invoice}}', 'coupon_id', '{{%coupon}}', 'id', 'SET NULL', 'CASCADE');
 
         // 3. Link Breakdown Elements to the parent Statement Ledger
         $this->addForeignKey('fk-invoice_item-invoice_id', '{{%invoice_item}}', 'invoice_id', '{{%invoice}}', 'id', 'CASCADE', 'CASCADE');

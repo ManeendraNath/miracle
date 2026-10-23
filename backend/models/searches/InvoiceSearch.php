@@ -22,8 +22,8 @@ class InvoiceSearch extends Invoice
     public function rules()
     {
         return [
-            [['id', 'user_id', 'coupon_id'], 'integer'],
-            [['invoice_number', 'client_name', 'client_name', 'coupon_code', 'status', 'due_date_range', 'created_at_range'], 'safe'],
+            [['id', 'user_id', 'id'], 'integer'],
+            [['invoice_number', 'client_name', 'client_name', 'code', 'status', 'due_date_range', 'created_at_range'], 'safe'],
             [['subtotal_amount', 'discount_amount', 'total_payable'], 'number'],
         ];
     }

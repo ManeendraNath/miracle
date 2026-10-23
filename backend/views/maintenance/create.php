@@ -1,18 +1,25 @@
 <?php
+declare(strict_types=1);
 
-use yii\helpers\Html;
+$this->title = 'Add Maintenance Contract';
 
-/** @var yii\web\View $this */
-/** @var common\models\Maintenance $model */
+$this->params['breadcrumbs'][] = [
+    'label' => 'Maintenance Contracts',
+    'url' => ['index'],
+];
 
-$this->title = 'Create Maintenance';
-$this->params['breadcrumbs'][] = ['label' => 'Maintenances', 'url' => ['index']];
 $this->params['breadcrumbs'][] = $this->title;
 ?>
+
 <div class="maintenance-create">
 
-    <?= $this->render('_form', [
-        'model' => $model,
-    ]) ?>
+<?=
+$this->render(
+        '_form',
+        [
+            'model' => $model,
+        ]
+)
+?>
 
 </div>

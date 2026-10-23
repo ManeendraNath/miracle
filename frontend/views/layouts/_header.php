@@ -29,6 +29,7 @@ use yii\bootstrap5\NavBar;
     if (Yii::$app->user->isGuest) {
         $menuItems[] = ['label' => 'Portal Access', 'url' => ['/site/login'], 'linkOptions' => ['style' => 'font-weight: 500;']];
     } else {
+/*
         $menuItems[] = ['label' => 'Dashboard', 'url' => ['/dashboard/index']];
         $menuItems[] = ['label' => 'My Services', 'url' => ['/service/index']];
         $menuItems[] = [
@@ -56,7 +57,7 @@ use yii\bootstrap5\NavBar;
                 ['label' => 'Change Password', 'url' => ['/account/change-password']],
             ],
         ];
-
+*/
         $menuItems[] = '<li class="nav-item">'
                 . Html::beginForm(['/site/logout'], 'post', ['class' => 'd-inline'])
                 . Html::submitButton('Sign Out (' . Html::encode(Yii::$app->user->identity->username) . ')', ['class' => 'btn btn-link nav-link logout', 'style' => 'font-weight:500; border:none;'])

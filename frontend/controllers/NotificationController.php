@@ -14,6 +14,8 @@ use yii\web\NotFoundHttpException;
 
 final class NotificationController extends Controller
 {
+    
+    public $layout = 'account';
 
     public function behaviors(): array
     {

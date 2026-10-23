@@ -23,5 +23,5 @@ $resetLink = Yii::$app->urlManager->createAbsoluteUrl(['site/reset-password', 't
         <p>If you did not request a password reset, safely ignore this email.</p>
         <p>This link expires automatically for security reasons.</p>
     </div>
-    <div style="background:#f8fafc; padding:20px; text-align:center; font-size:12px; color:#64748b;">© 2015-<?= date('Y') ?>Miracle Web Technologies</div>
+    <div style="background:#f8fafc; padding:20px; text-align:center; font-size:12px; color:#64748b;">© 2015-<?= date('Y') ?> Miracle Web Technologies</div>
 </div>

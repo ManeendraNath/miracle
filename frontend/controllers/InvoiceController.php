@@ -19,6 +19,8 @@ use yii\web\UploadedFile;
 
 final class InvoiceController extends Controller
 {
+    
+    public $layout = 'account';
 
     public function behaviors(): array
     {
@@ -138,6 +140,12 @@ final class InvoiceController extends Controller
         if ($form->receiptFile === null) {
             $form->addError('receiptFile', 'Please upload the payment receipt.');
             return $this->render('submit-payment', ['model' => $form, 'invoice' => $invoice, 'outstandingAmount' => $outstanding]);
+        }
+        if ($form->receiptFile !== null && $form->receiptFile->error !== UPLOAD_ERR_OK) {
+            Yii::warning([
+                'uploadError' => $form->receiptFile->error,
+                'fileName' => $form->receiptFile->name,
+            ]);
         }
         $extension = strtolower($form->receiptFile->extension);
         $fileName = bin2hex(random_bytes(24)) . '.' . $extension;

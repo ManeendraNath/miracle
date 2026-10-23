@@ -12,6 +12,8 @@ use yii\web\Controller;
 
 final class SecurityController extends Controller
 {
+    
+    public $layout = 'account';
 
     public function behaviors(): array
     {

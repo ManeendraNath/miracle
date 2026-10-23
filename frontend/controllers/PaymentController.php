@@ -15,6 +15,8 @@ use yii\web\NotFoundHttpException;
 
 final class PaymentController extends Controller
 {
+    
+    public $layout = 'account';
 
     public function behaviors(): array
     {

@@ -17,6 +17,9 @@ use yii\web\NotFoundHttpException;
 
 final class CheckoutController extends Controller
 {
+    
+    public $layout = 'account';
+    
     public function behaviors(): array
     {
         return [

@@ -13,6 +13,8 @@ use yii\web\Controller;
 
 final class RenewalController extends Controller
 {
+    
+    public $layout = 'account';
 
     public function behaviors(): array
     {

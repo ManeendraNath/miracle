@@ -48,7 +48,7 @@ $money = static function (int|float|string|null $amount): string {
                 Support Line: admin@miraclewebtechnologies.com
             </p>
         </div>
-        <div class="col-col-md-6 text-end pt-4">
+        <div class="col-md-6 text-end pt-4">
             <h1 class="text-uppercase fw-light text-muted m-0" style="font-size: 2.5rem;">INVOICE</h1>
             <p class="text-dark fw-bold m-0">Reference ID: <span class="text-primary"><?= Html::encode($model->invoice_number) ?></span></p>
         </div>

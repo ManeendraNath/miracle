@@ -17,6 +17,8 @@ use yii\web\NotFoundHttpException;
 
 final class ServiceController extends Controller
 {
+    
+    public $layout = 'account';
 
     public function behaviors(): array
     {

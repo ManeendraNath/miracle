@@ -13,7 +13,6 @@ $this->params['breadcrumbs'][] = $this->title;
 ?>
 <div class="transaction-view container-fluid pt-3">
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1 class="h3 mb-0 text-gray-800"><?= Html::encode($this->title) ?></h1>
         <div class="action-buttons">
             <?php if ($model->status === Transaction::STATUS_PENDING): ?>
                 <?=
@@ -49,6 +48,31 @@ $this->params['breadcrumbs'][] = $this->title;
     </div>
 
     <div class="row">
+        <div class="card card-outline card-primary mb-4">
+            <div class="card-header">
+                <h3 class="card-title">Invoice Information</h3>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3">
+                        <strong>Invoice Number</strong><br>
+                        <?= Html::encode($model->invoice->invoice_number) ?>
+                    </div>
+                    <div class="col-md-3">
+                        <strong>Client</strong><br>
+                        <?= Html::encode($model->invoice->client_name) ?>
+                    </div>
+                    <div class="col-md-3">
+                        <strong>Total Payable</strong><br>
+                        <?= Yii::$app->formatter->asCurrency($model->invoice->total_payable, 'INR') ?>
+                    </div>
+                    <div class="col-md-3">
+                        <strong>Status</strong><br>
+                        <?= Html::encode(Invoice::getStatuses()[$model->invoice->status] ?? $model->invoice->status) ?>
+                    </div>
+                </div>
+            </div>
+        </div>
         <div class="col-lg-8">
             <div class="card shadow-sm mb-4">
                 <div class="card-body p-0">
@@ -112,15 +136,97 @@ $this->params['breadcrumbs'][] = $this->title;
             </div>
         </div>
 
+    </div>
+    <div class="row">
         <?php if (!empty($model->payment_receipt_file)): ?>
+            <div class="card shadow-sm mt-4">
+                <?php
+                $file = (string) $model->payment_receipt_file;
+
+                $extension = strtolower(
+                        pathinfo(
+                                $file,
+                                PATHINFO_EXTENSION
+                        )
+                );
+                ?>
+                <div class="card card-outline card-info">
+
+                    <div class="card-header">
+
+                        <h3 class="card-title">
+                            Uploaded Payment Proof
+                        </h3>
+
+                    </div>
+
+                    <div class="card-body">
+
+                        <?=
+                        Html::a(
+                                'Open Receipt',
+                                [
+                                    'receipt',
+                                    'id' => $model->id,
+                                ],
+                                [
+                                    'class' =>
+                                    'btn btn-primary mb-3',
+                                    'target' => '_blank',
+                                ]
+                        )
+                        ?>
+
+                        <?php
+                        if (
+                                in_array(
+                                        $extension,
+                                        [
+                                            'jpg',
+                                            'jpeg',
+                                            'png',
+                                            'webp',
+                                        ],
+                                        true
+                                )
+                        ):
+                            ?>
+
+                            <img
+                                src="<?=
+                            \yii\helpers\Url::to([
+                                'receipt',
+                                'id' => $model->id,
+                            ])
+                            ?>"
+                                class="img-fluid border rounded">
+
+                            <?php elseif ($extension === 'pdf'): ?>
+
+                            <iframe
+                                src="<?=
+                            \yii\helpers\Url::to([
+                                'receipt',
+                                'id' => $model->id,
+                            ])
+                            ?>"
+                                style="width:100%;height:900px;border:none;">
+                            </iframe>
+
+    <?php endif; ?>
+
+                    </div>
+
+                </div>
+            </div>
             <div class="card shadow-sm mt-4">
                 <div class="card-header">
                     <strong>Payment Proof</strong>
                 </div>
                 <div class="card-body">
-                    <?= Html::a('View Receipt', ['receipt', 'id' => $model->id], ['class' => 'btn btn-outline-primary', 'target' => '_blank']) ?>
+    <?= Html::a('View Receipt', ['receipt', 'id' => $model->id], ['class' => 'btn btn-outline-primary', 'target' => '_blank']) ?>
                 </div>
             </div>
-        <?php endif; ?>
+<?php endif; ?>
     </div>
 </div>

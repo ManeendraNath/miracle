@@ -66,9 +66,44 @@ $this->title = 'Invoice #' . $model->invoice_number;
             </div>
         </div>
     </div>
+    <?= $this->render('_invoice_content', ['model' => $model, 'capturedAmount' => $capturedAmount, 'outstandingAmount' => $outstandingAmount]) ?>
+
     <?php
-    $this->render('_invoice_content', ['model' => $model, 'capturedAmount' => $capturedAmount, 'outstandingAmount' => $outstandingAmount])
+    $transactions = $model->transactions;
     ?>
+    <div class="card card-outline card-info shadow-sm mt-4">
+        <div class="card-header">
+            <h3 class="card-title">Payment Activity</h3>
+        </div>
+        <div class="card-body">
+<?php if (!$transactions): ?>
+                <div class="text-muted">
+                    No payment records available.
+                </div>
+<?php else: ?>
+                <table class="table table-bordered">
+                    <thead>
+                        <tr>
+                            <th>Reference</th>
+                            <th>Status</th>
+                            <th>Amount</th>
+                            <th>Receipt</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+    <?php foreach ($transactions as $transaction): ?>
+                            <tr>
+                                <td><?= Html::encode($transaction->gateway_payment_id) ?></td>
+                                <td><?= Html::encode($transaction->status) ?></td>
+                                <td><?= Yii::$app->formatter->asCurrency($transaction->amount, 'INR') ?></td>
+                                <td><?= $transaction->payment_receipt_file ? Html::a('View Receipt', ['/transaction/receipt', 'id' => $transaction->id], ['target' => '_blank', 'class' => 'btn btn-sm btn-info']) : '<span class="text-muted">N/A</span>' ?></td>
+                            </tr>
+    <?php endforeach; ?>
+                    </tbody>
+                </table>
+<?php endif; ?>
+        </div>
+    </div>
 </div>
 
 <!-- NATIVE CSS MEDIA PRINT OVERRIDES OVERLAY STYLE RULES -->

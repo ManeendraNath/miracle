@@ -5,14 +5,13 @@ declare(strict_types=1);
 namespace common\models\forms;
 
 use yii\base\Model;
-use yii\web\UploadedFile;
 
 final class PaymentProofForm extends Model
 {
 
     public string $gateway_payment_id = '';
     public string $user_payment_notes = '';
-    public ?UploadedFile $receiptFile = null;
+    public $receiptFile;
 
     #[\Override]
     public function rules(): array

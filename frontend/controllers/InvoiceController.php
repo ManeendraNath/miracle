@@ -8,6 +8,7 @@ use Yii;
 use common\models\Invoice;
 use common\models\Transaction;
 use common\models\forms\PaymentProofForm;
+use common\services\NotificationService;
 use common\services\billing\InvoicePaymentService;
 use common\services\billing\InvoicePdfService;
 use yii\data\ActiveDataProvider;
@@ -133,6 +134,10 @@ final class InvoiceController extends Controller
         if ($pendingExists) {
             Yii::$app->session->setFlash('warning', 'A payment proof for this invoice is already awaiting verification.');
             return $this->redirect(['view', 'number' => $invoice->invoice_number]);
+        }
+        if ($form->receiptFile === null) {
+            $form->addError('receiptFile', 'Please upload the payment receipt.');
+            return $this->render('submit-payment', ['model' => $form, 'invoice' => $invoice, 'outstandingAmount' => $outstanding]);
         }
         $extension = strtolower($form->receiptFile->extension);
         $fileName = bin2hex(random_bytes(24)) . '.' . $extension;

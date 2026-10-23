@@ -195,7 +195,6 @@ class TransactionController extends BaseController
             if ($model === null) {
                 throw new NotFoundHttpException('Transaction does not exist.');
             }
-
             if ($model->status !== Transaction::STATUS_PENDING) {
                 throw new \DomainException('Only pending payments can be rejected.');
             }
@@ -239,7 +238,7 @@ class TransactionController extends BaseController
         $fileName = basename((string) $model->payment_receipt_file);
         $path = Yii::getAlias('@storage/payment-receipts/' . $fileName);
         if (!is_file($path) || !is_readable($path)) {
-            throw new NotFoundHttpException('Payment receipt does not exist.');
+            throw new NotFoundHttpException('Payment receipt does not exist.' . $path);
         }
         return Yii::$app->response->sendFile($path, 'payment-receipt-' . $model->id . '.' . pathinfo($fileName, PATHINFO_EXTENSION), ['inline' => true]);
     }

@@ -47,9 +47,7 @@ class TransactionController extends BaseController
      */
     public function actionView(int $id)
     {
-        return $this->render('view', [
-                    'model' => $this->findModel($id),
-        ]);
+        return $this->render('view', ['model' => $this->findModel($id)]);
     }
 
     /**
@@ -68,47 +66,25 @@ class TransactionController extends BaseController
     {
         $model = new Transaction();
 
-        if (
-                $this->request->isPost && $model->load($this->request->post())
-        ) {
+        if ($this->request->isPost && $model->load($this->request->post())) {
             try {
                 $model->status = Transaction::STATUS_PENDING;
-
                 $model->paid_at = null;
-
                 $model->gateway_order_id = null;
-
                 $model->gateway_fee = 0.00;
-
                 $model->raw_payload = null;
-
                 $model->created_at = time();
-
                 $model->updated_at = time();
-
                 $this->saveAndProcessPayment($model);
-
-                Yii::$app->session->setFlash(
-                        'success',
-                        'Transaction created successfully.'
-                );
-
-                return $this->redirect([
-                            'view',
-                            'id' => $model->id,
-                ]);
+                Yii::$app->session->setFlash('success', 'Transaction created successfully.');
+                return $this->redirect(['view', 'id' => $model->id]);
             } catch (\Throwable $e) {
                 Yii::error($e, __METHOD__);
-
-                Yii::$app->session->setFlash(
-                        'error',
-                        $e->getMessage()
-                );
+                Yii::$app->session->setFlash('error', $e->getMessage());
             }
         } else {
             $model->loadDefaultValues();
         }
-
         return $this->render('create', ['model' => $model, 'invoiceList' => $this->getInvoiceList()]);
     }
 
@@ -208,90 +184,36 @@ class TransactionController extends BaseController
     /**
      * Reject an invalid manual payment.
      */
-    public function actionReject(
-            int $id
-    )
+    public function actionReject(int $id)
     {
-        $dbTransaction = Yii::$app->db
-                ->beginTransaction();
+        $dbTransaction = Yii::$app->db->beginTransaction();
 
         try {
-            $transactionId = Yii::$app->db
-                    ->createCommand(
-                            '
-                    SELECT id
-                    FROM {{%transaction}}
-                    WHERE id = :id
-                    FOR UPDATE
-                    '
-                    )
-                    ->bindValue(
-                            ':id',
-                            $id
-                    )
-                    ->queryScalar();
-
-            $model = $transactionId !== false ? Transaction::findOne(
-                            (int) $transactionId
-                    ) : null;
+            $transactionId = Yii::$app->db->createCommand('SELECT id FROM {{%transaction}} WHERE id = :id FOR UPDATE')->bindValue(':id', $id)->queryScalar();
+            $model = $transactionId !== false ? Transaction::findOne((int) $transactionId) : null;
 
             if ($model === null) {
-                throw new NotFoundHttpException(
-                                'Transaction does not exist.'
-                        );
+                throw new NotFoundHttpException('Transaction does not exist.');
             }
 
-            if (
-                    $model->status !== Transaction::STATUS_PENDING
-            ) {
-                throw new \DomainException(
-                                'Only pending payments '
-                                . 'can be rejected.'
-                        );
+            if ($model->status !== Transaction::STATUS_PENDING) {
+                throw new \DomainException('Only pending payments can be rejected.');
             }
-
             $model->status = Transaction::STATUS_FAILED;
-
             $model->updated_at = time();
-
-            if (
-                    !$model->save(
-                            false,
-                            [
-                                'status',
-                                'updated_at',
-                            ]
-                    )
-            ) {
-                throw new \RuntimeException(
-                                'Payment could not be rejected.'
-                        );
+            if (!$model->save(false, ['status', 'updated_at'])) {
+                throw new \RuntimeException('Payment could not be rejected.');
             }
-
             $dbTransaction->commit();
-
-            Yii::$app->session
-                    ->setFlash(
-                            'success',
-                            'Payment proof rejected.'
-                    );
+            Yii::$app->session->setFlash('success', 'Payment proof rejected.');
         } catch (\Throwable $e) {
             if ($dbTransaction->isActive) {
                 $dbTransaction->rollBack();
             }
-
-            Yii::$app->session
-                    ->setFlash(
-                            'error',
-                            $e->getMessage()
-                    );
+            Yii::$app->session->setFlash('error', $e->getMessage());
         }
 
-        return $this->redirect([
-                    'view',
-                    'id' =>
-                    $id,
-        ]);
+        return $this->redirect(['view', 'id' => $id]);
     }
 
     /**
@@ -302,102 +224,36 @@ class TransactionController extends BaseController
     public function actionDelete(int $id)
     {
         $model = $this->findModel($id);
+        Yii::$app->session->setFlash('error', sprintf('Transaction #%d cannot be deleted. Financial transactions must remain in the payment history.', $model->id));
 
-        Yii::$app->session->setFlash(
-                'error',
-                sprintf(
-                        'Transaction #%d cannot be deleted. '
-                        . 'Financial transactions must remain in the '
-                        . 'payment history.',
-                        $model->id
-                )
-        );
-
-        return $this->redirect([
-                    'view',
-                    'id' => $model->id,
-        ]);
+        return $this->redirect(['view', 'id' => $model->id]);
     }
 
-    public function actionReceipt(
-            int $id
-    )
+    public function actionReceipt(int $id)
     {
         $model = $this->findModel($id);
-
-        if (
-                empty(
-                        $model->payment_receipt_file
-                )
-        ) {
-            throw new NotFoundHttpException(
-                            'Payment receipt does not exist.'
-                    );
+        if (empty($model->payment_receipt_file)) {
+            throw new NotFoundHttpException('Payment receipt does not exist.');
         }
 
-        $fileName = basename(
-                (string)
-                $model->payment_receipt_file
-        );
-
+        $fileName = basename((string) $model->payment_receipt_file);
         $path = Yii::getAlias('@storage/payment-receipts/' . $fileName);
-
-        if (
-                !is_file($path) || !is_readable($path)
-        ) {
-            throw new NotFoundHttpException(
-                            'Payment receipt does not exist.'
-                    );
+        if (!is_file($path) || !is_readable($path)) {
+            throw new NotFoundHttpException('Payment receipt does not exist.');
         }
-
-        return Yii::$app->response
-                        ->sendFile(
-                                $path,
-                                'payment-receipt-'
-                                . $model->id
-                                . '.'
-                                . pathinfo(
-                                        $fileName,
-                                        PATHINFO_EXTENSION
-                                ),
-                                [
-                                    'inline' =>
-                                    true,
-                                ]
-                        );
+        return Yii::$app->response->sendFile($path, 'payment-receipt-' . $model->id . '.' . pathinfo($fileName, PATHINFO_EXTENSION), ['inline' => true]);
     }
 
     private function getInvoiceList(): array
     {
         $models = Invoice::find()
-                ->where([
-                    'status' => [
-                        Invoice::STATUS_UNPAID,
-                        Invoice::STATUS_PARTIALLY_PAID,
-                    ],
-                ])
-                ->orderBy([
-                    'created_at' =>
-                    SORT_DESC,
-                ])
+                ->where(['status' => [Invoice::STATUS_UNPAID, Invoice::STATUS_PARTIALLY_PAID]])
+                ->orderBy(['created_at' => SORT_DESC])
                 ->all();
-
         $list = [];
-
         foreach ($models as $invoice) {
-            $list[
-                    (int) $invoice->id
-                    ] = $invoice->invoice_number
-                    . ' - '
-                    . $invoice->client_name
-                    . ' - '
-                    . Yii::$app->formatter
-                            ->asCurrency(
-                                    $invoice->total_payable,
-                                    'INR'
-                            );
+            $list[(int) $invoice->id] = $invoice->invoice_number . ' - ' . $invoice->client_name . ' - ' . Yii::$app->formatter->asCurrency($invoice->total_payable, 'INR');
         }
-
         return $list;
     }
 
@@ -411,21 +267,13 @@ class TransactionController extends BaseController
      *
      * @throws \Throwable
      */
-    private function saveAndProcessPayment(
-            Transaction $model
-    ): void
+    private function saveAndProcessPayment(Transaction $model): void
     {
         $dbTransaction = Yii::$app->db->beginTransaction();
 
         try {
             if (!$model->save()) {
-                throw new \RuntimeException(
-                                'Transaction could not be saved: '
-                                . json_encode(
-                                        $model->errors,
-                                        JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE
-                                )
-                        );
+                throw new \RuntimeException('Transaction could not be saved: ' . json_encode($model->errors, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
             }
 
             /*
@@ -435,18 +283,12 @@ class TransactionController extends BaseController
              * PaymentProcessingService because this method
              * already owns the transaction.
              */
-            (new PaymentProcessingService())
-                    ->transactionChanged(
-                            $model,
-                            false
-                    );
-
+            (new PaymentProcessingService())->transactionChanged($model, false);
             $dbTransaction->commit();
         } catch (\Throwable $e) {
             if ($dbTransaction->isActive) {
                 $dbTransaction->rollBack();
             }
-
             throw $e;
         }
     }
@@ -456,16 +298,10 @@ class TransactionController extends BaseController
      */
     protected function findModel(int $id): Transaction
     {
-        $model = Transaction::findOne([
-            'id' => $id,
-        ]);
-
+        $model = Transaction::findOne(['id' => $id]);
         if ($model !== null) {
             return $model;
         }
-
-        throw new NotFoundHttpException(
-                        'The requested transaction does not exist.'
-                );
+        throw new NotFoundHttpException('The requested transaction does not exist.');
     }
 }

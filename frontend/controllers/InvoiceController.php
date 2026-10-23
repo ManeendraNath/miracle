@@ -149,7 +149,7 @@ final class InvoiceController extends Controller
         }
         $extension = strtolower($form->receiptFile->extension);
         $fileName = bin2hex(random_bytes(24)) . '.' . $extension;
-        $directory = Yii::getAlias('@common/runtime/payment-receipts');
+        $directory = Yii::getAlias('@storage/payment-receipts');
         if (!is_dir($directory) && !mkdir($directory, 0750, true) && !is_dir($directory)
         ) {
             throw new \RuntimeException('Payment receipt storage is unavailable.');

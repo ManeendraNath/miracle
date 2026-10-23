@@ -340,10 +340,7 @@ class TransactionController extends BaseController
                 $model->payment_receipt_file
         );
 
-        $path = Yii::getAlias(
-                '@common/runtime/payment-receipts/'
-                . $fileName
-        );
+        $path = Yii::getAlias('@storage/payment-receipts/' . $fileName);
 
         if (
                 !is_file($path) || !is_readable($path)

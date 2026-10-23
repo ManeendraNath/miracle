@@ -46,9 +46,6 @@ $this->params['breadcrumbs'][] = $this->title;
                 <?php endif; ?>
             <?php endif; ?>
         </div>
-    </div>
-
-    <div class="row">
         <div class="card card-outline card-primary mb-4">
             <div class="card-header">
                 <h3 class="card-title">Invoice Information</h3>
@@ -74,6 +71,9 @@ $this->params['breadcrumbs'][] = $this->title;
                 </div>
             </div>
         </div>
+    </div>
+
+    <div class="row">
         <div class="col-lg-8">
             <div class="card shadow-sm mb-4">
                 <div class="card-body p-0">

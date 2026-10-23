@@ -72,7 +72,7 @@ final class ResendVerificationEmailCest
             [
                 'email' => 'test@mail.com',
                 'username' => 'test.test',
-                'status' => User::STATUS_INACTIVE,
+                'status' => User::getStatusInactive(),
             ],
         );
         $I->see('Check your email for further instructions.');

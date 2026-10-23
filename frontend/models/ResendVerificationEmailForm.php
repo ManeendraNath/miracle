@@ -22,7 +22,7 @@ class ResendVerificationEmailForm extends Model
             ['email', 'email'],
             ['email', 'exist',
                 'targetClass' => User::class,
-                'filter' => ['status' => User::STATUS_INACTIVE],
+                'filter' => ['status' => User::getStatusInactive()],
                 'message' => 'There is no user with this email address.',
             ],
         ];
@@ -39,10 +39,7 @@ class ResendVerificationEmailForm extends Model
      */
     public function sendEmail(MailerInterface $mailer, string $supportEmail, string $appName): bool
     {
-        $user = User::findOne([
-            'email' => $this->email,
-            'status' => User::STATUS_INACTIVE,
-        ]);
+        $user = User::findOne(['email' => $this->email, 'status' => User::getStatusInactive()]);
 
         if ($user === null) {
             return false;

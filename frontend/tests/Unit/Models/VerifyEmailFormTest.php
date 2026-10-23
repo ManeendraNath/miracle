@@ -59,15 +59,10 @@ final class VerifyEmailFormTest extends Unit
 
         $user = $model->verifyEmail();
 
-        verify($user)
-            ->instanceOf(User::class);
-        verify($user->username)
-            ->equals('test.test');
-        verify($user->email)
-            ->equals('test@mail.com');
-        verify($user->status)
-            ->equals(User::STATUS_ACTIVE);
-        verify($user->validatePassword('Test1234'))
-            ->true();
+        verify($user)->instanceOf(User::class);
+        verify($user->username)->equals('test.test');
+        verify($user->email)->equals('test@mail.com');
+        verify($user->status)->equals(User::getStatusActive());
+        verify($user->validatePassword('Test1234'))->true();
     }
 }

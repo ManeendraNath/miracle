@@ -56,7 +56,7 @@ final class SignupCest
             [
                 'username' => 'tester',
                 'email' => 'tester.email@example.com',
-                'status' => User::STATUS_INACTIVE,
+                'status' => User::getStatusInactive(),
             ],
         );
 

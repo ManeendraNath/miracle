@@ -32,11 +32,11 @@ class UserController extends BaseController
         }
 
         // Standard Yii2 Advanced template state statuses (Active = 1, Inactive = 0)
-        if ((int) $model->status === User::STATUS_ACTIVE) {
-            $model->status = User::STATUS_INACTIVE;
+        if ((int) $model->status === User::getStatusActive()) {
+            $model->status = User::getStatusInactive();
             Yii::$app->session->setFlash('warning', "Account for profile '{$model->username}' has been suspended successfully.");
         } else {
-            $model->status = User::STATUS_ACTIVE;
+            $model->status = User::getStatusActive();
             Yii::$app->session->setFlash('success', "Account for profile '{$model->username}' has been activated and unlocked successfully!");
         }
 
@@ -52,9 +52,7 @@ class UserController extends BaseController
      */
     public function actionView($id)
     {
-        return $this->render('view', [
-                    'model' => $this->findModel($id),
-        ]);
+        return $this->render('view', ['model' => $this->findModel($id)]);
     }
 
     /**
@@ -65,26 +63,13 @@ class UserController extends BaseController
     public function actionCreate()
     {
         $model = new User();
-
-        if (
-                $model->load(Yii::$app->request->post()) && $model->save()
-        ) {
-            Yii::$app->session->setFlash(
-                    'success',
-                    'User created successfully.'
-            );
-
-            return $this->redirect([
-                        'view',
-                        'id' => $model->id,
-            ]);
+        if ($model->load(Yii::$app->request->post()) && $model->save()) {
+            Yii::$app->session->setFlash('success', 'User created successfully.');
+            return $this->redirect(['view', 'id' => $model->id]);
         }
-
         $model->clearPlainPassword();
 
-        return $this->render('create', [
-                    'model' => $model,
-        ]);
+        return $this->render('create', ['model' => $model]);
     }
 
     /**
@@ -99,25 +84,13 @@ class UserController extends BaseController
         $model = $this->findModel($id);
         $model->clearPlainPassword();
 
-        if (
-                $model->load(Yii::$app->request->post()) && $model->save()
-        ) {
-            Yii::$app->session->setFlash(
-                    'success',
-                    'User updated successfully.'
-            );
-
-            return $this->redirect([
-                        'view',
-                        'id' => $model->id,
-            ]);
+        if ($model->load(Yii::$app->request->post()) && $model->save()) {
+            Yii::$app->session->setFlash('success', 'User updated successfully.');
+            return $this->redirect(['view', 'id' => $model->id]);
         }
-
         $model->clearPlainPassword();
 
-        return $this->render('update', [
-                    'model' => $model,
-        ]);
+        return $this->render('update', ['model' => $model]);
     }
 
     /**

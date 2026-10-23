@@ -47,23 +47,18 @@ final class SignupFormTest extends Unit
             [
                 'username' => 'some_username',
                 'email' => 'some_email@example.com',
-                'status' => User::STATUS_INACTIVE,
+                'status' => User::getStatusInactive(),
             ],
         );
 
         $this->tester->seeEmailIsSent();
         $mail = $this->tester->grabLastSentEmail();
 
-        verify($mail)
-            ->instanceOf(MessageInterface::class);
-        verify($mail->getTo())
-            ->arrayHasKey('some_email@example.com');
-        verify($mail->getFrom())
-            ->arrayHasKey(Yii::$app->params['supportEmail']);
-        verify($mail->getSubject())
-            ->equals('Account registration at ' . Yii::$app->name);
-        verify($mail->toString())
-            ->stringContainsString($user->verification_token);
+        verify($mail)->instanceOf(MessageInterface::class);
+        verify($mail->getTo())->arrayHasKey('some_email@example.com');
+        verify($mail->getFrom())->arrayHasKey(Yii::$app->params['supportEmail']);
+        verify($mail->getSubject())->equals('Account registration at ' . Yii::$app->name);
+        verify($mail->toString())->stringContainsString($user->verification_token);
     }
 
     public function testNotCorrectSignup(): void
@@ -76,15 +71,10 @@ final class SignupFormTest extends Unit
             ],
         );
 
-        verify($model->signup(Yii::$app->mailer, Yii::$app->params['supportEmail'], Yii::$app->name))
-            ->empty();
-        verify($model->getErrors('username'))
-            ->notEmpty();
-        verify($model->getErrors('email'))
-            ->notEmpty();
-        verify($model->getFirstError('username'))
-            ->equals('This username has already been taken.');
-        verify($model->getFirstError('email'))
-            ->equals('This email address has already been taken.');
+        verify($model->signup(Yii::$app->mailer, Yii::$app->params['supportEmail'], Yii::$app->name))->empty();
+        verify($model->getErrors('username'))->notEmpty();
+        verify($model->getErrors('email'))->notEmpty();
+        verify($model->getFirstError('username'))->equals('This username has already been taken.');
+        verify($model->getFirstError('email'))->equals('This email address has already been taken.');
     }
 }

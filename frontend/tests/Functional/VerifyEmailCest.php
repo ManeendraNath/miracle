@@ -59,7 +59,7 @@ final class VerifyEmailCest
             [
                 'username' => 'test.test',
                 'email' => 'test@mail.com',
-                'status' => User::STATUS_ACTIVE,
+                'status' => User::getStatusActive(),
             ],
         );
     }

@@ -13,17 +13,12 @@ $serviceName = match ($type) {
     default => 'Service',
 };
 
-$statusLabel = match ((int)$model->status) {
-    1 => 'Active',
-    0 => 'Inactive',
-    default => 'Unknown',
-};
-
-$statusClass = match ((int)$model->status) {
+$statusClass = match ((int) $model->status) {
     1 => 'bg-success',
     0 => 'bg-danger',
     default => 'bg-secondary',
 };
+$today = new \DateTimeImmutable(date("Y-m-d H:i:s"));
 $expiryDate = new \DateTimeImmutable($model->current_expiry_date);
 $daysRemaining = (int) $today->diff($expiryDate)->format('%r%a');
 $expiryBadge = match (true) {
@@ -100,27 +95,94 @@ $expiryBadge = match (true) {
             <?php if ($latestEvent): ?>
                 <div class="card shadow-sm border-0 mt-4">
                     <div class="card-header">
-                        <strong>Latest Billing Event</strong>
+                        <strong>Latest Billing Activity</strong>
                     </div>
                     <div class="card-body">
-                        <div class="row">
-                            <div class="col-md-6">
+                        <div class="row g-3">
+                            <div class="col-md-12">
                                 <div class="text-muted small">
-                                    Event Type
+                                    Description
+                                </div>
+                                <div class="fw-semibold">
+                                    <?= Html::encode($latestEvent->description) ?>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="text-muted small">
+                                    Status
                                 </div>
                                 <div>
-                                    <?= Html::encode($latestEvent->event_type) ?>
+                                    <?php
+                                    $statusClass = match ($latestEvent->status) {
+                                        'Pending' => 'bg-warning text-dark',
+                                        'Invoiced' => 'bg-primary',
+                                        'Fulfilled' => 'bg-success',
+                                        'Cancelled' => 'bg-secondary',
+                                        default => 'bg-secondary',
+                                    };
+
+                                    echo Html::tag('span', $latestEvent->status, ['class' => 'badge ' . $statusClass]);
+                                    ?>
+
                                 </div>
                             </div>
 
-                            <div class="col-md-6">
+                            <div class="col-md-4">
                                 <div class="text-muted small">
-                                    Event Date
+                                    Period
                                 </div>
                                 <div>
-                                    <?= Yii::$app->formatter->asDatetime($latestEvent->created_at) ?>
+                                    <?= Yii::$app->formatter->asDate($latestEvent->period_start, 'php:d M Y') ?>
+                                    -
+                                    <?= Yii::$app->formatter->asDate($latestEvent->period_end, 'php:d M Y') ?>
                                 </div>
                             </div>
+                            <div class="col-md-4">
+                                <div class="text-muted small">
+                                    Due Date
+                                </div>
+                                <div>
+                                    <?= Yii::$app->formatter->asDate($latestEvent->due_date, 'php:d M Y') ?>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="text-muted small">
+                                    Amount
+                                </div>
+                                <div class="fw-bold">
+                                    <?= Yii::$app->formatter->asCurrency($latestEvent->amount, 'INR') ?>
+                                </div>
+                            </div>
+                            <?php if ($latestEvent->previous_amount): ?>
+                                <div class="col-md-4">
+                                    <div class="text-muted small">
+                                        Previous Amount
+                                    </div>
+                                    <div>
+                                        <?= Yii::$app->formatter->asCurrency($latestEvent->previous_amount, 'INR') ?>
+                                    </div>
+                                </div>
+                            <?php endif; ?>
+                            <?php if ($latestEvent->increase_percent > 0): ?>
+                                <div class="col-md-4">
+                                    <div class="text-muted small">
+                                        Increase
+                                    </div>
+                                    <div>
+                                        <?= Yii::$app->formatter->asDecimal($latestEvent->increase_percent, 2) ?>%
+                                    </div>
+                                </div>
+                            <?php endif; ?>
+                            <?php if (!empty($latestEvent->notes)): ?>
+                                <div class="col-md-12">
+                                    <div class="text-muted small">
+                                        Notes
+                                    </div>
+                                    <div>
+                                        <?= Html::encode($latestEvent->notes) ?>
+                                    </div>
+                                </div>
+                            <?php endif; ?>
                         </div>
                     </div>
                 </div>

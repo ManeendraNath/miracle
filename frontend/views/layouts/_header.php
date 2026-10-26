@@ -21,7 +21,6 @@ use yii\bootstrap5\NavBar;
     $menuItems = [
         ['label' => 'Home', 'url' => ['/site/index']],
         ['label' => 'Hosting Plans', 'url' => ['/site/index', '#' => 'hosting-tiers']],
-        // 💡 UPDATED ROUTE POINTER: Maps seamlessly onto our beautiful rule keys
         ['label' => 'Infrastructure Audit ⚡', 'url' => ['/site/audit'], 'linkOptions' => ['style' => 'font-weight: 600; color: #00a3e0 !important;']],
         ['label' => 'Reach Us', 'url' => ['/site/contact']],
     ];
@@ -29,35 +28,7 @@ use yii\bootstrap5\NavBar;
     if (Yii::$app->user->isGuest) {
         $menuItems[] = ['label' => 'Portal Access', 'url' => ['/site/login'], 'linkOptions' => ['style' => 'font-weight: 500;']];
     } else {
-/*
         $menuItems[] = ['label' => 'Dashboard', 'url' => ['/dashboard/index']];
-        $menuItems[] = ['label' => 'My Services', 'url' => ['/service/index']];
-        $menuItems[] = [
-            'label' => 'Billing',
-            'items' => [
-                ['label' => 'My Invoices', 'url' => ['/invoice/index']],
-                ['label' => 'Payment History', 'url' => ['/payment/index']],
-                ['label' => 'Renewal History', 'url' => ['/renewal/index']],
-            ],
-        ];
-        $menuItems[] = [
-            'label' => 'Support',
-            'items' => [
-                ['label' => 'My Requests', 'url' => ['/support/index']],
-                ['label' => 'New Support Request', 'url' => ['/support/create']],
-            ],
-        ];
-        $menuItems[] = ['label' => 'Notifications', 'url' => ['/notification/index']];
-        $menuItems[] = [
-            'label' => 'Account',
-            'items' => [
-                ['label' => 'My Profile', 'url' => ['/account/profile']],
-                ['label' => 'Notification Preferences', 'url' => ['/account/preferences']],
-                ['label' => 'Account Security', 'url' => ['/security/index']],
-                ['label' => 'Change Password', 'url' => ['/account/change-password']],
-            ],
-        ];
-*/
         $menuItems[] = '<li class="nav-item">'
                 . Html::beginForm(['/site/logout'], 'post', ['class' => 'd-inline'])
                 . Html::submitButton('Sign Out (' . Html::encode(Yii::$app->user->identity->username) . ')', ['class' => 'btn btn-link nav-link logout', 'style' => 'font-weight:500; border:none;'])

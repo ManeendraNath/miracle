@@ -14,9 +14,15 @@ return [
         'supplierState' => 'Delhi',
         'supplierStateCode' => '07',
         'gst' => [
+            'cgst' => 0.00,
+            'sgst' => 0.00,
+            'igst' => 0.00,
+            /*
             'cgst' => 9.00,
             'sgst' => 9.00,
             'igst' => 18.00,
+             * 
+             */
         ],
         'payment' => [
             'accountName' => $_ENV['BILLING_BANK_ACCOUNT_NAME'] ?? '',

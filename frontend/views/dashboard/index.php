@@ -14,8 +14,8 @@ $attentionCount = $openInvoices + $pendingPayments + $openSupportTickets;
         <div class="flex-grow-1">
             <div class="small text-white-50 mb-2">CUSTOMER PORTAL</div>
             <h1 class="fw-bold mb-2">Welcome back, <?= Html::encode(Yii::$app->user->identity->username) ?></h1>
-<div class="small text-uppercase text-white-50">Customer Portal</div>
-<p class="mb-0 opacity-75">View services, invoices, support requests and account activity from a single dashboard.</p>
+            <div class="small text-uppercase text-white-50">Customer Portal</div>
+            <p class="mb-0 opacity-75">View services, invoices, support requests and account activity from a single dashboard.</p>
         </div>
         <div class="text-end">
             <div class="card bg-danger text-white shadow-sm">
@@ -34,8 +34,8 @@ $attentionCount = $openInvoices + $pendingPayments + $openSupportTickets;
         <strong>Attention Required</strong>
         <br>
         <?= $openInvoices ?> open invoice(s),
-    <?= $pendingPayments ?> payment(s) under review,
-    <?= $openSupportTickets ?> support request(s) awaiting action.
+        <?= $pendingPayments ?> payment(s) under review,
+        <?= $openSupportTickets ?> support request(s) awaiting action.
     </div>
 <?php endif; ?>
 
@@ -45,7 +45,9 @@ $attentionCount = $openInvoices + $pendingPayments + $openSupportTickets;
         <a href="<?= \yii\helpers\Url::to(['/invoice/index']) ?>"
            class="card bg-primary text-white text-decoration-none border-0 shadow-sm">
             <div class="card-body text-center">
-                <i class="fas fa-file-invoice fa-3x mb-3"></i>
+                <div class="dashboard-icon">
+                    <i class="fas fa-file-invoice fa-3x mb-3"></i>
+                </div>
                 <h5>Invoices</h5>
             </div>
         </a>
@@ -55,7 +57,9 @@ $attentionCount = $openInvoices + $pendingPayments + $openSupportTickets;
         <a href="<?= \yii\helpers\Url::to(['/service/index']) ?>"
            class="card bg-success text-white text-decoration-none border-0 shadow-sm">
             <div class="card-body text-center">
-                <i class="fas fa-cubes fa-2x mb-2"></i>
+                <div class="dashboard-icon">
+                    <i class="fas fa-cubes fa-2x mb-2"></i>
+                </div>
                 <h5>Services</h5>
             </div>
         </a>
@@ -65,7 +69,9 @@ $attentionCount = $openInvoices + $pendingPayments + $openSupportTickets;
         <a href="<?= \yii\helpers\Url::to(['/support/index']) ?>"
            class="card bg-warning text-white text-decoration-none border-0 shadow-sm">
             <div class="card-body text-center">
-                <i class="fas fa-headset fa-2x mb-2"></i>
+                <div class="dashboard-icon">
+                    <i class="fas fa-headset fa-2x mb-2"></i>
+                </div>
                 <h5>Support</h5>
             </div>
         </a>
@@ -75,26 +81,28 @@ $attentionCount = $openInvoices + $pendingPayments + $openSupportTickets;
         <a href="<?= \yii\helpers\Url::to(['/account/profile']) ?>"
            class="card bg-dark text-white text-decoration-none border-0 shadow-sm">
             <div class="card-body text-center">
-                <i class="fas fa-user-cog fa-2x mb-2"></i>
+                <div class="dashboard-icon">
+                    <i class="fas fa-user-cog fa-2x mb-2"></i>
+                </div>
                 <h5>Profile</h5>
             </div>
         </a>
     </div>
 
 </div>
-<div class="row">
+<div class="row g-3 mb-4">
     <div class="col-12">
         <div class="card shadow-sm">
-    <?php if (!$upcomingServices): ?>
+            <?php if (!$upcomingServices): ?>
                 <div class="text-center py-5 text-muted">
                     <i class="fas fa-check-circle text-success fa-3x mb-3"></i>
                     <h5>No upcoming renewals</h5>
                     <div>No services expire within the next 60 days.</div>
                 </div>
-                <?php else: ?>
+            <?php else: ?>
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <strong>Upcoming Renewals</strong>
-        <?= Html::a('View All Services', ['/service/index'], ['class' => 'btn btn-sm btn-outline-primary']) ?>
+                    <?= Html::a('View All Services', ['/service/index'], ['class' => 'btn btn-sm btn-outline-primary']) ?>
                 </div>
                 <div class="table-responsive">
                     <table class="table table-hover align-middle mb-0">
@@ -124,136 +132,139 @@ $attentionCount = $openInvoices + $pendingPayments + $openSupportTickets;
                                             <span class="badge bg-warning text-dark"><?= $days ?> day(s)</span>
                                         <?php else: ?>
                                             <span class="badge bg-info"><?= $days ?> day(s)</span>
-            <?php endif; ?>
+                                        <?php endif; ?>
                                     </td>
                                     <td class="text-end"><?= Html::a('View', ['/service/view', 'type' => $service['type'], 'id' => $service['id']], ['class' => 'btn btn-sm btn-outline-primary']) ?></td>
                                 </tr>
-        <?php endforeach; ?>
+                            <?php endforeach; ?>
                         </tbody>
                     </table>
                 </div>
-    <?php endif; ?>
+            <?php endif; ?>
         </div>
     </div>
-
+</div>
+<div class="row g-3 mb-4">
     <div class="col-12">
         <div class="card shadow-sm">
             <div class="card-header d-flex justify-content-between align-items-center">
                 <strong>Billing Summary</strong>
             </div>
-            <div class="card-body">
-                <div class="row">
-                    <div class="col-md-3">
-                        <div class="card shadow-sm h-100">
-                            <div class="card-body">
-                                <div class="text-muted">Total Invoices</div>
-                                <div class="fs-3 fw-bold">
-<?= $totalInvoices ?>
-                                </div>
-                            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-3">
+                <div class="card shadow-sm h-100">
+                    <div class="card-body">
+                        <div class="text-muted">Total Invoices</div>
+                        <div class="fs-3 fw-bold">
+                            <?= $totalInvoices ?>
                         </div>
                     </div>
+                </div>
+            </div>
 
-                    <div class="col-md-3">
-                        <div class="card shadow-sm h-100">
-                            <div class="card-body">
-                                <div class="text-muted">Open Invoices</div>
-                                <div class="fs-3 fw-bold text-danger">
-<?= $openInvoices ?>
-                                </div>
-                            </div>
+            <div class="col-md-3">
+                <div class="card shadow-sm h-100">
+                    <div class="card-body">
+                        <div class="text-muted">Open Invoices</div>
+                        <div class="fs-3 fw-bold text-danger">
+                            <?= $openInvoices ?>
                         </div>
                     </div>
+                </div>
+            </div>
 
-                    <div class="col-md-3">
-                        <div class="card shadow-sm h-100">
-                            <div class="card-body">
-                                <div class="text-muted">Outstanding</div>
-                                <div class="fs-4 fw-bold">
-<?= Yii::$app->formatter->asCurrency($outstandingTotal, 'INR') ?>
-                                </div>
-                            </div>
+            <div class="col-md-3">
+                <div class="card shadow-sm h-100">
+                    <div class="card-body">
+                        <div class="text-muted">Outstanding</div>
+                        <div class="fs-4 fw-bold">
+                            <?= Yii::$app->formatter->asCurrency($outstandingTotal, 'INR') ?>
                         </div>
                     </div>
+                </div>
+            </div>
 
-                    <div class="col-md-3">
-                        <div class="card shadow-sm h-100">
-                            <div class="card-body">
-                                <div class="text-muted">Payments Under Review</div>
-                                <div class="fs-3 fw-bold text-warning">
-<?= $pendingPayments ?>
-                                </div>
-                            </div>
+            <div class="col-md-3">
+                <div class="card shadow-sm h-100">
+                    <div class="card-body">
+                        <div class="text-muted">Payments Under Review</div>
+                        <div class="fs-3 fw-bold text-warning">
+                            <?= $pendingPayments ?>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
-
-    <div class="card shadow-sm">
-        <div class="card-header d-flex justify-content-between align-items-center">
-            <strong>Recent Invoices</strong>
-<?= Html::a('View All Invoices', ['/invoice/index'], ['class' => 'btn btn-sm btn-primary']) ?>
-        </div>
-        <div class="card-body p-0">
-            <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0">
-                    <thead class="table-light">
-                        <tr>
-                            <th>Invoice</th>
-                            <th>Issued</th>
-                            <th>Due</th>
-                            <th class="text-end">Amount</th>
-                            <th>Status</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-<?php foreach ($recentInvoices as $invoice): ?>
+</div>
+<div class="row g-3 mb-4">
+    <div class="col">
+        <div class="card shadow-sm">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <strong>Recent Invoices</strong>
+                <?= Html::a('View All Invoices', ['/invoice/index'], ['class' => 'btn btn-sm btn-primary']) ?>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
                             <tr>
-                                <td><?= Html::a(Html::encode($invoice->invoice_number), ['/invoice/view', 'number' => $invoice->invoice_number]) ?></td>
-                                <td><?= Yii::$app->formatter->asDate($invoice->created_at, 'php:d M Y') ?></td>
-                                <td><?= $invoice->due_date ? Yii::$app->formatter->asDate($invoice->due_date, 'php:d M Y') : '-' ?></td>
-                                <td class="text-end"><?= Yii::$app->formatter->asCurrency($invoice->total_payable, 'INR') ?></td>
-                                <td>
-                                    <?php
-                                    $statusClass = match ($invoice->status) {
-                                        Invoice::STATUS_PAID => 'bg-success',
-                                        Invoice::STATUS_UNPAID => 'bg-danger',
-                                        Invoice::STATUS_PARTIALLY_PAID => 'bg-warning text-dark',
-                                        Invoice::STATUS_CANCELLED => 'bg-secondary',
-                                        default => 'bg-secondary',
-                                    };
-
-                                    echo Html::tag(
-                                            'span',
-                                            Invoice::getStatuses()[$invoice->status] ?? $invoice->status,
-                                            ['class' => 'badge ' . $statusClass]
-                                    );
-                                    ?>
-                                </td>
+                                <th>Invoice</th>
+                                <th>Issued</th>
+                                <th>Due</th>
+                                <th class="text-end">Amount</th>
+                                <th>Status</th>
                             </tr>
-                        <?php endforeach; ?>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($recentInvoices as $invoice): ?>
+                                <tr>
+                                    <td><?= Html::a(Html::encode($invoice->invoice_number), ['/invoice/view', 'number' => $invoice->invoice_number]) ?></td>
+                                    <td><?= Yii::$app->formatter->asDate($invoice->created_at, 'php:d M Y') ?></td>
+                                    <td><?= $invoice->due_date ? Yii::$app->formatter->asDate($invoice->due_date, 'php:d M Y') : '-' ?></td>
+                                    <td class="text-end"><?= Yii::$app->formatter->asCurrency($invoice->total_payable, 'INR') ?></td>
+                                    <td>
+                                        <?php
+                                        $statusClass = match ($invoice->status) {
+                                            Invoice::STATUS_PAID => 'bg-success',
+                                            Invoice::STATUS_UNPAID => 'bg-danger',
+                                            Invoice::STATUS_PARTIALLY_PAID => 'bg-warning text-dark',
+                                            Invoice::STATUS_CANCELLED => 'bg-secondary',
+                                            default => 'bg-secondary',
+                                        };
 
-<?php if (!$recentInvoices): ?>
-                            <tr>
-                                <td colspan="5" class="text-center text-muted py-4">No invoices available.</td>
-                            </tr>
-<?php endif; ?>
-                    </tbody>
-                </table>
+                                        echo Html::tag(
+                                                'span',
+                                                Invoice::getStatuses()[$invoice->status] ?? $invoice->status,
+                                                ['class' => 'badge ' . $statusClass]
+                                        );
+                                        ?>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+
+                            <?php if (!$recentInvoices): ?>
+                                <tr>
+                                    <td colspan="5" class="text-center text-muted py-4">No invoices available.</td>
+                                </tr>
+                            <?php endif; ?>
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </div>
 </div>
-
-<div class="card shadow-sm mb-4">
-    <div class="card-header">
-        <strong>Account Overview</strong>
-    </div>
-    <div class="card-body">
-        <div class="row g-3">
-            <div class="col-md-3">
+<div class="row g-3 mb-4">
+    <div class="col">
+        <div class="card shadow-sm mb-4">
+            <div class="card-header">
+                <strong>Account Overview</strong>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-4">
                 <div class="card border-0 shadow-sm h-100">
                     <div class="card-body">
                         <div class="d-flex justify-content-between align-items-center">
@@ -268,7 +279,7 @@ $attentionCount = $openInvoices + $pendingPayments + $openSupportTickets;
                     </div>
                 </div>
             </div>
-            <div class="col-md-3">
+            <div class="col-md-4">
                 <div class="card border-0 shadow-sm h-100">
                     <div class="card-body">
                         <div class="d-flex justify-content-between align-items-center">
@@ -283,7 +294,7 @@ $attentionCount = $openInvoices + $pendingPayments + $openSupportTickets;
                     </div>
                 </div>
             </div>
-            <div class="col-md-3">
+            <div class="col-md-4">
                 <div class="card border-0 shadow-sm h-100">
                     <div class="card-body">
                         <div class="d-flex justify-content-between align-items-center">
@@ -299,8 +310,8 @@ $attentionCount = $openInvoices + $pendingPayments + $openSupportTickets;
                 </div>
             </div>
         </div>
-        <div class="row g-3">
-            <div class="col-md-3">
+        <div class="row g-3 mb-4">
+            <div class="col-md-4">
                 <div class="card border-0 shadow-sm h-100">
                     <div class="card-body">
                         <div class="d-flex justify-content-between align-items-center">
@@ -315,33 +326,33 @@ $attentionCount = $openInvoices + $pendingPayments + $openSupportTickets;
                     </div>
                 </div>
             </div>
-        </div>
 
-        <div class="row g-3">
-            <div class="card border-0 shadow-sm">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between">
-                        <div>
-                            <div class="small text-muted">
-                                Notifications
+            <div class="col-md-4">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <div class="small text-muted">
+                                    Notifications
+                                </div>
+                                <h3><?= $unreadNotifications ?></h3>
                             </div>
-                            <h3><?= $unreadNotifications ?></h3>
+                            <i class="fas fa-bell fa-2x text-warning"></i>
                         </div>
-                        <i class="fas fa-bell fa-2x text-warning"></i>
                     </div>
                 </div>
             </div>
-        </div>
 
-        <div class="row g-3">
-            <div class="card border-0 shadow-sm">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between">
-                        <div>
-                            <div class="small text-muted">Open Support Tickets</div>
-                            <h3><?= $openSupportTickets ?></h3>
+            <div class="col-md-4">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <div class="small text-muted">Open Support Tickets</div>
+                                <h3><?= $openSupportTickets ?></h3>
+                            </div>
+                            <i class="fas fa-headset fa-2x text-primary"></i>
                         </div>
-                        <i class="fas fa-headset fa-2x text-primary"></i>
                     </div>
                 </div>
             </div>

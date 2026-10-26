@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace backend\controllers;
 
 use backend\models\searches\TransactionSearch;
+use common\models\Invoice;
 use common\models\Transaction;
 use common\services\billing\PaymentConfirmationService;
 use common\services\billing\PaymentProcessingService;

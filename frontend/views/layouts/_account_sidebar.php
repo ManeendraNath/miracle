@@ -1,6 +1,7 @@
 <?php
 
 use yii\helpers\Html;
+use yii\helpers\Url;
 
 $currentController = Yii::$app->controller->id;
 
@@ -23,6 +24,8 @@ $items = [
         <small style="opacity:.85;">Manage your services</small>
     </div>
     <div class="card-body">
+    <div class="list-group list-group-flush">
+        
         <?php if ($unreadNotifications): ?>
             <span class="badge bg-danger float-end">
                 <?= $unreadNotifications ?>
@@ -35,12 +38,14 @@ $items = [
             </span>
         <?php endif; ?>
     </div>
-    <div class="list-group list-group-flush">
         <?php foreach ($items as $item): ?>
             <?php
             $active = $currentController === $item['controller'];
             ?>
-            <?= Html::a('<i class="' . $item['icon'] . ' me-2"></i>' . Html::encode($item['label']), $item['url'], ['class' => 'list-group-item ' . 'list-group-item-action ' . ($active ? 'active' : ''), 'encode' => false]) ?>
+            <a href="<?= Url::to($item['url']) ?>" class="list-group-item list-group-item-action d-flex align-items-center <?= $active ? 'active' : '' ?>">
+                <i class="<?= $item['icon'] ?> me-2"></i>
+                <span><?= Html::encode($item['label']) ?></span>
+            </a>
         <?php endforeach; ?>
         <?=
         Html::a(

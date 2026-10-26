@@ -78,10 +78,16 @@ a.desc:after {
 
 
 /* footer logo: light logo by default (light bg-body-tertiary), dark logo for dark theme */
-.footer-logo-dark { display: none; }
+.footer-logo-dark {
+    display: none;
+}
 
-[data-bs-theme="dark"] .footer-logo-light { display: none; }
-[data-bs-theme="dark"] .footer-logo-dark  { display: inline-block; }
+[data-bs-theme="dark"] .footer-logo-light {
+    display: none;
+}
+[data-bs-theme="dark"] .footer-logo-dark  {
+    display: inline-block;
+}
 
 /* Yii brand button */
 .btn-yii {
@@ -418,4 +424,36 @@ a.desc:after {
 
 [data-bs-theme="dark"] .extension-card:hover {
     box-shadow: 0 0 0 1px var(--bs-border-color), 0 8px 24px rgba(0, 0, 0, .4) !important;
+}
+
+
+.account-sidebar .list-group-item {
+    padding: 14px 18px;
+    border: 0;
+}
+
+.account-sidebar .list-group-item.active {
+    background: #1565c0;
+    color: #fff;
+    border-left: 4px solid #0b1f4d;
+}
+
+.account-sidebar .list-group-item:hover {
+    background: rgba(21,101,192,.08);
+}
+
+.dashboard-card {
+    transition: all .2s ease;
+}
+
+.dashboard-card:hover {
+    transform: translateY(-3px);
+}
+
+@media (max-width: 991px) {
+
+    .account-sidebar {
+        margin-bottom: 20px;
+    }
+
 }

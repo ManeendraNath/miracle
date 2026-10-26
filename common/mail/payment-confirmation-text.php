@@ -1,41 +1,30 @@
-<?php
-declare(strict_types=1);
-?>
-
 Payment Confirmed
 
 Hello <?= $invoice->client_name ?>,
 
 We have verified and recorded your payment.
 
-Invoice: <?= $invoice->invoice_number ?>
+Invoice:
+<?= $invoice->invoice_number ?>
 
 
-Amount received: INR <?=
-number_format(
-        (float) $transaction->amount,
-        2
-)
+Amount Received:
+INR <?= number_format((float) $transaction->amount, 2)
 ?>
 
 
-Payment reference:
-<?= $transaction->gateway_payment_id ?: 'Recorded payment' ?>
-
-
-Outstanding balance: INR <?=
-number_format(
-        (float) $outstandingAmount,
-        2
-)
+Reference:
+<?= $transaction->gateway_payment_id ?: 'Manual Entry'
 ?>
 
 
-View invoice:
+Outstanding Balance:
+INR <?= number_format((float) $outstandingAmount, 2) ?>
+
+
+View Invoice:
+
 <?= $invoiceUrl ?>
 
 
 Thank you for your payment.
-
-Regards,
-Miracle Web Technologies

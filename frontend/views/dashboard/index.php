@@ -1,12 +1,11 @@
 <?php
 declare(strict_types=1);
 
-use DateTimeImmutable;
 use common\models\Invoice;
 use yii\helpers\Html;
 
 $this->title = 'Customer Portal';
-$today = new DateTimeImmutable('today');
+$today = new \DateTimeImmutable('today');
 ?>
 
 <div class="container py-4">
@@ -29,7 +28,7 @@ $today = new DateTimeImmutable('today');
                 <tbody>
                     <?php foreach ($upcomingServices as $service): ?>
                         <?php
-                        $expiry = new DateTimeImmutable($service['expiry']);
+                        $expiry = new \DateTimeImmutable($service['expiry']);
                         $days = (int) $today->diff($expiry)->format('%r%a');
                         ?>
                         <tr>

@@ -26,6 +26,7 @@ $isPaid = $invoice->status ===
      font-family:Arial,Helvetica,sans-serif;
      color:#171717;
      ">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <div style="
          max-width:680px;

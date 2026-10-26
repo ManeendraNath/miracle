@@ -9,6 +9,7 @@ $resetLink = Yii::$app->urlManager->createAbsoluteUrl(['site/reset-password', 't
 ?>
 
 <div style=" max-width:600px; margin:0 auto; font-family:Arial,sans-serif; background:#ffffff; border:1px solid #e5e7eb; border-radius:10px; overflow:hidden;">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <div style="background:#0f172a; color:#ffffff; padding:25px; text-align:center;">
         <h2 style="margin:0;">Miracle Web Technologies</h2>
     </div>

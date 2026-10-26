@@ -21,6 +21,7 @@ $amount = Yii::$app->formatter->asCurrency($outstandingAmount, 'INR');
 ?>
 
 <div style="margin:0; padding:32px 12px; background:#f3f4f6; font-family:Arial,Helvetica,sans-serif; color:#171717;">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <div style="max-width:680px; margin:0 auto;">
         <table width="100%" cellpadding="0" cellspacing="0" role="presentation">
             <tr>

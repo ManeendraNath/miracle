@@ -85,21 +85,33 @@ class CronController extends Controller
         foreach ($invoices as $invoice) {
             $client = User::findOne($invoice->user_id);
             if ($client && !empty($client->email)) {
-                $sent = Yii::$app->mailer->compose()
+                $clientPortalUrl = Yii::$app->params['frontendBaseUrl'] . '/invoice/view?number=' . rawurlencode($invoice->invoice_number);
+
+                $sent = Yii::$app->mailer
+                        ->compose()
                         ->setFrom([Yii::$app->params['supportEmail'] => 'Miracle Web Technologies Billing'])
                         ->setTo($client->email)
-                        ->setSubject("URGENT REMINDER: Invoice #{$invoice->invoice_number} is due tomorrow")
-                        ->setHtmlBody("
-                        <h3>Hello " . Html::encode($invoice->client_name) . ",</h3>
-                        <p>This is an automated operational alert system reminder that your billing statement invoice <strong>#{$invoice->invoice_number}</strong> is due tomorrow (<strong>" . date('d M Y', strtotime($invoice->due_date)) . "</strong>).</p>
-                        <ul>
-                            <li><strong>Invoice Number Reference:</strong> {$invoice->invoice_number}</li>
-                            <li><strong>Outstanding Balance Due:</strong> ₹" . number_format($invoice->total_payable, 2) . "</li>
-                        </ul>
-                        <p>Please log into your client hub area dashboard panel immediately to settle your outstanding ledger statement balance to ensure seamless continuity of services.</p>
-                        <br>
-                        <p>Regards,<br>Billing Team<br>Miracle Web Technologies</p>
-                    ")
+                        ->setSubject(sprintf('Payment Due Tomorrow | Invoice #%s', $invoice->invoice_number))
+                        ->setHtmlBody(
+                                Yii::$app->view->renderFile(
+                                        '@common/mail/invoiceDueTomorrow-html.php',
+                                        [
+                                            'invoice' => $invoice,
+                                            'client' => $client,
+                                            'clientPortalUrl' => $clientPortalUrl,
+                                        ]
+                                )
+                        )
+                        ->setTextBody(
+                                Yii::$app->view->renderFile(
+                                        '@common/mail/invoiceDueTomorrow-text.php',
+                                        [
+                                            'invoice' => $invoice,
+                                            'client' => $client,
+                                            'clientPortalUrl' => $clientPortalUrl,
+                                        ]
+                                )
+                        )
                         ->send();
 
                 if ($sent) {
@@ -113,7 +125,7 @@ class CronController extends Controller
         return Controller::EXIT_CODE_NORMAL;
     }
 
-    private function sendReminderEmail($type, $asset, $name, $user, $daysRemaining)
+    private function sendReminderEmail(string $type, object $asset, string $name, User $user, int $daysRemaining): void
     {
         if ($user === null || empty($user->email)) {
             return;
@@ -121,53 +133,64 @@ class CronController extends Controller
 
         // Defensive check block: Prevent redundant invoice spam alerts if they are already processing an existing payment renewal order
         $itemType = match ($type) {
-            'domain' =>
-            InvoiceItem::TYPE_DOMAIN,
-            'hosting' =>
-            InvoiceItem::TYPE_HOSTING,
-            'maintenance' =>
-            InvoiceItem::TYPE_MAINTENANCE,
-            default =>
-            throw new \InvalidArgumentException(
-                    'Unsupported reminder service type.'
-            ),
+            'domain' => InvoiceItem::TYPE_DOMAIN,
+            'hosting' => InvoiceItem::TYPE_HOSTING,
+            'maintenance' => InvoiceItem::TYPE_MAINTENANCE,
+            default => throw new \InvalidArgumentException('Unsupported reminder service type.'),
         };
 
         $alreadyInvoiced = InvoiceItem::find()
                 ->joinWith('invoice')
                 ->where([
-                    'invoice_item.item_type' =>
-                    $itemType,
-                    'invoice_item.item_id' =>
-                    $asset->id,
-                    'invoice.status' => [
-                        Invoice::STATUS_UNPAID,
-                        Invoice::STATUS_PARTIALLY_PAID,
-                    ],
+                    'invoice_item.item_type' => $itemType,
+                    'invoice_item.item_id' => $asset->id,
+                    'invoice.status' => [Invoice::STATUS_UNPAID, Invoice::STATUS_PARTIALLY_PAID],
                 ])
                 ->exists();
 
         if ($alreadyInvoiced) {
-            $this->stdout("Skipping alert email notification for $type ($name). Unpaid invoice active.\n", Console::FG_YELLOW);
+            $this->stdout("Skipping reminder for {$name}. Active invoice already exists.\n", Console::FG_YELLOW);
             return;
         }
 
-        // Initialize Yii2 Mailer component processing
-        $mail = Yii::$app->mailer->compose()
-                ->setFrom([Yii::$app->params['supportEmail'] => 'Miracle Web Technologies Operations'])
+        $subject = match (true) {
+            $daysRemaining <= 1 => sprintf('URGENT: %s expires tomorrow', $name),
+            $daysRemaining <= 5 => sprintf('Renewal Reminder: %s expires in %d days', $name, $daysRemaining),
+            default => sprintf('Upcoming Renewal: %s expires in %d days', $name, $daysRemaining),
+        };
+        $dashboardUrl = Yii::$app->params['frontendUrl'] . '/dashboard/index';
+        $htmlBody = Yii::$app->view->renderFile(
+                '@common/mail/serviceExpiryReminder-html.php',
+                [
+                    'type' => $type,
+                    'serviceName' => $name,
+                    'expiryDate' => $asset->current_expiry_date,
+                    'daysRemaining' => $daysRemaining,
+                    'user' => $user,
+                    'dashboardUrl' => $dashboardUrl,
+                ]
+        );
+        $textBody = Yii::$app->view->renderFile(
+                '@common/mail/serviceExpiryReminder-text.php',
+                [
+                    'type' => $type,
+                    'serviceName' => $name,
+                    'expiryDate' => $asset->current_expiry_date,
+                    'daysRemaining' => $daysRemaining,
+                    'user' => $user,
+                    'dashboardUrl' => $dashboardUrl,
+                ]
+        );
+        $sent = Yii::$app->mailer
+                ->compose()
+                ->setFrom([Yii::$app->params['supportEmail'] => 'Miracle Web Technologies'])
                 ->setTo($user->email)
-                ->setSubject("CRITICAL RENEWAL NOTICE: $name expires in $daysRemaining days")
-                ->setHtmlBody("
-                <h3>Hello {$user->username},</h3>
-                <p>This is an automated lifecycle systems alert tracking system message regarding your active contract account.</p>
-                <p>Your service asset type <strong>" . strtoupper($type) . "</strong> for identity entry <strong>$name</strong> is scheduled to expire on <strong>{$asset->current_expiry_date}</strong>.</p>
-                <p>Please log into your client hub area dashboard panel immediately to clear balance processing fees to avoid downtime disruptions.</p>
-                <br>
-                <p>Regards,<br>Billing Team<br>Miracle Web Technologies</p>
-            ");
-
-        if ($mail->send()) {
-            $this->stdout("Successfully dispatched expiry reminder warning notice to {$user->email} for asset: $name\n", Console::FG_GREEN);
+                ->setSubject($subject)
+                ->setHtmlBody($htmlBody)
+                ->setTextBody($textBody)
+                ->send();
+        if ($sent) {
+            $this->stdout("Renewal reminder sent to {$user->email}\n", Console::FG_GREEN);
         }
     }
 

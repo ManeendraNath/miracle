@@ -1,5 +1,4 @@
 <?php
-
 declare(strict_types=1);
 
 /** @var yii\web\View $this */
@@ -7,8 +6,17 @@ declare(strict_types=1);
 
 $verifyLink = Yii::$app->urlManager->createAbsoluteUrl(['site/verify-email', 'token' => $user->verification_token]);
 ?>
+
+Email Verification
+
 Hello <?= $user->username ?>,
 
-Follow the link below to verify your email:
+Thank you for registering.
+
+Please verify your email address using the link below:
 
 <?= $verifyLink ?>
+
+
+If you did not create this account,
+no further action is required.

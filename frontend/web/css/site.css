@@ -427,15 +427,21 @@ a.desc:after {
 }
 
 
+.account-sidebar {
+    border-radius:12px;
+    overflow:hidden;
+}
+
 .account-sidebar .list-group-item {
     padding: 14px 18px;
-    border: 0;
+    border: none;
+    font-weight: 500;
 }
 
 .account-sidebar .list-group-item.active {
     background: #1565c0;
     color: #fff;
-    border-left: 4px solid #0b1f4d;
+    border-left: 4px solid #fff;
 }
 
 .account-sidebar .list-group-item:hover {
@@ -451,7 +457,6 @@ a.desc:after {
 }
 
 @media (max-width: 991px) {
-
     .account-sidebar {
         margin-bottom: 20px;
     }

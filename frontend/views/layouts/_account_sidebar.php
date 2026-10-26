@@ -22,24 +22,38 @@ $items = [
         <div class="fw-bold">My Account</div>
         <small style="opacity:.85;">Manage your services</small>
     </div>
+    <div class="card-body">
+        Notifications
+        <?php if ($unreadNotifications): ?>
+            <span class="badge bg-danger float-end">
+                <?= $unreadNotifications ?>
+            </span>
+        <?php endif; ?>
 
+        Support Tickets
+        <?php if ($openSupportTickets): ?>
+            <span class="badge bg-warning text-dark float-end">
+                <?= $openSupportTickets ?>
+            </span>
+        <?php endif; ?>
+    </div>
     <div class="list-group list-group-flush">
-<?php foreach ($items as $item): ?>
-    <?php
-    $active = $currentController === $item['controller'];
-    ?>
-    <?= Html::a('<i class="' . $item['icon'] . ' me-2"></i>' . Html::encode($item['label']), $item['url'], ['class' => 'list-group-item ' . 'list-group-item-action ' . ($active ? 'active' : ''), 'encode' => false]) ?>
-<?php endforeach; ?>
-<?=
-Html::a(
-        '<i class="fas fa-sign-out-alt me-2"></i> Sign Out',
-        ['/site/logout'],
-        [
-            'class' => 'list-group-item ' . 'list-group-item-action ' . 'text-danger',
-            'data' => ['method' => 'post'],
-            'encode' => false,
-        ]
-)
-?>
+        <?php foreach ($items as $item): ?>
+            <?php
+            $active = $currentController === $item['controller'];
+            ?>
+            <?= Html::a('<i class="' . $item['icon'] . ' me-2"></i>' . Html::encode($item['label']), $item['url'], ['class' => 'list-group-item ' . 'list-group-item-action ' . ($active ? 'active' : ''), 'encode' => false]) ?>
+        <?php endforeach; ?>
+        <?=
+        Html::a(
+                '<i class="fas fa-sign-out-alt me-2"></i> Sign Out',
+                ['/site/logout'],
+                [
+                    'class' => 'list-group-item ' . 'list-group-item-action ' . 'text-danger',
+                    'data' => ['method' => 'post'],
+                    'encode' => false,
+                ]
+        )
+        ?>
     </div>
 </div>

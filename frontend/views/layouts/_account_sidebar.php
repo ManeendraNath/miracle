@@ -23,14 +23,12 @@ $items = [
         <small style="opacity:.85;">Manage your services</small>
     </div>
     <div class="card-body">
-        Notifications
         <?php if ($unreadNotifications): ?>
             <span class="badge bg-danger float-end">
                 <?= $unreadNotifications ?>
             </span>
         <?php endif; ?>
 
-        Support Tickets
         <?php if ($openSupportTickets): ?>
             <span class="badge bg-warning text-dark float-end">
                 <?= $openSupportTickets ?>

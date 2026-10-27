@@ -32,7 +32,7 @@ final class SupportTicketMailer
                 )
                 ->setFrom([Yii::$app->params['senderEmail'] => Yii::$app->params['senderName']])
                 ->setTo(Yii::$app->params['supportEmail'])
-                ->setSubject(sprintf('Customer Reply %s', $ticket->ticket_number))
+                ->setSubject(sprintf('[Ticket #%s Customer Replied]', $ticket->ticket_number))
                 ->send();
     }
 
@@ -45,7 +45,7 @@ final class SupportTicketMailer
                 )
                 ->setFrom([Yii::$app->params['senderEmail'] => Yii::$app->params['senderName']])
                 ->setTo($ticket->user->email)
-                ->setSubject(sprintf('Response Received %s', $ticket->ticket_number))
+                ->setSubject(sprintf('[Ticket #%s Support Team Replied]', $ticket->ticket_number))
                 ->send();
     }
 
@@ -58,7 +58,7 @@ final class SupportTicketMailer
                 )
                 ->setFrom([Yii::$app->params['senderEmail'] => Yii::$app->params['senderName']])
                 ->setTo($ticket->user->email)
-                ->setSubject(sprintf('Support Request Resolved - %s', $ticket->ticket_number))
+                ->setSubject(sprintf('[Ticket #%s Support Request Resolved]', $ticket->ticket_number))
                 ->send();
     }
 
@@ -71,7 +71,7 @@ final class SupportTicketMailer
                 )
                 ->setFrom([Yii::$app->params['senderEmail'] => Yii::$app->params['senderName']])
                 ->setTo($ticket->user->email)
-                ->setSubject(sprintf('Support Request Closed - %s', $ticket->ticket_number))
+                ->setSubject(sprintf('[Ticket #%s Support Request Closed]', $ticket->ticket_number))
                 ->send();
     }
 }

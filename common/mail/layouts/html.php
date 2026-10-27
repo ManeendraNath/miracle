@@ -74,7 +74,7 @@ use yii\helpers\Html;
                         <!-- Header -->
                         <tr>
                             <td align="center" style="background:#0b1f4d;color:#ffffff;padding:30px;">
-                                <img src="https://miraclewebtechnologies.com/images/logo.png" alt="Miracle Web Technologies" style=" max-height:70px; width:auto; display:block; margin:0 auto 15px;">
+                                <img src="https://miraclewebtechnologies.com/images/logo.png" alt="Miracle Web Technologies" style=" max-height:90px; width:auto; display:block; margin:0 auto 15px;">
                                 <h1 style="margin:0; font-size:28px; color:#ffffff;">Miracle Web Technologies</h1>
                                 <div style="margin-top:8px; font-size:14px; color:#d7e4ff;">
                                     Upgrade Your Business With Us
@@ -97,6 +97,8 @@ use yii\helpers\Html;
                                 <?= Html::encode(Yii::$app->params['supportEmail']) ?>
                                 <br>
                                 https://miraclewebtechnologies.com
+                                <br>
+                                <a href="https://miraclewebtechnologies.com/dashboard">Access Customer Portal</a>
                                 <br><br>
                                 © 2015-<?= date('Y') ?> Miracle Web Technologies
                             </td>

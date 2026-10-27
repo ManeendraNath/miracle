@@ -98,7 +98,7 @@ use yii\helpers\Html;
                                 <br>
                                 https://miraclewebtechnologies.com
                                 <br>
-                                <a href="https://miraclewebtechnologies.com/dashboard">Access Customer Portal</a>
+                                <a href="https://miraclewebtechnologies.com/dashboard/">Access Customer Portal</a>
                                 <br><br>
                                 © 2015-<?= date('Y') ?> Miracle Web Technologies
                             </td>

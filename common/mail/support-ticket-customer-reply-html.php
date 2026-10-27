@@ -3,7 +3,6 @@
 use yii\helpers\Html;
 
 /** @var \common\models\SupportTicket $ticket */
-$ticketLink = Yii::$app->urlManager->createAbsoluteUrl(['support/view', 'number' => $ticket->ticket_number]);
 ?>
 <div style="font-family:Arial,sans-serif;max-width:700px;margin:0 auto;">
     <div style="background:#fd7e14;color:#fff;padding:20px;">
@@ -25,6 +24,5 @@ $ticketLink = Yii::$app->urlManager->createAbsoluteUrl(['support/view', 'number'
                 <td><?= Html::encode($ticket->user->username) ?></td>
             </tr>
         </table>
-        <a href="<?= $ticketLink ?>" style="background:#1565c0; color:#fff; padding:12px 25px; border-radius:6px; text-decoration:none; display:inline-block;">View Ticket</a>
     </div>
 </div>

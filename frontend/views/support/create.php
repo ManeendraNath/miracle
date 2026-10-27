@@ -49,7 +49,7 @@ $form = ActiveForm::begin(['id' => 'support-ticket-form']);
             <?= $form->field($model, 'subject')->textInput(['maxlength' => true]) ?>
             <?= $form->field($model, 'message')->textarea(['rows' => 8]) ?>
         <div class="mt-3">
-        <?= Html::submitButton('Submit Ticket', ['class' => 'btn btn-primary']) ?>
+        <?= Html::submitButton('Submit Ticket', ['class' => 'btn btn-primary', 'data' => ['disable-with' => 'Submitting...']]) ?>
         <?= Html::a('Cancel', ['index'], ['class' => 'btn btn-outline-secondary']) ?>
         </div>
 <?php ActiveForm::end(); ?>
@@ -57,8 +57,7 @@ $form = ActiveForm::begin(['id' => 'support-ticket-form']);
 </div>
 
 <?php
-$this->registerJs(
-        '
+$this->registerJs('
     const services = ' . Json::htmlEncode($services) . ';
     $("#service-type").on("change", function () {
         const type = $(this).val();
@@ -76,6 +75,5 @@ $this->registerJs(
         );
     });
     $("#service-type").trigger("change");
-'
-);
+');
 ?>

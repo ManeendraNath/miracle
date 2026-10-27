@@ -3,7 +3,7 @@
 use yii\helpers\Html;
 
 /** @var \common\models\SupportTicket $ticket */
-$ticketLink = $_ENV['FRONTEND_BASE_URL'] . 'support/view?number' . $ticket->ticket_number;
+$ticketLink = $_ENV['FRONTEND_BASE_URL'] . '/support/view?number=' . $ticket->ticket_number;
 ?>
 <div style="font-family:Arial,sans-serif;max-width:700px;margin:0 auto;">
     <div style="background:#0d6efd;color:#fff;padding:20px;">

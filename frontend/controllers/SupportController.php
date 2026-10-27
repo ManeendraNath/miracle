@@ -53,10 +53,10 @@ final class SupportController extends Controller
                         'index',
                         [
                             'dataProvider' =>
-                            new ActiveDataProvider([
-                                'query' => $query,
-                                'pagination' => ['pageSize' => 20],
-                                    ]),
+                                new ActiveDataProvider([
+                                    'query' => $query,
+                                    'pagination' => ['pageSize' => 20],
+                                ]),
                         ]
                 );
     }
@@ -98,14 +98,14 @@ final class SupportController extends Controller
                 do {
                     $ticketNumber = 'SUP-' . date('Ymd') . '-' . strtoupper(bin2hex(random_bytes(4)));
                 } while (
-                SupportTicket::find()->where(['ticket_number' => $ticketNumber])->exists()
+                    SupportTicket::find()->where(['ticket_number' => $ticketNumber])->exists()
                 );
                 $model->ticket_number = $ticketNumber;
                 $model->status = SupportTicket::STATUS_OPEN;
                 $model->created_at = $now;
                 $model->updated_at = $now;
                 if ($model->save()) {
-                    NotificationService::create($userId, 'support', 'Support Ticket Created', sprintf('Ticket %s has been created.', $model->ticket_number), '/support/view?number=' . $model->ticket_number);
+                    (new NotificationService())->create($userId, 'support', 'Support Ticket Created', sprintf('Ticket %s has been created.', $model->ticket_number), '/support/view?number=' . $model->ticket_number);
                     SupportTicketMailer::ticketCreated($model);
                     Yii::$app->session->setFlash('success', 'Support request submitted successfully.');
                     return $this->redirect(['view', 'number' => $model->ticket_number]);
@@ -117,10 +117,7 @@ final class SupportController extends Controller
 
     public function actionView(string $number)
     {
-        $model = SupportTicket::findOne([
-            'ticket_number' => $number,
-            'user_id' => (int) Yii::$app->user->id,
-        ]);
+        $model = SupportTicket::findOne(['ticket_number' => $number, 'user_id' => (int) Yii::$app->user->id]);
         if ($model === null) {
             throw new NotFoundHttpException('Support request does not exist.');
         }
@@ -171,7 +168,7 @@ final class SupportController extends Controller
             $ticket->status = SupportTicket::STATUS_OPEN;
         }
         $ticket->save(false, ['status', 'updated_at']);
-        NotificationService::create((int) $ticket->user_id, 'support', 'Reply Added', sprintf('A new reply has been added to ticket %s.', $ticket->ticket_number), '/support/view?number=' . $ticket->ticket_number);
+        (new NotificationService())->create((int) $ticket->user_id, 'support', 'Reply Added', sprintf('A new reply has been added to ticket %s.', $ticket->ticket_number), '/support/view?number=' . $ticket->ticket_number);
         SupportTicketMailer::customerReply($ticket);
         Yii::$app->session->setFlash('success', 'Your reply has been added.');
         return $this->redirect(['view', 'number' => $ticket->ticket_number]);

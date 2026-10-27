@@ -9,7 +9,7 @@ use common\models\CustomerNotification;
 final class NotificationService
 {
 
-    public static function create(int $userId, string $type, string $title, string $message, ?string $route = null): CustomerNotification
+    public function create(int $userId, string $type, string $title, string $message, ?string $route = null): CustomerNotification
     {
         $model = new CustomerNotification();
         $model->user_id = $userId;

@@ -50,7 +50,7 @@ final class SupportTicketMailer
     {
         Yii::$app->mailer
                 ->compose(
-                        ['html' => 'support-ticket-resolve-html', 'text' => 'support-ticket-resolve-text'],
+                        ['html' => 'support-ticket-resolved-html', 'text' => 'support-ticket-resolved-text'],
                         ['ticket' => $ticket]
                 )
                 ->setTo($ticket->user->email)

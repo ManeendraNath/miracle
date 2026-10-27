@@ -1,4 +1,74 @@
-<div class="card shadow-sm mb-4">
+<?php
+declare(strict_types=1);
+
+use yii\helpers\Html;
+
+/** @var common\models\SupportTicket $model */
+/** @var common\models\SupportTicketMessage[] $messages */
+$this->title = $model->ticket_number;
+?>
+
+<div class="card border-0 shadow-sm mb-4">
+
+    <div class="card-header">
+
+        <div class="d-flex justify-content-between align-items-center">
+
+            <div>
+
+                <strong>
+<?=
+Html::encode(
+        $model->ticket_number
+)
+?>
+                </strong>
+
+                <div class="small text-muted">
+
+                    <?=
+                    Html::encode(
+                            $model->subject
+                    )
+                    ?>
+
+                </div>
+
+            </div>
+
+            <span class="badge bg-primary">
+
+                <?=
+                Html::encode(
+                        $model->status
+                )
+                ?>
+
+            </span>
+
+        </div>
+
+    </div>
+
+</div>
+
+<div class="card border-0 shadow-sm mb-4">
+
+    <div class="card-body">
+
+        <?=
+        nl2br(
+                Html::encode(
+                        $model->message
+                )
+        )
+        ?>
+
+    </div>
+
+</div>
+
+<div class="card border-0 shadow-sm mb-4">
 
     <div class="card-header">
 
@@ -10,149 +80,114 @@
 
     <div class="card-body">
 
-        <?php
-        foreach (
-                $model->messages
-        as $message
-        ):
-            ?>
+        <?php foreach ($messages as $message): ?>
 
             <?php
-            $customer = $message->sender_type ===
-                    \common\models\SupportTicketMessage::SENDER_CUSTOMER;
+            $customer = strtolower(
+                            $message->sender_type
+                    ) === 'customer';
             ?>
 
-            <div class="
-                 d-flex
-                 <?=
-                 $customer ? 'justify-content-end' : 'justify-content-start'
-                 ?>
-                 mb-3
-                 ">
+            <div
+                class="
+                d-flex
+                mb-3
+                <?=
+                $customer ? 'justify-content-end' : 'justify-content-start'
+                ?>
+                "
+                >
 
                 <div
                     class="
-                    rounded-3
-                    p-3
+                    p-3 rounded
                     <?=
-                    $customer ? 'bg-primary text-white' : 'bg-light border'
+                    $customer ? 'bg-primary text-white' : 'bg-light'
                     ?>
                     "
-                    style="max-width:75%;"
+                    style="max-width:70%;"
                     >
 
-                    <div class="
-                         small
-                         fw-semibold
-                         mb-1
-                         ">
-                             <?=
-                             $customer ? 'You' : 'Support Team'
-                             ?>
-                    </div>
-
-                    <div>
-                        <?=
-                        nl2br(
-                                Html::encode(
-                                        $message->message
-                                )
-                        )
-                        ?>
-                    </div>
+                    <?=
+                    nl2br(
+                            Html::encode(
+                                    $message->message
+                            )
+                    )
+                    ?>
 
                     <div
                         class="
-                        small mt-2
+                        small
+                        mt-2
                         <?=
                         $customer ? 'text-white-50' : 'text-muted'
                         ?>
                         "
                         >
-                            <?=
-                                    Yii::$app
-                                    ->formatter
-                                    ->asDatetime(
-                                            $message
-                                            ->created_at,
-                                            'php:d M Y, h:i A'
-                                    )
-                            ?>
+
+                        <?=
+                                Yii::$app
+                                ->formatter
+                                ->asDatetime(
+                                        $message->created_at
+                                )
+                        ?>
+
                     </div>
 
                 </div>
 
             </div>
 
-        <?php endforeach; ?>
+<?php endforeach; ?>
 
     </div>
 
 </div>
-<?php
-if (
-        $model->status !== \common\models\SupportTicket::STATUS_CLOSED
-):
-    ?>
 
-    <?=
-    Html::beginForm(
-            [
-                'reply',
-                'number' =>
-                $model->ticket_number,
-            ],
-            'post'
-    )
-    ?>
+<?php if ($model->status !== 'Closed'): ?>
 
-    <div class="card shadow-sm">
+    <div class="card border-0 shadow-sm">
 
         <div class="card-header">
-            <strong>
-                Reply
-            </strong>
+
+            Reply
+
         </div>
 
         <div class="card-body">
 
-            <?=
-            Html::textarea(
-                    'message',
-                    '',
-                    [
-                        'class' =>
-                        'form-control',
-                        'rows' =>
-                        5,
-                        'maxlength' =>
-                        10000,
-                        'required' =>
-                        true,
-                        'placeholder' =>
-                        'Write your reply...',
-                    ]
-            )
-            ?>
+            <form
+                method="post"
+                action="<?=
+    \yii\helpers\Url::to([
+        '/support/reply',
+        'number' => $model->ticket_number,
+    ])
+    ?>"
+                >
 
-        </div>
+    <?= Yii::$app->request->csrfInput ?>
 
-        <div class="card-footer">
+                <textarea
+                    name="message"
+                    rows="5"
+                    class="form-control mb-3"
+                    required
+                    ></textarea>
 
-            <?=
-            Html::submitButton(
-                    'Send Reply',
-                    [
-                        'class' =>
-                        'btn btn-primary',
-                    ]
-            )
-            ?>
+                <button
+                    type="submit"
+                    class="btn btn-primary"
+                    >
+                    Send Reply
+                </button>
+
+            </form>
 
         </div>
 
     </div>
-
-    <?= Html::endForm() ?>
 
 <?php endif; ?>

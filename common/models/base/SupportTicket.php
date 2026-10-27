@@ -21,6 +21,7 @@ use Yii;
  * @property int $created_at
  * @property int $updated_at
  *
+ * @property SupportTicketAttachment[] $supportTicketAttachments
  * @property SupportTicketMessage[] $supportTicketMessages
  * @property User $user
  */
@@ -76,6 +77,16 @@ class SupportTicket extends \yii\db\ActiveRecord
             'created_at' => 'Created At',
             'updated_at' => 'Updated At',
         ];
+    }
+
+    /**
+     * Gets query for [[SupportTicketAttachments]].
+     *
+     * @return \yii\db\ActiveQuery
+     */
+    public function getSupportTicketAttachments()
+    {
+        return $this->hasMany(SupportTicketAttachment::class, ['ticket_id' => 'id']);
     }
 
     /**

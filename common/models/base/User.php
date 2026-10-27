@@ -18,10 +18,19 @@ use Yii;
  * @property int $updated_at
  * @property string|null $verification_token
  *
+ * @property BillingEvent[] $billingEvents
+ * @property CouponAssignedUser[] $couponAssignedUsers
+ * @property CouponRedemption[] $couponRedemptions
+ * @property CustomerBillingProfile $customerBillingProfile
+ * @property CustomerNotification[] $customerNotifications
+ * @property CustomerPreference $customerPreference
  * @property Domains[] $domains
  * @property Hosting[] $hostings
  * @property Invoice[] $invoices
  * @property Maintenance[] $maintenances
+ * @property SupportTicketAttachment[] $supportTicketAttachments
+ * @property SupportTicket[] $supportTickets
+ * @property UserLoginHistory[] $userLoginHistories
  */
 class User extends \yii\db\ActiveRecord
 {
@@ -42,7 +51,7 @@ class User extends \yii\db\ActiveRecord
     {
         return [
             [['password_reset_token', 'verification_token'], 'default', 'value' => null],
-            [['status'], 'default', 'value' => 1],
+            [['status'], 'default', 'value' => 10],
             [['username', 'auth_key', 'password_hash', 'email', 'created_at', 'updated_at'], 'required'],
             [['status', 'created_at', 'updated_at'], 'integer'],
             [['username', 'password_hash', 'password_reset_token', 'email', 'verification_token'], 'string', 'max' => 255],
@@ -70,6 +79,66 @@ class User extends \yii\db\ActiveRecord
             'updated_at' => 'Updated At',
             'verification_token' => 'Verification Token',
         ];
+    }
+
+    /**
+     * Gets query for [[BillingEvents]].
+     *
+     * @return \yii\db\ActiveQuery
+     */
+    public function getBillingEvents()
+    {
+        return $this->hasMany(BillingEvent::class, ['user_id' => 'id']);
+    }
+
+    /**
+     * Gets query for [[CouponAssignedUsers]].
+     *
+     * @return \yii\db\ActiveQuery
+     */
+    public function getCouponAssignedUsers()
+    {
+        return $this->hasMany(CouponAssignedUser::class, ['user_id' => 'id']);
+    }
+
+    /**
+     * Gets query for [[CouponRedemptions]].
+     *
+     * @return \yii\db\ActiveQuery
+     */
+    public function getCouponRedemptions()
+    {
+        return $this->hasMany(CouponRedemption::class, ['user_id' => 'id']);
+    }
+
+    /**
+     * Gets query for [[CustomerBillingProfile]].
+     *
+     * @return \yii\db\ActiveQuery
+     */
+    public function getCustomerBillingProfile()
+    {
+        return $this->hasOne(CustomerBillingProfile::class, ['user_id' => 'id']);
+    }
+
+    /**
+     * Gets query for [[CustomerNotifications]].
+     *
+     * @return \yii\db\ActiveQuery
+     */
+    public function getCustomerNotifications()
+    {
+        return $this->hasMany(CustomerNotification::class, ['user_id' => 'id']);
+    }
+
+    /**
+     * Gets query for [[CustomerPreference]].
+     *
+     * @return \yii\db\ActiveQuery
+     */
+    public function getCustomerPreference()
+    {
+        return $this->hasOne(CustomerPreference::class, ['user_id' => 'id']);
     }
 
     /**
@@ -110,6 +179,36 @@ class User extends \yii\db\ActiveRecord
     public function getMaintenances()
     {
         return $this->hasMany(Maintenance::class, ['user_id' => 'id']);
+    }
+
+    /**
+     * Gets query for [[SupportTicketAttachments]].
+     *
+     * @return \yii\db\ActiveQuery
+     */
+    public function getSupportTicketAttachments()
+    {
+        return $this->hasMany(SupportTicketAttachment::class, ['uploaded_by' => 'id']);
+    }
+
+    /**
+     * Gets query for [[SupportTickets]].
+     *
+     * @return \yii\db\ActiveQuery
+     */
+    public function getSupportTickets()
+    {
+        return $this->hasMany(SupportTicket::class, ['user_id' => 'id']);
+    }
+
+    /**
+     * Gets query for [[UserLoginHistories]].
+     *
+     * @return \yii\db\ActiveQuery
+     */
+    public function getUserLoginHistories()
+    {
+        return $this->hasMany(UserLoginHistory::class, ['user_id' => 'id']);
     }
 
 }

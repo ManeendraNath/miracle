@@ -14,7 +14,7 @@ use yii\web\NotFoundHttpException;
 
 final class NotificationController extends Controller
 {
-    
+
     public $layout = 'account';
 
     public function behaviors(): array
@@ -67,6 +67,32 @@ final class NotificationController extends Controller
                                     'pageSize' => 20,
                                 ],
                                     ]),
+                        ]
+                );
+    }
+
+    public function actionView(int $id)
+    {
+        $model = $this->findOwnedModel($id);
+
+        if (!(bool) $model->is_read) {
+
+            $model->is_read = 1;
+            $model->read_at = time();
+
+            $model->save(
+                    false,
+                    [
+                        'is_read',
+                        'read_at',
+                    ]
+            );
+        }
+
+        return $this->render(
+                        'view',
+                        [
+                            'model' => $model,
                         ]
                 );
     }

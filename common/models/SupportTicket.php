@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace common\models;
 
 use yii\db\ActiveQuery;
+use yii\helpers\ArrayHelper;
 
 /**
  * This is the model class for table "support_ticket".
@@ -45,9 +46,17 @@ class SupportTicket extends base\SupportTicket
             ['message', 'string', 'min' => 10, 'max' => 10000],
             ['priority', 'in', 'range' => [self::PRIORITY_LOW, self::PRIORITY_NORMAL, self::PRIORITY_HIGH]],
             ['service_type', 'in', 'range' => ['domain', 'hosting', 'maintenance'], 'skipOnEmpty' => true],
-            ['service_id', 'integer', 'min' => 1],
+            ['service_id', 'integer', 'min' => 1, 'skipOnEmpty' => true],
+            ['service_id', 'required',
+                'when' => static function ($model) {
+                    return !empty($model->service_type);
+                },
+                'whenClient' => "function() {
+        return $('#service-type').val() !== '';
+    }",
+            ],
         ];
-        return array_merge(parent::rules(), $rules);
+        return ArrayHelper::merge(parent::rules(), $rules);
     }
 
     public static function getStatuses(): array
@@ -67,11 +76,6 @@ class SupportTicket extends base\SupportTicket
             self::PRIORITY_NORMAL => 'Normal',
             self::PRIORITY_HIGH => 'High',
         ];
-    }
-
-    public function getUser(): ActiveQuery
-    {
-        return $this->hasOne(User::class, ['id' => 'user_id']);
     }
 
     public function getMessages(): ActiveQuery

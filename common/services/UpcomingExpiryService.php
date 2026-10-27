@@ -44,51 +44,27 @@ final class UpcomingExpiryService
         ];
     }
 
-    public function getItems(
-            ?string $type = null,
-            ?int $userId = null,
-            string $window = self::WINDOW_60
-    ): array
+    public function getItems(?string $type = null, ?int $userId = null, string $window = self::WINDOW_60): array
     {
         $items = [];
-
         foreach ($this->getSources() as $sourceType => $source) {
             if ($type !== null && $type !== $sourceType) {
                 continue;
             }
-
-            $items = array_merge(
-                    $items,
-                    $this->loadSource(
-                            $sourceType,
-                            $source,
-                            $userId
-                    )
-            );
+            $items = array_merge($items, $this->loadSource($sourceType, $source, $userId));
         }
 
         return array_values(
                 array_filter(
                         $items,
-                        fn(array $item): bool => $this->matchesWindow(
-                                $item['days_remaining'],
-                                $window
-                        )
+                        fn(array $item): bool => $this->matchesWindow($item['days_remaining'], $window)
                 )
         );
     }
 
-    public function getSummary(
-            ?string $type = null,
-            ?int $userId = null
-    ): array
+    public function getSummary(?string $type = null, ?int $userId = null): array
     {
-        $items = $this->getItems(
-                $type,
-                $userId,
-                self::WINDOW_ALL
-        );
-
+        $items = $this->getItems($type, $userId, self::WINDOW_ALL);
         $summary = [
             'expired' => 0,
             'next7' => 0,
@@ -101,7 +77,6 @@ final class UpcomingExpiryService
 
             if ($remaining < 0) {
                 $summary['expired']++;
-
                 continue;
             }
 
@@ -139,92 +114,48 @@ final class UpcomingExpiryService
         ];
     }
 
-    private function loadSource(
-            string $type,
-            array $source,
-            ?int $userId
-    ): array
+    private function loadSource(string $type, array $source, ?int $userId): array
     {
         $class = $source['class'];
         $nameAttribute = $source['nameAttribute'];
 
         $query = $class::find()
                 ->with('user')
-                ->andWhere([
-                    'not',
-                    ['current_expiry_date' => null],
-                ])
-                ->andWhere([
-                    '<>',
-                    'current_expiry_date',
-                    '',
-        ]);
-
+                ->andWhere(['not', ['current_expiry_date' => null]])
+                ->andWhere(['<>', 'current_expiry_date', '']);
         if ($userId !== null) {
-            $query->andWhere([
-                'user_id' => $userId,
-            ]);
+            $query->andWhere(['user_id' => $userId]);
         }
-
         $items = [];
 
         foreach ($query->all() as $model) {
             if (!$model instanceof ActiveRecord) {
                 continue;
             }
-
-            $item = $this->normaliseModel(
-                    $model,
-                    $type,
-                    $nameAttribute
-            );
-
+            $item = $this->normaliseModel($model, $type, $nameAttribute);
             if ($item !== null) {
                 $items[] = $item;
             }
         }
-
         return $items;
     }
 
-    private function normaliseModel(
-            ActiveRecord $model,
-            string $type,
-            string $nameAttribute
-    ): ?array
+    private function normaliseModel(ActiveRecord $model, string $type, string $nameAttribute): ?array
     {
-        $expiryDate = trim(
-                (string) $model->getAttribute(
-                        'current_expiry_date'
-                )
-        );
-
-        $expiry = DateTimeImmutable::createFromFormat(
-                '!Y-m-d',
-                $expiryDate
-        );
-
-        if (
-                $expiry === false || $expiry->format('Y-m-d') !== $expiryDate
-        ) {
+        $expiryDate = trim((string) $model->getAttribute('current_expiry_date'));
+        $expiry = DateTimeImmutable::createFromFormat('!Y-m-d', $expiryDate);
+        if ($expiry === false || $expiry->format('Y-m-d') !== $expiryDate) {
             return null;
         }
 
         $today = new DateTimeImmutable('today');
-
-        $daysRemaining = (int) $today
-                        ->diff($expiry)
-                        ->format('%r%a');
-
+        $daysRemaining = (int) $today->diff($expiry)->format('%r%a');
         $user = $model->user;
-
         return [
             'id' => (int) $model->getPrimaryKey(),
             'user_id' => (int) $model->getAttribute('user_id'),
             'type' => $type,
-            'name' => (string) $model->getAttribute(
-                    $nameAttribute
-            ),
+            'name' => (string) $model->getAttribute($nameAttribute),
             'expiry_date' => $expiryDate,
             'days_remaining' => $daysRemaining,
             'username' => $user !== null ? (string) $user->username : '',
@@ -232,10 +163,7 @@ final class UpcomingExpiryService
         ];
     }
 
-    private function matchesWindow(
-            int $daysRemaining,
-            string $window
-    ): bool
+    private function matchesWindow(int $daysRemaining, string $window): bool
     {
         if ($window === self::WINDOW_ALL) {
             return true;

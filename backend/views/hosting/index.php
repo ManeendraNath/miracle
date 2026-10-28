@@ -1,6 +1,7 @@
 <?php
 declare(strict_types=1);
 
+use common\helpers\AdminIndexHelper;
 use common\helpers\GridActionHelper;
 use common\helpers\GridFilterHelper;
 use common\helpers\GridPaginationHelper;
@@ -22,35 +23,13 @@ $users = ArrayHelper::map(User::find()->orderBy(['username' => SORT_ASC])->all()
 <div class="hosting-index">
 
     <div class="card card-outline card-primary shadow-sm">
-
-        <div class="card-header">
-
-            <div class="d-flex justify-content-between align-items-center">
-
-                <div>
-                    <h3 class="card-title mb-1">
-                        Hosting Subscriptions
-                    </h3>
-
-                    <div class="text-muted small">
-                        Manage client hosting accounts, server access, expiry dates and renewal settings.
-                    </div>
-                </div>
-
-<?=
-Html::a(
-        '<i class="fas fa-plus mr-1"></i> Add Hosting',
-        ['create'],
-        [
-            'class' => 'btn btn-sm btn-primary',
-        ]
-)
-?>
-
-            </div>
-
-        </div>
-
+        <?=
+        AdminIndexHelper::pageHeader(
+                'Manage customer hosting accounts and renewal periods.',
+                'create',
+                'Add Hosting'
+        )
+        ?>
         <div class="card-body p-0">
 
             <div class="table-responsive">

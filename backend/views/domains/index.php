@@ -1,5 +1,6 @@
 <?php
 
+use common\helpers\AdminIndexHelper;
 use common\helpers\GridActionHelper;
 use common\helpers\GridFilterHelper;
 use common\helpers\GridPaginationHelper;
@@ -29,23 +30,13 @@ $users = ArrayHelper::map(User::find()->orderBy(['username' => SORT_ASC])->all()
 
 <div class="domains-index">
     <div class="card card-outline card-primary shadow-sm">
-        <div class="card-header">
-            <div class="d-flex justify-content-between align-items-center">
-                <div>
-                    <div class="text-muted small">
-                        Manage client domains, registrars,
-                        registration dates and expiry dates.
-                    </div>
-                </div>
-                <?=
-                Html::a(
-                        '<i class="fas fa-plus me-1"></i> Add Domain',
-                        ['create'],
-                        ['class' => 'btn btn-sm btn-primary']
-                )
-                ?>
-            </div>
-        </div>
+        <?=
+        AdminIndexHelper::pageHeader(
+                'Manage client domains, registrars, registration dates and expiry dates.',
+                'create',
+                'Add Domain'
+        )
+        ?>
         <div class="card-body p-0">
             <?=
             GridView::widget([
@@ -56,7 +47,7 @@ $users = ArrayHelper::map(User::find()->orderBy(['username' => SORT_ASC])->all()
                 'tableOptions' => [
                     'class' => 'table table-hover table-striped align-middle mb-0',
                 ],
-                'filterRowOptions' => ['class' => 'bg-dark'],
+                'filterRowOptions' => ['class' => 'bg-light border-top'],
                 'columns' => [
                     /*
                      * Serial number

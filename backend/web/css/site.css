@@ -78,10 +78,16 @@ a.desc:after {
 
 
 /* footer logo: light logo by default (light bg-body-tertiary), dark logo for dark theme */
-.footer-logo-dark { display: none; }
+.footer-logo-dark {
+    display: none;
+}
 
-[data-bs-theme="dark"] .footer-logo-light { display: none; }
-[data-bs-theme="dark"] .footer-logo-dark  { display: inline-block; }
+[data-bs-theme="dark"] .footer-logo-light {
+    display: none;
+}
+[data-bs-theme="dark"] .footer-logo-dark  {
+    display: inline-block;
+}
 
 /* login inputs: seamless icon inside input (Volt style) */
 .login-split-card .input-group {
@@ -453,4 +459,25 @@ body {
     font-size: 12px;
     font-weight: 500;
     padding: .4rem .65rem;
+}
+
+.card-outline.card-primary {
+    border-top: 3px solid #007bff;
+}
+
+.grid-view .filters {
+    background: #f8f9fa;
+}
+
+.grid-view .table thead th {
+    font-weight: 700;
+    color: #0d6efd;
+}
+
+.badge {
+    font-size: .85rem;
+}
+
+.btn-sm {
+    border-radius: 4px;
 }

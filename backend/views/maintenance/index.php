@@ -1,6 +1,7 @@
 <?php
 declare(strict_types=1);
 
+use common\helpers\AdminIndexHelper;
 use common\helpers\GridActionHelper;
 use common\helpers\GridFilterHelper;
 use common\helpers\GridPaginationHelper;
@@ -16,55 +17,20 @@ $this->params['breadcrumbs'][] = $this->title;
 
 GridViewHelper::register($this);
 
-$users = ArrayHelper::map(
-        User::find()
-                ->orderBy([
-                    'username' => SORT_ASC,
-                ])
-                ->all(),
-        'id',
-        'username'
-);
+$users = ArrayHelper::map(User::find()->orderBy(['username' => SORT_ASC])->all(), 'id', 'username');
 ?>
 
 <div class="maintenance-index">
-
     <div class="card card-outline card-primary shadow-sm">
-
-        <div class="card-header">
-
-            <div class="d-flex justify-content-between align-items-center">
-
-                <div>
-
-                    <h3 class="card-title mb-1">
-                        Maintenance Contracts (AMC)
-                    </h3>
-
-                    <div class="text-muted small">
-                        Manage client maintenance services, expiry dates and renewal status.
-                    </div>
-
-                </div>
-
-<?=
-Html::a(
-        '<i class="fas fa-plus mr-1"></i> Add Maintenance',
-        ['create'],
-        [
-            'class' => 'btn btn-sm btn-primary',
-        ]
-)
-?>
-
-            </div>
-
-        </div>
-
+        <?=
+        AdminIndexHelper::pageHeader(
+                'Manage AMC contracts and maintenance renewals.',
+                'create',
+                'Add Maintenance'
+        )
+        ?>
         <div class="card-body p-0">
-
             <div class="table-responsive">
-
                 <?=
                 GridView::widget([
                     'dataProvider' => $dataProvider,

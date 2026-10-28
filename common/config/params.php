@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 return [
     'adminEmail' => $_ENV['ADMIN_EMAIL'],
+    'adminWhatsapp' => $_ENV['ADMIN_WHATSAPP'],
     'supportEmail' => $_ENV['SUPPORT_EMAIL'],
     'senderEmail' => $_ENV['SENDER_EMAIL'],
     'senderName' => $_ENV['SENDER_NAME'],

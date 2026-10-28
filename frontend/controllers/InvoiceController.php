@@ -8,9 +8,10 @@ use Yii;
 use common\models\Invoice;
 use common\models\Transaction;
 use common\models\forms\PaymentProofForm;
-use common\services\NotificationService;
+use common\services\admin\AdminAlertService;
 use common\services\billing\InvoicePaymentService;
 use common\services\billing\InvoicePdfService;
+use common\services\notification\NotificationService;
 use yii\data\ActiveDataProvider;
 use yii\filters\AccessControl;
 use yii\web\Controller;
@@ -178,6 +179,7 @@ final class InvoiceController extends Controller
             }
             $dbTransaction->commit();
             (new NotificationService())->create((int) $invoice->user_id, 'payment', 'Payment Proof Submitted', 'Your payment proof for invoice ' . $invoice->invoice_number . ' is awaiting verification.', '/invoice/view?number=' . rawurlencode($invoice->invoice_number));
+            AdminAlertService::paymentSubmitted($invoice->invoice_number, $invoice->user->username, $transaction->amount);
             Yii::$app->session->setFlash('success', 'Payment proof submitted successfully. ' . 'The payment is pending verification.');
             return $this->redirect(['view', 'number' => $invoice->invoice_number]);
         } catch (\Throwable $e) {

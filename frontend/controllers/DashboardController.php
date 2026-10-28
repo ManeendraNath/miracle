@@ -72,6 +72,7 @@ final class DashboardController extends Controller
                             'unreadNotifications' => $unreadNotifications,
                             'openSupportTickets' => $openSupportTickets,
                             'upcomingServices' => $this->upcomingServices(),
+                            'renewalCount' => count($this->upcomingServices()),
                         ]
                 );
     }

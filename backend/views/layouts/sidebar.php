@@ -74,6 +74,12 @@ use yii\helpers\Html;
                         'active' => Yii::$app->controller->id === 'support-ticket',
                     ],
                     [
+                        'label' => 'Admin Notifications',
+                        'icon' => 'bell',
+                        'url' => ['/admin-notification/index'],
+                        'active' => Yii::$app->controller->id === 'admin-notification',
+                    ],
+                    [
                         'label' => 'Notification Preferences',
                         'icon' => 'bell',
                         'url' => ['/customer-preference/index'],

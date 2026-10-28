@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace common\services;
+namespace common\services\notification;
 
 use common\models\CustomerNotification;
 

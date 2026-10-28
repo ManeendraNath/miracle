@@ -10,7 +10,8 @@ use common\models\Maintenance;
 use common\models\SupportTicket;
 use common\models\SupportTicketMessage;
 use common\services\NotificationService;
-use common\services\SupportTicketMailer;
+use common\services\admin\AdminAlertService;
+use common\services\support\SupportTicketMailer;
 use Yii;
 use yii\data\ActiveDataProvider;
 use yii\filters\AccessControl;
@@ -107,6 +108,7 @@ final class SupportController extends Controller
                 if ($model->save()) {
                     (new NotificationService())->create($userId, 'support', 'Support Ticket Created', sprintf('Ticket %s has been created.', $model->ticket_number), '/support/view?number=' . $model->ticket_number);
                     SupportTicketMailer::ticketCreated($model);
+                    AdminAlertService::supportTicketCreated($model->ticket_number, Yii::$app->user->identity->username, $model->subject);
                     Yii::$app->session->setFlash('success', 'Support request submitted successfully.');
                     return $this->redirect(['view', 'number' => $model->ticket_number]);
                 }
@@ -170,6 +172,7 @@ final class SupportController extends Controller
         $ticket->save(false, ['status', 'updated_at']);
         (new NotificationService())->create((int) $ticket->user_id, 'support', 'Reply Added', sprintf('A new reply has been added to ticket %s.', $ticket->ticket_number), '/support/view?number=' . $ticket->ticket_number);
         SupportTicketMailer::customerReply($ticket);
+        AdminAlertService::supportCustomerReply($ticket->ticket_number, Yii::$app->user->identity->username);
         Yii::$app->session->setFlash('success', 'Your reply has been added.');
         return $this->redirect(['view', 'number' => $ticket->ticket_number]);
     }

@@ -249,12 +249,125 @@ $attentionCount = $openInvoices + $pendingPayments + $openSupportTickets;
         </div>
     </div>
 </div>
+
+<div class="row g-3 mb-4">
+
+    <div class="col-12">
+
+        <div class="card shadow-sm">
+
+            <div class="card-header">
+
+                <strong>
+                    Recent Activity
+                </strong>
+
+            </div>
+
+            <div class="card-body p-0">
+
+                <?php if (empty($activities)): ?>
+
+                    <div class="text-center py-4 text-muted">
+
+                        No recent activity available.
+
+                    </div>
+
+                <?php else: ?>
+
+                    <div class="list-group list-group-flush">
+
+                        <?php foreach ($activities as $activity): ?>
+
+                            <div
+                                class="
+                                list-group-item
+                                "
+                                >
+
+                                <div
+                                    class="
+                                    d-flex
+                                    justify-content-between
+                                    "
+                                    >
+
+                                    <div>
+
+                                        <div
+                                            class="
+                                            fw-semibold
+                                            "
+                                            >
+
+                                            <?=
+                                            Html::encode(
+                                                    $activity['title']
+                                            )
+                                            ?>
+
+                                        </div>
+
+                                        <div
+                                            class="
+                                            small
+                                            text-muted
+                                            "
+                                            >
+
+                                            <?=
+                                            Html::encode(
+                                                    $activity['message']
+                                            )
+                                            ?>
+
+                                        </div>
+
+                                    </div>
+
+                                    <div
+                                        class="
+                                        text-muted
+                                        small
+                                        text-nowrap
+                                        "
+                                        >
+
+                                        <?=
+                                                Yii::$app
+                                                ->formatter
+                                                ->asRelativeTime(
+                                                        $activity['time']
+                                                )
+                                        ?>
+
+                                    </div>
+
+                                </div>
+
+                            </div>
+
+    <?php endforeach; ?>
+
+                    </div>
+
+<?php endif; ?>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
 <div class="row g-3 mb-4">
     <div class="col">
         <div class="card shadow-sm">
             <div class="card-header d-flex justify-content-between align-items-center">
                 <strong>Recent Invoices</strong>
-                <?= Html::a('View All Invoices', ['/invoice/index'], ['class' => 'btn btn-sm btn-primary']) ?>
+<?= Html::a('View All Invoices', ['/invoice/index'], ['class' => 'btn btn-sm btn-primary']) ?>
             </div>
             <div class="card-body p-0">
                 <div class="table-responsive">
@@ -269,7 +382,7 @@ $attentionCount = $openInvoices + $pendingPayments + $openSupportTickets;
                             </tr>
                         </thead>
                         <tbody>
-                            <?php foreach ($recentInvoices as $invoice): ?>
+                                    <?php foreach ($recentInvoices as $invoice): ?>
                                 <tr>
                                     <td><?= Html::a(Html::encode($invoice->invoice_number), ['/invoice/view', 'number' => $invoice->invoice_number]) ?></td>
                                     <td><?= Yii::$app->formatter->asDate($invoice->created_at, 'php:d M Y') ?></td>
@@ -295,11 +408,11 @@ $attentionCount = $openInvoices + $pendingPayments + $openSupportTickets;
                                 </tr>
                             <?php endforeach; ?>
 
-                            <?php if (!$recentInvoices): ?>
+<?php if (!$recentInvoices): ?>
                                 <tr>
                                     <td colspan="5" class="text-center text-muted py-4">No invoices available.</td>
                                 </tr>
-                            <?php endif; ?>
+<?php endif; ?>
                         </tbody>
                     </table>
                 </div>

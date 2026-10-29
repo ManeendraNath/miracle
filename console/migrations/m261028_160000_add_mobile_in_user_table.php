@@ -16,5 +16,6 @@ final class m261028_160000_add_mobile_in_user_table extends Migration
     {
         $this->dropIndex('idx_user_mobile', 'user');
         $this->dropColumn('user', 'mobile');
+        $this->dropColumn('user', 'whatsapp');
     }
 }

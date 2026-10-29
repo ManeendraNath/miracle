@@ -8,7 +8,7 @@ use backend\models\searches\SupportTicketSearch;
 use common\models\SupportTicket;
 use common\models\SupportTicketMessage;
 use common\services\notification\NotificationService;
-use common\services\SupportTicketMailer;
+use common\services\support\SupportTicketMailer;
 use Yii;
 use yii\filters\VerbFilter;
 use yii\web\NotFoundHttpException;

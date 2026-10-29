@@ -9,7 +9,7 @@ use common\models\AdminNotification;
 class AdminNotificationService
 {
 
-    public static function create(string $type, string $title, string $message, ?string $route = null): void
+    public function create(string $type, string $title, string $message, ?string $route = null): void
     {
         $model = new AdminNotification();
         $model->type = $type;

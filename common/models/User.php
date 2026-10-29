@@ -72,6 +72,11 @@ class User extends base\User implements IdentityInterface
         return ArrayHelper::merge(parent::attributeLabels(), $attributes);
     }
 
+    public function getMobileNumber(): ?string
+    {
+        return empty($this->mobile) ? null : preg_replace('/[^0-9]/', '', $this->mobile);
+    }
+
     public function getWhatsappNumber(): ?string
     {
         if (empty($this->mobile) && empty($this->whatsapp)) {

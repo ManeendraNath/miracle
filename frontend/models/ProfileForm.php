@@ -12,13 +12,20 @@ final class ProfileForm extends Model
 
     public string $username = '';
     public string $email = '';
+    public string $mobile = '';
+    public string $whatsapp = '';
     private User $user;
 
     public function __construct(User $user, array $config = [])
     {
         $this->user = $user;
+
         $this->username = (string) $user->username;
         $this->email = (string) $user->email;
+
+        $this->mobile = (string) $user->mobile;
+        $this->whatsapp = (string) $user->whatsapp;
+
         parent::__construct($config);
     }
 
@@ -33,6 +40,16 @@ final class ProfileForm extends Model
             ['username', 'validateUsernameUnique'],
             ['email', 'validateEmailUnique'],
             ['email', 'validateEmailChange'],
+            ['mobile', 'string', 'max' => 20],
+            ['whatsapp', 'string', 'max' => 20],
+            [
+                ['mobile', 'whatsapp'],
+                'match',
+                'pattern' => '/^[0-9]{10,15}$/',
+                'message' => 'Enter a valid mobile number.'
+            ],
+            ['mobile', 'validateMobileUnique'],
+            ['whatsapp', 'validateWhatsappUnique'],
         ];
     }
 
@@ -57,7 +74,7 @@ final class ProfileForm extends Model
             $this->addError($attribute, 'This email address is already in use.');
         }
     }
-    
+
     public function validateEmailChange(string $attribute): void
     {
         if ($this->hasErrors()) {
@@ -69,6 +86,68 @@ final class ProfileForm extends Model
         }
     }
 
+    public function validateMobileUnique(
+            string $attribute
+    ): void
+    {
+
+        if (
+                empty($this->$attribute) || $this->hasErrors()
+        ) {
+            return;
+        }
+
+        $exists = User::find()
+                ->where([
+                    'mobile' => $this->$attribute,
+                ])
+                ->andWhere([
+                    '<>',
+                    'id',
+                    $this->user->id,
+                ])
+                ->exists();
+
+        if ($exists) {
+
+            $this->addError(
+                    $attribute,
+                    'This mobile number is already in use.'
+            );
+        }
+    }
+
+    public function validateWhatsappUnique(
+            string $attribute
+    ): void
+    {
+
+        if (
+                empty($this->$attribute) || $this->hasErrors()
+        ) {
+            return;
+        }
+
+        $exists = User::find()
+                ->where([
+                    'whatsapp' => $this->$attribute,
+                ])
+                ->andWhere([
+                    '<>',
+                    'id',
+                    $this->user->id,
+                ])
+                ->exists();
+
+        if ($exists) {
+
+            $this->addError(
+                    $attribute,
+                    'This WhatsApp number is already in use.'
+            );
+        }
+    }
+
     public function save(): bool
     {
         if (!$this->validate()) {
@@ -77,6 +156,11 @@ final class ProfileForm extends Model
         $emailChanged = strcasecmp((string) $this->user->email, $this->email) !== 0;
         $this->user->username = $this->username;
         $this->user->email = $this->email;
+        $this->user->mobile = $this->mobile;
+        $this->user->whatsapp = $this->whatsapp;
+        if (empty($this->user->whatsapp) && !empty($this->user->mobile)) {
+            $this->user->whatsapp = $this->user->mobile;
+        }
         if ($emailChanged) {
             $this->user->generateEmailVerificationToken();
         }

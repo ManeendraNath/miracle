@@ -37,12 +37,34 @@ $form = ActiveForm::begin(['id' => 'profile-form']);
                             Contact support if your account email needs to be changed.
                         </div>
                     </div>
-                    <?= $form->field($model, 'mobile')->textInput(['maxlength' => true, 'placeholder' => '919876543210']) ?>
-                    <?= $form->field($model, 'whatsapp')->textInput(['maxlength' => true, 'placeholder' => '919876543210']) ?>
+                    <?=
+                    $form->field(
+                            $model,
+                            'mobile'
+                    )->textInput([
+                        'maxlength' => true,
+                        'placeholder' => '919876543210',
+                    ])->hint(
+                            'Enter mobile number with country code.'
+                    )
+                    ?>
+
+                    <?=
+                    $form->field(
+                            $model,
+                            'whatsapp'
+                    )->textInput([
+                        'maxlength' => true,
+                        'placeholder' => '919876543210',
+                    ])->hint(
+                            'Enter WhatsApp number with country code.'
+                    )
+                    ?>
+
                 </div>
                 <div class="card-footer">
-                    <?= Html::submitButton('Save Profile', ['class' => 'btn btn-primary px-4']) ?>
-                    <?= Html::a('Change Password', ['change-password'], ['class' => 'btn btn-outline-secondary']) ?>
+<?= Html::submitButton('Save Profile', ['class' => 'btn btn-primary px-4']) ?>
+<?= Html::a('Change Password', ['change-password'], ['class' => 'btn btn-outline-secondary']) ?>
                 </div>
             </div>
         </div>
@@ -167,7 +189,7 @@ $form = ActiveForm::begin(['id' => 'profile-form']);
                                 </div>
                             </div>
 
-                        <?php endif; ?>
+    <?php endif; ?>
 
 <?php else: ?>
 

@@ -221,7 +221,7 @@ final class ServiceRenewalReminderService
                 return false;
             }
 
-            NotificationService::create(
+            (new NotificationService())->create(
                     $userId,
                     'Renewal Reminder',
                     sprintf(

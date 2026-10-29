@@ -67,7 +67,7 @@ final class AdminAlertService extends AdminNotificationService
 
     private static function send(string $title, string $message, bool $whatsappNotification = false): void
     {
-        AdminNotificationService::create('support', $title, $message);
+        (new AdminNotificationService())->create('support', $title, $message);
         self::sendEmail($title, $message);
         if ($whatsappNotification) {
             self::sendWhatsApp($title, $message);

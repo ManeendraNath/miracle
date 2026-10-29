@@ -17,7 +17,7 @@ use yii\web\Controller;
 
 final class DashboardController extends Controller
 {
-    
+
     public $layout = 'account';
 
     public function behaviors(): array
@@ -73,6 +73,7 @@ final class DashboardController extends Controller
                             'openSupportTickets' => $openSupportTickets,
                             'upcomingServices' => $upcomingServices,
                             'renewalCount' => count($upcomingServices),
+                            'activities' => $this->getRecentActivities(),
                         ]
                 );
     }
@@ -110,5 +111,27 @@ final class DashboardController extends Controller
     private function fillService(string $type, int $id, string $name, string $expiry)
     {
         return ['type' => $type, 'id' => $id, 'name' => $name, 'expiry' => $expiry];
+    }
+
+    private function getRecentActivities(): array
+    {
+        $userId = (int) Yii::$app->user->id;
+        $activities = [];
+        $notifications = CustomerNotification::find()
+                        ->where(['user_id' => $userId])
+                        ->orderBy(['created_at' => SORT_DESC])
+                        ->limit(20)->all();
+        foreach ($notifications as $notification) {
+            $activities[] = [
+                'title' => $notification->title,
+                'message' => $notification->message,
+                'time' => $notification->created_at,
+                'type' => $notification->type,
+                'route' => $notification->route,
+            ];
+        }
+        usort($activities, static fn($a, $b) => $b['time'] <=> $a['time']);
+
+        return array_slice($activities, 0, 10);
     }
 }

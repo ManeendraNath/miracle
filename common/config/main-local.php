@@ -9,7 +9,6 @@ return [
             ],
         ],
     ],
-
     'components' => [
         'db' => [
             'class' => \yii\db\Connection::class,
@@ -18,16 +17,13 @@ return [
             'password' => $_ENV['DB_PASSWORD'],
             'charset' => $_ENV['DB_CHARSET'] ?? 'utf8mb4',
         ],
-
         'mailer' => [
             'class' => \yii\symfonymailer\Mailer::class,
             'viewPath' => '@common/mail',
-
             'useFileTransport' => filter_var(
-                $_ENV['MAIL_USE_FILE_TRANSPORT'] ?? false,
-                FILTER_VALIDATE_BOOLEAN
+                    $_ENV['MAIL_USE_FILE_TRANSPORT'] ?? false,
+                    FILTER_VALIDATE_BOOLEAN
             ),
-
             'transport' => [
                 'scheme' => $_ENV['SMTP_SCHEME'] ?? 'smtps',
                 'host' => $_ENV['SMTP_HOST'],
@@ -40,6 +36,18 @@ return [
                         'verify_peer' => true,
                         'verify_peer_name' => true,
                     ],
+                ],
+            ],
+        ],
+        'log' => [
+            'targets' => [
+                [
+                    'class' => yii\log\FileTarget::class,
+                    'categories' => [
+                        'common\services\notification\WhatsAppService',
+                    ],
+                    'logFile' => '@runtime/logs/whatsapp.log',
+                    'levels' => ['error', 'warning', 'info'],
                 ],
             ],
         ],

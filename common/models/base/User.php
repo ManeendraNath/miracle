@@ -13,6 +13,8 @@ use Yii;
  * @property string $password_hash
  * @property string|null $password_reset_token
  * @property string $email
+ * @property string|null $mobile
+ * @property string|null $whatsapp
  * @property int $status
  * @property int $created_at
  * @property int $updated_at
@@ -28,6 +30,7 @@ use Yii;
  * @property Hosting[] $hostings
  * @property Invoice[] $invoices
  * @property Maintenance[] $maintenances
+ * @property ServiceReminderLog[] $serviceReminderLogs
  * @property SupportTicketAttachment[] $supportTicketAttachments
  * @property SupportTicket[] $supportTickets
  * @property UserLoginHistory[] $userLoginHistories
@@ -50,15 +53,18 @@ class User extends \yii\db\ActiveRecord
     public function rules()
     {
         return [
-            [['password_reset_token', 'verification_token'], 'default', 'value' => null],
+            [['password_reset_token', 'mobile', 'whatsapp', 'verification_token'], 'default', 'value' => null],
             [['status'], 'default', 'value' => 10],
             [['username', 'auth_key', 'password_hash', 'email', 'created_at', 'updated_at'], 'required'],
             [['status', 'created_at', 'updated_at'], 'integer'],
             [['username', 'password_hash', 'password_reset_token', 'email', 'verification_token'], 'string', 'max' => 255],
             [['auth_key'], 'string', 'max' => 32],
+            [['mobile', 'whatsapp'], 'string', 'max' => 20],
             [['username'], 'unique'],
             [['email'], 'unique'],
             [['password_reset_token'], 'unique'],
+            [['mobile'], 'unique'],
+            [['whatsapp'], 'unique'],
         ];
     }
 
@@ -74,6 +80,8 @@ class User extends \yii\db\ActiveRecord
             'password_hash' => 'Password Hash',
             'password_reset_token' => 'Password Reset Token',
             'email' => 'Email',
+            'mobile' => 'Mobile',
+            'whatsapp' => 'Whatsapp',
             'status' => 'Status',
             'created_at' => 'Created At',
             'updated_at' => 'Updated At',
@@ -179,6 +187,16 @@ class User extends \yii\db\ActiveRecord
     public function getMaintenances()
     {
         return $this->hasMany(Maintenance::class, ['user_id' => 'id']);
+    }
+
+    /**
+     * Gets query for [[ServiceReminderLogs]].
+     *
+     * @return \yii\db\ActiveQuery
+     */
+    public function getServiceReminderLogs()
+    {
+        return $this->hasMany(ServiceReminderLog::class, ['user_id' => 'id']);
     }
 
     /**

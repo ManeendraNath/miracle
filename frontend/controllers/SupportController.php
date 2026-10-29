@@ -9,7 +9,7 @@ use common\models\Hosting;
 use common\models\Maintenance;
 use common\models\SupportTicket;
 use common\models\SupportTicketMessage;
-use common\services\NotificationService;
+use common\services\notification\NotificationService;
 use common\services\admin\AdminAlertService;
 use common\services\support\SupportTicketMailer;
 use Yii;

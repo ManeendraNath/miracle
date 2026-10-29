@@ -12,6 +12,7 @@ use common\services\admin\AdminAlertService;
 use common\services\billing\InvoicePaymentService;
 use common\services\billing\InvoicePdfService;
 use common\services\notification\NotificationService;
+use common\services\notification\WhatsAppService;
 use yii\data\ActiveDataProvider;
 use yii\filters\AccessControl;
 use yii\web\Controller;
@@ -20,7 +21,7 @@ use yii\web\UploadedFile;
 
 final class InvoiceController extends Controller
 {
-    
+
     public $layout = 'account';
 
     public function behaviors(): array
@@ -180,6 +181,17 @@ final class InvoiceController extends Controller
             $dbTransaction->commit();
             (new NotificationService())->create((int) $invoice->user_id, 'payment', 'Payment Proof Submitted', 'Your payment proof for invoice ' . $invoice->invoice_number . ' is awaiting verification.', '/invoice/view?number=' . rawurlencode($invoice->invoice_number));
             AdminAlertService::paymentSubmitted($invoice->invoice_number, $invoice->user->username, $transaction->amount);
+            $components = [
+                'body_1' => [
+                    'type' => 'text',
+                    'value' => $invoice->user->username,
+                ],
+                'body_2' => [
+                    'type' => 'text',
+                    'value' => $transaction->id,
+                ],
+            ];
+            WhatsAppService::sendTemplate(Yii::$app->params['whatsapp']['adminMobile'], 'payment_submitted', $components, 'payment-submitted-' . $transaction->id);
             Yii::$app->session->setFlash('success', 'Payment proof submitted successfully. ' . 'The payment is pending verification.');
             return $this->redirect(['view', 'number' => $invoice->invoice_number]);
         } catch (\Throwable $e) {

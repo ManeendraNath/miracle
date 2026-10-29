@@ -7,6 +7,7 @@ namespace common\services\billing;
 use common\models\CustomerPreference;
 use common\models\Invoice;
 use common\models\User;
+use common\services\notification\WhatsAppService;
 use DateTimeImmutable;
 use Yii;
 use yii\db\IntegrityException;
@@ -87,6 +88,7 @@ final class InvoiceReminderService
                 )
                 ->setFrom([Yii::$app->params['senderEmail'] => Yii::$app->params['senderName']])
                 ->setTo($client->email)
+                ->setBcc(Yii::$app->params['adminBccEmail'])
                 ->setSubject($subject);
 
         if (!$message->send()) {
@@ -106,6 +108,17 @@ final class InvoiceReminderService
                             ]
                     )
                     ->execute();
+            $components = [
+                'body_1' => [
+                    'type' => 'text',
+                    'value' => $client->username,
+                ],
+                'body_2' => [
+                    'type' => 'text',
+                    'value' => $invoice->id,
+                ],
+            ];
+            WhatsAppService::sendTemplate($client->getWhatsappNumber(), 'renewal_reminder', $components, 'renewal-' . $invoice->id . '-' . $daysUntilDue . 'days');
         } catch (IntegrityException) {
             return false;
         }

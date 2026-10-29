@@ -24,20 +24,6 @@ $items = [
         <small style="opacity:.85;">Manage your services</small>
     </div>
     <div class="card-body">
-    <div class="list-group list-group-flush">
-        
-        <?php if ($unreadNotifications): ?>
-            <span class="badge bg-danger float-end">
-                <?= $unreadNotifications ?>
-            </span>
-        <?php endif; ?>
-
-        <?php if ($openSupportTickets): ?>
-            <span class="badge bg-warning text-dark float-end">
-                <?= $openSupportTickets ?>
-            </span>
-        <?php endif; ?>
-    </div>
         <?php foreach ($items as $item): ?>
             <?php
             $active = $currentController === $item['controller'];
@@ -45,6 +31,12 @@ $items = [
             <a href="<?= Url::to($item['url']) ?>" class="list-group-item list-group-item-action d-flex align-items-center <?= $active ? 'active' : '' ?>">
                 <i class="<?= $item['icon'] ?> me-2"></i>
                 <span><?= Html::encode($item['label']) ?></span>
+                <?php if ($item['controller'] === 'notification' && !empty($unreadNotifications)): ?>
+                    <span class="badge bg-danger ms-auto"><?= $unreadNotifications ?></span>
+                <?php endif; ?>
+                <?php if ($item['controller'] === 'support' && !empty($openSupportTickets)): ?>
+                    <span class="badge bg-warning text-dark ms-auto"><?= $openSupportTickets ?></span>
+            <?php endif; ?>
             </a>
         <?php endforeach; ?>
         <?=

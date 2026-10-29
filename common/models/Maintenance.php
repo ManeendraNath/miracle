@@ -2,6 +2,8 @@
 
 namespace common\models;
 
+use common\models\traits\AutoTimestampTrait;
+
 /**
  * This is the model class for table "maintenance".
  *
@@ -19,4 +21,9 @@ namespace common\models;
 class Maintenance extends base\Maintenance
 {
 
+    use AutoTimestampTrait;
+
+    public const STATUS_CANCELLED = 0;
+    public const STATUS_ACTIVE = 1;
+    public const STATUS_OVERDUE = 2;
 }

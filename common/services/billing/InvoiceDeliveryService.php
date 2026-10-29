@@ -42,6 +42,7 @@ final class InvoiceDeliveryService
                     Yii::$app->params['senderEmail'] => Yii::$app->params['senderName'],
                 ])
                 ->setTo($client->email)
+                ->setBcc(Yii::$app->params['adminBccEmail'])
                 ->setSubject('Invoice ' . $invoice->invoice_number . ' - Miracle Web Technologies')
                 ->attachContent(
                         $pdf,

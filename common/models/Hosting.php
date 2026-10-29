@@ -65,11 +65,6 @@ class Hosting extends base\Hosting
             parent::attributeLabels(),
             [
                 'user_id' => 'Client',
-                'primary_domain' => 'Primary Domain',
-                'cpanel_ip' => 'cPanel IP',
-                'cpanel_username' => 'cPanel Username',
-                'cpanel_password' => 'cPanel Password',
-                'current_expiry_date' => 'Current Expiry Date',
                 'renewal_cycle_months' => 'Renewal Cycle (Months)',
                 'renewal_increase_percent' => 'Renewal Increase (%)',
                 'renewal_base_amount' => 'Base Renewal Amount',

@@ -7,7 +7,7 @@ namespace backend\controllers;
 use backend\models\searches\SupportTicketSearch;
 use common\models\SupportTicket;
 use common\models\SupportTicketMessage;
-use common\services\NotificationService;
+use common\services\notification\NotificationService;
 use common\services\SupportTicketMailer;
 use Yii;
 use yii\filters\VerbFilter;

@@ -16,8 +16,23 @@ $this->params['breadcrumbs'][] = $this->title;
             GridView::widget([
                 'dataProvider' => $dataProvider,
                 'columns' => [
-                    'title',
-                    'message:ntext',
+                    [
+                        'attribute' => 'title',
+                        'format' => 'raw',
+                        'value' => static function ($model) {
+                            return Html::tag(
+                                    'span',
+                                    Html::encode($model->title),
+                                    ['class' => $model->is_read ? '' : 'fw-bold text-primary']
+                            );
+                        },
+                    ],
+                    [
+                        'attribute' => 'message',
+                        'contentOptions' => [
+                            'style' => 'max-width:450px;',
+                        ],
+                    ],
                     [
                         'attribute' => 'created_at',
                         'format' => ['datetime', 'php:d M Y h:i A'],

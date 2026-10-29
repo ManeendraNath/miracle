@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 return [
     'adminEmail' => $_ENV['ADMIN_EMAIL'],
-    'adminWhatsapp' => $_ENV['ADMIN_WHATSAPP'],
+    'adminBccEmail' =>  $_ENV['ADMIN_BCC_EMAIL'],
     'supportEmail' => $_ENV['SUPPORT_EMAIL'],
     'senderEmail' => $_ENV['SENDER_EMAIL'],
     'senderName' => $_ENV['SENDER_NAME'],
@@ -18,12 +18,12 @@ return [
             'cgst' => 0.00,
             'sgst' => 0.00,
             'igst' => 0.00,
-            /*
-            'cgst' => 9.00,
-            'sgst' => 9.00,
-            'igst' => 18.00,
-             * 
-             */
+        /*
+          'cgst' => 9.00,
+          'sgst' => 9.00,
+          'igst' => 18.00,
+         * 
+         */
         ],
         'payment' => [
             'accountName' => $_ENV['BILLING_BANK_ACCOUNT_NAME'] ?? '',
@@ -34,4 +34,13 @@ return [
         ],
     ],
     'frontendBaseUrl' => rtrim($_ENV['FRONTEND_BASE_URL'] ?? '', '/'),
+    'whatsapp' => [
+        'provider' => $_ENV['WHATSAPP_PROVIDER'],
+        'enabled' => false,
+        'apiKey' => $_ENV['WHATSAPP_API_KEY'],
+        'templateNamespace' => '',
+        'sender' => $_ENV['SENDER_NAME'],
+        'integratedNumber' => $_ENV['PROVIDER_INTEGRATED_NUMBER'],
+        'adminMobile' => $_ENV['ADMIN_WHATSAPP_MOBILE'],
+    ],
 ];

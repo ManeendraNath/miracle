@@ -18,13 +18,11 @@ $attentionCount = $openInvoices + $pendingPayments + $openSupportTickets;
             <p class="mb-0 opacity-75">View services, invoices, support requests and account activity from a single dashboard.</p>
         </div>
         <div class="text-end">
-            <div class="card bg-danger text-white shadow-sm">
-                <div class="card-body">
-                    <div class="small">Outstanding Balance</div>
-                    <h2 class="mb-0 fw-bold">
-                        <?= Yii::$app->formatter->asCurrency($outstandingTotal, 'INR') ?>
-                    </h2>
-                </div>
+            <div class="display-5 fw-bold">
+                <?= Yii::$app->formatter->asCurrency($outstandingTotal, 'INR') ?>
+            </div>
+            <div class="small text-white-50">
+                Outstanding Balance
             </div>
         </div>
     </div>
@@ -40,7 +38,7 @@ $attentionCount = $openInvoices + $pendingPayments + $openSupportTickets;
 <?php endif; ?>
 
 <div class="row g-3 mb-4">
-    
+
     <div class="col-md-3">
         <a href="<?= \yii\helpers\Url::to(['/renewal/index']) ?>"
            class="card bg-info text-white text-decoration-none border-0 shadow-sm">
@@ -52,7 +50,7 @@ $attentionCount = $openInvoices + $pendingPayments + $openSupportTickets;
             </div>
         </a>
     </div>
-    
+
     <div class="col-md-3">
         <a href="<?= \yii\helpers\Url::to(['/invoice/index']) ?>"
            class="card bg-primary text-white text-decoration-none border-0 shadow-sm">
@@ -138,30 +136,23 @@ $attentionCount = $openInvoices + $pendingPayments + $openSupportTickets;
                                     <td><?= Html::encode(ucfirst($service['type'])) ?></td>
                                     <td><?= Yii::$app->formatter->asDate($service['expiry'], 'php:d M Y') ?></td>
                                     <td>
-                                        <?php
-                                        if ($days < 0) {
-
-                                            echo '<span class="badge bg-danger">Expired</span>';
-                                        } elseif ($days === 0) {
-
-                                            echo '<span class="badge bg-danger">Expires Today</span>';
-                                        } elseif ($days <= 5) {
-
-                                            echo '<span class="badge bg-danger">'
-                                            . $days
-                                            . ' day(s)</span>';
-                                        } elseif ($days <= 15) {
-
-                                            echo '<span class="badge bg-warning text-dark">'
-                                            . $days
-                                            . ' day(s)</span>';
-                                        } else {
-
-                                            echo '<span class="badge bg-info">'
-                                            . $days
-                                            . ' day(s)</span>';
-                                        }
-                                        ?>
+                                        <?php if ($days < 0): ?>
+                                            <span class="badge bg-danger">Expired</span>
+                                        <?php elseif ($days === 0): ?>
+                                            <span class="badge bg-danger">Expires Today</span>
+                                        <?php elseif ($days <= 5): ?>
+                                            <span class="badge bg-danger">
+                                                <?= $days ?> day<?= $days !== 1 ? 's' : '' ?>
+                                            </span>
+                                        <?php elseif ($days <= 15): ?>
+                                            <span class="badge bg-warning text-dark">
+                                                <?= $days ?> day<?= $days !== 1 ? 's' : '' ?>
+                                            </span>
+                                        <?php else: ?>
+                                            <span class="badge bg-info">
+                                                <?= $days ?> day<?= $days !== 1 ? 's' : '' ?>
+                                            </span>
+                                        <?php endif; ?>
                                     </td>
                                     <td class="text-end">
 
@@ -196,11 +187,11 @@ $attentionCount = $openInvoices + $pendingPayments + $openSupportTickets;
 
                                     </td>
                                 </tr>
-    <?php endforeach; ?>
+                            <?php endforeach; ?>
                         </tbody>
                     </table>
                 </div>
-<?php endif; ?>
+            <?php endif; ?>
         </div>
     </div>
 </div>
@@ -217,7 +208,7 @@ $attentionCount = $openInvoices + $pendingPayments + $openSupportTickets;
                     <div class="card-body">
                         <div class="text-muted">Total Invoices</div>
                         <div class="fs-3 fw-bold">
-<?= $totalInvoices ?>
+                            <?= $totalInvoices ?>
                         </div>
                     </div>
                 </div>
@@ -228,7 +219,7 @@ $attentionCount = $openInvoices + $pendingPayments + $openSupportTickets;
                     <div class="card-body">
                         <div class="text-muted">Open Invoices</div>
                         <div class="fs-3 fw-bold text-danger">
-<?= $openInvoices ?>
+                            <?= $openInvoices ?>
                         </div>
                     </div>
                 </div>
@@ -239,7 +230,7 @@ $attentionCount = $openInvoices + $pendingPayments + $openSupportTickets;
                     <div class="card-body">
                         <div class="text-muted">Outstanding</div>
                         <div class="fs-4 fw-bold">
-<?= Yii::$app->formatter->asCurrency($outstandingTotal, 'INR') ?>
+                            <?= Yii::$app->formatter->asCurrency($outstandingTotal, 'INR') ?>
                         </div>
                     </div>
                 </div>
@@ -250,7 +241,7 @@ $attentionCount = $openInvoices + $pendingPayments + $openSupportTickets;
                     <div class="card-body">
                         <div class="text-muted">Payments Under Review</div>
                         <div class="fs-3 fw-bold text-warning">
-<?= $pendingPayments ?>
+                            <?= $pendingPayments ?>
                         </div>
                     </div>
                 </div>
@@ -263,7 +254,7 @@ $attentionCount = $openInvoices + $pendingPayments + $openSupportTickets;
         <div class="card shadow-sm">
             <div class="card-header d-flex justify-content-between align-items-center">
                 <strong>Recent Invoices</strong>
-<?= Html::a('View All Invoices', ['/invoice/index'], ['class' => 'btn btn-sm btn-primary']) ?>
+                <?= Html::a('View All Invoices', ['/invoice/index'], ['class' => 'btn btn-sm btn-primary']) ?>
             </div>
             <div class="card-body p-0">
                 <div class="table-responsive">
@@ -278,37 +269,37 @@ $attentionCount = $openInvoices + $pendingPayments + $openSupportTickets;
                             </tr>
                         </thead>
                         <tbody>
-<?php foreach ($recentInvoices as $invoice): ?>
+                            <?php foreach ($recentInvoices as $invoice): ?>
                                 <tr>
                                     <td><?= Html::a(Html::encode($invoice->invoice_number), ['/invoice/view', 'number' => $invoice->invoice_number]) ?></td>
                                     <td><?= Yii::$app->formatter->asDate($invoice->created_at, 'php:d M Y') ?></td>
                                     <td><?= $invoice->due_date ? Yii::$app->formatter->asDate($invoice->due_date, 'php:d M Y') : '-' ?></td>
                                     <td class="text-end"><?= Yii::$app->formatter->asCurrency($invoice->total_payable, 'INR') ?></td>
                                     <td>
-    <?php
-    $statusClass = match ($invoice->status) {
-        Invoice::STATUS_PAID => 'bg-success',
-        Invoice::STATUS_UNPAID => 'bg-danger',
-        Invoice::STATUS_PARTIALLY_PAID => 'bg-warning text-dark',
-        Invoice::STATUS_CANCELLED => 'bg-secondary',
-        default => 'bg-secondary',
-    };
+                                        <?php
+                                        $statusClass = match ($invoice->status) {
+                                            Invoice::STATUS_PAID => 'bg-success',
+                                            Invoice::STATUS_UNPAID => 'bg-danger',
+                                            Invoice::STATUS_PARTIALLY_PAID => 'bg-warning text-dark',
+                                            Invoice::STATUS_CANCELLED => 'bg-secondary',
+                                            default => 'bg-secondary',
+                                        };
 
-    echo Html::tag(
-            'span',
-            Invoice::getStatuses()[$invoice->status] ?? $invoice->status,
-            ['class' => 'badge ' . $statusClass]
-    );
-    ?>
+                                        echo Html::tag(
+                                                'span',
+                                                Invoice::getStatuses()[$invoice->status] ?? $invoice->status,
+                                                ['class' => 'badge ' . $statusClass]
+                                        );
+                                        ?>
                                     </td>
                                 </tr>
-<?php endforeach; ?>
+                            <?php endforeach; ?>
 
                             <?php if (!$recentInvoices): ?>
                                 <tr>
                                     <td colspan="5" class="text-center text-muted py-4">No invoices available.</td>
                                 </tr>
-<?php endif; ?>
+                            <?php endif; ?>
                         </tbody>
                     </table>
                 </div>

@@ -11,14 +11,7 @@ class Invoice extends base\Invoice
 
     public function getItems(): ActiveQuery
 {
-    return $this->hasMany(
-        InvoiceItem::class,
-        [
-            'invoice_id' => 'id',
-        ]
-    )->orderBy([
-        'id' => SORT_ASC,
-    ]);
+    return $this->hasMany(InvoiceItem::class, ['invoice_id' => 'id'])->orderBy(['id' => SORT_ASC]);
 }
 
     public function getTransactions(): ActiveQuery
@@ -34,18 +27,12 @@ class Invoice extends base\Invoice
     public static function getStatuses(): array
     {
         return [
-            self::STATUS_UNPAID =>
-            'Unpaid',
-            self::STATUS_PARTIALLY_PAID =>
-            'Partially Paid',
-            self::STATUS_PAID =>
-            'Paid',
-            self::STATUS_CARRIED_FORWARD =>
-            'Carried Forward',
-            self::STATUS_CANCELLED =>
-            'Cancelled',
-            self::STATUS_REFUNDED =>
-            'Refunded',
+            self::STATUS_UNPAID => 'Unpaid',
+            self::STATUS_PARTIALLY_PAID => 'Partially Paid',
+            self::STATUS_PAID => 'Paid',
+            self::STATUS_CARRIED_FORWARD => 'Carried Forward',
+            self::STATUS_CANCELLED => 'Cancelled',
+            self::STATUS_REFUNDED => 'Refunded',
         ];
     }
 }

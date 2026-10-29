@@ -23,8 +23,8 @@ class AdminController extends BaseController
         $dataProvider = $searchModel->search($this->request->queryParams);
 
         return $this->render('index', [
-            'searchModel' => $searchModel,
-            'dataProvider' => $dataProvider,
+                    'searchModel' => $searchModel,
+                    'dataProvider' => $dataProvider,
         ]);
     }
 
@@ -37,7 +37,7 @@ class AdminController extends BaseController
     public function actionView($id)
     {
         return $this->render('view', [
-            'model' => $this->findModel($id),
+                    'model' => $this->findModel($id),
         ]);
     }
 
@@ -59,7 +59,7 @@ class AdminController extends BaseController
         }
 
         return $this->render('create', [
-            'model' => $model,
+                    'model' => $model,
         ]);
     }
 
@@ -76,7 +76,7 @@ class AdminController extends BaseController
 
         if ($this->request->isPost && $model->load($this->request->post())) {
             $newPassword = $this->request->post('new_password_string');
-            
+
             // Cryptographic Hashing Protocol: Only update if a new password string is supplied
             if (!empty($newPassword)) {
                 $model->setPassword($newPassword);
@@ -90,7 +90,7 @@ class AdminController extends BaseController
         }
 
         return $this->render('update', [
-            'model' => $model,
+                    'model' => $model,
         ]);
     }
 
@@ -107,10 +107,11 @@ class AdminController extends BaseController
             // Read last 150 lines from your server's log file safely
             $fileData = file($logPath);
             $slicedData = array_slice($fileData, -150);
-            
+
             foreach ($slicedData as $line) {
                 $lineText = trim($line);
-                if (empty($lineText)) continue;
+                if (empty($lineText))
+                    continue;
 
                 // Dynamically compile metrics parameters using word signature sweeps
                 if (stripos($lineText, 'Successfully dispatched') !== false || stripos($lineText, 'complete') !== false) {
@@ -128,12 +129,35 @@ class AdminController extends BaseController
         }
 
         return $this->render('cron-log', [
-            'logLines' => array_reverse($logLines), // Newest log activities appear at the top
-            'metrics' => $metrics,
-            'logPath' => $logPath
+                    'logLines' => array_reverse($logLines), // Newest log activities appear at the top
+                    'metrics' => $metrics,
+                    'logPath' => $logPath
         ]);
     }
-    
+
+    /**
+     * test msg91 whatsapp service
+     */
+    public function actionWhatsappTest()
+    {
+        $result = WhatsAppService::sendTemplate(
+                '919654511842',
+                'admin_alert',
+                [
+                    'body_1' => [
+                        'type' => 'text',
+                        'value' => 'Testing',
+                    ],
+                    'body_2' => [
+                        'type' => 'text',
+                        'value' => 'MSG91 Integration',
+                    ],
+                ]
+        );
+        var_dump($result);
+        exit;
+    }
+
     /**
      * Deletes an existing Admin model.
      * If deletion is successful, the browser will be redirected to the 'index' page.

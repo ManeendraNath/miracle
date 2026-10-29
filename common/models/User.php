@@ -37,7 +37,11 @@ class User extends base\User implements IdentityInterface
     #[\Override]
     public function rules(): array
     {
-        return ArrayHelper::merge(parent::rules(), $this->getBaseIdentityRules(), $this->getPasswordRules());
+        $rules = [
+            ['mobile', 'match', 'pattern' => '/^[0-9]{10,15}$/', 'message' => 'Enter a valid mobile number.'],
+            ['whatsapp', 'match', 'pattern' => '/^[0-9]{10,15}$/', 'message' => 'Enter a valid whatsapp number.'],
+        ];
+        return ArrayHelper::merge(parent::rules(), $this->getBaseIdentityRules(), $this->getPasswordRules(), $rules);
     }
 
     /**
@@ -66,5 +70,16 @@ class User extends base\User implements IdentityInterface
             'status' => 'Account Status',
         ];
         return ArrayHelper::merge(parent::attributeLabels(), $attributes);
+    }
+
+    public function getWhatsappNumber(): ?string
+    {
+        if (empty($this->mobile) && empty($this->whatsapp)) {
+            return null;
+        }
+        if (!empty($this->whatsapp)) {
+            return preg_replace('/[^0-9]/', '', $this->whatsapp);
+        }
+        return preg_replace('/[^0-9]/', '', $this->mobile);
     }
 }

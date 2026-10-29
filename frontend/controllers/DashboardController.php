@@ -57,7 +57,7 @@ final class DashboardController extends Controller
         $maintenanceCount = (int) Maintenance::find()->where(['user_id' => $userId])->count();
         $unreadNotifications = (int) CustomerNotification::find()->where(['user_id' => $userId, 'is_read' => 0])->count();
         $openSupportTickets = (int) SupportTicket::find()->where(['user_id' => $userId, 'status' => [SupportTicket::STATUS_OPEN, SupportTicket::STATUS_IN_PROGRESS]])->count();
-
+        $upcomingServices = $this->upcomingServices();
         return $this->render(
                         'index',
                         [
@@ -71,8 +71,8 @@ final class DashboardController extends Controller
                             'maintenanceCount' => $maintenanceCount,
                             'unreadNotifications' => $unreadNotifications,
                             'openSupportTickets' => $openSupportTickets,
-                            'upcomingServices' => $this->upcomingServices(),
-                            'renewalCount' => count($this->upcomingServices()),
+                            'upcomingServices' => $upcomingServices,
+                            'renewalCount' => count($upcomingServices),
                         ]
                 );
     }

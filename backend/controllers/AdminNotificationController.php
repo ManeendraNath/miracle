@@ -7,6 +7,7 @@ namespace backend\controllers;
 use common\models\AdminNotification;
 use Yii;
 use yii\data\ActiveDataProvider;
+use yii\web\NotFoundHttpException;
 
 final class AdminNotificationController extends BaseController
 {

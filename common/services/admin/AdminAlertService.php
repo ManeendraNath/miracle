@@ -51,11 +51,27 @@ final class AdminAlertService extends AdminNotificationService
         self::send($title, $message);
     }
 
-    private static function send(string $title, string $message): void
+    public static function serviceExpiring(string $service, string $expiryDate): void
+    {
+        $title = 'Service Expiring';
+        $message = "Service: {$service}\n" . "Expiry Date: {$expiryDate}";
+        self::send($title, $message);
+    }
+
+    public static function invoiceGenerated(string $invoiceNumber, float $amount): void
+    {
+        $title = 'Invoice Generated';
+        $message = "Invoice: {$invoiceNumber}\n" . "Amount: ₹{$amount}";
+        self::send($title, $message);
+    }
+
+    private static function send(string $title, string $message, bool $whatsappNotification = false): void
     {
         AdminNotificationService::create('support', $title, $message);
         self::sendEmail($title, $message);
-        self::sendWhatsApp($title, $message);
+        if ($whatsappNotification) {
+            self::sendWhatsApp($title, $message);
+        }
     }
 
     private static function sendEmail(string $title, string $message): void
@@ -75,9 +91,16 @@ final class AdminAlertService extends AdminNotificationService
     private static function sendWhatsApp(string $title, string $message): void
     {
         try {
-            WhatsAppService::send(Yii::$app->params['adminWhatsapp'], "🔔 {$title}\n\n{$message}");
-        } catch (\Throwable $e) {
-            Yii::error($e, __METHOD__);
+            WhatsAppService::sendTemplate(
+                    Yii::$app->params['whatsapp']['adminMobile'],
+                    'admin_alert',
+                    [
+                        'body_1' => ['type' => 'text', 'value' => $title],
+                        'body_2' => ['type' => 'text', 'value' => $message],
+                    ]
+            );
+        } catch (\Throwable $exception) {
+            Yii::error($exception, __METHOD__);
         }
     }
 }

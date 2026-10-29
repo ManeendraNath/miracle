@@ -16,6 +16,8 @@ class AdminNotificationService
         $model->title = $title;
         $model->message = $message;
         $model->route = $route;
+        $model->is_read = 0;
+        $model->read_at = null;
         $model->created_at = time();
         if (!$model->save()) {
             throw new \RuntimeException('Admin notification could not be saved.');

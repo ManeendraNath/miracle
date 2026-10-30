@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 use yii\grid\GridView;
@@ -33,11 +34,11 @@ $this->params['breadcrumbs'][] = $this->title;
 
 <?=
 Html::a(
-        'Change Password',
-        [
+    'Change Password',
+    [
             '/account/change-password',
         ],
-        [
+    [
             'class' =>
             'btn btn-primary',
         ]

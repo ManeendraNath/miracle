@@ -10,44 +10,42 @@ use common\services\billing\dto\RenewalPriceResult;
 
 final class RenewalPriceCalculator
 {
-
     public function calculate(
-            int $itemType,
-            int $itemId,
-            float $baseAmount,
-            float $increasePercent
-    ): RenewalPriceResult
-    {
+        int $itemType,
+        int $itemId,
+        float $baseAmount,
+        float $increasePercent
+    ): RenewalPriceResult {
         if ($baseAmount < 0) {
             throw new \InvalidArgumentException(
-                            'Base amount cannot be negative.'
-                    );
+                'Base amount cannot be negative.'
+            );
         }
 
         if ($increasePercent < 0) {
             throw new \InvalidArgumentException(
-                            'Increase percentage cannot be negative.'
-                    );
+                'Increase percentage cannot be negative.'
+            );
         }
 
         if ($itemType === InvoiceItem::TYPE_MAINTENANCE) {
             return $this->calculateMaintenance(
-                            $itemId,
-                            $baseAmount,
-                            $increasePercent
-                    );
+                $itemId,
+                $baseAmount,
+                $increasePercent
+            );
         }
 
         $previous = BillingEvent::previousFulfilled(
-                $itemType,
-                $itemId
+            $itemType,
+            $itemId
         );
 
         if ($previous === null) {
             return new RenewalPriceResult(
-                    round($baseAmount, 2),
-                    round($increasePercent, 2),
-                    round($baseAmount, 2)
+                round($baseAmount, 2),
+                round($increasePercent, 2),
+                round($baseAmount, 2)
             );
         }
 
@@ -56,35 +54,34 @@ final class RenewalPriceCalculator
         $amount = $previousAmount * (1 + ($increasePercent / 100));
 
         return new RenewalPriceResult(
-                round($previousAmount, 2),
-                round($increasePercent, 2),
-                round($amount, 2)
+            round($previousAmount, 2),
+            round($increasePercent, 2),
+            round($amount, 2)
         );
     }
 
     private function calculateMaintenance(
-            int $itemId,
-            float $baseAmount,
-            float $increasePercent
-    ): RenewalPriceResult
-    {
+        int $itemId,
+        float $baseAmount,
+        float $increasePercent
+    ): RenewalPriceResult {
         $completed = BillingEvent::fulfilledCount(
-                InvoiceItem::TYPE_MAINTENANCE,
-                $itemId
+            InvoiceItem::TYPE_MAINTENANCE,
+            $itemId
         );
 
         $previous = BillingEvent::previousFulfilled(
-                InvoiceItem::TYPE_MAINTENANCE,
-                $itemId
+            InvoiceItem::TYPE_MAINTENANCE,
+            $itemId
         );
 
         if ($previous === null) {
             $amount = round($baseAmount, 2);
 
             return new RenewalPriceResult(
-                    $amount,
-                    round($increasePercent, 2),
-                    $amount
+                $amount,
+                round($increasePercent, 2),
+                $amount
             );
         }
 
@@ -97,9 +94,9 @@ final class RenewalPriceCalculator
                 : 1;
 
         return new RenewalPriceResult(
-                round($previousAmount, 2),
-                round($increasePercent, 2),
-                round($previousAmount * $multiplier, 2)
+            round($previousAmount, 2),
+            round($increasePercent, 2),
+            round($previousAmount * $multiplier, 2)
         );
     }
 }

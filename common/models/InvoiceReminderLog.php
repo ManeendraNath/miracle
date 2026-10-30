@@ -17,5 +17,4 @@ namespace common\models;
  */
 class InvoiceReminderLog extends base\InvoiceReminderLog
 {
-    
 }

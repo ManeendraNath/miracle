@@ -10,7 +10,6 @@ use yii\data\ActiveDataProvider;
 
 final class UserLoginHistorySearch extends UserLoginHistory
 {
-
     use DateRangeSearchTrait;
 
     public ?string $customer = null;
@@ -88,9 +87,9 @@ final class UserLoginHistorySearch extends UserLoginHistory
             'lh.user_id' => $this->user_id,
         ]);
         $this->applyTimestampDateRange(
-                $query,
-                'lh.logged_in_at',
-                $this->logged_in_at_range
+            $query,
+            'lh.logged_in_at',
+            $this->logged_in_at_range
         );
 
         return $dataProvider;

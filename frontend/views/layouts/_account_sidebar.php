@@ -37,14 +37,14 @@ $items = [
                 <?php endif; ?>
                 <?php if ($item['controller'] === 'support' && !empty($openSupportTickets)): ?>
                     <span class="badge bg-warning text-dark ms-auto"><?= $openSupportTickets ?></span>
-            <?php endif; ?>
+                <?php endif; ?>
             </a>
         <?php endforeach; ?>
         <?=
         Html::a(
-                '<i class="fas fa-sign-out-alt me-2"></i> Sign Out',
-                ['/site/logout'],
-                [
+            '<i class="fas fa-sign-out-alt me-2"></i> Sign Out',
+            ['/site/logout'],
+            [
                     'class' => 'list-group-item ' . 'list-group-item-action ' . 'text-danger',
                     'data' => ['method' => 'post'],
                     'encode' => false,

@@ -9,7 +9,6 @@ use yii\helpers\ArrayHelper;
 
 class Coupon extends base\Coupon
 {
-
     use AutoTimestampTrait;
 
     public static function getTypes(): array

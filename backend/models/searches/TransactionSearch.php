@@ -11,7 +11,6 @@ use common\models\Transaction;
  */
 class TransactionSearch extends Transaction
 {
-
     // Transient placeholder to handle the composite range string text
     public $date_range;
 

@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 use common\models\UserLoginHistory;
@@ -45,9 +46,9 @@ $this->params['breadcrumbs'][] = $this->title;
 
                         <?=
                         Html::a(
-                                'Back to History',
-                                ['index'],
-                                [
+                            'Back to History',
+                            ['index'],
+                            [
                                     'class' =>
                                     'btn btn-light border',
                                 ]

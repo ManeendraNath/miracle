@@ -27,8 +27,6 @@ use Yii;
  */
 class SiteSetting extends \yii\db\ActiveRecord
 {
-
-
     /**
      * {@inheritdoc}
      */
@@ -75,5 +73,4 @@ class SiteSetting extends \yii\db\ActiveRecord
             'updated_at' => 'Updated At',
         ];
     }
-
 }

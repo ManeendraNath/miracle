@@ -19,16 +19,16 @@ $isNew = $model->isNewRecord;
  * Value = username (email)
  */
 $users = ArrayHelper::map(
-        User::find()
+    User::find()
                 ->orderBy([
                     'username' => SORT_ASC,
                 ])
                 ->all(),
-        'id',
-        static function (User $user): string {
+    'id',
+    static function (User $user): string {
             return $user->username
                     . ($user->email ? ' (' . $user->email . ')' : '');
-        }
+    }
 );
 ?>
 
@@ -66,7 +66,7 @@ $users = ArrayHelper::map(
                                     'allowClear' => true,
                                 ],
                             ])
-                    ?>
+                            ?>
                 </div>
                 <div class="col-md-6">
                     <?=
@@ -76,7 +76,7 @@ $users = ArrayHelper::map(
                                 'class' => 'form-control',
                                 'placeholder' => 'example.com',
                             ])
-                    ?>
+                            ?>
                 </div>
 
             </div>
@@ -96,8 +96,9 @@ $users = ArrayHelper::map(
 
                 <div class="col-md-6">
                     <?=
-                    $form->field($model, 'status')->dropDownList(Domains::getStatuses(),
-                            [
+                    $form->field($model, 'status')->dropDownList(
+                        Domains::getStatuses(),
+                        [
                                 'prompt' => 'Select Status',
                                 'class' => 'form-control',
                             ]
@@ -146,15 +147,15 @@ $users = ArrayHelper::map(
         <div class="card-footer d-flex justify-content-between align-items-center">
             <?=
             Html::a(
-                    '<i class="fas fa-arrow-left me-1"></i> Cancel',
-                    $isNew ? ['index'] : ['view', 'id' => $model->id],
-                    ['class' => 'btn btn-outline-secondary']
+                '<i class="fas fa-arrow-left me-1"></i> Cancel',
+                $isNew ? ['index'] : ['view', 'id' => $model->id],
+                ['class' => 'btn btn-outline-secondary']
             )
             ?>
             <?=
             Html::submitButton(
-                    $isNew ? '<i class="fas fa-save me-1"></i> Save Domain' : '<i class="fas fa-save me-1"></i> Update Domain',
-                    ['class' => 'btn btn-primary px-4']
+                $isNew ? '<i class="fas fa-save me-1"></i> Save Domain' : '<i class="fas fa-save me-1"></i> Update Domain',
+                ['class' => 'btn btn-primary px-4']
             )
             ?>
         </div>

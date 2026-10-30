@@ -14,7 +14,6 @@ use yii\web\NotFoundHttpException;
 
 final class NotificationController extends Controller
 {
-
     public $layout = 'account';
 
     public function behaviors(): array
@@ -57,8 +56,8 @@ final class NotificationController extends Controller
         ]);
 
         return $this->render(
-                        'index',
-                        [
+            'index',
+            [
                             'dataProvider' =>
                             new ActiveDataProvider([
                                 'query' =>
@@ -68,7 +67,7 @@ final class NotificationController extends Controller
                                 ],
                                     ]),
                         ]
-                );
+        );
     }
 
     public function actionView(int $id)
@@ -76,13 +75,12 @@ final class NotificationController extends Controller
         $model = $this->findOwnedModel($id);
 
         if (!(bool) $model->is_read) {
-
             $model->is_read = 1;
             $model->read_at = time();
 
             $model->save(
-                    false,
-                    [
+                false,
+                [
                         'is_read',
                         'read_at',
                     ]
@@ -90,19 +88,18 @@ final class NotificationController extends Controller
         }
 
         return $this->render(
-                        'view',
-                        [
+            'view',
+            [
                             'model' => $model,
                         ]
-                );
+        );
     }
 
     public function actionMarkRead(
-            int $id
-    )
-    {
+        int $id
+    ) {
         $model = $this->findOwnedModel(
-                $id
+            $id
         );
 
         if (!(bool) $model->is_read) {
@@ -111,8 +108,8 @@ final class NotificationController extends Controller
             $model->read_at = time();
 
             $model->save(
-                    false,
-                    [
+                false,
+                [
                         'is_read',
                         'read_at',
                     ]
@@ -127,11 +124,11 @@ final class NotificationController extends Controller
     public function actionMarkAllRead()
     {
         CustomerNotification::updateAll(
-                [
+            [
                     'is_read' => 1,
                     'read_at' => time(),
                 ],
-                [
+            [
                     'user_id' =>
                     (int)
                     Yii::$app->user->id,
@@ -145,9 +142,8 @@ final class NotificationController extends Controller
     }
 
     private function findOwnedModel(
-            int $id
-    ): CustomerNotification
-    {
+        int $id
+    ): CustomerNotification {
         $model = CustomerNotification::findOne([
             'id' => $id,
             'user_id' =>
@@ -157,8 +153,8 @@ final class NotificationController extends Controller
 
         if ($model === null) {
             throw new NotFoundHttpException(
-                            'Notification does not exist.'
-                    );
+                'Notification does not exist.'
+            );
         }
 
         return $model;

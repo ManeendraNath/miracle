@@ -17,10 +17,10 @@ $this->params['breadcrumbs'][] = $this->title;
 <?=
 
 $this->render(
-        '_form',
-        [
+    '_form',
+    [
             'model' => $model,
             'usersList' => $usersList,
         ]
-)
-?>
+);
+

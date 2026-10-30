@@ -11,7 +11,6 @@ use yii\web\NotFoundHttpException;
  */
 class MaintenanceController extends BaseController
 {
-
     /**
      * Lists all Maintenance models.
      *

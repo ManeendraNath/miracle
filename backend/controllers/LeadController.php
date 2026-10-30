@@ -15,7 +15,6 @@ use yii\web\ForbiddenHttpException;
  */
 class LeadController extends BaseController
 {
-
     /**
      * Lists all corporate audit request records.
      */

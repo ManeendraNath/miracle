@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 use common\models\SupportTicket;
@@ -20,9 +21,9 @@ $tickets = $dataProvider->getModels();
 
 <?=
 Html::a(
-        'Create Ticket',
-        ['create'],
-        [
+    'Create Ticket',
+    ['create'],
+    [
             'class' => 'btn btn-primary btn-sm',
         ]
 )
@@ -33,7 +34,6 @@ Html::a(
     <div class="card-body p-0">
 
         <?php if (empty($tickets)): ?>
-
             <div class="text-center py-5 text-muted">
 
                 <i class="fas fa-headset fa-3x mb-3"></i>
@@ -45,11 +45,9 @@ Html::a(
             </div>
 
         <?php else: ?>
-
             <div class="list-group list-group-flush">
 
                 <?php foreach ($tickets as $ticket): ?>
-
                     <?php
                     $badge = match ($ticket->status) {
                         'Open' => 'bg-danger',
@@ -58,15 +56,15 @@ Html::a(
                         'Closed' => 'bg-secondary',
                         default => 'bg-secondary',
                     };
-                    ?>
+    ?>
 
                     <a
                         href="<?=
-            \yii\helpers\Url::to([
-                '/support/view',
-                'number' => $ticket->ticket_number,
-            ])
-                    ?>"
+                        \yii\helpers\Url::to([
+                        '/support/view',
+                        'number' => $ticket->ticket_number,
+                        ])
+                                ?>"
                         class="list-group-item list-group-item-action"
                         >
 
@@ -78,7 +76,7 @@ Html::a(
 
                                     <?=
                                     Html::encode(
-                                            $ticket->subject
+                                        $ticket->subject
                                     )
                                     ?>
 
@@ -88,7 +86,7 @@ Html::a(
 
                                     <?=
                                     Html::encode(
-                                            $ticket->ticket_number
+                                        $ticket->ticket_number
                                     )
                                     ?>
 
@@ -99,22 +97,22 @@ Html::a(
                             <span
                                 class="badge <?= $badge ?>"
                                 >
-        <?=
-        Html::encode(
-                $ticket->status
-        )
-        ?>
+                    <?=
+                    Html::encode(
+                        $ticket->status
+                    )
+                    ?>
                             </span>
 
                         </div>
 
                     </a>
 
-    <?php endforeach; ?>
+                <?php endforeach; ?>
 
             </div>
 
-<?php endif; ?>
+        <?php endif; ?>
 
     </div>
 

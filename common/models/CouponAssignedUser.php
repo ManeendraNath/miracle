@@ -2,7 +2,6 @@
 
 namespace common\models;
 
-
 /**
  * This is the model class for table "coupon_assigned_user".
  *
@@ -18,5 +17,4 @@ namespace common\models;
  */
 class CouponAssignedUser extends base\CouponAssignedUser
 {
-
 }

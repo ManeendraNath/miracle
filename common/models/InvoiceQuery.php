@@ -6,7 +6,6 @@ use yii\db\ActiveQuery;
 
 class InvoiceQuery extends ActiveQuery
 {
-
     /**
      * Scope: Aggregate gross total receivables value from unpaid invoices
      */

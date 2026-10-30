@@ -27,7 +27,6 @@ use yii\web\BadRequestHttpException;
  */
 class TransactionController extends BaseController
 {
-
     /**
      * Lists all transactions.
      */
@@ -36,7 +35,7 @@ class TransactionController extends BaseController
         $searchModel = new TransactionSearch();
 
         $dataProvider = $searchModel->search(
-                $this->request->queryParams
+            $this->request->queryParams
         );
 
         return $this->render('index', [
@@ -175,7 +174,7 @@ class TransactionController extends BaseController
             Yii::$app->session->setFlash('error', 'Payment could not be approved.');
             return $this->redirect(['view', 'id' => $paymentTransaction->id]);
         }
-        
+
         try {
             (new PaymentConfirmationService())->send($paymentTransaction);
             (new NotificationService())->create((int) $paymentTransaction->invoice->user_id, 'payment', 'Payment Confirmed', 'Your payment for invoice ' . $paymentTransaction->invoice->invoice_number . ' has been confirmed.', '/invoice/view?number=' . rawurlencode($paymentTransaction->invoice->invoice_number));

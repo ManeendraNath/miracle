@@ -9,7 +9,6 @@ use yii\data\ActiveDataProvider;
 
 final class CustomerPreferenceSearch extends CustomerPreference
 {
-
     public ?string $customer = null;
 
     #[\Override]

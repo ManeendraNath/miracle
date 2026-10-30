@@ -20,8 +20,6 @@ use Yii;
  */
 class Admin extends \yii\db\ActiveRecord
 {
-
-
     /**
      * {@inheritdoc}
      */
@@ -68,5 +66,4 @@ class Admin extends \yii\db\ActiveRecord
             'updated_at' => 'Updated At',
         ];
     }
-
 }

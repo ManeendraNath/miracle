@@ -9,11 +9,9 @@ use Yii;
 
 final class UserLoginHistoryService
 {
-
     public function record(
-            int $userId
-    ): void
-    {
+        int $userId
+    ): void {
         try {
             $model = new UserLoginHistory();
 
@@ -23,24 +21,24 @@ final class UserLoginHistoryService
                     ->userIP;
 
             $model->user_agent = mb_substr(
-                    (string)
+                (string)
                     Yii::$app->request
                     ->userAgent,
-                    0,
-                    1000
+                0,
+                1000
             );
 
             $model->logged_in_at = time();
 
             if (!$model->save(false)) {
                 throw new \RuntimeException(
-                                'Login history '
+                    'Login history '
                                 . 'could not be saved.'
-                        );
+                );
             }
         } catch (\Throwable $e) {
             Yii::error(
-                    [
+                [
                         'message' => 'Unable to record '
                         . 'login history.',
                         'userId' =>
@@ -48,7 +46,7 @@ final class UserLoginHistoryService
                         'error' =>
                         $e->getMessage(),
                     ],
-                    __METHOD__
+                __METHOD__
             );
         }
     }

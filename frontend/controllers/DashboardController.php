@@ -18,7 +18,6 @@ use yii\web\Controller;
 
 final class DashboardController extends Controller
 {
-
     public $layout = 'account';
 
     public function behaviors(): array
@@ -60,8 +59,8 @@ final class DashboardController extends Controller
         $openSupportTickets = (int) SupportTicket::find()->where(['user_id' => $userId, 'status' => [SupportTicket::STATUS_OPEN, SupportTicket::STATUS_IN_PROGRESS]])->count();
         $upcomingServices = $this->upcomingServices();
         return $this->render(
-                        'index',
-                        [
+            'index',
+            [
                             'totalInvoices' => $totalInvoices,
                             'openInvoices' => $openInvoices,
                             'outstandingTotal' => round($outstandingTotal, 2),
@@ -76,7 +75,7 @@ final class DashboardController extends Controller
                             'renewalCount' => count($upcomingServices),
                             'activities' => CustomerActivityService::getActivities($userId, 15),
                         ]
-                );
+        );
     }
 
     private function upcomingServices()
@@ -113,5 +112,4 @@ final class DashboardController extends Controller
     {
         return ['type' => $type, 'id' => $id, 'name' => $name, 'expiry' => $expiry];
     }
-
 }

@@ -8,11 +8,10 @@ use yii\db\ActiveQuery;
 
 class Invoice extends base\Invoice
 {
-
     public function getItems(): ActiveQuery
-{
-    return $this->hasMany(InvoiceItem::class, ['invoice_id' => 'id'])->orderBy(['id' => SORT_ASC]);
-}
+    {
+        return $this->hasMany(InvoiceItem::class, ['invoice_id' => 'id'])->orderBy(['id' => SORT_ASC]);
+    }
 
     public function getTransactions(): ActiveQuery
     {

@@ -16,12 +16,10 @@ use Yii;
 
 final class RenewalFulfilmentService
 {
-
     public function fulfilInvoice(
-            Invoice $invoice,
-            bool $useTransaction = true
-    ): void
-    {
+        Invoice $invoice,
+        bool $useTransaction = true
+    ): void {
         if ($invoice->status !== Invoice::STATUS_PAID) {
             return;
         }
@@ -52,8 +50,8 @@ final class RenewalFulfilmentService
 
             foreach ($events as $event) {
                 $this->fulfilEvent(
-                        $event,
-                        $transactionId ? (int) $transactionId : null
+                    $event,
+                    $transactionId ? (int) $transactionId : null
                 );
             }
 
@@ -70,8 +68,8 @@ final class RenewalFulfilmentService
             }
 
             Yii::error(
-                    $e,
-                    __METHOD__
+                $e,
+                __METHOD__
             );
 
             throw $e;
@@ -108,10 +106,9 @@ final class RenewalFulfilmentService
     }
 
     private function fulfilEvent(
-            BillingEvent $event,
-            ?int $transactionId
-    ): void
-    {
+        BillingEvent $event,
+        ?int $transactionId
+    ): void {
         $exists = ServiceRenewalHistory::find()
                 ->where([
                     'billing_event_id' => $event->id,
@@ -126,20 +123,20 @@ final class RenewalFulfilmentService
 
         if ($asset === null) {
             throw new \RuntimeException(
-                            "Billing asset not found for event {$event->id}."
-                    );
+                "Billing asset not found for event {$event->id}."
+            );
         }
 
         $months = $this->monthDifference(
-                $event->period_start,
-                $event->period_end
+            $event->period_start,
+            $event->period_end
         );
 
         $history = new ServiceRenewalHistory();
 
         $history->billing_event_id = $event->id;
         $history->item_type = $this->historyType(
-                (int) $event->item_type
+            (int) $event->item_type
         );
 
         $history->item_id = $event->item_id;
@@ -156,8 +153,8 @@ final class RenewalFulfilmentService
 
         if (!$history->save()) {
             throw new \RuntimeException(
-                            json_encode($history->errors)
-                    );
+                json_encode($history->errors)
+            );
         }
 
         $now = time();
@@ -169,39 +166,42 @@ final class RenewalFulfilmentService
 
         $asset->updated_at = $now;
 
-        if (!$asset->save(
-                        false,
-                        [
+        if (
+            !$asset->save(
+                false,
+                [
                             'current_expiry_date',
                             'updated_at',
                         ]
-                )) {
+            )
+        ) {
             throw new \RuntimeException(
-                            'Unable to update service expiry.'
-                    );
+                'Unable to update service expiry.'
+            );
         }
 
         $event->status = BillingEvent::STATUS_FULFILLED;
 
         $event->updated_at = $now;
 
-        if (!$event->save(
-                        false,
-                        [
+        if (
+            !$event->save(
+                false,
+                [
                             'status',
                             'updated_at',
                         ]
-                )) {
+            )
+        ) {
             throw new \RuntimeException(
-                            'Unable to fulfil billing event.'
-                    );
+                'Unable to fulfil billing event.'
+            );
         }
     }
 
     private function findAsset(
-            BillingEvent $event
-    ): object|null
-    {
+        BillingEvent $event
+    ): object|null {
         return match ((int) $event->item_type) {
             InvoiceItem::TYPE_DOMAIN =>
             Domains::findOne($event->item_id),
@@ -214,24 +214,22 @@ final class RenewalFulfilmentService
     }
 
     private function historyType(
-            int $type
-    ): string
-    {
+        int $type
+    ): string {
         return match ($type) {
             InvoiceItem::TYPE_DOMAIN => 'domain',
             InvoiceItem::TYPE_HOSTING => 'hosting',
             InvoiceItem::TYPE_MAINTENANCE => 'maintenance',
             default => throw new \RuntimeException(
-                    'Unsupported renewable service.'
+                'Unsupported renewable service.'
             ),
         };
     }
 
     private function monthDifference(
-            string $start,
-            string $end
-    ): int
-    {
+        string $start,
+        string $end
+    ): int {
         $a = new \DateTimeImmutable($start);
         $b = new \DateTimeImmutable($end);
 

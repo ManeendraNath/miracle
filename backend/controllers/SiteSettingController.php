@@ -10,7 +10,6 @@ use common\models\SiteSetting;
  */
 class SiteSettingController extends BaseController
 {
-
     /**
      * Lists all SiteSetting models.
      *

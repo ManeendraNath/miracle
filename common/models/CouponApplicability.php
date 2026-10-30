@@ -16,5 +16,4 @@ namespace common\models;
  */
 class CouponApplicability extends base\CouponApplicability
 {
-    
 }

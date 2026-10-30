@@ -29,9 +29,9 @@ GridViewHelper::register($this);
                 </div>
                 <?=
                 Html::a(
-                        '<i class="fas fa-plus me-1"></i> Add Audit Request',
-                        ['create'],
-                        ['class' => 'btn btn-primary']
+                    '<i class="fas fa-plus me-1"></i> Add Audit Request',
+                    ['create'],
+                    ['class' => 'btn btn-primary']
                 )
                 ?>
             </div>
@@ -69,9 +69,9 @@ GridViewHelper::register($this);
                         'format' => 'raw',
                         'value' => static function (AuditRequest $model): string {
                             return Html::tag(
-                                    'span',
-                                    Html::encode($model->name),
-                                    [
+                                'span',
+                                Html::encode($model->name),
+                                [
                                         'class' => 'fw-semibold text-primary',
                                         'title' => $model->email,
                                         'data-bs-toggle' => 'tooltip',
@@ -104,9 +104,9 @@ GridViewHelper::register($this);
                                 return '<span class="text-muted">-</span>';
                             }
                             return Html::a(
-                                    Html::encode($model->company_url),
-                                    $model->company_url,
-                                    [
+                                Html::encode($model->company_url),
+                                $model->company_url,
+                                [
                                         'target' => '_blank',
                                         'rel' => 'noopener noreferrer',
                                         'class' => 'text-decoration-none',

@@ -91,7 +91,6 @@ $statusClass = match ($status) {
                         <dd class="col-sm-8">
 
                             <?php if ($model->user !== null): ?>
-
                                 <div class="fw-semibold">
                                     <?= Html::encode(
                                         $model->user->username
@@ -99,7 +98,6 @@ $statusClass = match ($status) {
                                 </div>
 
                                 <?php if (!empty($model->user->email)): ?>
-
                                     <div class="text-muted small">
                                         <?= Html::encode(
                                             $model->user->email
@@ -109,7 +107,6 @@ $statusClass = match ($status) {
                                 <?php endif; ?>
 
                             <?php else: ?>
-
                                 <span class="text-muted">
                                     -
                                 </span>
@@ -263,14 +260,12 @@ $statusClass = match ($status) {
                         <dd class="col-sm-7">
 
                             <?php if ($model->renewal_cycle_months): ?>
-
                                 <?= Html::encode(
                                     $model->renewal_cycle_months
                                     . ' month(s)'
                                 ) ?>
 
                             <?php else: ?>
-
                                 <span class="text-muted">
                                     Global setting
                                 </span>
@@ -287,8 +282,7 @@ $statusClass = match ($status) {
 
                             <?php if (
                                 $model->renewal_increase_percent !== null
-                            ): ?>
-
+): ?>
                                 <?= Html::encode(
                                     number_format(
                                         (float) $model->renewal_increase_percent,
@@ -298,7 +292,6 @@ $statusClass = match ($status) {
                                 ) ?>
 
                             <?php else: ?>
-
                                 <span class="text-muted">
                                     Global setting
                                 </span>

@@ -19,8 +19,6 @@ use Yii;
  */
 class SupportTicketMessage extends \yii\db\ActiveRecord
 {
-
-
     /**
      * {@inheritdoc}
      */
@@ -78,5 +76,4 @@ class SupportTicketMessage extends \yii\db\ActiveRecord
     {
         return $this->hasOne(SupportTicket::class, ['id' => 'ticket_id']);
     }
-
 }

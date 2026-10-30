@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 use common\models\SupportTicket;
@@ -39,9 +40,10 @@ $priorityClass = match ($model->priority) {
             <?= Html::a('Back', ['index'], ['class' => 'btn btn-sm btn-outline-secondary']) ?>&nbsp;
             <?php if ($model->status === SupportTicket::STATUS_RESOLVED || $model->status === SupportTicket::STATUS_CLOSED): ?>
                 <?=
-                Html::a('Reopen',
-                        ['reopen', 'number' => $model->ticket_number],
-                        [
+                Html::a(
+                    'Reopen',
+                    ['reopen', 'number' => $model->ticket_number],
+                    [
                             'class' => 'btn btn-sm btn-outline-primary',
                             'data' => ['method' => 'post', 'confirm' => 'Reopen this support request?'],
                         ]
@@ -49,18 +51,20 @@ $priorityClass = match ($model->priority) {
                 ?>&nbsp;
             <?php else: ?>
                 <?=
-                Html::a('Resolve',
-                        ['resolve', 'number' => $model->ticket_number],
-                        [
+                Html::a(
+                    'Resolve',
+                    ['resolve', 'number' => $model->ticket_number],
+                    [
                             'class' => 'btn btn-sm btn-success',
                             'data' => ['method' => 'post', 'confirm' => 'Mark this support request as resolved?'],
                         ]
                 )
                 ?>&nbsp;
                 <?=
-                Html::a('Close',
-                        ['close', 'number' => $model->ticket_number],
-                        [
+                Html::a(
+                    'Close',
+                    ['close', 'number' => $model->ticket_number],
+                    [
                             'class' => 'btn btn-sm btn-outline-danger',
                             'data' => ['method' => 'post', 'confirm' => 'Close this support request?'],
                         ]
@@ -156,8 +160,10 @@ $priorityClass = match ($model->priority) {
                     </div>
                     <div class="card-body">
                         <?=
-                        Html::textarea('message', '',
-                                [
+                        Html::textarea(
+                            'message',
+                            '',
+                            [
                                     'class' => 'form-control',
                                     'rows' => 7,
                                     'maxlength' => 10000,

@@ -13,21 +13,21 @@ use yii\widgets\ActiveForm;
 $isNew = $model->isNewRecord;
 
 $users = ArrayHelper::map(
-        User::find()
+    User::find()
                 ->orderBy([
                     'username' => SORT_ASC,
                 ])
                 ->all(),
-        'id',
-        static function (User $user): string {
+    'id',
+    static function (User $user): string {
             $label = $user->username;
 
-            if (!empty($user->email)) {
-                $label .= ' (' . $user->email . ')';
-            }
+        if (!empty($user->email)) {
+            $label .= ' (' . $user->email . ')';
+        }
 
             return $label;
-        }
+    }
 );
 ?>
 
@@ -55,8 +55,8 @@ $users = ArrayHelper::map(
 
             <?=
             $form->errorSummary(
-                    $model,
-                    [
+                $model,
+                [
                         'class' => 'alert alert-danger',
                     ]
             )
@@ -76,8 +76,8 @@ $users = ArrayHelper::map(
                             $form
                             ->field($model, 'user_id')
                             ->widget(
-                                    Select2::class,
-                                    [
+                                Select2::class,
+                                [
                                         'data' => $users,
                                         'options' => [
                                             'placeholder' =>
@@ -89,7 +89,7 @@ $users = ArrayHelper::map(
                                         ],
                                     ]
                             )
-                    ?>
+                            ?>
 
                 </div>
 
@@ -102,7 +102,7 @@ $users = ArrayHelper::map(
                                 'maxlength' => true,
                                 'placeholder' => 'example.com',
                             ])
-                    ?>
+                            ?>
 
                 </div>
 
@@ -125,7 +125,7 @@ $users = ArrayHelper::map(
                                 'maxlength' => true,
                                 'placeholder' => 'cPanel IP',
                             ])
-                    ?>
+                            ?>
 
                 </div>
 
@@ -138,7 +138,7 @@ $users = ArrayHelper::map(
             'maxlength' => true,
             'autocomplete' => 'off',
         ])
-?>
+        ?>
 
                 </div>
 
@@ -151,7 +151,7 @@ $users = ArrayHelper::map(
             'maxlength' => true,
             'autocomplete' => 'new-password',
         ])
-?>
+        ?>
 
                 </div>
 
@@ -170,11 +170,11 @@ $users = ArrayHelper::map(
                     <?=
                             $form
                             ->field(
-                                    $model,
-                                    'current_expiry_date'
+                                $model,
+                                'current_expiry_date'
                             )
                             ->input('date')
-                    ?>
+                            ?>
 
                 </div>
 
@@ -184,9 +184,9 @@ $users = ArrayHelper::map(
                             $form
                             ->field($model, 'status')
                             ->dropDownList(
-                                    Hosting::getStatuses()
+                                Hosting::getStatuses()
                             )
-                    ?>
+                            ?>
 
                 </div>
 
@@ -195,8 +195,8 @@ $users = ArrayHelper::map(
 <?=
         $form
         ->field(
-                $model,
-                'renewal_base_amount'
+            $model,
+            'renewal_base_amount'
         )
         ->textInput([
             'type' => 'number',
@@ -205,7 +205,7 @@ $users = ArrayHelper::map(
             'placeholder' =>
             'Initial renewal amount',
         ])
-?>
+        ?>
 
                 </div>
 
@@ -231,8 +231,8 @@ $users = ArrayHelper::map(
                     <?=
                             $form
                             ->field(
-                                    $model,
-                                    'renewal_cycle_months'
+                                $model,
+                                'renewal_cycle_months'
                             )
                             ->textInput([
                                 'type' => 'number',
@@ -240,7 +240,7 @@ $users = ArrayHelper::map(
                                 'placeholder' =>
                                 'Use global setting',
                             ])
-                    ?>
+                            ?>
 
                 </div>
 
@@ -249,8 +249,8 @@ $users = ArrayHelper::map(
 <?=
         $form
         ->field(
-                $model,
-                'renewal_increase_percent'
+            $model,
+            'renewal_increase_percent'
         )
         ->textInput([
             'type' => 'number',
@@ -260,7 +260,7 @@ $users = ArrayHelper::map(
             'placeholder' =>
             'Use global setting',
         ])
-?>
+        ?>
 
                 </div>
 
@@ -274,12 +274,12 @@ $users = ArrayHelper::map(
 
             <?=
             Html::a(
-                    '<i class="fas fa-arrow-left me-1"></i> Cancel',
-                    $isNew ? ['index'] : [
+                '<i class="fas fa-arrow-left me-1"></i> Cancel',
+                $isNew ? ['index'] : [
                         'view',
                         'id' => $model->id,
                             ],
-                    [
+                [
                         'class' => 'btn btn-outline-secondary',
                     ]
             )
@@ -287,8 +287,8 @@ $users = ArrayHelper::map(
 
 <?=
 Html::submitButton(
-        $isNew ? '<i class="fas fa-save me-1"></i> Save Hosting' : '<i class="fas fa-save me-1"></i> Update Hosting',
-        [
+    $isNew ? '<i class="fas fa-save me-1"></i> Save Hosting' : '<i class="fas fa-save me-1"></i> Update Hosting',
+    [
             'class' => 'btn btn-primary px-4',
         ]
 )

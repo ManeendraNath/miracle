@@ -25,8 +25,6 @@ use Yii;
  */
 class InvoiceItem extends \yii\db\ActiveRecord
 {
-
-
     /**
      * {@inheritdoc}
      */
@@ -105,5 +103,4 @@ class InvoiceItem extends \yii\db\ActiveRecord
     {
         return $this->hasOne(Invoice::class, ['id' => 'source_invoice_id']);
     }
-
 }

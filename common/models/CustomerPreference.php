@@ -8,7 +8,6 @@ use yii\helpers\ArrayHelper;
 
 class CustomerPreference extends base\CustomerPreference
 {
-
     public function rules(): array
     {
         $rules = [

@@ -17,7 +17,6 @@ use yii\web\Response;
  */
 class AuthController extends Controller
 {
-
     /**
      * {@inheritdoc}
      */

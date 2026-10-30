@@ -10,7 +10,6 @@ use yii\db\ActiveQuery;
 
 trait DateRangeSearchTrait
 {
-
     /**
      * Apply a date range to a UNIX timestamp database column.
      *

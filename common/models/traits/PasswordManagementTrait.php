@@ -19,7 +19,6 @@ namespace common\models\traits;
  */
 trait PasswordManagementTrait
 {
-
     /**
      * Plain-text password from create/update forms.
      *
@@ -35,7 +34,7 @@ trait PasswordManagementTrait
         return [
             ['password', 'required', 'when' => static function ($model): bool {
                     return $model->isNewRecord;
-                },
+            },
             ],
             ['password', 'string', 'min' => 8, 'max' => 255, 'skipOnEmpty' => true],
         ];

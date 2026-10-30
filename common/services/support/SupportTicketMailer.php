@@ -9,7 +9,6 @@ use Yii;
 
 final class SupportTicketMailer
 {
-
     public static function ticketCreated(SupportTicket $ticket): void
     {
         self::send($ticket, 'support-ticket-created', Yii::$app->params['supportEmail'], 'New Support Ticket %s');
@@ -44,8 +43,8 @@ final class SupportTicketMailer
         try {
             $sent = Yii::$app->mailer
                     ->compose(
-                            ['html' => $view . '-html', 'text' => $view . '-text'],
-                            ['ticket' => $ticket]
+                        ['html' => $view . '-html', 'text' => $view . '-text'],
+                        ['ticket' => $ticket]
                     )
                     ->setFrom([Yii::$app->params['senderEmail'] => Yii::$app->params['senderName']])
                     ->setTo($to)

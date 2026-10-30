@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 use common\models\AuditRequest;
@@ -46,9 +47,9 @@ $statusLabel = AuditRequest::getStatuses()[$model->status] ?? $model->status;
 
 <?=
 Html::a(
-        '<i class="fas fa-arrow-left mr-1"></i> Back',
-        ['index'],
-        [
+    '<i class="fas fa-arrow-left mr-1"></i> Back',
+    ['index'],
+    [
             'class' => 'btn btn-light border',
         ]
 )
@@ -56,12 +57,12 @@ Html::a(
 
             <?=
             Html::a(
-                    '<i class="fas fa-edit mr-1"></i> Update',
-                    [
+                '<i class="fas fa-edit mr-1"></i> Update',
+                [
                         'update',
                         'id' => $model->id,
                     ],
-                    [
+                [
                         'class' => 'btn btn-primary',
                     ]
             )
@@ -103,9 +104,9 @@ Html::a(
 
                             <?=
                             $model->email ? Html::a(
-                                            Html::encode($model->email),
-                                            'mailto:' . $model->email
-                                    ) : '-'
+                                Html::encode($model->email),
+                                'mailto:' . $model->email
+                            ) : '-'
                             ?>
 
                         </dd>
@@ -117,7 +118,7 @@ Html::a(
                         <dd class="col-sm-8">
                             <?=
                             Html::encode(
-                                    $model->phone ?: '-'
+                                $model->phone ?: '-'
                             )
                             ?>
                         </dd>
@@ -129,25 +130,23 @@ Html::a(
                         <dd class="col-sm-8">
 
                             <?php if ($model->company_url): ?>
-
                                 <?=
                                 Html::a(
-                                        Html::encode(
-                                                $model->company_url
-                                        ),
-                                        $model->company_url,
-                                        [
+                                    Html::encode(
+                                        $model->company_url
+                                    ),
+                                    $model->company_url,
+                                    [
                                             'target' => '_blank',
                                             'rel' => 'noopener noreferrer',
                                         ]
                                 )
                                 ?>
 
-<?php else: ?>
-
+                            <?php else: ?>
                                 -
 
-<?php endif; ?>
+                            <?php endif; ?>
 
                         </dd>
 
@@ -180,7 +179,7 @@ Html::a(
                         <dd class="col-sm-7">
 <?=
 Html::encode(
-        $model->current_framework ?: '-'
+    $model->current_framework ?: '-'
 )
 ?>
                         </dd>
@@ -192,7 +191,7 @@ Html::encode(
                         <dd class="col-sm-7">
 <?=
 Html::encode(
-        $model->hosting_environment ?: '-'
+    $model->hosting_environment ?: '-'
 )
 ?>
                         </dd>
@@ -205,9 +204,9 @@ Html::encode(
 
 <?=
 Html::tag(
-        'span',
-        Html::encode($statusLabel),
-        [
+    'span',
+    Html::encode($statusLabel),
+    [
             'class' => 'badge '
             . $statusClass,
         ]
@@ -237,22 +236,20 @@ Html::tag(
         <div class="card-body">
 
 <?php if (!empty($model->message)): ?>
-
                 <div class="mb-3">
                 <?=
                 nl2br(
-                        Html::encode($model->message)
+                    Html::encode($model->message)
                 )
                 ?>
                 </div>
 
 <?php else: ?>
-
                 <div class="text-muted mb-3">
                     No additional request details provided.
                 </div>
 
-                    <?php endif; ?>
+<?php endif; ?>
 
             <hr>
 
@@ -265,7 +262,7 @@ Html::tag(
                 <dd class="col-lg-4 col-sm-8">
                     <?=
                     Html::encode(
-                            $model->user_ip ?: '-'
+                        $model->user_ip ?: '-'
                     )
                     ?>
                 </dd>
@@ -278,9 +275,9 @@ Html::tag(
 
                     <?=
                     $model->created_at ? Yii::$app->formatter->asDatetime(
-                                    $model->created_at,
-                                    'php:d M Y, h:i A'
-                            ) : '-'
+                        $model->created_at,
+                        'php:d M Y, h:i A'
+                    ) : '-'
                     ?>
 
                 </dd>
@@ -293,9 +290,9 @@ Html::tag(
 
 <?=
 $model->updated_at ? Yii::$app->formatter->asDatetime(
-                $model->updated_at,
-                'php:d M Y, h:i A'
-        ) : '-'
+    $model->updated_at,
+    'php:d M Y, h:i A'
+) : '-'
 ?>
 
                 </dd>

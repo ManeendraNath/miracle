@@ -21,5 +21,4 @@ namespace common\models;
  */
 class ServiceRenewalHistory extends base\ServiceRenewalHistory
 {
-
 }

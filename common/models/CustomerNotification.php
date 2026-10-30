@@ -2,7 +2,6 @@
 
 namespace common\models;
 
-
 /**
  * This is the model class for table "customer_notification".
  *
@@ -20,5 +19,4 @@ namespace common\models;
  */
 class CustomerNotification extends base\CustomerNotification
 {
-
 }

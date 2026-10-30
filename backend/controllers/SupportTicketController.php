@@ -15,7 +15,6 @@ use yii\web\NotFoundHttpException;
 
 final class SupportTicketController extends BaseController
 {
-
     public function behaviors(): array
     {
         $behaviors = parent::behaviors();
@@ -78,11 +77,11 @@ final class SupportTicketController extends BaseController
             }
             (new NotificationService())
                     ->create(
-                            (int) $ticket->user_id,
-                            'support',
-                            'Support Team Replied',
-                            'A new response was added to ' . 'support request ' . $ticket->ticket_number . '.',
-                            '/support/view?number=' . rawurlencode($ticket->ticket_number)
+                        (int) $ticket->user_id,
+                        'support',
+                        'Support Team Replied',
+                        'A new response was added to ' . 'support request ' . $ticket->ticket_number . '.',
+                        '/support/view?number=' . rawurlencode($ticket->ticket_number)
                     );
             $transaction->commit();
         } catch (\Throwable $e) {
@@ -104,11 +103,11 @@ final class SupportTicketController extends BaseController
         $this->changeStatus($ticket, SupportTicket::STATUS_RESOLVED);
         try {
             (new NotificationService())->create(
-                    (int) $ticket->user_id,
-                    'support',
-                    'Support Request Resolved',
-                    'Support request ' . $ticket->ticket_number . ' has been marked as resolved.',
-                    '/support/view?number=' . rawurlencode($ticket->ticket_number)
+                (int) $ticket->user_id,
+                'support',
+                'Support Request Resolved',
+                'Support request ' . $ticket->ticket_number . ' has been marked as resolved.',
+                '/support/view?number=' . rawurlencode($ticket->ticket_number)
             );
             SupportTicketMailer::ticketResolved($ticket);
         } catch (\Throwable $e) {
@@ -138,11 +137,11 @@ final class SupportTicketController extends BaseController
         }
         try {
             (new NotificationService())->create(
-                    (int) $ticket->user_id,
-                    'support',
-                    'Support Request Closed',
-                    'Support request ' . $ticket->ticket_number . ' has been closed.',
-                    '/support/view?number=' . rawurlencode($ticket->ticket_number)
+                (int) $ticket->user_id,
+                'support',
+                'Support Request Closed',
+                'Support request ' . $ticket->ticket_number . ' has been closed.',
+                '/support/view?number=' . rawurlencode($ticket->ticket_number)
             );
             SupportTicketMailer::ticketClosed($ticket);
         } catch (\Throwable $e) {

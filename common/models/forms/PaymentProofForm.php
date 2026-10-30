@@ -8,7 +8,6 @@ use yii\base\Model;
 
 final class PaymentProofForm extends Model
 {
-
     public string $gateway_payment_id = '';
     public string $user_payment_notes = '';
     public $receiptFile;

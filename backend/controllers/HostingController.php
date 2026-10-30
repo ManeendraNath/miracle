@@ -11,7 +11,6 @@ use yii\web\NotFoundHttpException;
  */
 class HostingController extends BaseController
 {
-
     /**
      * Lists all Hosting models.
      *

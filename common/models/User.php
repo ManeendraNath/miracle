@@ -26,7 +26,6 @@ use yii\web\IdentityInterface;
  */
 class User extends base\User implements IdentityInterface
 {
-
     use BaseIdentityTrait;
     use AutoTimestampTrait;
     use PasswordManagementTrait;

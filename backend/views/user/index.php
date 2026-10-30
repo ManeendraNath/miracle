@@ -51,10 +51,10 @@ $this->params['breadcrumbs'][] = $this->title;
                 'attribute' => 'status',
                 'label' => 'Account Status',
                 'filter' => GridFilterHelper::select2(
-                        $searchModel,
-                        'status',
-                        User::getStatuses(),
-                        'All Statuses'
+                    $searchModel,
+                    'status',
+                    User::getStatuses(),
+                    'All Statuses'
                 ),
                 'format' => 'raw',
                 'value' => static function (User $model): string {
@@ -80,9 +80,9 @@ $this->params['breadcrumbs'][] = $this->title;
                     }
 
                     return Html::tag(
-                            'span',
-                            Html::encode($statuses[$status] ?? 'Unknown'),
-                            [
+                        'span',
+                        Html::encode($statuses[$status] ?? 'Unknown'),
+                        [
                                 'class' => 'badge ' . $class,
                             ]
                     );
@@ -92,14 +92,14 @@ $this->params['breadcrumbs'][] = $this->title;
                 'attribute' => 'created_at',
                 'label' => 'Created At',
                 'filter' => GridFilterHelper::dateRange(
-                        $searchModel,
-                        'created_at_range',
-                        'Created date'
+                    $searchModel,
+                    'created_at_range',
+                    'Created date'
                 ),
                 'value' => static function (User $model): string {
                     return Yii::$app->formatter->asDatetime(
-                            $model->created_at,
-                            'php:d M Y, h:i A'
+                        $model->created_at,
+                        'php:d M Y, h:i A'
                     );
                 },
                 'headerOptions' => [
@@ -110,14 +110,14 @@ $this->params['breadcrumbs'][] = $this->title;
                 'attribute' => 'updated_at',
                 'label' => 'Updated At',
                 'filter' => GridFilterHelper::dateRange(
-                        $searchModel,
-                        'updated_at_range',
-                        'Updated date'
+                    $searchModel,
+                    'updated_at_range',
+                    'Updated date'
                 ),
                 'value' => static function (User $model): string {
                     return Yii::$app->formatter->asDatetime(
-                            $model->updated_at,
-                            'php:d M Y, h:i A'
+                        $model->updated_at,
+                        'php:d M Y, h:i A'
                     );
                 },
                 'headerOptions' => [

@@ -6,5 +6,4 @@ namespace common\models;
 
 class WhatsappLog extends base\WhatsappLog
 {
-    
 }

@@ -6,7 +6,6 @@ use Yii;
 
 trait BaseIdentityTrait
 {
-
     public static function getRoleSuperAdmin(): string
     {
         return 'Superadmin';

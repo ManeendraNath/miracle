@@ -21,9 +21,9 @@ $this->params['breadcrumbs'][] = $this->title;
                         'format' => 'raw',
                         'value' => static function ($model) {
                             return Html::tag(
-                                    'span',
-                                    Html::encode($model->title),
-                                    ['class' => $model->is_read ? '' : 'fw-bold text-primary']
+                                'span',
+                                Html::encode($model->title),
+                                ['class' => $model->is_read ? '' : 'fw-bold text-primary']
                             );
                         },
                     ],

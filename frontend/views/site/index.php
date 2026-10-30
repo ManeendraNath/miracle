@@ -24,7 +24,7 @@ $this->title = 'Miracle Web Technologies | Enterprise Infrastructure & Premium C
             <div class="d-flex justify-content-center gap-3 flex-wrap pt-2">
                 <!-- 💡 FIXED BUTTON CONTRAST: Forced crisp white text over your brand cyan background -->
                 <?= Html::a('Request Systems Audit ⚡', ['site/contact'], [
-                    'class' => 'btn btn-lg px-4 py-3 fw-bold shadow-sm text-white', 
+                    'class' => 'btn btn-lg px-4 py-3 fw-bold shadow-sm text-white',
                     'style' => 'background-color: #00a3e0 !important; border: none !important; min-width: 240px; border-radius: 0.5rem; color: #ffffff !important;'
                 ]) ?>
                 <a class="btn btn-outline-light btn-lg px-4 py-3 fw-bold" href="#hosting-tiers" style="border-color: #475569; color: #f1f5f9; min-width: 240px; border-radius: 0.5rem;">
@@ -92,7 +92,7 @@ $this->title = 'Miracle Web Technologies | Enterprise Infrastructure & Premium C
                         </ul>
                     </div>
                     <?= Html::a('Deploy Business Matrix 🚀', ['site/contact'], [
-                        'class' => 'btn w-100 fw-bold py-3 text-white', 
+                        'class' => 'btn w-100 fw-bold py-3 text-white',
                         'style' => 'background-color: #00a3e0 !important; border: none !important; border-radius: 0.5rem; color: #ffffff !important;'
                     ]) ?>
                 </div>
@@ -118,7 +118,7 @@ $this->title = 'Miracle Web Technologies | Enterprise Infrastructure & Premium C
                         </ul>
                     </div>
                     <?= Html::a('Deploy Corporate Cloud', ['site/contact'], [
-                        'class' => 'btn w-100 fw-bold py-2', 
+                        'class' => 'btn w-100 fw-bold py-2',
                         'style' => 'border: 2px solid #dc2626 !important; color: #dc2626 !important; background: transparent !important; border-radius: 0.5rem;'
                     ]) ?>
                 </div>

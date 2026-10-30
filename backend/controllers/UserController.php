@@ -9,7 +9,6 @@ use yii\web\NotFoundHttpException;
 
 class UserController extends BaseController
 {
-
     public function actionIndex()
     {
         $searchModel = new UserSearch();

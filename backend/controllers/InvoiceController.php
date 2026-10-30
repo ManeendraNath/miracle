@@ -20,7 +20,6 @@ use yii\web\NotFoundHttpException;
 
 class InvoiceController extends BaseController
 {
-
     /**
      * List invoices.
      */
@@ -48,16 +47,16 @@ class InvoiceController extends BaseController
         $totals = $this->calculateDisplayTotals($model);
 
         return $this->render(
-                        'view',
-                        array_merge(
-                                [
+            'view',
+            array_merge(
+                [
                                     'model' => $model,
                                     'capturedAmount' => $paymentService->getCapturedAmount((int) $model->id),
                                     'outstandingAmount' => $paymentService->getOutstanding($model),
                                 ],
-                                $totals
-                        )
-                );
+                $totals
+            )
+        );
     }
 
     /**
@@ -225,13 +224,13 @@ class InvoiceController extends BaseController
             Yii::$app->session->setFlash('success', 'Invoice email sent successfully.');
         } catch (\Throwable $e) {
             Yii::error(
-                    [
+                [
                         'message' => 'Invoice email delivery failed.',
                         'invoiceId' => (int) $invoice->id,
                         'invoiceNumber' => $invoice->invoice_number,
                         'error' => $e->getMessage(),
                     ],
-                    __METHOD__
+                __METHOD__
             );
             Yii::$app->session->setFlash('error', 'Invoice email could not be sent. The invoice itself was not changed.');
         }
@@ -287,12 +286,12 @@ class InvoiceController extends BaseController
     private function getUsersList(): array
     {
         return ArrayHelper::map(
-                        User::find()->orderBy(['username' => SORT_ASC])->asArray()->all(),
-                        'id',
-                        static function (array $user): string {
+            User::find()->orderBy(['username' => SORT_ASC])->asArray()->all(),
+            'id',
+            static function (array $user): string {
                             return sprintf('%s (%s)', $user['username'], $user['email']);
-                        }
-                );
+            }
+        );
     }
 
     private function calculateDisplayTotals(Invoice $model): array
@@ -324,15 +323,15 @@ class InvoiceController extends BaseController
         $totals = $this->calculateDisplayTotals($model);
         $paymentService = new InvoicePaymentService();
         $htmlContent = $this->renderPartial(
-                '_invoice_content',
-                array_merge(
-                        [
+            '_invoice_content',
+            array_merge(
+                [
                             'model' => $model,
                             'capturedAmount' => $paymentService->getCapturedAmount((int) $model->id),
                             'outstandingAmount' => $paymentService->getOutstanding($model),
                         ],
-                        $totals
-                )
+                $totals
+            )
         );
 
         $message = Yii::$app->mailer
@@ -344,7 +343,7 @@ class InvoiceController extends BaseController
                 ->setTo($client->email)
                 ->setSubject('Invoice ' . $model->invoice_number)
                 ->setHtmlBody(
-                        '<h3>Hello '
+                    '<h3>Hello '
                         . Html::encode($model->client_name)
                         . ',</h3>'
                         . '<p>Your invoice <strong>'
@@ -355,8 +354,8 @@ class InvoiceController extends BaseController
                 );
 
         $message->attachContent(
-                $htmlContent,
-                [
+            $htmlContent,
+            [
                     'fileName' => 'Invoice_' . $model->invoice_number . '.html',
                     'contentType' => 'text/html',
                 ]

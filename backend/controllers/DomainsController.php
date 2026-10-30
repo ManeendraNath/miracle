@@ -12,7 +12,6 @@ use yii\web\NotFoundHttpException;
  */
 class DomainsController extends BaseController
 {
-
     /**
      * Lists all Domains models.
      *

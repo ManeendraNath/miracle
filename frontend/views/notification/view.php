@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 use yii\helpers\Html;
@@ -14,7 +15,7 @@ $this->title = $model->title;
         <strong>
 <?=
 Html::encode(
-        $model->title
+    $model->title
 )
 ?>
         </strong>
@@ -29,9 +30,9 @@ Html::encode(
                     Yii::$app
                     ->formatter
                     ->asDatetime(
-                            $model->created_at
+                        $model->created_at
                     )
-            ?>
+                    ?>
 
         </div>
 
@@ -39,23 +40,22 @@ Html::encode(
 
             <?=
             nl2br(
-                    Html::encode(
-                            $model->message
-                    )
+                Html::encode(
+                    $model->message
+                )
             )
             ?>
 
         </div>
 
             <?php if (!empty($model->route)): ?>
-
             <div class="mt-4">
 
                 <?=
                 Html::a(
-                        'Open Related Item',
-                        $model->route,
-                        [
+                    'Open Related Item',
+                    $model->route,
+                    [
                             'class' =>
                             'btn btn-primary',
                         ]
@@ -64,7 +64,7 @@ Html::encode(
 
             </div>
 
-<?php endif; ?>
+            <?php endif; ?>
 
     </div>
 

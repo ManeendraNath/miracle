@@ -1,18 +1,19 @@
 <?php
+
 declare(strict_types=1);
 
 use yii\helpers\Html;
 
 $paidAmount = Yii::$app->formatter
         ->asCurrency(
-                $transaction->amount,
-                'INR'
+            $transaction->amount,
+            'INR'
         );
 
 $outstanding = Yii::$app->formatter
         ->asCurrency(
-                $outstandingAmount,
-                'INR'
+            $outstandingAmount,
+            'INR'
         );
 
 $isPaid = $invoice->status ===
@@ -101,7 +102,7 @@ $isPaid = $invoice->status ===
                         >
 <?=
 Html::encode(
-        $invoice
+    $invoice
         ->invoice_number
 )
 ?>
@@ -125,7 +126,7 @@ Html::encode(
                         >
 <?=
 Html::encode(
-        $paidAmount
+    $paidAmount
 )
 ?>
                     </td>
@@ -147,7 +148,7 @@ Html::encode(
                         >
                             <?=
                             Html::encode(
-                                    $transaction
+                                $transaction
                                     ->gateway_payment_id ?: 'Recorded payment'
                             )
                             ?>
@@ -170,7 +171,7 @@ Html::encode(
                         >
                             <?=
                             Html::encode(
-                                    $outstanding
+                                $outstanding
                             )
                             ?>
                     </td>
@@ -179,7 +180,6 @@ Html::encode(
             </table>
 
 <?php if ($isPaid): ?>
-
                 <div style="
                      background:#ecfdf5;
                      border-left:4px solid #22c55e;
@@ -194,7 +194,6 @@ Html::encode(
                 </div>
 
 <?php else: ?>
-
                 <div style="
                      background:#fff7ed;
                      border-left:4px solid #f97316;
@@ -207,13 +206,13 @@ Html::encode(
                     A remaining balance is still due on the invoice.
                 </div>
 
-            <?php endif; ?>
+<?php endif; ?>
 
             <?=
             Html::a(
-                    'View Invoice →',
-                    $invoiceUrl,
-                    [
+                'View Invoice →',
+                $invoiceUrl,
+                [
                         'style' =>
                         'display:inline-block;'
                         . 'background:#171717;'

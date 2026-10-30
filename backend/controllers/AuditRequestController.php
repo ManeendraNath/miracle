@@ -11,7 +11,6 @@ use yii\web\NotFoundHttpException;
  */
 class AuditRequestController extends BaseController
 {
-
     /**
      * Lists all AuditRequest models.
      *

@@ -127,20 +127,20 @@ $adminNotificationCount = AdminNotification::find()
                         <a href="<?= Url::to(['/admin-notification/read', 'id' => $notification->id]) ?>" class="dropdown-item">
                             <div class="d-flex justify-content-between">
                                 <strong><?= Html::encode($notification->title) ?></strong>
-        <?php if (!$notification->is_read): ?>
+                        <?php if (!$notification->is_read): ?>
                                     <span class="badge badge-danger">New</span>
-        <?php endif; ?>
+                        <?php endif; ?>
                             </div>
                             <div class="text-muted text-sm mt-1" style="white-space: normal; line-height: 1.4;">
                                 <?= Html::encode(mb_strimwidth($notification->message, 0, 80, '...')) ?>
                             </div>
                             <div class="text-muted text-xs mt-1">
-        <?= Yii::$app->formatter->asRelativeTime($notification->created_at) ?>
+                        <?= Yii::$app->formatter->asRelativeTime($notification->created_at) ?>
                             </div>
                         </a>
                         <div class="dropdown-divider"></div>
-    <?php endforeach; ?>
-<?php endif; ?>
+                    <?php endforeach; ?>
+                <?php endif; ?>
                 <a href="<?= Url::to(['/admin-notification/index']) ?>" class="dropdown-item dropdown-footer">View All Notifications</a>
             </div>
         </li>

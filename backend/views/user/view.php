@@ -65,9 +65,9 @@ switch ((int) $model->status) {
 
                     <?=
                     Html::a(
-                            'Back',
-                            ['index'],
-                            [
+                        'Back',
+                        ['index'],
+                        [
                                 'class' => 'btn btn-light border',
                             ]
                     )
@@ -75,23 +75,23 @@ switch ((int) $model->status) {
 
                     <?=
                     Html::a(
-                            'Update',
-                            ['update', 'id' => $model->id],
-                            [
+                        'Update',
+                        ['update', 'id' => $model->id],
+                        [
                                 'class' => 'btn btn-primary',
                             ]
                     )
                     ?>
                     <?=
                     Html::a(
-                            '<i class="fas fa-shield-alt mr-1"></i> Login History',
-                            [
+                        '<i class="fas fa-shield-alt mr-1"></i> Login History',
+                        [
                                 '/user-login-history/index',
                                 'UserLoginHistorySearch' => [
                                     'user_id' => $model->id,
                                 ],
                             ],
-                            [
+                        [
                                 'class' =>
                                 'btn btn-outline-secondary',
                             ]
@@ -130,9 +130,9 @@ switch ((int) $model->status) {
                         'label' => 'Account Status',
                         'format' => 'raw',
                         'value' => Html::tag(
-                                'span',
-                                Html::encode($statusLabel),
-                                [
+                            'span',
+                            Html::encode($statusLabel),
+                            [
                                     'class' => 'badge ' . $statusClass,
                                 ]
                         ),

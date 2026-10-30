@@ -15,7 +15,6 @@ namespace common\models;
  */
 class Lead extends base\Lead
 {
-
     public static function getSources()
     {
         return [

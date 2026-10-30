@@ -6,5 +6,4 @@ namespace common\models;
 
 class AdminNotification extends base\AdminNotification
 {
-    
 }

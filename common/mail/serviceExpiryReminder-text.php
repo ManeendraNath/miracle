@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 /**
@@ -28,8 +29,8 @@ Service Name:
 Expiry Date:
 <?=
 date(
-        'd M Y',
-        strtotime($expiryDate)
+    'd M Y',
+    strtotime($expiryDate)
 )
 ?>
 

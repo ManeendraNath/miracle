@@ -12,7 +12,6 @@ use yii\helpers\ArrayHelper;
  */
 class AuditRequest extends base\AuditRequest
 {
-
     use AutoTimestampTrait;
 
     public const STATUS_PENDING = 'Pending';
@@ -46,8 +45,8 @@ class AuditRequest extends base\AuditRequest
     public function attributeLabels(): array
     {
         return ArrayHelper::merge(
-                        parent::attributeLabels(),
-                        [
+            parent::attributeLabels(),
+            [
                             'company_url' => 'Website',
                             'current_framework' => 'Framework',
                             'hosting_environment' => 'Hosting',
@@ -55,6 +54,6 @@ class AuditRequest extends base\AuditRequest
                             'created_at' => 'Created At',
                             'updated_at' => 'Updated At',
                         ]
-                );
+        );
     }
 }

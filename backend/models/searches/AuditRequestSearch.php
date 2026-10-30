@@ -38,7 +38,8 @@ class AuditRequestSearch extends AuditRequest
     /**
      * Build the Audit Request GridView provider.
      */
-    public function search(array $params, ?string $formName = null): ActiveDataProvider {
+    public function search(array $params, ?string $formName = null): ActiveDataProvider
+    {
         $query = AuditRequest::find();
 
         $dataProvider = new ActiveDataProvider([

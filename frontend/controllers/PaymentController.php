@@ -15,7 +15,6 @@ use yii\web\NotFoundHttpException;
 
 final class PaymentController extends Controller
 {
-    
     public $layout = 'account';
 
     public function behaviors(): array
@@ -39,8 +38,8 @@ final class PaymentController extends Controller
         $query = Transaction::find()
                 ->alias('t')
                 ->innerJoin(
-                        ['i' => Invoice::tableName()],
-                        'i.id = t.invoice_id'
+                    ['i' => Invoice::tableName()],
+                    'i.id = t.invoice_id'
                 )
                 ->where([
                     'i.user_id' =>
@@ -63,12 +62,12 @@ final class PaymentController extends Controller
         ]);
 
         return $this->render(
-                        'index',
-                        [
+            'index',
+            [
                             'dataProvider' =>
                             $dataProvider,
                         ]
-                );
+        );
     }
 
     public function actionView(int $id)
@@ -76,8 +75,8 @@ final class PaymentController extends Controller
         $model = Transaction::find()
                 ->alias('t')
                 ->innerJoin(
-                        ['i' => Invoice::tableName()],
-                        'i.id = t.invoice_id'
+                    ['i' => Invoice::tableName()],
+                    'i.id = t.invoice_id'
                 )
                 ->where([
                     't.id' => $id,
@@ -89,16 +88,16 @@ final class PaymentController extends Controller
 
         if ($model === null) {
             throw new NotFoundHttpException(
-                            'Payment does not exist.'
-                    );
+                'Payment does not exist.'
+            );
         }
 
         return $this->render(
-                        'view',
-                        [
+            'view',
+            [
                             'model' => $model,
                         ]
-                );
+        );
     }
 
     public function actionReceipt(int $id)
@@ -106,11 +105,11 @@ final class PaymentController extends Controller
         $transaction = Transaction::find()
                 ->alias('t')
                 ->innerJoin(
-                        [
+                    [
                             'i' =>
                             Invoice::tableName(),
                         ],
-                        'i.id = t.invoice_id'
+                    'i.id = t.invoice_id'
                 )
                 ->where([
                     't.id' =>
@@ -130,12 +129,12 @@ final class PaymentController extends Controller
         $pdf = (new PaymentReceiptPdfService())->render($transaction);
 
         return Yii::$app->response->sendContentAsFile(
-                        $pdf,
-                        'Payment_Receipt_' . $transaction->id . '.pdf',
-                        [
+            $pdf,
+            'Payment_Receipt_' . $transaction->id . '.pdf',
+            [
                             'mimeType' => 'application/pdf',
                             'inline' => false,
                         ]
-                );
+        );
     }
 }

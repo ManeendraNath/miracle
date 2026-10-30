@@ -1,6 +1,6 @@
 <?php
 
-declare (strict_types=1);
+declare(strict_types=1);
 
 namespace common\models;
 
@@ -13,7 +13,6 @@ use yii\helpers\ArrayHelper;
  */
 class SupportTicketAttachment extends base\SupportTicketAttachment
 {
-
     public $attachment;
 
     public function rules(): array

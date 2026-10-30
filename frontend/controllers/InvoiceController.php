@@ -21,7 +21,6 @@ use yii\web\UploadedFile;
 
 final class InvoiceController extends Controller
 {
-
     public $layout = 'account';
 
     public function behaviors(): array
@@ -59,12 +58,12 @@ final class InvoiceController extends Controller
         ]);
 
         return $this->render(
-                        'index',
-                        [
+            'index',
+            [
                             'dataProvider' =>
                             $dataProvider,
                         ]
-                );
+        );
     }
 
     public function actionView(string $number)
@@ -73,14 +72,14 @@ final class InvoiceController extends Controller
         $pendingPayment = Transaction::find()->where(['invoice_id' => $model->id, 'gateway_id' => Transaction::GATEWAY_UPI_BANK, 'status' => Transaction::STATUS_PENDING])->orderBy(['id' => SORT_DESC])->one();
         $paymentService = new InvoicePaymentService();
         return $this->render(
-                        'view',
-                        [
+            'view',
+            [
                             'model' => $model,
                             'capturedAmount' => $paymentService->getCapturedAmount((int) $model->id),
                             'outstandingAmount' => $paymentService->getOutstanding($model),
                             'pendingPayment' => $pendingPayment,
                         ]
-                );
+        );
     }
 
     private function findOwnedInvoice(string $number): Invoice
@@ -147,7 +146,8 @@ final class InvoiceController extends Controller
         $extension = strtolower($form->receiptFile->extension);
         $fileName = bin2hex(random_bytes(24)) . '.' . $extension;
         $directory = Yii::getAlias('@storage/payment-receipts');
-        if (!is_dir($directory) && !mkdir($directory, 0750, true) && !is_dir($directory)
+        if (
+            !is_dir($directory) && !mkdir($directory, 0750, true) && !is_dir($directory)
         ) {
             throw new \RuntimeException('Payment receipt storage is unavailable.');
         }

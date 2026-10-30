@@ -10,38 +10,34 @@ use common\models\InvoiceItem;
 
 final class OutstandingBalanceService
 {
-
     public function __construct(
-            private readonly InvoicePaymentService $paymentService = new InvoicePaymentService()
-    )
-    {
-        
+        private readonly InvoicePaymentService $paymentService = new InvoicePaymentService()
+    ) {
     }
 
     public function transferForUser(
-            Invoice $targetInvoice
-    ): float
-    {
+        Invoice $targetInvoice
+    ): float {
         if ($targetInvoice->getIsNewRecord()) {
             throw new \LogicException(
-                            'Target invoice must be saved before '
+                'Target invoice must be saved before '
                             . 'outstanding balances are transferred.'
-                    );
+            );
         }
 
         if ((int) $targetInvoice->user_id <= 0) {
             throw new \LogicException(
-                            'Target invoice must belong to a valid client.'
-                    );
+                'Target invoice must belong to a valid client.'
+            );
         }
         if ($targetInvoice->billing_run_id === null) {
             throw new \LogicException(
-                            'Automatic target invoice must belong to a billing run.'
-                    );
+                'Automatic target invoice must belong to a billing run.'
+            );
         }
         $sourceInvoiceIds = Yii::$app->db
                 ->createCommand(
-                        '
+                    '
         SELECT id
         FROM {{%invoice}}
         WHERE user_id = :userId
@@ -100,7 +96,7 @@ final class OutstandingBalanceService
 
             $outstanding = $this->paymentService
                     ->getOutstanding(
-                            $sourceInvoice
+                        $sourceInvoice
                     );
 
             if ($outstanding <= 0) {
@@ -127,54 +123,56 @@ final class OutstandingBalanceService
             $item->quantity = 1;
 
             $item->unit_price = number_format(
-                    $outstanding,
-                    2,
-                    '.',
-                    ''
+                $outstanding,
+                2,
+                '.',
+                ''
             );
 
             $item->total_price = number_format(
-                    $outstanding,
-                    2,
-                    '.',
-                    ''
+                $outstanding,
+                2,
+                '.',
+                ''
             );
 
             if (!$item->save()) {
                 throw new \RuntimeException(
-                                'Unable to carry forward balance from invoice '
+                    'Unable to carry forward balance from invoice '
                                 . $sourceInvoice->invoice_number
                                 . ': '
                                 . json_encode(
-                                        $item->errors,
-                                        JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES
+                                    $item->errors,
+                                    JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES
                                 )
-                        );
+                );
             }
 
             $sourceInvoice->status = Invoice::STATUS_CARRIED_FORWARD;
 
             $sourceInvoice->updated_at = time();
 
-            if (!$sourceInvoice->save(
-                            false,
-                            [
+            if (
+                !$sourceInvoice->save(
+                    false,
+                    [
                                 'status',
                                 'updated_at',
                             ]
-                    )) {
+                )
+            ) {
                 throw new \RuntimeException(
-                                'Unable to mark source invoice '
+                    'Unable to mark source invoice '
                                 . 'as carried forward.'
-                        );
+                );
             }
 
             $transferredTotal += $outstanding;
         }
 
         return round(
-                $transferredTotal,
-                2
+            $transferredTotal,
+            2
         );
     }
 }

@@ -28,28 +28,27 @@ use yii\helpers\ArrayHelper;
  */
 class CustomerBillingProfile extends base\CustomerBillingProfile
 {
-
     use AutoTimestampTrait;
 
     public function rules(): array
     {
         return ArrayHelper::merge(
-                        parent::rules(),
-                        [
+            parent::rules(),
+            [
                             [['legal_name', 'state', 'state_code'], 'trim'],
                             [['legal_name', 'state', 'state_code'], 'required'],
                             ['state_code', 'string', 'max' => 10],
                             ['gstin', 'string', 'max' => 15],
                             ['pan', 'string', 'max' => 10],
                         ]
-                );
+        );
     }
 
     public function attributeLabels(): array
     {
         return ArrayHelper::merge(
-                        parent::attributeLabels(),
-                        [
+            parent::attributeLabels(),
+            [
                             'user_id' => 'Client',
                             'legal_name' => 'Legal Name',
                             'address_line_1' => 'Address Line 1',
@@ -59,6 +58,6 @@ class CustomerBillingProfile extends base\CustomerBillingProfile
                             'gstin' => 'GSTIN',
                             'pan' => 'PAN',
                         ]
-                );
+        );
     }
 }

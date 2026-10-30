@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 use common\models\SupportTicket;
@@ -25,21 +26,21 @@ $form = ActiveForm::begin(['id' => 'support-ticket-form']);
     <div class="card-body">
         <?=
         $form->field($model, 'service_type')->dropDownList(
-                [
+            [
                     '' => 'General Support',
                     'domain' => 'Domain',
                     'hosting' => 'Hosting',
                     'maintenance' => 'Maintenance',
                 ],
-                [
+            [
                     'id' => 'service-type'
                 ]
         )
         ?>
         <?=
         $form->field($model, 'service_id')->dropDownList(
-                [],
-                [
+            [],
+            [
                     'prompt' => 'Select Service',
                     'id' => 'service-id',
                 ]

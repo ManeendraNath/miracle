@@ -66,9 +66,9 @@ GridViewHelper::register($this);
                         'format' => 'raw',
                         'value' => static function (Invoice $model): string {
                             return Html::a(
-                                    Html::encode($model->invoice_number),
-                                    ['view', 'number' => $model->invoice_number],
-                                    ['class' => 'fw-semibold text-decoration-none']
+                                Html::encode($model->invoice_number),
+                                ['view', 'number' => $model->invoice_number],
+                                ['class' => 'fw-semibold text-decoration-none']
                             );
                         },
                         'headerOptions' => ['style' => 'min-width: 150px;'],
@@ -109,9 +109,9 @@ GridViewHelper::register($this);
                         'format' => 'raw',
                         'value' => static function (Invoice $model): string {
                             return Html::tag(
-                                    'span',
-                                    Yii::$app->formatter->asCurrency($model->total_payable, 'INR'),
-                                    ['class' => 'fw-semibold']
+                                'span',
+                                Yii::$app->formatter->asCurrency($model->total_payable, 'INR'),
+                                ['class' => 'fw-semibold']
                             );
                         },
                         'headerOptions' => ['style' => 'min-width: 130px;'],
@@ -136,9 +136,9 @@ GridViewHelper::register($this);
                             };
                             $label = Invoice::getStatuses()[$model->status] ?? $model->status;
                             return Html::tag(
-                                    'span',
-                                    Html::encode($label),
-                                    ['class' => 'badge ' . $class . ' px-2 py-1']
+                                'span',
+                                Html::encode($label),
+                                ['class' => 'badge ' . $class . ' px-2 py-1']
                             );
                         },
                         'headerOptions' => ['style' => 'min-width: 155px;'],
@@ -171,17 +171,17 @@ GridViewHelper::register($this);
                         'attribute' => 'created_at',
                         'label' => 'Created',
                         'filter' => GridFilterHelper::dateRange(
-                                $searchModel,
-                                'created_at_range',
-                                'Created date'
+                            $searchModel,
+                            'created_at_range',
+                            'Created date'
                         ),
                         'value' => static function (
-                                Invoice $model
+                            Invoice $model
                         ): string {
                             return Yii::$app->formatter
                                     ->asDatetime(
-                                            $model->created_at,
-                                            'php:d M Y, h:i A'
+                                        $model->created_at,
+                                        'php:d M Y, h:i A'
                                     );
                         },
                         'headerOptions' => [
@@ -195,13 +195,13 @@ GridViewHelper::register($this);
                      * Shared CRUD actions.
                      */
                     GridActionHelper::crudColumn(
-                            template: '{view} {update}',
-                            urlCreator: static function (string $action, Invoice $model): array {
-                                if ($action === 'view') {
-                                    return ['view', 'number' => $model->invoice_number];
-                                }
-                                return [$action, 'id' => $model->id];
+                        template: '{view} {update}',
+                        urlCreator: static function (string $action, Invoice $model): array {
+                            if ($action === 'view') {
+                                return ['view', 'number' => $model->invoice_number];
                             }
+                                return [$action, 'id' => $model->id];
+                        }
                     ),
                 ],
             ])

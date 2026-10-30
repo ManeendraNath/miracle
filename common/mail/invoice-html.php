@@ -1,33 +1,34 @@
 <?php
+
 declare(strict_types=1);
 
 use yii\helpers\Html;
 
 $frontendBaseUrl = rtrim(
-        (string)
+    (string)
         (
         Yii::$app
         ->params['frontendBaseUrl'] ?? ''
         ),
-        '/'
+    '/'
 );
 
 $invoiceUrl = $frontendBaseUrl !== '' ? $frontendBaseUrl
         . '/invoice/view?number='
         . rawurlencode(
-                $invoice->invoice_number
+            $invoice->invoice_number
         ) : '#';
 
 $total = Yii::$app->formatter
         ->asCurrency(
-                $invoice->total_payable,
-                'INR'
+            $invoice->total_payable,
+            'INR'
         );
 
 $due = Yii::$app->formatter
         ->asDate(
-                $invoice->due_date,
-                'php:d M Y'
+            $invoice->due_date,
+            'php:d M Y'
         );
 ?>
 
@@ -71,7 +72,7 @@ $due = Yii::$app->formatter
                     Invoice
 <?=
 Html::encode(
-        $invoice->invoice_number
+    $invoice->invoice_number
 )
 ?>
                 </td>
@@ -139,7 +140,7 @@ Html::encode(
                         >
 <?=
 Html::encode(
-        $total
+    $total
 )
 ?>
                     </td>
@@ -162,7 +163,7 @@ Html::encode(
                         >
 <?=
 Html::encode(
-        $due
+    $due
 )
 ?>
                     </td>
@@ -171,9 +172,9 @@ Html::encode(
 
             <?=
             Html::a(
-                    'View Invoice & Pay →',
-                    $invoiceUrl,
-                    [
+                'View Invoice & Pay →',
+                $invoiceUrl,
+                [
                         'style' =>
                         'display:inline-block;'
                         . 'background:#171717;'

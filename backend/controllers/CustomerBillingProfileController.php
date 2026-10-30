@@ -12,7 +12,6 @@ use yii\web\NotFoundHttpException;
 
 final class CustomerBillingProfileController extends BaseController
 {
-
     public function actionIndex()
     {
         $profiles = CustomerBillingProfile::find()
@@ -23,11 +22,11 @@ final class CustomerBillingProfileController extends BaseController
                 ->all();
 
         return $this->render(
-                        'index',
-                        [
+            'index',
+            [
                             'profiles' => $profiles,
                         ]
-                );
+        );
     }
 
     public function actionCreate()
@@ -36,13 +35,13 @@ final class CustomerBillingProfileController extends BaseController
 
         if (
                 $this->request->isPost && $model->load(
-                        $this->request->post()
+                    $this->request->post()
                 )
         ) {
             if ($model->save()) {
                 Yii::$app->session->setFlash(
-                        'success',
-                        'Customer billing profile created successfully.'
+                    'success',
+                    'Customer billing profile created successfully.'
                 );
 
                 return $this->redirect([
@@ -52,13 +51,13 @@ final class CustomerBillingProfileController extends BaseController
         }
 
         return $this->render(
-                        'create',
-                        [
+            'create',
+            [
                             'model' => $model,
                             'usersList' =>
                             $this->getUsersList(),
                         ]
-                );
+        );
     }
 
     public function actionUpdate(int $id)
@@ -67,12 +66,12 @@ final class CustomerBillingProfileController extends BaseController
 
         if (
                 $this->request->isPost && $model->load(
-                        $this->request->post()
+                    $this->request->post()
                 ) && $model->save()
         ) {
             Yii::$app->session->setFlash(
-                    'success',
-                    'Customer billing profile updated successfully.'
+                'success',
+                'Customer billing profile updated successfully.'
             );
 
             return $this->redirect([
@@ -81,19 +80,18 @@ final class CustomerBillingProfileController extends BaseController
         }
 
         return $this->render(
-                        'update',
-                        [
+            'update',
+            [
                             'model' => $model,
                             'usersList' =>
                             $this->getUsersList(),
                         ]
-                );
+        );
     }
 
     protected function findModel(
-            int $id
-    ): CustomerBillingProfile
-    {
+        int $id
+    ): CustomerBillingProfile {
         $model = CustomerBillingProfile::findOne($id);
 
         if ($model !== null) {
@@ -101,14 +99,14 @@ final class CustomerBillingProfileController extends BaseController
         }
 
         throw new NotFoundHttpException(
-                        'Billing profile does not exist.'
-                );
+            'Billing profile does not exist.'
+        );
     }
 
     private function getUsersList(): array
     {
         return ArrayHelper::map(
-                        User::find()
+            User::find()
                                 ->select([
                                     'id',
                                     'username',
@@ -119,16 +117,16 @@ final class CustomerBillingProfileController extends BaseController
                                 ])
                                 ->asArray()
                                 ->all(),
-                        'id',
-                        static function (
-                                array $user
-                        ): string {
+            'id',
+            static function (
+                array $user
+            ): string {
                             return sprintf(
-                                    '%s (%s)',
-                                    $user['username'],
-                                    $user['email']
+                                '%s (%s)',
+                                $user['username'],
+                                $user['email']
                             );
-                        }
-                );
+            }
+        );
     }
 }

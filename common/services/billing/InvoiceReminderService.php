@@ -15,7 +15,6 @@ use yii\db\IntegrityException;
 
 final class InvoiceReminderService
 {
-
     private const REMINDER_DAYS = [30, 15, 7, 5, 4, 3, 2, 1, 0, -1, -3, -7, -15, -30];
 
     public function sendDueReminders(?DateTimeImmutable $today = null): int
@@ -76,11 +75,11 @@ final class InvoiceReminderService
         $subject = $this->getSubject($invoice, $daysUntilDue);
         $message = Yii::$app->mailer
                 ->compose(
-                        [
+                    [
                             'html' => '@common/mail/payment-reminder-html',
                             'text' => '@common/mail/payment-reminder-text',
                         ],
-                        [
+                    [
                             'invoice' => $invoice,
                             'outstandingAmount' => $outstanding,
                             'daysUntilDue' => $daysUntilDue,
@@ -97,8 +96,8 @@ final class InvoiceReminderService
 
         try {
             Yii::$app->db->createCommand()->insert(
-                            '{{%invoice_reminder_log}}',
-                            [
+                '{{%invoice_reminder_log}}',
+                [
                                 'invoice_id' => (int) $invoice->id,
                                 'reminder_key' => $key,
                                 'days_from_due' => $daysUntilDue,
@@ -106,7 +105,7 @@ final class InvoiceReminderService
                                 'sent_at' => time(),
                                 'created_at' => time(),
                             ]
-                    )
+            )
                     ->execute();
             $components = [
                 'body_1' => [

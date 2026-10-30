@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 use yii\helpers\Html;
@@ -11,13 +12,13 @@ use yii\helpers\Html;
 $this->title = 'Payment Due Reminder';
 
 $amount = Yii::$app->formatter->asCurrency(
-        (float) $invoice->total_payable,
-        'INR'
+    (float) $invoice->total_payable,
+    'INR'
 );
 
 $dueDate = Yii::$app->formatter->asDate(
-        $invoice->due_date,
-        'php:d M Y'
+    $invoice->due_date,
+    'php:d M Y'
 );
 ?>
 
@@ -68,10 +69,10 @@ $dueDate = Yii::$app->formatter->asDate(
         "
         >
         Hello <?=
-Html::encode(
-        $invoice->client_name
-)
-?>,
+        Html::encode(
+            $invoice->client_name
+        )
+        ?>,
     </h2>
 
     <p
@@ -105,7 +106,7 @@ Html::encode(
                 <strong>
                     <?=
                     Html::encode(
-                            $invoice->invoice_number
+                        $invoice->invoice_number
                     )
                     ?>
                 </strong>
@@ -161,10 +162,10 @@ Html::encode(
 
         <a
             href="<?=
-Html::encode(
-        $clientPortalUrl
-)
-?>"
+            Html::encode(
+                $clientPortalUrl
+            )
+            ?>"
             class="action-button"
             aria-label="View Invoice"
             style="

@@ -12,12 +12,9 @@ use Yii;
 
 final class InvoiceCancellationService
 {
-
     public function __construct(
-            private readonly InvoicePaymentService $paymentService = new InvoicePaymentService()
-    )
-    {
-        
+        private readonly InvoicePaymentService $paymentService = new InvoicePaymentService()
+    ) {
     }
 
     public function cancel(Invoice $invoice, ?string $reason = null): void
@@ -66,8 +63,8 @@ final class InvoiceCancellationService
             $now = time();
             $notes = $reason !== null && trim($reason) !== '' ? mb_substr(trim($reason), 0, 500) : 'Invoice cancelled.';
             BillingEvent::updateAll(
-                    ['status' => BillingEvent::STATUS_CANCELLED, 'notes' => $notes, 'updated_at' => $now],
-                    [
+                ['status' => BillingEvent::STATUS_CANCELLED, 'notes' => $notes, 'updated_at' => $now],
+                [
                         'and', ['invoice_id' => $lockedInvoice->id],
                         [
                             'status' => [BillingEvent::STATUS_PENDING, BillingEvent::STATUS_INVOICED],

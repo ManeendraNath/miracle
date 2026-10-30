@@ -12,7 +12,6 @@ use DateTimeImmutable;
 
 final class MaintenanceBillingCollector
 {
-
     /**
      * Return Maintenance renewals currently inside their
      * configured automatic-invoice window.
@@ -20,11 +19,10 @@ final class MaintenanceBillingCollector
      * @return BillableRenewal[]
      */
     public function collect(
-            DateTimeImmutable $today
-    ): array
-    {
+        DateTimeImmutable $today
+    ): array {
         $settings = BillingSettings::forType(
-                InvoiceItem::TYPE_MAINTENANCE
+            InvoiceItem::TYPE_MAINTENANCE
         );
 
         if (!(bool) $settings->is_active) {
@@ -32,12 +30,12 @@ final class MaintenanceBillingCollector
         }
 
         $invoiceBeforeDays = max(
-                0,
-                (int) $settings->invoice_before_days
+            0,
+            (int) $settings->invoice_before_days
         );
 
         $cutoff = $today->modify(
-                '+' . $invoiceBeforeDays . ' days'
+            '+' . $invoiceBeforeDays . ' days'
         );
 
         $models = Maintenance::find()
@@ -68,20 +66,20 @@ final class MaintenanceBillingCollector
 
         foreach ($models as $model) {
             $renewals[] = new BillableRenewal(
-                    userId: (int) $model->user_id,
-                    itemType:
+                userId: (int) $model->user_id,
+                itemType:
                     InvoiceItem::TYPE_MAINTENANCE,
-                    itemId: (int) $model->id,
-                    description:
+                itemId: (int) $model->id,
+                description:
                     'Maintenance renewal - '
                     . $model->website_url,
-                    currentExpiryDate:
+                currentExpiryDate:
                     (string) $model->current_expiry_date,
-                    baseAmount:
+                baseAmount:
                     (float) $model->renewal_base_amount,
-                    cycleMonths:
+                cycleMonths:
                     $model->renewal_cycle_months !== null ? (int) $model->renewal_cycle_months : null,
-                    increasePercent:
+                increasePercent:
                     $model->renewal_increase_percent !== null ? (float) $model->renewal_increase_percent : null
             );
         }

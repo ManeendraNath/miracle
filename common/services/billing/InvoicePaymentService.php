@@ -9,16 +9,14 @@ use common\models\Transaction;
 
 final class InvoicePaymentService
 {
-
     /**
      * Amount actually received.
      *
      * Only Captured transactions represent settled payments.
      */
     public function getCapturedAmount(
-            int $invoiceId
-    ): float
-    {
+        int $invoiceId
+    ): float {
         $amount = Transaction::find()
                 ->where([
                     'invoice_id' => $invoiceId,
@@ -27,8 +25,8 @@ final class InvoicePaymentService
                 ->sum('amount');
 
         return round(
-                (float) ($amount ?: 0),
-                2
+            (float) ($amount ?: 0),
+            2
         );
     }
 
@@ -36,19 +34,18 @@ final class InvoicePaymentService
      * Remaining collectible balance.
      */
     public function getOutstanding(
-            Invoice $invoice
-    ): float
-    {
+        Invoice $invoice
+    ): float {
         $paid = $this->getCapturedAmount(
-                (int) $invoice->id
+            (int) $invoice->id
         );
 
         return max(
-                0.00,
-                round(
-                        (float) $invoice->total_payable - $paid,
-                        2
-                )
+            0.00,
+            round(
+                (float) $invoice->total_payable - $paid,
+                2
+            )
         );
     }
 
@@ -56,38 +53,39 @@ final class InvoicePaymentService
      * Synchronise invoice.status with actual transactions.
      */
     public function reconcile(
-            Invoice $invoice
-    ): void
-    {
+        Invoice $invoice
+    ): void {
         /*
          * These invoices are no longer part of ordinary payment
          * reconciliation.
          */
-        if (in_array(
-                        $invoice->status,
-                        [
+        if (
+            in_array(
+                $invoice->status,
+                [
                             Invoice::STATUS_CANCELLED,
                             Invoice::STATUS_CARRIED_FORWARD,
                         ],
-                        true
-                )) {
+                true
+            )
+        ) {
             return;
         }
 
         $paid = $this->getCapturedAmount(
-                (int) $invoice->id
+            (int) $invoice->id
         );
 
         $total = round(
-                (float) $invoice->total_payable,
-                2
+            (float) $invoice->total_payable,
+            2
         );
 
         if ($total <= 0) {
             throw new \DomainException(
-                            'Invoice total must be greater than zero '
+                'Invoice total must be greater than zero '
                             . 'before processing payment.'
-                    );
+            );
         }
 
         if ($paid <= 0) {
@@ -105,16 +103,18 @@ final class InvoicePaymentService
         $invoice->status = $status;
         $invoice->updated_at = time();
 
-        if (!$invoice->save(
-                        false,
-                        [
+        if (
+            !$invoice->save(
+                false,
+                [
                             'status',
                             'updated_at',
                         ]
-                )) {
+            )
+        ) {
             throw new \RuntimeException(
-                            'Unable to update invoice payment status.'
-                    );
+                'Unable to update invoice payment status.'
+            );
         }
     }
 }

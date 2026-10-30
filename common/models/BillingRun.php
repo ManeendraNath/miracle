@@ -6,7 +6,6 @@ namespace common\models;
 
 class BillingRun extends base\BillingRun
 {
-
     public static function getStatuses(): array
     {
         return parent::optsStatus();

@@ -17,7 +17,6 @@ use yii\web\NotFoundHttpException;
 
 final class ServiceController extends Controller
 {
-
     public $layout = 'account';
 
     public function behaviors(): array
@@ -95,5 +94,4 @@ final class ServiceController extends Controller
                 ->all();
         return $this->render('view', ['model' => $model, 'type' => $type, 'latestEvent' => $latestEvent, 'invoice' => $invoice, 'billingEvents' => $billingEvents]);
     }
-    
 }

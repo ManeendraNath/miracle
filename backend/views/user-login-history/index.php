@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 use backend\models\searches\UserLoginHistorySearch;
@@ -94,17 +95,17 @@ GridView::widget([
             'format' => 'raw',
             'value' =>
             static function (
-                    UserLoginHistory $model
+                UserLoginHistory $model
             ): string {
                 if ($model->user === null) {
                     return Html::tag(
-                                    'span',
-                                    'Unknown',
-                                    [
+                        'span',
+                        'Unknown',
+                        [
                                         'class' =>
                                         'text-muted',
                                     ]
-                            );
+                    );
                 }
 
                 $username = (string)
@@ -114,9 +115,9 @@ GridView::widget([
                         $model->user->email;
 
                 return Html::tag(
-                        'span',
-                        Html::encode($username),
-                        [
+                    'span',
+                    Html::encode($username),
+                    [
                             'class' =>
                             'fw-semibold',
                             'title' =>
@@ -144,14 +145,14 @@ GridView::widget([
             'format' => 'raw',
             'value' =>
             static function (
-                    UserLoginHistory $model
+                UserLoginHistory $model
             ): string {
                 return Html::tag(
-                        'code',
-                        Html::encode(
-                                $model->ip_address ?: '-'
-                        ),
-                        [
+                    'code',
+                    Html::encode(
+                        $model->ip_address ?: '-'
+                    ),
+                    [
                             'class' =>
                             'text-dark',
                         ]
@@ -177,10 +178,10 @@ GridView::widget([
             'format' => 'raw',
             'value' =>
             static function (
-                    UserLoginHistory $model
+                UserLoginHistory $model
             ): string {
                 $userAgent = trim(
-                        (string)
+                    (string)
                         $model->user_agent
                 );
 
@@ -189,15 +190,15 @@ GridView::widget([
                 }
 
                 $short = mb_strlen($userAgent) > 65 ? mb_substr(
-                                $userAgent,
-                                0,
-                                62
-                        ) . '...' : $userAgent;
+                    $userAgent,
+                    0,
+                    62
+                ) . '...' : $userAgent;
 
                 return Html::tag(
-                        'span',
-                        Html::encode($short),
-                        [
+                    'span',
+                    Html::encode($short),
+                    [
                             'title' =>
                             $userAgent,
                             'data-bs-toggle' =>
@@ -222,19 +223,19 @@ GridView::widget([
             'Login Time',
             'filter' =>
             GridFilterHelper::dateRange(
-                    $searchModel,
-                    'logged_in_at_range',
-                    'Login date'
+                $searchModel,
+                'logged_in_at_range',
+                'Login date'
             ),
             'value' =>
             static function (
-                    UserLoginHistory $model
+                UserLoginHistory $model
             ): string {
                 return Yii::$app
                         ->formatter
                         ->asDatetime(
-                                $model->logged_in_at,
-                                'php:d M Y, h:i A'
+                            $model->logged_in_at,
+                            'php:d M Y, h:i A'
                         );
             },
             'headerOptions' => [
@@ -250,7 +251,7 @@ GridView::widget([
          * Read-only action.
          */
         GridActionHelper::crudColumn(
-                template: '{view}',
+            template: '{view}',
         ),
     ],
 ])

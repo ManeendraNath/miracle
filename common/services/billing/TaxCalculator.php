@@ -9,11 +9,9 @@ use Yii;
 
 final class TaxCalculator
 {
-
     public function getRates(
-            CustomerBillingProfile $profile
-    ): array
-    {
+        CustomerBillingProfile $profile
+    ): array {
         if (!(bool) $profile->is_gst_applicable) {
             return [
                 'cgst' => 0.00,
@@ -26,26 +24,26 @@ final class TaxCalculator
         $gstConfig = $billingConfig['gst'] ?? [];
 
         $supplierStateCode = trim(
-                (string) (
+            (string) (
                 $billingConfig['supplierStateCode'] ?? ''
                 )
         );
 
         $customerStateCode = trim(
-                (string) $profile->state_code
+            (string) $profile->state_code
         );
 
         if ($supplierStateCode === '') {
             throw new \RuntimeException(
-                            'Supplier state code is not configured.'
-                    );
+                'Supplier state code is not configured.'
+            );
         }
 
         if ($customerStateCode === '') {
             throw new \DomainException(
-                            'Customer billing state code is required '
+                'Customer billing state code is required '
                             . 'before an invoice can be generated.'
-                    );
+            );
         }
 
         $cgst = (float) (
@@ -64,8 +62,8 @@ final class TaxCalculator
                 $cgst < 0 || $sgst < 0 || $igst < 0
         ) {
             throw new \RuntimeException(
-                            'GST percentages cannot be negative.'
-                    );
+                'GST percentages cannot be negative.'
+            );
         }
 
         if (
@@ -86,30 +84,29 @@ final class TaxCalculator
     }
 
     public function calculate(
-            float $taxableAmount,
-            float $cgstPercent,
-            float $sgstPercent,
-            float $igstPercent
-    ): array
-    {
+        float $taxableAmount,
+        float $cgstPercent,
+        float $sgstPercent,
+        float $igstPercent
+    ): array {
         $taxableAmount = max(
-                0,
-                round($taxableAmount, 2)
+            0,
+            round($taxableAmount, 2)
         );
 
         $cgstAmount = round(
-                $taxableAmount * ($cgstPercent / 100),
-                2
+            $taxableAmount * ($cgstPercent / 100),
+            2
         );
 
         $sgstAmount = round(
-                $taxableAmount * ($sgstPercent / 100),
-                2
+            $taxableAmount * ($sgstPercent / 100),
+            2
         );
 
         $igstAmount = round(
-                $taxableAmount * ($igstPercent / 100),
-                2
+            $taxableAmount * ($igstPercent / 100),
+            2
         );
 
         return [
@@ -121,13 +118,13 @@ final class TaxCalculator
             $igstAmount,
             'totalTax' =>
             round(
-                    $cgstAmount + $sgstAmount + $igstAmount,
-                    2
+                $cgstAmount + $sgstAmount + $igstAmount,
+                2
             ),
             'total' =>
             round(
-                    $taxableAmount + $cgstAmount + $sgstAmount + $igstAmount,
-                    2
+                $taxableAmount + $cgstAmount + $sgstAmount + $igstAmount,
+                2
             ),
         ];
     }

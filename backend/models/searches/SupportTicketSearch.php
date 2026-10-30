@@ -10,7 +10,6 @@ use yii\data\ActiveDataProvider;
 
 final class SupportTicketSearch extends SupportTicket
 {
-
     public function rules(): array
     {
         return [
@@ -27,9 +26,8 @@ final class SupportTicketSearch extends SupportTicket
     }
 
     public function search(
-            array $params
-    ): ActiveDataProvider
-    {
+        array $params
+    ): ActiveDataProvider {
         $query = SupportTicket::find()
                 ->with('user');
 

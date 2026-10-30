@@ -12,7 +12,6 @@ use yii\db\ActiveRecord;
 
 final class UpcomingExpiryService
 {
-
     public const TYPE_DOMAIN = 'domain';
     public const TYPE_HOSTING = 'hosting';
     public const TYPE_MAINTENANCE = 'maintenance';
@@ -55,10 +54,10 @@ final class UpcomingExpiryService
         }
 
         return array_values(
-                array_filter(
-                        $items,
-                        fn(array $item): bool => $this->matchesWindow($item['days_remaining'], $window)
-                )
+            array_filter(
+                $items,
+                fn(array $item): bool => $this->matchesWindow($item['days_remaining'], $window)
+            )
         );
     }
 

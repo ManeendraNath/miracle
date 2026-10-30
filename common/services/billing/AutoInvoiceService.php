@@ -14,24 +14,20 @@ use Yii;
 
 final class AutoInvoiceService
 {
-
     public function __construct(
-            private readonly TaxCalculator $taxCalculator = new TaxCalculator(),
-            private readonly InvoiceNumberService $numberService = new InvoiceNumberService(),
-            private readonly OutstandingBalanceService $outstandingService = new OutstandingBalanceService()
-    )
-    {
-        
+        private readonly TaxCalculator $taxCalculator = new TaxCalculator(),
+        private readonly InvoiceNumberService $numberService = new InvoiceNumberService(),
+        private readonly OutstandingBalanceService $outstandingService = new OutstandingBalanceService()
+    ) {
     }
 
     public function generatePendingInvoices(
-            int $runId
-    ): array
-    {
+        int $runId
+    ): array {
         if ($runId <= 0) {
             throw new \InvalidArgumentException(
-                            'A valid billing run ID is required.'
-                    );
+                'A valid billing run ID is required.'
+            );
         }
 
         $userIds = BillingEvent::find()
@@ -68,7 +64,7 @@ final class AutoInvoiceService
         try {
             $eventIds = Yii::$app->db
                     ->createCommand(
-                            '
+                        '
         SELECT id
         FROM {{%billing_event}}
         WHERE billing_run_id = :runId
@@ -116,34 +112,34 @@ final class AutoInvoiceService
 
             if ($profile === null) {
                 throw new \DomainException(
-                                'Customer billing profile is missing '
+                    'Customer billing profile is missing '
                                 . 'for user ID '
                                 . $userId
                                 . '.'
-                        );
+                );
             }
 
             $invoice = $this->createInvoiceHeader(
-                    $runId,
-                    $user,
-                    $profile,
-                    $events
+                $runId,
+                $user,
+                $profile,
+                $events
             );
 
             foreach ($events as $event) {
                 $this->createInvoiceItem(
-                        $invoice,
-                        $event
+                    $invoice,
+                    $event
                 );
             }
 
             $this->outstandingService
                     ->transferForUser(
-                            $invoice
+                        $invoice
                     );
 
             $this->calculateInvoiceTotals(
-                    $invoice
+                $invoice
             );
 
             foreach ($events as $event) {
@@ -155,19 +151,19 @@ final class AutoInvoiceService
 
                 if (!$event->save()) {
                     throw new \RuntimeException(
-                                    'Unable to link billing event '
+                        'Unable to link billing event '
                                     . $event->id
                                     . ' to invoice: '
                                     . json_encode(
-                                            $event->errors,
-                                            JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES
+                                        $event->errors,
+                                        JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES
                                     )
-                            );
+                    );
                 }
             }
 
             $this->numberService->assign(
-                    $invoice
+                $invoice
             );
 
             $dbTransaction->commit();
@@ -185,15 +181,14 @@ final class AutoInvoiceService
     }
 
     private function createInvoiceHeader(
-            int $runId,
-            User $user,
-            CustomerBillingProfile $profile,
-            array $events
-    ): Invoice
-    {
+        int $runId,
+        User $user,
+        CustomerBillingProfile $profile,
+        array $events
+    ): Invoice {
         $rates = $this->taxCalculator
                 ->getRates(
-                        $profile
+                    $profile
                 );
 
         $now = time();
@@ -275,13 +270,13 @@ final class AutoInvoiceService
         $invoice->updated_at = time();
         if (!$invoice->save()) {
             throw new \RuntimeException(
-                            'Unable to calculate automatic '
+                'Unable to calculate automatic '
                             . 'invoice totals: '
                             . json_encode(
-                                    $invoice->errors,
-                                    JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES
+                                $invoice->errors,
+                                JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES
                             )
-                    );
+            );
         }
     }
 
@@ -289,9 +284,9 @@ final class AutoInvoiceService
     {
         if (!$events) {
             throw new \LogicException(
-                            'At least one billing event '
+                'At least one billing event '
                             . 'is required.'
-                    );
+            );
         }
 
         $dates = [];
@@ -299,10 +294,10 @@ final class AutoInvoiceService
         foreach ($events as $event) {
             if (!$event->due_date) {
                 throw new \RuntimeException(
-                                'Billing event '
+                    'Billing event '
                                 . $event->id
                                 . ' does not have a due date.'
-                        );
+                );
             }
 
             $dates[] = (string) $event->due_date;

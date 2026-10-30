@@ -8,7 +8,6 @@ use yii\helpers\ArrayHelper;
 
 final class SupportTicketMessage extends base\SupportTicketMessage
 {
-
     public const SENDER_CUSTOMER = 'customer';
     public const SENDER_ADMIN = 'admin';
 

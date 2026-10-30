@@ -10,7 +10,6 @@ use common\models\SiteSetting;
  */
 class CustomYii extends \Yii
 {
-
     /**
      * @var string the application name.
      */

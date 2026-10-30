@@ -20,7 +20,6 @@ use common\models\traits\AutoTimestampTrait;
  */
 class Maintenance extends base\Maintenance
 {
-
     use AutoTimestampTrait;
 
     public const STATUS_CANCELLED = 0;

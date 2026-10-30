@@ -11,12 +11,11 @@ use yii\web\NotFoundHttpException;
 
 final class AdminNotificationController extends BaseController
 {
-
     public function actionIndex()
     {
         return $this->render(
-                        'index',
-                        [
+            'index',
+            [
                             'dataProvider' =>
                             new ActiveDataProvider([
                                 'query' =>
@@ -29,7 +28,7 @@ final class AdminNotificationController extends BaseController
                                 ],
                                     ]),
                         ]
-                );
+        );
     }
 
     public function actionRead(int $id)

@@ -6,7 +6,6 @@ use yii\db\ActiveQuery;
 
 class TransactionQuery extends ActiveQuery
 {
-
     /**
      * Scope: Filter manual user-uploaded UPI/Bank transfer items waiting for review
      */

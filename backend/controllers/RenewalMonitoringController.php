@@ -12,34 +12,33 @@ use yii\helpers\ArrayHelper;
 
 final class RenewalMonitoringController extends BaseController
 {
-
     public function actionIndex()
     {
         $request = Yii::$app->request;
 
         $type = trim(
-                (string) $request->get(
-                        'type',
-                        ''
-                )
+            (string) $request->get(
+                'type',
+                ''
+            )
         );
 
         $userId = (int) $request->get(
-                        'user_id',
-                        0
-                );
+            'user_id',
+            0
+        );
 
         $window = trim(
-                (string) $request->get(
-                        'window',
-                        UpcomingExpiryService::WINDOW_60
-                )
+            (string) $request->get(
+                'window',
+                UpcomingExpiryService::WINDOW_60
+            )
         );
 
         if (
                 $type !== '' && !array_key_exists(
-                        $type,
-                        UpcomingExpiryService::getTypes()
+                    $type,
+                    UpcomingExpiryService::getTypes()
                 )
         ) {
             $type = '';
@@ -47,8 +46,8 @@ final class RenewalMonitoringController extends BaseController
 
         if (
                 !array_key_exists(
-                        $window,
-                        UpcomingExpiryService::getWindows()
+                    $window,
+                    UpcomingExpiryService::getWindows()
                 )
         ) {
             $window = UpcomingExpiryService::WINDOW_60;
@@ -61,14 +60,14 @@ final class RenewalMonitoringController extends BaseController
         $service = new UpcomingExpiryService();
 
         $items = $service->getItems(
-                $typeFilter,
-                $userIdFilter,
-                $window
+            $typeFilter,
+            $userIdFilter,
+            $window
         );
 
         $summary = $service->getSummary(
-                $typeFilter,
-                $userIdFilter
+            $typeFilter,
+            $userIdFilter
         );
 
         $dataProvider = new ArrayDataProvider([
@@ -134,7 +133,7 @@ final class RenewalMonitoringController extends BaseController
                 ],
             ],
             'key' => static function (
-                    array $item
+                array $item
             ): string {
                 return $item['type']
                 . '-'
@@ -143,7 +142,7 @@ final class RenewalMonitoringController extends BaseController
         ]);
 
         $customers = ArrayHelper::map(
-                User::find()
+            User::find()
                         ->select([
                             'id',
                             'username',
@@ -153,23 +152,23 @@ final class RenewalMonitoringController extends BaseController
                             'username' => SORT_ASC,
                         ])
                         ->all(),
-                'id',
-                static function (
-                        User $user
-                ): string {
+            'id',
+            static function (
+                User $user
+            ): string {
                     $label = (string) $user->username;
 
-                    if (!empty($user->email)) {
-                        $label .= ' (' . $user->email . ')';
-                    }
+                if (!empty($user->email)) {
+                    $label .= ' (' . $user->email . ')';
+                }
 
                     return $label;
-                }
+            }
         );
 
         return $this->render(
-                        'index',
-                        [
+            'index',
+            [
                             'dataProvider' => $dataProvider,
                             'filters' => [
                                 'type' => $type,
@@ -179,6 +178,6 @@ final class RenewalMonitoringController extends BaseController
                             'customers' => $customers,
                             'summary' => $summary,
                         ]
-                );
+        );
     }
 }

@@ -28,7 +28,6 @@ use Yii;
  */
 class Transaction extends \yii\db\ActiveRecord
 {
-
     /**
      * ENUM field values
      */

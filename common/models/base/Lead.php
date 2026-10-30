@@ -17,8 +17,6 @@ use Yii;
  */
 class Lead extends \yii\db\ActiveRecord
 {
-
-
     /**
      * {@inheritdoc}
      */
@@ -58,5 +56,4 @@ class Lead extends \yii\db\ActiveRecord
             'updated_at' => 'Updated At',
         ];
     }
-
 }

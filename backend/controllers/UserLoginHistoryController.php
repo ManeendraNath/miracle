@@ -11,13 +11,12 @@ use yii\web\NotFoundHttpException;
 
 final class UserLoginHistoryController extends BaseController
 {
-
     public function actionIndex()
     {
         $searchModel = new UserLoginHistorySearch();
 
         $dataProvider = $searchModel->search(
-                Yii::$app->request->queryParams
+            Yii::$app->request->queryParams
         );
 
         return $this->render('index', [
@@ -34,9 +33,8 @@ final class UserLoginHistoryController extends BaseController
     }
 
     private function findModel(
-            int $id
-    ): UserLoginHistory
-    {
+        int $id
+    ): UserLoginHistory {
         $model = UserLoginHistory::find()
                 ->with('user')
                 ->where([
@@ -49,7 +47,7 @@ final class UserLoginHistoryController extends BaseController
         }
 
         throw new NotFoundHttpException(
-                        'Login history record does not exist.'
-                );
+            'Login history record does not exist.'
+        );
     }
 }

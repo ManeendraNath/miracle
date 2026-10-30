@@ -26,7 +26,6 @@ use yii\web\IdentityInterface;
  */
 class Admin extends base\Admin implements IdentityInterface
 {
-
     use BaseIdentityTrait;
     use AutoTimestampTrait;
     use PasswordManagementTrait;
@@ -37,9 +36,9 @@ class Admin extends base\Admin implements IdentityInterface
     public function rules(): array
     {
         $rules = ArrayHelper::merge(
-                $this->getBaseIdentityRules(),
-                $this->getPasswordRules(),
-                [
+            $this->getBaseIdentityRules(),
+            $this->getPasswordRules(),
+            [
                     [['username', 'email'], 'required'],
                     [['username', 'email'], 'unique'],
                     ['email', 'email'],

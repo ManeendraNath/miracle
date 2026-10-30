@@ -9,7 +9,6 @@ namespace backend\controllers;
  */
 class SiteController extends BaseController
 {
-
     /**
      * Displays homepage.
      *
@@ -19,5 +18,4 @@ class SiteController extends BaseController
     {
         return $this->render('index');
     }
-
 }

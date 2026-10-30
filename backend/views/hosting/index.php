@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 use common\helpers\AdminIndexHelper;
@@ -25,9 +26,9 @@ $users = ArrayHelper::map(User::find()->orderBy(['username' => SORT_ASC])->all()
     <div class="card card-outline card-primary shadow-sm">
         <?=
         AdminIndexHelper::pageHeader(
-                'Manage customer hosting accounts and renewal periods.',
-                'create',
-                'Add Hosting'
+            'Manage customer hosting accounts and renewal periods.',
+            'create',
+            'Add Hosting'
         )
         ?>
         <div class="card-body p-0">
@@ -73,9 +74,9 @@ $users = ArrayHelper::map(User::find()->orderBy(['username' => SORT_ASC])->all()
                                 $email = $model->user->email ?: 'Email not available';
 
                                 return Html::tag(
-                                        'span',
-                                        Html::encode($username),
-                                        [
+                                    'span',
+                                    Html::encode($username),
+                                    [
                                             'class' => 'fw-semibold text-primary',
                                             'title' => $email,
                                             'data-bs-toggle' => 'tooltip',
@@ -85,10 +86,10 @@ $users = ArrayHelper::map(User::find()->orderBy(['username' => SORT_ASC])->all()
                                 );
                             },
                             'filter' => GridFilterHelper::select2(
-                                    $searchModel,
-                                    'user_id',
-                                    $users,
-                                    'All Clients'
+                                $searchModel,
+                                'user_id',
+                                $users,
+                                'All Clients'
                             ),
                             'headerOptions' => [
                                 'style' => 'min-width: 150px; width: 170px;',
@@ -103,9 +104,9 @@ $users = ArrayHelper::map(User::find()->orderBy(['username' => SORT_ASC])->all()
                             'format' => 'raw',
                             'value' => static function (Hosting $model): string {
                                 return Html::tag(
-                                        'span',
-                                        Html::encode($model->primary_domain),
-                                        [
+                                    'span',
+                                    Html::encode($model->primary_domain),
+                                    [
                                             'class' => 'fw-semibold text-dark',
                                         ]
                                 );
@@ -128,9 +129,9 @@ $users = ArrayHelper::map(User::find()->orderBy(['username' => SORT_ASC])->all()
                             'attribute' => 'current_expiry_date',
                             'label' => 'Expiry',
                             'filter' => GridFilterHelper::dateRange(
-                                    $searchModel,
-                                    'expiry_date_range',
-                                    'Expiry dates'
+                                $searchModel,
+                                'expiry_date_range',
+                                'Expiry dates'
                             ),
                             'format' => [
                                 'date',
@@ -147,10 +148,10 @@ $users = ArrayHelper::map(User::find()->orderBy(['username' => SORT_ASC])->all()
                             'attribute' => 'status',
                             'format' => 'raw',
                             'filter' => GridFilterHelper::select2(
-                                    $searchModel,
-                                    'status',
-                                    Hosting::getStatuses(),
-                                    'All Statuses'
+                                $searchModel,
+                                'status',
+                                Hosting::getStatuses(),
+                                'All Statuses'
                             ),
                             'value' => static function (Hosting $model): string {
                                 $status = (int) $model->status;
@@ -164,11 +165,11 @@ $users = ArrayHelper::map(User::find()->orderBy(['username' => SORT_ASC])->all()
                                 };
 
                                 return Html::tag(
-                                        'span',
-                                        Html::encode(
-                                                $statuses[$status] ?? 'Unknown'
-                                        ),
-                                        [
+                                    'span',
+                                    Html::encode(
+                                        $statuses[$status] ?? 'Unknown'
+                                    ),
+                                    [
                                             'class' => 'badge ' . $class,
                                         ]
                                 );
@@ -181,7 +182,7 @@ $users = ArrayHelper::map(User::find()->orderBy(['username' => SORT_ASC])->all()
                             ],
                         ],
                         GridActionHelper::crudColumn(
-                                deleteMessage: 'Are you sure you want to delete this hosting service?'
+                            deleteMessage: 'Are you sure you want to delete this hosting service?'
                         ),
                     ],
                 ])

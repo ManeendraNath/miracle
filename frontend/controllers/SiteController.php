@@ -30,14 +30,12 @@ use yii\web\Response;
  */
 class SiteController extends Controller
 {
-
     public function __construct(
-            $id,
-            $module,
-            private readonly MailerInterface $mailer,
-            $config = [],
-    )
-    {
+        $id,
+        $module,
+        private readonly MailerInterface $mailer,
+        $config = [],
+    ) {
         parent::__construct($id, $module, $config);
     }
 
@@ -107,8 +105,8 @@ class SiteController extends Controller
     {
         if (!Yii::$app->user->isGuest) {
             return $this->redirect([
-    '/dashboard/index',
-]);
+            '/dashboard/index',
+            ]);
         }
 
         $model = new LoginForm();
@@ -208,10 +206,10 @@ class SiteController extends Controller
         $model = new SignupForm();
 
         $signed = $model->load(Yii::$app->request->post()) && $model->signup(
-                        $this->mailer,
-                        Yii::$app->params['supportEmail'],
-                        Yii::$app->name,
-                );
+            $this->mailer,
+            Yii::$app->params['supportEmail'],
+            Yii::$app->name,
+        );
 
         if ($signed) {
             Yii::$app->session->setFlash('success', 'Thank you for registration. Please check your inbox for verification email.');
@@ -234,9 +232,9 @@ class SiteController extends Controller
 
         if ($model->load(Yii::$app->request->post()) && $model->validate()) {
             $sent = $model->sendEmail(
-                    $this->mailer,
-                    Yii::$app->params['supportEmail'],
-                    Yii::$app->name,
+                $this->mailer,
+                Yii::$app->params['supportEmail'],
+                Yii::$app->name,
             );
 
             if ($sent) {
@@ -317,9 +315,9 @@ class SiteController extends Controller
 
         if ($model->load(Yii::$app->request->post()) && $model->validate()) {
             $sent = $model->sendEmail(
-                    $this->mailer,
-                    Yii::$app->params['supportEmail'],
-                    Yii::$app->name,
+                $this->mailer,
+                Yii::$app->params['supportEmail'],
+                Yii::$app->name,
             );
 
             if ($sent) {

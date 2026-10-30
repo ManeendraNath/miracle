@@ -25,7 +25,6 @@ use yii\helpers\ArrayHelper;
 
 class Domains extends base\Domains
 {
-
     use AutoTimestampTrait;
 
     public const STATUS_INACTIVE = 0;
@@ -51,8 +50,8 @@ class Domains extends base\Domains
     public function rules()
     {
         return ArrayHelper::merge(
-                        parent::rules(),
-                        [
+            parent::rules(),
+            [
                             [['registered_date', 'current_expiry_date'], 'required'],
                             [['registered_date', 'current_expiry_date'], 'date', 'format' => 'php:Y-m-d'],
                             ['renewal_cycle_months', 'integer', 'min' => 1],
@@ -60,7 +59,7 @@ class Domains extends base\Domains
                             ['renewal_base_amount', 'number', 'min' => 0],
                             ['status', 'in', 'range' => array_keys(self::getStatuses())],
                         ]
-                );
+        );
     }
 
     /**
@@ -70,8 +69,8 @@ class Domains extends base\Domains
     public function attributeLabels(): array
     {
         return ArrayHelper::merge(
-                        parent::attributeLabels(),
-                        [
+            parent::attributeLabels(),
+            [
                             'user_id' => 'Client',
                             'domain_url' => 'Domain Name',
                             'registered_date' => 'Registered',
@@ -79,6 +78,6 @@ class Domains extends base\Domains
                             'renewal_cycle_months' => 'Renewal Cycle (Months)',
                             'renewal_increase_percent' => 'Renewal Increase (%)',
                         ]
-                );
+        );
     }
 }

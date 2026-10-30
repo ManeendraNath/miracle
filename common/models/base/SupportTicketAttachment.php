@@ -23,8 +23,6 @@ use Yii;
  */
 class SupportTicketAttachment extends \yii\db\ActiveRecord
 {
-
-
     /**
      * {@inheritdoc}
      */
@@ -98,5 +96,4 @@ class SupportTicketAttachment extends \yii\db\ActiveRecord
     {
         return $this->hasOne(User::class, ['id' => 'uploaded_by']);
     }
-
 }

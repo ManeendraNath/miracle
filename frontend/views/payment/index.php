@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 use common\models\Transaction;
@@ -46,7 +47,7 @@ $this->params['breadcrumbs'][] = $this->title;
                         'raw',
                         'value' =>
                         static function (
-                                Transaction $model
+                            Transaction $model
                         ): string {
                             if (
                                     $model->invoice === null
@@ -55,11 +56,11 @@ $this->params['breadcrumbs'][] = $this->title;
                             }
 
                             return Html::a(
-                                    Html::encode(
-                                            $model->invoice
+                                Html::encode(
+                                    $model->invoice
                                             ->invoice_number
-                                    ),
-                                    [
+                                ),
+                                [
                                         '/invoice/view',
                                         'number' =>
                                         $model->invoice
@@ -86,8 +87,8 @@ $this->params['breadcrumbs'][] = $this->title;
                                 Yii::$app
                                 ->formatter
                                 ->asCurrency(
-                                        $model->amount,
-                                        'INR'
+                                    $model->amount,
+                                    'INR'
                                 ),
                     ],
                     [
@@ -97,10 +98,10 @@ $this->params['breadcrumbs'][] = $this->title;
                         'raw',
                         'value' =>
                         static function (
-                                Transaction $model
+                            Transaction $model
                         ): string {
                             $class = match (
-                            $model->status
+                                $model->status
                             ) {
                                 Transaction::STATUS_CAPTURED =>
                                 'bg-success',
@@ -113,11 +114,11 @@ $this->params['breadcrumbs'][] = $this->title;
                             };
 
                             return Html::tag(
-                                    'span',
-                                    Html::encode(
-                                            $model->status
-                                    ),
-                                    [
+                                'span',
+                                Html::encode(
+                                    $model->status
+                                ),
+                                [
                                         'class' =>
                                         'badge '
                                         . $class,
@@ -147,8 +148,8 @@ $this->params['breadcrumbs'][] = $this->title;
                         $model->paid_at ? Yii::$app
                                         ->formatter
                                         ->asDatetime(
-                                                $model->paid_at,
-                                                'php:d M Y, h:i A'
+                                            $model->paid_at,
+                                            'php:d M Y, h:i A'
                                         ) : '-',
                     ],
                 ],

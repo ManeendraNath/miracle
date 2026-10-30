@@ -12,7 +12,6 @@ use yii\web\Response;
 
 final class CouponController extends BaseController
 {
-
     public function actionIndex(): string
     {
         $searchModel = new CouponSearch();
@@ -25,16 +24,15 @@ final class CouponController extends BaseController
     }
 
     public function actionView(
-            int $id
-    ): string
-    {
+        int $id
+    ): string {
         return $this->render(
-                        'view',
-                        [
+            'view',
+            [
                             'model' =>
                             $this->findModel($id),
                         ]
-                );
+        );
     }
 
     public function actionCreate(): Response|string

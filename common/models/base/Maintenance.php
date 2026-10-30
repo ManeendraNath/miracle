@@ -23,8 +23,6 @@ use Yii;
  */
 class Maintenance extends \yii\db\ActiveRecord
 {
-
-
     /**
      * {@inheritdoc}
      */
@@ -79,5 +77,4 @@ class Maintenance extends \yii\db\ActiveRecord
     {
         return $this->hasOne(User::class, ['id' => 'user_id']);
     }
-
 }

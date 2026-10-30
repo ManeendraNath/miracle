@@ -8,31 +8,29 @@ use DateTimeImmutable;
 
 final class RenewalPeriodCalculator
 {
-
     public function calculate(
-            string $expiryDate,
-            int $months
-    ): array
-    {
+        string $expiryDate,
+        int $months
+    ): array {
         if ($months < 1) {
             throw new \InvalidArgumentException(
-                            'Renewal period must be positive.'
-                    );
+                'Renewal period must be positive.'
+            );
         }
 
         $expiry = DateTimeImmutable::createFromFormat(
-                '!Y-m-d',
-                $expiryDate
+            '!Y-m-d',
+            $expiryDate
         );
 
         $errors = DateTimeImmutable::getLastErrors();
 
         if ($expiry === false) {
             throw new \InvalidArgumentException(
-                            'Invalid expiry date '
+                'Invalid expiry date '
                             . $expiryDate
                             . '.'
-                    );
+            );
         }
 
         if (
@@ -41,10 +39,10 @@ final class RenewalPeriodCalculator
                 )
         ) {
             throw new \InvalidArgumentException(
-                            'Invalid expiry date '
+                'Invalid expiry date '
                             . $expiryDate
                             . '.'
-                    );
+            );
         }
 
         $start = $expiry->modify('+1 day');
@@ -57,9 +55,9 @@ final class RenewalPeriodCalculator
                 ? (int) $target->format('t')
                 : min((int) $expiry->format('j'), (int) $target->format('t'));
         $end = $target->setDate(
-                (int) $target->format('Y'),
-                (int) $target->format('n'),
-                $day
+            (int) $target->format('Y'),
+            (int) $target->format('n'),
+            $day
         );
 
         return [

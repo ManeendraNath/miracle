@@ -14,51 +14,47 @@ use Yii;
 
 final class ManualInvoiceService
 {
-
     public function __construct(
-            private readonly TaxCalculator $taxCalculator = new TaxCalculator(),
-            private readonly InvoiceNumberService $numberService = new InvoiceNumberService(),
-            private readonly InvoicePaymentService $paymentService = new InvoicePaymentService(),
-            private readonly CouponService $couponService = new CouponService()
-    )
-    {
-        
+        private readonly TaxCalculator $taxCalculator = new TaxCalculator(),
+        private readonly InvoiceNumberService $numberService = new InvoiceNumberService(),
+        private readonly InvoicePaymentService $paymentService = new InvoicePaymentService(),
+        private readonly CouponService $couponService = new CouponService()
+    ) {
     }
 
     public function create(
-            Invoice $invoice,
-            array $items
-    ): Invoice
-    {
+        Invoice $invoice,
+        array $items
+    ): Invoice {
         if (!$items) {
             throw new \DomainException(
-                            'At least one invoice item is required.'
-                    );
+                'At least one invoice item is required.'
+            );
         }
 
         if (empty($invoice->user_id)) {
             throw new \DomainException(
-                            'A client must be selected.'
-                    );
+                'A client must be selected.'
+            );
         }
 
         if (empty($invoice->due_date)) {
             throw new \DomainException(
-                            'Invoice due date is required.'
-                    );
+                'Invoice due date is required.'
+            );
         }
 
         $transaction = Yii::$app->db->beginTransaction();
 
         try {
             $client = User::findOne(
-                    (int) $invoice->user_id
+                (int) $invoice->user_id
             );
 
             if ($client === null) {
                 throw new \DomainException(
-                                'Selected client does not exist.'
-                        );
+                    'Selected client does not exist.'
+                );
             }
 
             $profile = CustomerBillingProfile::findOne([
@@ -67,53 +63,53 @@ final class ManualInvoiceService
 
             if ($profile === null) {
                 throw new \DomainException(
-                                'Please complete the client billing '
+                    'Please complete the client billing '
                                 . 'profile before creating an invoice.'
-                        );
+                );
             }
 
             $this->applyClientSnapshot(
-                    $invoice,
-                    $profile
+                $invoice,
+                $profile
             );
 
             $this->applyTax(
-                    $invoice,
-                    $profile
+                $invoice,
+                $profile
             );
 
             $subtotal = $this->calculateSubtotal(
-                    $items
+                $items
             );
 
             if ($subtotal <= 0) {
                 throw new \DomainException(
-                                'Invoice subtotal must be greater than zero.'
-                        );
+                    'Invoice subtotal must be greater than zero.'
+                );
             }
 
             $couponCode = strtoupper(
-                    trim(
-                            (string) $invoice->coupon_code
-                    )
+                trim(
+                    (string) $invoice->coupon_code
+                )
             );
 
             if ($couponCode !== '') {
                 $discount = $this->couponService->calculate(
-                        $couponCode,
-                        (int) $invoice->user_id,
-                        $subtotal
+                    $couponCode,
+                    (int) $invoice->user_id,
+                    $subtotal
                 );
 
                 $invoice->coupon_code = $couponCode;
             } else {
                 $discount = max(
-                        0,
-                        round(
-                                (float)
+                    0,
+                    round(
+                        (float)
                                 $invoice->discount_amount,
-                                2
-                        )
+                        2
+                    )
                 );
 
                 $invoice->coupon_code = null;
@@ -121,13 +117,13 @@ final class ManualInvoiceService
 
             if ($discount > $subtotal) {
                 throw new \DomainException(
-                                'Invoice discount cannot exceed subtotal.'
-                        );
+                    'Invoice discount cannot exceed subtotal.'
+                );
             }
 
             $taxable = round(
-                    $subtotal - $discount,
-                    2
+                $subtotal - $discount,
+                2
             );
 
             $tax = $this->taxCalculator->calculate($taxable, (float) $invoice->cgst_percent, (float) $invoice->sgst_percent, (float) $invoice->igst_percent);
@@ -153,7 +149,7 @@ final class ManualInvoiceService
             $this->numberService->assign($invoice);
             if ($invoice->coupon_code !== null) {
                 $this->couponService->record(
-                        $invoice
+                    $invoice
                 );
             }
             $transaction->commit();
@@ -168,38 +164,37 @@ final class ManualInvoiceService
     }
 
     public function update(
-            Invoice $invoice,
-            array $items
-    ): Invoice
-    {
+        Invoice $invoice,
+        array $items
+    ): Invoice {
         if (!$items) {
             throw new \DomainException(
-                            'At least one invoice item is required.'
-                    );
+                'At least one invoice item is required.'
+            );
         }
 
         if (
                 $invoice->status !== Invoice::STATUS_UNPAID
         ) {
             throw new \DomainException(
-                            'Only unpaid invoices can be modified.'
-                    );
+                'Only unpaid invoices can be modified.'
+            );
         }
 
         $subtotal = $this->calculateSubtotal(
-                $items
+            $items
         );
 
         if ($subtotal <= 0) {
             throw new \DomainException(
-                            'Invoice subtotal must be greater than zero.'
-                    );
+                'Invoice subtotal must be greater than zero.'
+            );
         }
 
         $couponCode = strtoupper(
-                trim(
-                        (string) $invoice->coupon_code
-                )
+            trim(
+                (string) $invoice->coupon_code
+            )
         );
 
         $dbTransaction = Yii::$app->db->beginTransaction();
@@ -207,46 +202,46 @@ final class ManualInvoiceService
         try {
             $invoiceId = Yii::$app->db
                     ->createCommand(
-                            'SELECT id
+                        'SELECT id
                  FROM {{%invoice}}
                  WHERE id = :id
                  FOR UPDATE'
                     )
                     ->bindValue(
-                            ':id',
-                            (int) $invoice->id
+                        ':id',
+                        (int) $invoice->id
                     )
                     ->queryScalar();
 
             $lockedInvoice = $invoiceId !== false ? Invoice::findOne(
-                            (int) $invoiceId
-                    ) : null;
+                (int) $invoiceId
+            ) : null;
 
             if ($lockedInvoice === null) {
                 throw new \RuntimeException(
-                                'Invoice no longer exists.'
-                        );
+                    'Invoice no longer exists.'
+                );
             }
 
             if (
                     $lockedInvoice->status !== Invoice::STATUS_UNPAID
             ) {
                 throw new \DomainException(
-                                'Invoice status changed while editing. '
+                    'Invoice status changed while editing. '
                                 . 'The invoice can no longer be modified.'
-                        );
+                );
             }
 
             $capturedAmount = $this->paymentService
                     ->getCapturedAmount(
-                            (int) $lockedInvoice->id
+                        (int) $lockedInvoice->id
                     );
 
             if ($capturedAmount > 0) {
                 throw new \DomainException(
-                                'An invoice with captured payments '
+                    'An invoice with captured payments '
                                 . 'cannot be modified.'
-                        );
+                );
             }
 
             $hasAutomaticItems = InvoiceItem::find()
@@ -265,9 +260,9 @@ final class ManualInvoiceService
 
             if ($hasAutomaticItems) {
                 throw new \DomainException(
-                                'Automatic renewal invoices '
+                    'Automatic renewal invoices '
                                 . 'cannot be modified manually.'
-                        );
+                );
             }
 
             $hasArrears = InvoiceItem::find()
@@ -281,9 +276,9 @@ final class ManualInvoiceService
 
             if ($hasArrears) {
                 throw new \DomainException(
-                                'Invoices containing carried-forward '
+                    'Invoices containing carried-forward '
                                 . 'balances cannot be modified manually.'
-                        );
+                );
             }
 
             $invalidManualItems = InvoiceItem::find()
@@ -300,35 +295,35 @@ final class ManualInvoiceService
 
             if ($invalidManualItems) {
                 throw new \DomainException(
-                                'Only fully manual invoices can be '
+                    'Only fully manual invoices can be '
                                 . 'modified using this editor.'
-                        );
+                );
             }
 
             if ($couponCode !== '') {
                 $discount = $this->couponService->calculate(
-                        $couponCode,
-                        (int)
+                    $couponCode,
+                    (int)
                         $lockedInvoice->user_id,
-                        $subtotal,
-                        (int)
+                    $subtotal,
+                    (int)
                         $lockedInvoice->id
                 );
             } else {
                 $discount = max(
-                        0,
-                        round(
-                                (float)
+                    0,
+                    round(
+                        (float)
                                 $invoice->discount_amount,
-                                2
-                        )
+                        2
+                    )
                 );
             }
 
             if ($discount > $subtotal) {
                 throw new \DomainException(
-                                'Invoice discount cannot exceed subtotal.'
-                        );
+                    'Invoice discount cannot exceed subtotal.'
+                );
             }
 
             $existingItems = InvoiceItem::find()
@@ -350,42 +345,42 @@ final class ManualInvoiceService
                         $existingItem->delete() === false
                 ) {
                     throw new \RuntimeException(
-                                    'Existing manual invoice item '
+                        'Existing manual invoice item '
                                     . 'could not be removed.'
-                            );
+                    );
                 }
             }
 
             foreach ($items as $itemForm) {
                 $this->createItem(
-                        $lockedInvoice,
-                        $itemForm
+                    $lockedInvoice,
+                    $itemForm
                 );
             }
 
             $taxable = round(
-                    $subtotal - $discount,
-                    2
+                $subtotal - $discount,
+                2
             );
 
             $tax = $this->taxCalculator
                     ->calculate(
-                            $taxable,
-                            (float)
+                        $taxable,
+                        (float)
                             $lockedInvoice
                             ->cgst_percent,
-                            (float)
+                        (float)
                             $lockedInvoice
                             ->sgst_percent,
-                            (float)
+                        (float)
                             $lockedInvoice
                             ->igst_percent
                     );
 
             if ($tax['total'] <= 0) {
                 throw new \DomainException(
-                                'Invoice total must be greater than zero.'
-                        );
+                    'Invoice total must be greater than zero.'
+                );
             }
 
             $lockedInvoice->discount_amount = $discount;
@@ -402,22 +397,22 @@ final class ManualInvoiceService
 
             if (!$lockedInvoice->save()) {
                 throw new \RuntimeException(
-                                'Invoice could not be updated: '
+                    'Invoice could not be updated: '
                                 . json_encode(
-                                        $lockedInvoice->errors,
-                                        JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES
+                                    $lockedInvoice->errors,
+                                    JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES
                                 )
-                        );
+                );
             }
 
             if ($couponCode !== '') {
                 $this->couponService->record(
-                        $lockedInvoice
+                    $lockedInvoice
                 );
             } else {
                 $this->couponService
                         ->removeForInvoice(
-                                (int)
+                            (int)
                                 $lockedInvoice->id
                         );
             }
@@ -437,42 +432,40 @@ final class ManualInvoiceService
     }
 
     private function calculateSubtotal(
-            array $items
-    ): float
-    {
+        array $items
+    ): float {
         $subtotal = 0.00;
 
         foreach ($items as $item) {
             if (!$item instanceof ManualInvoiceItemForm) {
                 throw new \InvalidArgumentException(
-                                'Invalid manual invoice item.'
-                        );
+                    'Invalid manual invoice item.'
+                );
             }
 
             if (!$item->validate()) {
                 throw new \DomainException(
-                                'Invalid invoice item: '
+                    'Invalid invoice item: '
                                 . json_encode(
-                                        $item->errors,
-                                        JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES
+                                    $item->errors,
+                                    JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES
                                 )
-                        );
+                );
             }
 
             $subtotal += $item->getTotal();
         }
 
         return round(
-                $subtotal,
-                2
+            $subtotal,
+            2
         );
     }
 
     private function createItem(
-            Invoice $invoice,
-            ManualInvoiceItemForm $form
-    ): void
-    {
+        Invoice $invoice,
+        ManualInvoiceItemForm $form
+    ): void {
         $item = new InvoiceItem();
 
         $item->invoice_id = (int) $invoice->id;
@@ -492,35 +485,34 @@ final class ManualInvoiceService
         $item->quantity = $form->quantity;
 
         $item->unit_price = number_format(
-                $form->unit_price,
-                2,
-                '.',
-                ''
+            $form->unit_price,
+            2,
+            '.',
+            ''
         );
 
         $item->total_price = number_format(
-                $form->getTotal(),
-                2,
-                '.',
-                ''
+            $form->getTotal(),
+            2,
+            '.',
+            ''
         );
 
         if (!$item->save()) {
             throw new \RuntimeException(
-                            'Invoice item could not be saved: '
+                'Invoice item could not be saved: '
                             . json_encode(
-                                    $item->errors,
-                                    JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES
+                                $item->errors,
+                                JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES
                             )
-                    );
+            );
         }
     }
 
     private function applyClientSnapshot(
-            Invoice $invoice,
-            CustomerBillingProfile $profile
-    ): void
-    {
+        Invoice $invoice,
+        CustomerBillingProfile $profile
+    ): void {
         $invoice->client_name = $profile->legal_name;
         $invoice->client_address_line_1 = $profile->address_line_1;
         $invoice->client_address_line_2 = $profile->address_line_2;
@@ -534,13 +526,12 @@ final class ManualInvoiceService
     }
 
     private function applyTax(
-            Invoice $invoice,
-            CustomerBillingProfile $profile
-    ): void
-    {
+        Invoice $invoice,
+        CustomerBillingProfile $profile
+    ): void {
         $rates = $this->taxCalculator
                 ->getRates(
-                        $profile
+                    $profile
                 );
 
         $invoice->cgst_percent = $rates['cgst'];

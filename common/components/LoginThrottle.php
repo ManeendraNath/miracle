@@ -16,7 +16,6 @@ use yii\web\Request;
  */
 final class LoginThrottle
 {
-
     private const MAX_FAILURES = 5;
     private const LOCK_SECONDS = 900;
 

@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 use common\models\Invoice;
@@ -18,7 +19,7 @@ $statusClass = match ((int) $model->status) {
     0 => 'bg-danger',
     default => 'bg-secondary',
 };
-$today = new \DateTimeImmutable(date("Y-m-d H:i:s"));
+$today = new \DateTimeImmutable(date('Y-m-d H:i:s'));
 $expiryDate = new \DateTimeImmutable($model->current_expiry_date);
 $daysRemaining = (int) $today->diff($expiryDate)->format('%r%a');
 $expiryBadge = match (true) {
@@ -122,7 +123,7 @@ $expiryBadge = match (true) {
                                     };
 
                                     echo Html::tag('span', $latestEvent->status, ['class' => 'badge ' . $statusClass]);
-                                    ?>
+    ?>
 
                                 </div>
                             </div>

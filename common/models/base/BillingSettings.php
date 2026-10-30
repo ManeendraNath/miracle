@@ -19,8 +19,6 @@ use Yii;
  */
 class BillingSettings extends \yii\db\ActiveRecord
 {
-
-
     /**
      * {@inheritdoc}
      */
@@ -63,5 +61,4 @@ class BillingSettings extends \yii\db\ActiveRecord
             'updated_at' => 'Updated At',
         ];
     }
-
 }

@@ -11,35 +11,33 @@ use Yii;
 
 final class InvoicePdfService
 {
-
     public function render(
-            Invoice $invoice
-    ): string
-    {
+        Invoice $invoice
+    ): string {
         if ($invoice->getIsNewRecord()) {
             throw new \LogicException(
-                            'Invoice must be persisted before PDF generation.'
-                    );
+                'Invoice must be persisted before PDF generation.'
+            );
         }
 
         $paymentService = new InvoicePaymentService();
 
         $html = Yii::$app->view
                 ->renderFile(
-                        Yii::getAlias(
-                                '@common/mail/invoice-pdf.php'
-                        ),
-                        [
+                    Yii::getAlias(
+                        '@common/mail/invoice-pdf.php'
+                    ),
+                    [
                             'invoice' => $invoice,
                             'capturedAmount' =>
                             $paymentService
                             ->getCapturedAmount(
-                                    (int) $invoice->id
+                                (int) $invoice->id
                             ),
                             'outstandingAmount' =>
                             $paymentService
                             ->getOutstanding(
-                                    $invoice
+                                $invoice
                             ),
                         ]
                 );
@@ -54,12 +52,12 @@ final class InvoicePdfService
         ]);
 
         $mpdf->WriteHTML(
-                $html
+            $html
         );
 
         return $mpdf->Output(
-                        '',
-                        Destination::STRING_RETURN
-                );
+            '',
+            Destination::STRING_RETURN
+        );
     }
 }

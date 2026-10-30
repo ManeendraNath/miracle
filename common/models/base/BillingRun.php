@@ -21,7 +21,6 @@ use Yii;
  */
 class BillingRun extends \yii\db\ActiveRecord
 {
-
     /**
      * ENUM field values
      */

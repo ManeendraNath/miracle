@@ -9,7 +9,6 @@ use yii\filters\VerbFilter;
 
 class BaseController extends Controller
 {
-
     public function behaviors()
     {
         return [

@@ -11,7 +11,6 @@ use common\models\User;
 
 class DashboardController extends BaseController
 {
-
     /**
      * Renders the master administrative operational metrics matrix interface.
      * Route mapping path: /backend/web/dashboard/index

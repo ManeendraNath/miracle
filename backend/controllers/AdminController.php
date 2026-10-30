@@ -12,7 +12,6 @@ use Yii;
  */
 class AdminController extends BaseController
 {
-
     /**
      * Lists all Admin models.
      *
@@ -111,8 +110,9 @@ class AdminController extends BaseController
 
             foreach ($slicedData as $line) {
                 $lineText = trim($line);
-                if (empty($lineText))
+                if (empty($lineText)) {
                     continue;
+                }
 
                 // Dynamically compile metrics parameters using word signature sweeps
                 if (stripos($lineText, 'Successfully dispatched') !== false || stripos($lineText, 'complete') !== false) {
@@ -126,7 +126,7 @@ class AdminController extends BaseController
                 $logLines[] = $lineText;
             }
         } else {
-            $logLines[] = "System tracking ledger log file is not initialized yet. Run your cPanel cron tasks to populate data paths.";
+            $logLines[] = 'System tracking ledger log file is not initialized yet. Run your cPanel cron tasks to populate data paths.';
         }
 
         return $this->render('cron-log', [

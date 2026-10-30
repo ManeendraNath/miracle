@@ -8,7 +8,6 @@ use common\models\traits\AutoTimestampTrait;
 
 class BillingEvent extends base\BillingEvent
 {
-
     use AutoTimestampTrait;
 
     public static function getStatuses(): array
@@ -17,10 +16,9 @@ class BillingEvent extends base\BillingEvent
     }
 
     public static function previousFulfilled(
-            int $itemType,
-            int $itemId
-    ): ?self
-    {
+        int $itemType,
+        int $itemId
+    ): ?self {
         return static::find()
                         ->where([
                             'item_type' => $itemType,
@@ -35,10 +33,9 @@ class BillingEvent extends base\BillingEvent
     }
 
     public static function fulfilledCount(
-            int $itemType,
-            int $itemId
-    ): int
-    {
+        int $itemType,
+        int $itemId
+    ): int {
         return (int) static::find()
                         ->where([
                             'item_type' => $itemType,

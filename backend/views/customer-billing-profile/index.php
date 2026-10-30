@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 use yii\helpers\Html;
@@ -22,9 +23,9 @@ $this->params['breadcrumbs'][] = $this->title;
 
 <?=
 Html::a(
-        'Add Billing Profile',
-        ['create'],
-        [
+    'Add Billing Profile',
+    ['create'],
+    [
             'class' =>
             'btn btn-primary',
         ]
@@ -67,7 +68,7 @@ Html::a(
                             <td>
                                 <?=
                                 Html::encode(
-                                        $profile->user
+                                    $profile->user
                                         ?->username ?? '-'
                                 )
                                 ?>
@@ -76,23 +77,23 @@ Html::a(
                             <td>
                                 <?=
                                 Html::encode(
-                                        $profile->legal_name
+                                    $profile->legal_name
                                 )
                                 ?>
                             </td>
 
                             <td>
-    <?=
-    Html::encode(
-            $profile->state
-    )
-    ?>
+                        <?=
+                        Html::encode(
+                            $profile->state
+                        )
+                        ?>
                             </td>
 
                             <td>
                                 <?=
                                 Html::encode(
-                                        $profile->gstin ?: '-'
+                                    $profile->gstin ?: '-'
                                 )
                                 ?>
                             </td>
@@ -100,7 +101,7 @@ Html::a(
                             <td>
                                 <?=
                                 Html::encode(
-                                        $profile->pan ?: '-'
+                                    $profile->pan ?: '-'
                                 )
                                 ?>
                             </td>
@@ -109,13 +110,13 @@ Html::a(
 
                                 <?=
                                 Html::a(
-                                        'Edit',
-                                        [
+                                    'Edit',
+                                    [
                                             'update',
                                             'id' =>
                                             $profile->id,
                                         ],
-                                        [
+                                    [
                                             'class' =>
                                             'btn btn-sm btn-outline-primary',
                                         ]
@@ -126,10 +127,9 @@ Html::a(
 
                         </tr>
 
-<?php endforeach; ?>
+                    <?php endforeach; ?>
 
                     <?php if (!$profiles): ?>
-
                         <tr>
                             <td
                                 colspan="6"
@@ -139,7 +139,7 @@ Html::a(
                             </td>
                         </tr>
 
-<?php endif; ?>
+                    <?php endif; ?>
 
                 </tbody>
 

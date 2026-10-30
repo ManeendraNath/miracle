@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 use kartik\select2\Select2;
@@ -12,8 +13,8 @@ $form = ActiveForm::begin([
 
 <?=
 $form->errorSummary(
-        $model,
-        [
+    $model,
+    [
             'class' => 'alert alert-danger',
         ]
 )
@@ -29,12 +30,12 @@ $form->errorSummary(
         <?=
                 $form
                 ->field(
-                        $model,
-                        'user_id'
+                    $model,
+                    'user_id'
                 )
                 ->widget(
-                        Select2::class,
-                        [
+                    Select2::class,
+                    [
                             'data' => $usersList,
                             'options' => [
                                 'placeholder' =>
@@ -46,46 +47,46 @@ $form->errorSummary(
                             ],
                         ]
                 )
-        ?>
+                ?>
 
         <?=
                 $form
                 ->field(
-                        $model,
-                        'legal_name'
+                    $model,
+                    'legal_name'
                 )
                 ->textInput([
                     'maxlength' => true,
                     'placeholder' =>
                     'Legal / Company Name',
                 ])
-        ?>
+                ?>
 
         <div class="row">
             <div class="col-md-6">
                 <?=
                         $form
                         ->field(
-                                $model,
-                                'address_line_1'
+                            $model,
+                            'address_line_1'
                         )
                         ->textInput([
                             'maxlength' => true,
                         ])
-                ?>
+                        ?>
             </div>
 
             <div class="col-md-6">
                 <?=
                         $form
                         ->field(
-                                $model,
-                                'address_line_2'
+                            $model,
+                            'address_line_2'
                         )
                         ->textInput([
                             'maxlength' => true,
                         ])
-                ?>
+                        ?>
             </div>
         </div>
 
@@ -94,80 +95,80 @@ $form->errorSummary(
                 <?=
                         $form
                         ->field(
-                                $model,
-                                'city'
+                            $model,
+                            'city'
                         )
                         ->textInput([
                             'maxlength' => true,
                         ])
-                ?>
+                        ?>
             </div>
 
             <div class="col-md-4">
                 <?=
                         $form
                         ->field(
-                                $model,
-                                'state'
+                            $model,
+                            'state'
                         )
                         ->textInput([
                             'maxlength' => true,
                         ])
-                ?>
+                        ?>
             </div>
 
             <div class="col-md-4">
                 <?=
                         $form
                         ->field(
-                                $model,
-                                'state_code'
+                            $model,
+                            'state_code'
                         )
                         ->textInput([
                             'maxlength' => true,
                             'placeholder' =>
                             'e.g. 07',
                         ])
-                ?>
+                        ?>
             </div>
         </div>
 
         <?=
                 $form
                 ->field(
-                        $model,
-                        'postal_code'
+                    $model,
+                    'postal_code'
                 )
                 ->textInput([
                     'maxlength' => true,
                 ])
-        ?>
+                ?>
 
         <div class="row">
             <div class="col-md-6">
                 <?=
                         $form
                         ->field(
-                                $model,
-                                'gstin'
+                            $model,
+                            'gstin'
                         )
                         ->textInput([
                             'maxlength' => true,
                         ])
-                ?>
+                        ?>
             </div>
 
             <div class="col-md-6">
                 <?=
                         $form
                         ->field(
-                                $model,
-                                'pan'
+                            $model,
+                            'pan'
                         )
                         ->textInput([
                             'maxlength' => true,
                         ])
-                ?>
+                        ?>
             </div>
         </div>
 
@@ -176,35 +177,35 @@ $form->errorSummary(
                 <?=
                         $form
                         ->field(
-                                $model,
-                                'is_gst_applicable'
+                            $model,
+                            'is_gst_applicable'
                         )
                         ->dropDownList([
                             0 => 'No',
                             1 => 'Yes',
                         ])
-                ?>
+                        ?>
             </div>
 
             <div class="col-md-6">
                 <?=
                         $form
                         ->field(
-                                $model,
-                                'default_discount_amount'
+                            $model,
+                            'default_discount_amount'
                         )
                         ->input(
-                                'number',
-                                [
+                            'number',
+                            [
                                     'min' => 0,
                                     'step' => '0.01',
                                     'placeholder' => '0.00',
                                 ]
                         )
                         ->hint(
-                                'Fixed discount applied to automatically generated invoices.'
+                            'Fixed discount applied to automatically generated invoices.'
                         )
-                ?>
+                        ?>
             </div>
         </div>
     </div>
@@ -212,8 +213,8 @@ $form->errorSummary(
     <div class="card-footer">
         <?=
         Html::submitButton(
-                'Save Billing Profile',
-                [
+            'Save Billing Profile',
+            [
                     'class' =>
                     'btn btn-primary px-4',
                 ]
@@ -222,9 +223,9 @@ $form->errorSummary(
 
         <?=
         Html::a(
-                'Cancel',
-                ['index'],
-                [
+            'Cancel',
+            ['index'],
+            [
                     'class' =>
                     'btn btn-outline-secondary',
                 ]

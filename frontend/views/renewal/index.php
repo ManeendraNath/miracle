@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 use common\models\ServiceRenewalHistory;
@@ -36,13 +37,13 @@ $this->params['breadcrumbs'][] = $this->title;
                             $class = 'text-danger';
                         }
                         if ($service['type'] == 1) {
-                            $serviceClass = "badge bg-primary";
+                            $serviceClass = 'badge bg-primary';
                         } elseif ($service['type'] == 2) {
-                            $serviceClass = "badge bg-success";
+                            $serviceClass = 'badge bg-success';
                         } elseif ($service['type'] == 3) {
-                            $serviceClass = "badge bg-warning text-dark";
+                            $serviceClass = 'badge bg-warning text-dark';
                         } else {
-                            $serviceClass = "";
+                            $serviceClass = '';
                         }
                         ?>
                     

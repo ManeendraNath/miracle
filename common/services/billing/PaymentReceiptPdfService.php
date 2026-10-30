@@ -12,7 +12,6 @@ use common\models\Transaction;
 
 final class PaymentReceiptPdfService
 {
-
     public function render(Transaction $transaction): string
     {
         if ($transaction->status !== Transaction::STATUS_CAPTURED) {
@@ -24,8 +23,8 @@ final class PaymentReceiptPdfService
         }
         $paymentService = new InvoicePaymentService();
         $html = Yii::$app->view->renderFile(
-                Yii::getAlias('@common/mail/payment-receipt-pdf.php'),
-                [
+            Yii::getAlias('@common/mail/payment-receipt-pdf.php'),
+            [
                     'transaction' => $transaction,
                     'invoice' => $invoice,
                     'outstandingAmount' => $paymentService->getOutstanding($invoice),

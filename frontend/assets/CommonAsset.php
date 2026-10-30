@@ -9,6 +9,7 @@ namespace frontend\assets;
 
 use yii\web\AssetBundle;
 
-class CommonAsset extends AssetBundle {
+class CommonAsset extends AssetBundle
+{
     public $sourcePath = '@common/web/upload';
 }

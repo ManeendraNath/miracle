@@ -8,7 +8,6 @@ use yii\base\Model;
 
 final class ManualInvoiceItemForm extends Model
 {
-
     public ?int $id = null;
     public string $category = '';
     public string $description = '';
@@ -61,8 +60,8 @@ final class ManualInvoiceItemForm extends Model
     public function getTotal(): float
     {
         return round(
-                $this->quantity * $this->unit_price,
-                2
+            $this->quantity * $this->unit_price,
+            2
         );
     }
 }

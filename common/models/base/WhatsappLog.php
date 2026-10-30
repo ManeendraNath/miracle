@@ -20,8 +20,6 @@ use Yii;
  */
 class WhatsappLog extends \yii\db\ActiveRecord
 {
-
-
     /**
      * {@inheritdoc}
      */
@@ -64,5 +62,4 @@ class WhatsappLog extends \yii\db\ActiveRecord
             'created_at' => 'Created At',
         ];
     }
-
 }

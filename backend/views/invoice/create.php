@@ -1,4 +1,5 @@
 <?php
+
 /** @var yii\web\View $this */
 /** @var common\models\Invoice $model */
 /** @var array $usersList Passed from InvoiceController */

@@ -2,6 +2,7 @@
 
 use common\components\CustomYii;
 use yii\bootstrap5\Html;
+
 ?>
 <!-- 🚀 DYNAMIC CORRESPONDING BRAND FOOTER -->
 <footer class="footer mt-auto py-5 text-white" style="background-color: #0f172a; border-top: 4px solid #00a3e0;">
@@ -53,7 +54,7 @@ use yii\bootstrap5\Html;
                     <?php endif; ?>
                     <?php if (CustomYii::getSetting('instagram')): ?>
                         <a href="<?= Html::encode(CustomYii::getSetting('instagram')) ?>" target="_blank" rel="noopener" class="text-white bg-secondary px-3 py-1 rounded text-decoration-none" style="background-color: #1e293b !important;">Instagram</a>
-<?php endif; ?>
+                    <?php endif; ?>
                 </div>
                 <div class="mt-3 small text-muted" style="color: #64748b !important;">
                     🏢 Head Office: <?= Html::encode(CustomYii::getSetting('address_line_1', 'Tech Suite Hub Area')) ?>

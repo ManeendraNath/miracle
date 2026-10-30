@@ -14,7 +14,6 @@ use common\models\InvoiceItem;
 
 final class CouponService
 {
-
     public function calculate(?string $code, int $userId, float $subtotal, ?int $excludeInvoiceId = null): float
     {
         $code = strtoupper(trim((string) $code));

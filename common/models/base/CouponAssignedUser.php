@@ -19,8 +19,6 @@ use Yii;
  */
 class CouponAssignedUser extends \yii\db\ActiveRecord
 {
-
-
     /**
      * {@inheritdoc}
      */
@@ -77,5 +75,4 @@ class CouponAssignedUser extends \yii\db\ActiveRecord
     {
         return $this->hasOne(User::class, ['id' => 'user_id']);
     }
-
 }

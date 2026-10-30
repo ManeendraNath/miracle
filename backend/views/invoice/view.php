@@ -27,9 +27,9 @@ $this->title = 'Invoice #' . $model->invoice_number;
 
                 <?=
                 Html::a(
-                        '<i class="fas fa-arrow-left me-1"></i> Back to Grid',
-                        ['index'],
-                        ['class' => 'btn btn-sm btn-secondary']
+                    '<i class="fas fa-arrow-left me-1"></i> Back to Grid',
+                    ['index'],
+                    ['class' => 'btn btn-sm btn-secondary']
                 )
                 ?>
                 <?php if ($model->status === Invoice::STATUS_UNPAID): ?>
@@ -37,9 +37,9 @@ $this->title = 'Invoice #' . $model->invoice_number;
 
                     <?=
                     Html::a(
-                            '<i class="fas fa-ban me-1"></i> Cancel Invoice',
-                            ['cancel', 'id' => $model->id],
-                            [
+                        '<i class="fas fa-ban me-1"></i> Cancel Invoice',
+                        ['cancel', 'id' => $model->id],
+                        [
                                 'class' => 'btn btn-sm btn-outline-danger',
                                 'data' => [
                                     'confirm' => 'Are you sure you want to cancel this invoice?',
@@ -50,9 +50,9 @@ $this->title = 'Invoice #' . $model->invoice_number;
                     ?>
                     <?=
                     Html::a(
-                            'Resend Invoice',
-                            ['resend-invoice', 'id' => $model->id],
-                            [
+                        'Resend Invoice',
+                        ['resend-invoice', 'id' => $model->id],
+                        [
                                 'class' => 'btn btn-sm btn-outline-primary',
                                 'data' => [
                                     'method' => 'post',

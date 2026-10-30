@@ -21,7 +21,6 @@ use yii\web\NotFoundHttpException;
 
 final class SupportController extends Controller
 {
-
     public $layout = 'account';
 
     public function behaviors(): array
@@ -51,15 +50,15 @@ final class SupportController extends Controller
                 ->where(['user_id' => (int) Yii::$app->user->id])
                 ->orderBy(['created_at' => SORT_DESC, 'id' => SORT_DESC]);
         return $this->render(
-                        'index',
-                        [
+            'index',
+            [
                             'dataProvider' =>
                                 new ActiveDataProvider([
                                     'query' => $query,
                                     'pagination' => ['pageSize' => 20],
                                 ]),
                         ]
-                );
+        );
     }
 
     public function actionCreate()

@@ -25,7 +25,6 @@ use Yii;
  */
 class ServiceRenewalHistory extends \yii\db\ActiveRecord
 {
-
     /**
      * ENUM field values
      */

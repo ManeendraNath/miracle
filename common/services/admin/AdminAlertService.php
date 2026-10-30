@@ -15,7 +15,6 @@ use Yii;
  */
 final class AdminAlertService extends AdminNotificationService
 {
-
     public static function supportTicketCreated(string $ticketNumber, string $customer, string $subject): void
     {
         $title = 'New Support Ticket';
@@ -92,9 +91,9 @@ final class AdminAlertService extends AdminNotificationService
     {
         try {
             WhatsAppService::sendTemplate(
-                    Yii::$app->params['whatsapp']['adminMobile'],
-                    'admin_alert',
-                    [
+                Yii::$app->params['whatsapp']['adminMobile'],
+                'admin_alert',
+                [
                         'body_1' => ['type' => 'text', 'value' => $title],
                         'body_2' => ['type' => 'text', 'value' => $message],
                     ]

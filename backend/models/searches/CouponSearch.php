@@ -11,7 +11,6 @@ use yii\data\ActiveDataProvider;
 
 final class CouponSearch extends Coupon
 {
-
     public ?string $validity_range = null;
 
     public function rules(): array
@@ -51,10 +50,9 @@ final class CouponSearch extends Coupon
     }
 
     public function search(
-            array $params,
-            ?string $formName = null
-    ): ActiveDataProvider
-    {
+        array $params,
+        ?string $formName = null
+    ): ActiveDataProvider {
         $query = Coupon::find();
 
         $dataProvider = new ActiveDataProvider([
@@ -71,8 +69,8 @@ final class CouponSearch extends Coupon
         ]);
 
         $this->load(
-                $params,
-                $formName
+            $params,
+            $formName
         );
 
         if (!$this->validate()) {
@@ -126,8 +124,8 @@ final class CouponSearch extends Coupon
         }
 
         $parts = preg_split(
-                '/\s+-\s+/',
-                trim($this->validity_range)
+            '/\s+-\s+/',
+            trim($this->validity_range)
         );
 
         if (

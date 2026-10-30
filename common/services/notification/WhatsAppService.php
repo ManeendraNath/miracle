@@ -10,7 +10,6 @@ use yii\httpclient\Client;
 
 final class WhatsAppService
 {
-
     private const STATUS_PENDING = 'pending';
     private const STATUS_DUPLICATE = 'duplicate';
     private const STATUS_SUCCESS = 'success';
@@ -20,26 +19,26 @@ final class WhatsAppService
     {
         if ($eventKey !== null && self::wasSentRecently($eventKey)) {
             self::log(
-                    mobile: $mobile,
-                    template: $templateName,
-                    payload: [],
-                    response: null,
-                    status: self::STATUS_DUPLICATE,
-                    error: 'Duplicate send prevented',
-                    eventKey: $eventKey
+                mobile: $mobile,
+                template: $templateName,
+                payload: [],
+                response: null,
+                status: self::STATUS_DUPLICATE,
+                error: 'Duplicate send prevented',
+                eventKey: $eventKey
             );
             Yii::warning(['duplicate' => true, 'eventKey' => $eventKey], __METHOD__);
             return true;
         }
         if (!Yii::$app->params['whatsapp']['enabled']) {
             Yii::info(
-                    [
+                [
                         'provider' => Yii::$app->params['whatsapp']['provider'],
                         'reason' => 'disabled',
                         'mobile' => $mobile,
                         'template' => $templateName,
                     ],
-                    __METHOD__
+                __METHOD__
             );
             return true;
         }
@@ -67,7 +66,6 @@ final class WhatsAppService
         ];
 
         try {
-
             $client = new Client(['transport' => 'yii\httpclient\CurlTransport']);
             // Retry (with sleeps) only from cron; a web request gets one short attempt
             // so a slow MSG91 can't hang the page.
@@ -92,13 +90,13 @@ final class WhatsAppService
                     $responseContent = substr((string) $response->content, 0, 5000);
                     if ($response->isOk) {
                         self::log(
-                                mobile: $mobile,
-                                template: $templateName,
-                                payload: $payload,
-                                response: $responseContent,
-                                status: self::STATUS_SUCCESS,
-                                error: null,
-                                eventKey: $eventKey
+                            mobile: $mobile,
+                            template: $templateName,
+                            payload: $payload,
+                            response: $responseContent,
+                            status: self::STATUS_SUCCESS,
+                            error: null,
+                            eventKey: $eventKey
                         );
                         return true;
                     }
@@ -111,26 +109,24 @@ final class WhatsAppService
                     }
 
                     self::log(
-                            mobile: $mobile,
-                            template: $templateName,
-                            payload: $payload,
-                            response: $responseContent,
-                            status: self::STATUS_FAILED,
-                            error: 'MSG91 returned non-success response',
-                            eventKey: $eventKey
+                        mobile: $mobile,
+                        template: $templateName,
+                        payload: $payload,
+                        response: $responseContent,
+                        status: self::STATUS_FAILED,
+                        error: 'MSG91 returned non-success response',
+                        eventKey: $eventKey
                     );
 
                     return false;
                 } catch (\Throwable $exception) {
-
                     if ($attempt < $attempts) {
-
                         Yii::warning(
-                                [
+                            [
                                     'attempt' => $attempt,
                                     'error' => $exception->getMessage(),
                                 ],
-                                __METHOD__
+                            __METHOD__
                         );
 
                         sleep($attempt);
@@ -144,19 +140,18 @@ final class WhatsAppService
 
             return false;
         } catch (\Throwable $exception) {
-
             self::log(
-                    mobile: $mobile,
-                    template: $templateName,
-                    payload: $payload,
-                    response: null,
-                    status: self::STATUS_FAILED,
-                    error: $exception->getMessage(),
-                    eventKey: $eventKey
+                mobile: $mobile,
+                template: $templateName,
+                payload: $payload,
+                response: null,
+                status: self::STATUS_FAILED,
+                error: $exception->getMessage(),
+                eventKey: $eventKey
             );
 
             Yii::error(
-                    [
+                [
                         'provider' =>
                         Yii::$app->params['whatsapp']['provider'],
                         'mobile' => $mobile,
@@ -164,7 +159,7 @@ final class WhatsAppService
                         'error' =>
                         $exception->getMessage(),
                     ],
-                    __METHOD__
+                __METHOD__
             );
 
             return false;

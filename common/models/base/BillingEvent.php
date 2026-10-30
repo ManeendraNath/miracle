@@ -35,7 +35,6 @@ use Yii;
  */
 class BillingEvent extends \yii\db\ActiveRecord
 {
-
     /**
      * ENUM field values
      */

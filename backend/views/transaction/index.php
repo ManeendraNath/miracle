@@ -106,8 +106,8 @@ GridViewHelper::register($this);
                             }
 
                             return Yii::$app->formatter->asDatetime(
-                                    $model->paid_at,
-                                    'php:d M Y, h:i A'
+                                $model->paid_at,
+                                'php:d M Y, h:i A'
                             );
                         },
                         'filter' => \kartik\daterange\DateRangePicker::widget([

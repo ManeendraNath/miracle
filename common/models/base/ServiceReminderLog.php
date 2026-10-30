@@ -20,8 +20,6 @@ use Yii;
  */
 class ServiceReminderLog extends \yii\db\ActiveRecord
 {
-
-
     /**
      * {@inheritdoc}
      */
@@ -71,5 +69,4 @@ class ServiceReminderLog extends \yii\db\ActiveRecord
     {
         return $this->hasOne(User::class, ['id' => 'user_id']);
     }
-
 }

@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 use yii\helpers\Html;
@@ -19,15 +20,15 @@ $notifications = $dataProvider->getModels();
 
 <?=
 Html::beginForm(
-        ['/notification/mark-all-read'],
-        'post'
+    ['/notification/mark-all-read'],
+    'post'
 )
 ?>
 
         <?=
         Html::submitButton(
-                'Mark All Read',
-                [
+            'Mark All Read',
+            [
                     'class' =>
                     'btn btn-sm btn-outline-primary',
                 ]
@@ -41,14 +42,13 @@ Html::beginForm(
     <div class="list-group list-group-flush">
 
 <?php foreach ($notifications as $notification): ?>
-
             <a
                 href="<?=
                 \yii\helpers\Url::to([
                     '/notification/view',
                     'id' => $notification->id,
                 ])
-                ?>"
+                        ?>"
                 class="
                 list-group-item
                 list-group-item-action
@@ -62,7 +62,7 @@ Html::beginForm(
 
     <?=
     Html::encode(
-            $notification->title
+        $notification->title
     )
     ?>
 
@@ -74,7 +74,7 @@ Html::beginForm(
             Yii::$app
             ->formatter
             ->asDatetime(
-                    $notification->created_at
+                $notification->created_at
             )
     ?>
 

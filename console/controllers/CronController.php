@@ -16,7 +16,6 @@ use common\models\WhatsappLog;
 
 class CronController extends Controller
 {
-
     /**
      * Generate automatic renewal invoices for:
      *
@@ -45,13 +44,13 @@ class CronController extends Controller
                     $deliveryService->send($invoice);
                 } catch (\Throwable $e) {
                     Yii::error(
-                            [
+                        [
                                 'message' => 'Automatic invoice email failed.',
                                 'invoiceId' => (int) $invoice->id,
                                 'invoiceNumber' => $invoice->invoice_number,
                                 'error' => $e->getMessage(),
                             ],
-                            __METHOD__
+                        __METHOD__
                     );
                 }
             }

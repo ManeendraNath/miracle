@@ -25,7 +25,6 @@ namespace common\models;
  */
 class SiteSetting extends base\SiteSetting
 {
-    
     public function attributeLabels(): array
     {
         $labels = [

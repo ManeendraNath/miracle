@@ -32,9 +32,9 @@ $users = ArrayHelper::map(User::find()->orderBy(['username' => SORT_ASC])->all()
     <div class="card card-outline card-primary shadow-sm">
         <?=
         AdminIndexHelper::pageHeader(
-                'Manage client domains, registrars, registration dates and expiry dates.',
-                'create',
-                'Add Domain'
+            'Manage client domains, registrars, registration dates and expiry dates.',
+            'create',
+            'Add Domain'
         )
         ?>
         <div class="card-body p-0">
@@ -72,9 +72,9 @@ $users = ArrayHelper::map(User::find()->orderBy(['username' => SORT_ASC])->all()
                             $username = $model->user->username ?: 'Unknown';
                             $email = $model->user->email ?: 'Email not available';
                             return Html::tag(
-                                    'span',
-                                    Html::encode($username),
-                                    [
+                                'span',
+                                Html::encode($username),
+                                [
                                         'class' => 'fw-semibold text-primary',
                                         'title' => $email,
                                         'data-bs-toggle' => 'tooltip',

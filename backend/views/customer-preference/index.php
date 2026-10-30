@@ -23,9 +23,9 @@ $badge = static function ($value): string {
     $enabled = (bool) $value;
 
     return Html::tag(
-            'span',
-            $enabled ? 'Enabled' : 'Disabled',
-            [
+        'span',
+        $enabled ? 'Enabled' : 'Disabled',
+        [
                 'class' =>
                 'badge '
                 . (
@@ -97,17 +97,17 @@ GridView::widget([
             'format' => 'raw',
             'value' =>
             static function (
-                    CustomerPreference $model
+                CustomerPreference $model
             ): string {
                 if ($model->user === null) {
                     return Html::tag(
-                                    'span',
-                                    'Unknown customer',
-                                    [
+                        'span',
+                        'Unknown customer',
+                        [
                                         'class' =>
                                         'text-muted',
                                     ]
-                            );
+                    );
                 }
 
                 $username = (string)
@@ -117,9 +117,9 @@ GridView::widget([
                         $model->user->email;
 
                 return Html::tag(
-                        'span',
-                        Html::encode($username),
-                        [
+                    'span',
+                    Html::encode($username),
+                    [
                             'class' =>
                             'fw-semibold',
                             'title' =>
@@ -145,7 +145,7 @@ GridView::widget([
             CustomerPreference $model
             ): string =>
             $badge(
-                    $model
+                $model
                     ->renewal_reminders
             ),
             'filter' => $booleanFilter,
@@ -165,7 +165,7 @@ GridView::widget([
             CustomerPreference $model
             ): string =>
             $badge(
-                    $model
+                $model
                     ->payment_reminders
             ),
             'filter' => $booleanFilter,
@@ -185,7 +185,7 @@ GridView::widget([
             CustomerPreference $model
             ): string =>
             $badge(
-                    $model
+                $model
                     ->service_expiry_notifications
             ),
             'filter' => $booleanFilter,
@@ -205,7 +205,7 @@ GridView::widget([
             CustomerPreference $model
             ): string =>
             $badge(
-                    $model
+                $model
                     ->support_notifications
             ),
             'filter' => $booleanFilter,
@@ -232,16 +232,16 @@ GridView::widget([
             'format' => 'raw',
             'value' =>
             static function (
-                    CustomerPreference $model
+                CustomerPreference $model
             ): string {
                 return Html::a(
-                        '<i class="fas fa-edit"></i>',
-                        [
+                    '<i class="fas fa-edit"></i>',
+                    [
                             'update',
                             'userId' =>
                             $model->user_id,
                         ],
-                        [
+                    [
                             'class' =>
                             'btn btn-sm '
                             . 'btn-outline-primary',

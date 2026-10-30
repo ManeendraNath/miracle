@@ -15,7 +15,6 @@ use yii\web\ServerErrorHttpException;
 
 final class WebhookController extends Controller
 {
-
     public $enableCsrfValidation = false;
 
     public function actionRazorpay(): array
@@ -28,7 +27,8 @@ final class WebhookController extends Controller
         }
         $body = Yii::$app->request->getRawBody();
         $signature = Yii::$app->request->headers->get('X-Razorpay-Signature');
-        if (!is_string($signature) || $signature === '' || !$this->verifySignature($body, $signature, $secret)
+        if (
+            !is_string($signature) || $signature === '' || !$this->verifySignature($body, $signature, $secret)
         ) {
             Yii::warning('Rejected Razorpay webhook with invalid signature.', __METHOD__);
             throw new BadRequestHttpException('Invalid webhook signature.');
@@ -52,7 +52,8 @@ final class WebhookController extends Controller
         $paymentId = $payment['id'] ?? null;
         $amountMinor = $payment['amount'] ?? null;
         $currency = $payment['currency'] ?? null;
-        if (!is_string($orderId) || $orderId === '' || !is_string($paymentId) || $paymentId === '' || !is_int($amountMinor) || $amountMinor <= 0 || !is_string($currency)
+        if (
+            !is_string($orderId) || $orderId === '' || !is_string($paymentId) || $paymentId === '' || !is_int($amountMinor) || $amountMinor <= 0 || !is_string($currency)
         ) {
             throw new BadRequestHttpException('Incomplete payment information.');
         }

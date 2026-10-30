@@ -19,5 +19,4 @@ namespace backend\models;
  */
 class Admin extends \common\models\Admin
 {
-
 }

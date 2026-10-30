@@ -15,7 +15,6 @@ use yii\data\ActiveDataProvider;
  */
 class DomainsSearch extends Domains
 {
-
     use DateRangeSearchTrait;
 
     /**

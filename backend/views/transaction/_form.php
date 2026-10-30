@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 use kartik\select2\Select2;
@@ -16,14 +17,14 @@ $isNew = $model->isNewRecord;
     </div>
     <div class="card-body">
         <?= $form->field($model, 'invoice_id')->widget(
-                        Select2::class,
-                        [
+            Select2::class,
+            [
                             'data' => $invoiceList,
                             'options' => ['placeholder' => 'Select Invoice'],
                             'pluginOptions' => ['allowClear' => false, 'width' => '100%'],
                         ]
-                )
-        ?>
+        )
+?>
 
         <?= $form->field($model, 'gateway_id')->dropDownList([2 => 'Manual UPI / Bank Transfer'], ['prompt' => 'Select Payment Method'])
         ?>

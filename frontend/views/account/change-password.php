@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 use yii\helpers\Html;
@@ -40,8 +41,8 @@ $form = ActiveForm::begin([
 
 <?=
 $form->errorSummary(
-        $model,
-        [
+    $model,
+    [
             'class' =>
             'alert alert-danger',
         ]
@@ -51,41 +52,41 @@ $form->errorSummary(
                     <?=
                             $form
                             ->field(
-                                    $model,
-                                    'currentPassword'
+                                $model,
+                                'currentPassword'
                             )
                             ->passwordInput([
                                 'autocomplete' =>
                                 'current-password',
                             ])
-                    ?>
+                            ?>
 
                     <?=
                             $form
                             ->field(
-                                    $model,
-                                    'newPassword'
+                                $model,
+                                'newPassword'
                             )
                             ->passwordInput([
                                 'autocomplete' =>
                                 'new-password',
                             ])
                             ->hint(
-                                    'Use at least 8 characters.'
+                                'Use at least 8 characters.'
                             )
-                    ?>
+                            ?>
 
                     <?=
                             $form
                             ->field(
-                                    $model,
-                                    'confirmPassword'
+                                $model,
+                                'confirmPassword'
                             )
                             ->passwordInput([
                                 'autocomplete' =>
                                 'new-password',
                             ])
-                    ?>
+                            ?>
 
                 </div>
 
@@ -93,8 +94,8 @@ $form->errorSummary(
 
                     <?=
                     Html::submitButton(
-                            'Change Password',
-                            [
+                        'Change Password',
+                        [
                                 'class' =>
                                 'btn btn-primary px-4',
                             ]
@@ -103,9 +104,9 @@ $form->errorSummary(
 
                     <?=
                     Html::a(
-                            'Cancel',
-                            ['profile'],
-                            [
+                        'Cancel',
+                        ['profile'],
+                        [
                                 'class' =>
                                 'btn btn-outline-secondary',
                             ]

@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 use common\models\Coupon;
@@ -27,8 +28,8 @@ $normaliseDatetime = static function (?string $value): string {
 
     <?=
     $form->errorSummary(
-            $model,
-            [
+        $model,
+        [
                 'class' =>
                 'alert alert-danger mb-3',
             ]
@@ -51,8 +52,8 @@ $normaliseDatetime = static function (?string $value): string {
 
                     <?=
                     $form->field(
-                            $model,
-                            'name'
+                        $model,
+                        'name'
                     )->textInput([
                         'maxlength' => true,
                         'placeholder' =>
@@ -66,8 +67,8 @@ $normaliseDatetime = static function (?string $value): string {
 
                     <?=
                     $form->field(
-                            $model,
-                            'code'
+                        $model,
+                        'code'
                     )->textInput([
                         'maxlength' => true,
                         'placeholder' =>
@@ -83,8 +84,8 @@ $normaliseDatetime = static function (?string $value): string {
 
             <?=
             $form->field(
-                    $model,
-                    'description'
+                $model,
+                'description'
             )->textarea([
                 'rows' => 4,
                 'placeholder' =>
@@ -112,11 +113,11 @@ $normaliseDatetime = static function (?string $value): string {
 
                     <?=
                     $form->field(
-                            $model,
-                            'type'
+                        $model,
+                        'type'
                     )->dropDownList(
-                            Coupon::getTypes(),
-                            [
+                        Coupon::getTypes(),
+                        [
                                 'prompt' =>
                                 'Select Discount Type',
                             ]
@@ -129,17 +130,17 @@ $normaliseDatetime = static function (?string $value): string {
 
                     <?=
                     $form->field(
-                            $model,
-                            'amount'
+                        $model,
+                        'amount'
                     )->input(
-                            'number',
-                            [
+                        'number',
+                        [
                                 'min' => '0.01',
                                 'step' => '0.01',
                                 'placeholder' => '0.00',
                             ]
                     )->hint(
-                            'For percentage coupon enter a value between 0 and 100.'
+                        'For percentage coupon enter a value between 0 and 100.'
                     )
                     ?>
 
@@ -149,17 +150,17 @@ $normaliseDatetime = static function (?string $value): string {
 
                     <?=
                     $form->field(
-                            $model,
-                            'minimum_order'
+                        $model,
+                        'minimum_order'
                     )->input(
-                            'number',
-                            [
+                        'number',
+                        [
                                 'min' => 0,
                                 'step' => '0.01',
                                 'placeholder' => '0.00',
                             ]
                     )->hint(
-                            'Use 0 when no minimum order value is required.'
+                        'Use 0 when no minimum order value is required.'
                     )
                     ?>
 
@@ -187,13 +188,13 @@ $normaliseDatetime = static function (?string $value): string {
 
                     <?=
                     $form->field(
-                            $model,
-                            'start_date'
+                        $model,
+                        'start_date'
                     )->input(
-                            'datetime-local',
-                            [
+                        'datetime-local',
+                        [
                                 'value' => $normaliseDatetime(
-                                        $model->start_date
+                                    $model->start_date
                                 ),
                             ]
                     )
@@ -205,13 +206,13 @@ $normaliseDatetime = static function (?string $value): string {
 
                     <?=
                     $form->field(
-                            $model,
-                            'end_date'
+                        $model,
+                        'end_date'
                     )->input(
-                            'datetime-local',
-                            [
+                        'datetime-local',
+                        [
                                 'value' => $normaliseDatetime(
-                                        $model->end_date
+                                    $model->end_date
                                 ),
                             ]
                     )
@@ -245,16 +246,16 @@ $normaliseDatetime = static function (?string $value): string {
 
                     <?=
                     $form->field(
-                            $model,
-                            'uses_per_coupon'
+                        $model,
+                        'uses_per_coupon'
                     )->input(
-                            'number',
-                            [
+                        'number',
+                        [
                                 'min' => 0,
                                 'step' => 1,
                             ]
                     )->hint(
-                            'Maximum allowed uses for this coupon.'
+                        'Maximum allowed uses for this coupon.'
                     )
                     ?>
 
@@ -264,16 +265,16 @@ $normaliseDatetime = static function (?string $value): string {
 
                     <?=
                     $form->field(
-                            $model,
-                            'uses_per_user'
+                        $model,
+                        'uses_per_user'
                     )->input(
-                            'number',
-                            [
+                        'number',
+                        [
                                 'min' => 0,
                                 'step' => 1,
                             ]
                     )->hint(
-                            'Use 0 when there is no per-customer limit.'
+                        'Use 0 when there is no per-customer limit.'
                     )
                     ?>
 
@@ -283,10 +284,10 @@ $normaliseDatetime = static function (?string $value): string {
 
                     <?=
                     $form->field(
-                            $model,
-                            'is_active'
+                        $model,
+                        'is_active'
                     )->dropDownList(
-                            Coupon::getStatuses()
+                        Coupon::getStatuses()
                     )
                     ?>
 
@@ -302,13 +303,13 @@ $normaliseDatetime = static function (?string $value): string {
 
         <?=
         Html::a(
-                'Cancel',
-                $isNew ? ['index'] : [
+            'Cancel',
+            $isNew ? ['index'] : [
                     'view',
                     'id' =>
                     $model->id,
                         ],
-                [
+            [
                     'class' =>
                     'btn btn-outline-secondary',
                 ]
@@ -317,8 +318,8 @@ $normaliseDatetime = static function (?string $value): string {
 
         <?=
         Html::submitButton(
-                $isNew ? 'Save Coupon' : 'Update Coupon',
-                [
+            $isNew ? 'Save Coupon' : 'Update Coupon',
+            [
                     'class' =>
                     'btn btn-primary px-4',
                 ]

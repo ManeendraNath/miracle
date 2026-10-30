@@ -9,7 +9,6 @@ use yii\base\Model;
 
 final class ChangePasswordForm extends Model
 {
-
     public string $currentPassword = '';
     public string $newPassword = '';
     public string $confirmPassword = '';

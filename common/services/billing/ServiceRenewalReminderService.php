@@ -18,7 +18,6 @@ use Yii;
 
 final class ServiceRenewalReminderService
 {
-
     private const REMINDER_DAYS = [60, 30, 15, 7, 3, 1];
 
     public function sendReminders(?DateTimeImmutable $today = null): int
@@ -108,11 +107,11 @@ final class ServiceRenewalReminderService
             }
             $message = Yii::$app->mailer
                     ->compose(
-                            [
+                        [
                                 'html' => '@common/mail/renewal-reminder-html',
                                 'text' => '@common/mail/renewal-reminder-text',
                             ],
-                            [
+                        [
                                 'serviceName' => $serviceName,
                                 'expiryDate' => $expiryDate,
                                 'daysBefore' => $daysBefore,

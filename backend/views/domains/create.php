@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 use yii\helpers\Html;
@@ -29,8 +30,8 @@ $this->params['breadcrumbs'][] = $this->title;
 
 <?=
 $this->render(
-        '_form',
-        [
+    '_form',
+    [
             'model' => $model,
         ]
 )

@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 use yii\helpers\Html;
@@ -8,14 +9,14 @@ $this->title = 'My Services';
 $this->params['breadcrumbs'][] = $this->title;
 
 $statusBadge = static function (
-        int|string|null $status
+    int|string|null $status
 ): string {
     $active = (int) $status === 1;
 
     return Html::tag(
-            'span',
-            $active ? 'Active' : 'Inactive',
-            [
+        'span',
+        $active ? 'Active' : 'Inactive',
+        [
                 'class' =>
                 $active ? 'badge bg-success' : 'badge bg-secondary',
             ]
@@ -71,7 +72,7 @@ $statusBadge = static function (
                             <td class="fw-semibold">
                                 <?=
                                 Html::encode(
-                                        $domain->domain_url
+                                    $domain->domain_url
                                 )
                                 ?>
                             </td>
@@ -81,8 +82,8 @@ $statusBadge = static function (
                                 $domain->current_expiry_date ? Yii::$app
                                                 ->formatter
                                                 ->asDate(
-                                                        $domain->current_expiry_date,
-                                                        'php:d M Y'
+                                                    $domain->current_expiry_date,
+                                                    'php:d M Y'
                                                 ) : '-'
                                 ?>
                             </td>
@@ -90,7 +91,7 @@ $statusBadge = static function (
                             <td>
                                 <?=
                                 $statusBadge(
-                                        $domain->status
+                                    $domain->status
                                 )
                                 ?>
                             </td>
@@ -99,15 +100,15 @@ $statusBadge = static function (
 
                                 <?=
                                 Html::a(
-                                        'View',
-                                        [
+                                    'View',
+                                    [
                                             'view',
                                             'type' =>
                                             'domain',
                                             'id' =>
                                             $domain->id,
                                         ],
-                                        [
+                                    [
                                             'class' =>
                                             'btn btn-sm '
                                             . 'btn-outline-primary',
@@ -122,7 +123,6 @@ $statusBadge = static function (
                     <?php endforeach; ?>
 
                     <?php if (!$domains): ?>
-
                         <tr>
                             <td
                                 colspan="4"
@@ -176,7 +176,7 @@ $statusBadge = static function (
                             <td class="fw-semibold">
                                 <?=
                                 Html::encode(
-                                        $host->primary_domain
+                                    $host->primary_domain
                                 )
                                 ?>
                             </td>
@@ -186,8 +186,8 @@ $statusBadge = static function (
                                 $host->current_expiry_date ? Yii::$app
                                                 ->formatter
                                                 ->asDate(
-                                                        $host->current_expiry_date,
-                                                        'php:d M Y'
+                                                    $host->current_expiry_date,
+                                                    'php:d M Y'
                                                 ) : '-'
                                 ?>
                             </td>
@@ -195,7 +195,7 @@ $statusBadge = static function (
                             <td>
                                 <?=
                                 $statusBadge(
-                                        $host->status
+                                    $host->status
                                 )
                                 ?>
                             </td>
@@ -204,15 +204,15 @@ $statusBadge = static function (
 
                                 <?=
                                 Html::a(
-                                        'View',
-                                        [
+                                    'View',
+                                    [
                                             'view',
                                             'type' =>
                                             'hosting',
                                             'id' =>
                                             $host->id,
                                         ],
-                                        [
+                                    [
                                             'class' =>
                                             'btn btn-sm '
                                             . 'btn-outline-primary',
@@ -227,7 +227,6 @@ $statusBadge = static function (
                     <?php endforeach; ?>
 
                     <?php if (!$hosting): ?>
-
                         <tr>
                             <td
                                 colspan="4"
@@ -272,7 +271,7 @@ $statusBadge = static function (
                             <td class="fw-semibold">
                                 <?=
                                 Html::encode(
-                                        $item->website_url
+                                    $item->website_url
                                 )
                                 ?>
                             </td>
@@ -281,30 +280,30 @@ $statusBadge = static function (
                                 $item->current_expiry_date ? Yii::$app
                                                 ->formatter
                                                 ->asDate(
-                                                        $item->current_expiry_date,
-                                                        'php:d M Y'
+                                                    $item->current_expiry_date,
+                                                    'php:d M Y'
                                                 ) : '-'
                                 ?>
                             </td>
                             <td>
                                 <?=
                                 $statusBadge(
-                                        $item->status
+                                    $item->status
                                 )
                                 ?>
                             </td>
                             <td class="text-end">
                                 <?=
                                 Html::a(
-                                        'View',
-                                        [
+                                    'View',
+                                    [
                                             'view',
                                             'type' =>
                                             'maintenance',
                                             'id' =>
                                             $item->id,
                                         ],
-                                        [
+                                    [
                                             'class' =>
                                             'btn btn-sm '
                                             . 'btn-outline-primary',

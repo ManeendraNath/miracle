@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 use common\helpers\AdminIndexHelper;
@@ -48,12 +49,13 @@ GridViewHelper::register($this);
                         'label' => 'Ticket',
                         'format' => 'raw',
                         'value' => static function (SupportTicket $model): string {
-                            return Html::a(Html::encode($model->ticket_number),
-                                    [
+                            return Html::a(
+                                Html::encode($model->ticket_number),
+                                [
                                         'view',
                                         'number' => $model->ticket_number,
                                     ],
-                                    [
+                                [
                                         'class' => 'fw-semibold text-decoration-none',
                                     ]
                             );
@@ -70,9 +72,9 @@ GridViewHelper::register($this);
                                 return '-';
                             }
                             return Html::tag(
-                                    'span',
-                                    Html::encode($model->user->username),
-                                    [
+                                'span',
+                                Html::encode($model->user->username),
+                                [
                                         'title' => $model->user->email,
                                         'data-bs-toggle' => 'tooltip',
                                         'data-bs-placement' => 'top',
@@ -98,9 +100,9 @@ GridViewHelper::register($this);
                                 default => 'bg-info text-dark',
                             };
                             return Html::tag(
-                                    'span',
-                                    Html::encode($model->priority),
-                                    ['class' => 'badge ' . $class]
+                                'span',
+                                Html::encode($model->priority),
+                                ['class' => 'badge ' . $class]
                             );
                         },
                     ],
@@ -126,8 +128,8 @@ GridViewHelper::register($this);
                         'contentOptions' => ['class' => 'text-nowrap'],
                     ],
                     GridActionHelper::crudColumn(
-                            template: '{view}',
-                            urlCreator:
+                        template: '{view}',
+                        urlCreator:
                             static function (string $action, SupportTicket $model): array {
                                 return ['view', 'number' => $model->ticket_number];
                             }

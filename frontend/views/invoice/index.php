@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 use common\models\Invoice;
@@ -44,20 +45,20 @@ $this->params['breadcrumbs'][] = $this->title;
                         'raw',
                         'value' =>
                         static function (
-                                Invoice $model
+                            Invoice $model
                         ): string {
                             return Html::a(
-                                    Html::encode(
-                                            $model
+                                Html::encode(
+                                    $model
                                             ->invoice_number
-                                    ),
-                                    [
+                                ),
+                                [
                                         'view',
                                         'number' =>
                                         $model
                                         ->invoice_number,
                                     ],
-                                    [
+                                [
                                         'class' =>
                                         'fw-semibold text-decoration-none',
                                     ]
@@ -93,14 +94,14 @@ $this->params['breadcrumbs'][] = $this->title;
                         'Total',
                         'value' =>
                         static function (
-                                Invoice $model
+                            Invoice $model
                         ): string {
                             return Yii::$app
                                     ->formatter
                                     ->asCurrency(
-                                            $model
+                                        $model
                                             ->total_payable,
-                                            'INR'
+                                        'INR'
                                     );
                         },
                     ],
@@ -113,10 +114,10 @@ $this->params['breadcrumbs'][] = $this->title;
                         'raw',
                         'value' =>
                         static function (
-                                Invoice $model
+                            Invoice $model
                         ): string {
                             $class = match (
-                            $model->status
+                                $model->status
                             ) {
                                 Invoice::STATUS_PAID =>
                                 'bg-success',
@@ -137,11 +138,11 @@ $this->params['breadcrumbs'][] = $this->title;
                                     ] ?? $model->status;
 
                             return Html::tag(
-                                    'span',
-                                    Html::encode(
-                                            $label
-                                    ),
-                                    [
+                                'span',
+                                Html::encode(
+                                    $label
+                                ),
+                                [
                                         'class' =>
                                         'badge '
                                         . $class,

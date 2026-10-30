@@ -73,7 +73,7 @@ $isNewRecord = $model->isNewRecord;
                                 'autocomplete' => 'new-password',
                             ])
                             ->hint($isNewRecord ? 'A minimum of 8 characters is required.' : 'Leave blank to preserve the existing password.')
-                    ?>
+                            ?>
                 </div>
 
                 <div class="col-md-6">

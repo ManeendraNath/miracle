@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 use common\models\Invoice;
@@ -158,13 +159,13 @@ $attentionCount = $openInvoices + $pendingPayments + $openSupportTickets;
 
                                         <?=
                                         Html::a(
-                                                'View',
-                                                [
+                                            'View',
+                                            [
                                                     '/service/view',
                                                     'type' => $service['type'],
                                                     'id' => $service['id'],
                                                 ],
-                                                [
+                                            [
                                                     'class' => 'btn btn-sm btn-outline-secondary me-1',
                                                 ]
                                         )
@@ -172,13 +173,13 @@ $attentionCount = $openInvoices + $pendingPayments + $openSupportTickets;
 
                                         <?=
                                         Html::a(
-                                                'Renew',
-                                                [
+                                            'Renew',
+                                            [
                                                     '/checkout/renew',
                                                     'type' => $service['type'],
                                                     'id' => $service['id'],
                                                 ],
-                                                [
+                                            [
                                                     'class' =>
                                                     'btn btn-sm btn-primary',
                                                 ]
@@ -267,7 +268,6 @@ $attentionCount = $openInvoices + $pendingPayments + $openSupportTickets;
             <div class="card-body p-0">
 
                 <?php if (empty($activities)): ?>
-
                     <div class="text-center py-4 text-muted">
 
                         No recent activity available.
@@ -275,7 +275,6 @@ $attentionCount = $openInvoices + $pendingPayments + $openSupportTickets;
                     </div>
 
                 <?php else: ?>
-
                     <div class="list-group list-group-flush">
 
                         <?php foreach ($activities as $activity): ?>
@@ -345,14 +344,14 @@ $attentionCount = $openInvoices + $pendingPayments + $openSupportTickets;
                                         };
 
                                         echo Html::tag(
-                                                'span',
-                                                Invoice::getStatuses()[$invoice->status] ?? $invoice->status,
-                                                ['class' => 'badge ' . $statusClass]
+                                            'span',
+                                            Invoice::getStatuses()[$invoice->status] ?? $invoice->status,
+                                            ['class' => 'badge ' . $statusClass]
                                         );
                                         ?>
                                     </td>
                                 </tr>
-                            <?php endforeach; ?>
+<?php endforeach; ?>
 
 <?php if (!$recentInvoices): ?>
                                 <tr>

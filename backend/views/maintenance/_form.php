@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 use common\models\Maintenance;
@@ -11,7 +12,7 @@ use yii\widgets\ActiveForm;
 $isNew = $model->isNewRecord;
 
 $users = ArrayHelper::map(
-        User::find()
+    User::find()
                 ->select([
                     'id',
                     'username',
@@ -22,15 +23,15 @@ $users = ArrayHelper::map(
                 ])
                 ->asArray()
                 ->all(),
-        'id',
-        static function (
-                array $user
-        ): string {
+    'id',
+    static function (
+        array $user
+    ): string {
             return $user['username']
                     . (
                     !empty($user['email']) ? ' (' . $user['email'] . ')' : ''
             );
-        }
+    }
 );
 
 $form = ActiveForm::begin([
@@ -40,8 +41,8 @@ $form = ActiveForm::begin([
 
 <?=
 $form->errorSummary(
-        $model,
-        [
+    $model,
+    [
             'class' =>
             'alert alert-danger',
         ]
@@ -61,12 +62,12 @@ $form->errorSummary(
 <?=
         $form
         ->field(
-                $model,
-                'user_id'
+            $model,
+            'user_id'
         )
         ->widget(
-                Select2::class,
-                [
+            Select2::class,
+            [
                     'data' =>
                     $users,
                     'options' => [
@@ -81,20 +82,20 @@ $form->errorSummary(
                     ],
                 ]
         )
-?>
+        ?>
 
         <?=
                 $form
                 ->field(
-                        $model,
-                        'website_url'
+                    $model,
+                    'website_url'
                 )
                 ->textInput([
                     'maxlength' => true,
                     'placeholder' =>
                     'https://example.com',
                 ])
-        ?>
+                ?>
 
         <div class="row">
 
@@ -103,13 +104,13 @@ $form->errorSummary(
                 <?=
                         $form
                         ->field(
-                                $model,
-                                'start_date'
+                            $model,
+                            'start_date'
                         )
                         ->input(
-                                'date'
+                            'date'
                         )
-                ?>
+                        ?>
 
             </div>
 
@@ -118,13 +119,13 @@ $form->errorSummary(
                 <?=
                         $form
                         ->field(
-                                $model,
-                                'current_expiry_date'
+                            $model,
+                            'current_expiry_date'
                         )
                         ->input(
-                                'date'
+                            'date'
                         )
-                ?>
+                        ?>
 
             </div>
 
@@ -133,13 +134,13 @@ $form->errorSummary(
         <?=
                 $form
                 ->field(
-                        $model,
-                        'status'
+                    $model,
+                    'status'
                 )
                 ->dropDownList(
-                        Maintenance::getStatuses()
+                    Maintenance::getStatuses()
                 )
-        ?>
+                ?>
 
         <hr>
 
@@ -154,19 +155,19 @@ $form->errorSummary(
         <?=
                 $form
                 ->field(
-                        $model,
-                        'renewal_base_amount'
+                    $model,
+                    'renewal_base_amount'
                 )
                 ->input(
-                        'number',
-                        [
+                    'number',
+                    [
                             'min' => 0,
                             'step' => '0.01',
                             'placeholder' =>
                             'Initial renewal amount',
                         ]
                 )
-        ?>
+                ?>
 
         <div class="row">
 
@@ -175,18 +176,18 @@ $form->errorSummary(
                 <?=
                         $form
                         ->field(
-                                $model,
-                                'renewal_cycle_months'
+                            $model,
+                            'renewal_cycle_months'
                         )
                         ->input(
-                                'number',
-                                [
+                            'number',
+                            [
                                     'min' => 1,
                                     'placeholder' =>
                                     'Use global setting',
                                 ]
                         )
-                ?>
+                        ?>
 
             </div>
 
@@ -195,12 +196,12 @@ $form->errorSummary(
                 <?=
                         $form
                         ->field(
-                                $model,
-                                'renewal_increase_percent'
+                            $model,
+                            'renewal_increase_percent'
                         )
                         ->input(
-                                'number',
-                                [
+                            'number',
+                            [
                                     'min' => 0,
                                     'max' => 100,
                                     'step' => '0.01',
@@ -208,7 +209,7 @@ $form->errorSummary(
                                     'Use global setting',
                                 ]
                         )
-                ?>
+                        ?>
 
             </div>
 
@@ -220,12 +221,12 @@ $form->errorSummary(
 
         <?=
         Html::a(
-                'Cancel',
-                $isNew ? ['index'] : [
+            'Cancel',
+            $isNew ? ['index'] : [
                     'view',
                     'id' => $model->id,
                         ],
-                [
+            [
                     'class' =>
                     'btn btn-outline-secondary',
                 ]
@@ -234,8 +235,8 @@ $form->errorSummary(
 
 <?=
 Html::submitButton(
-        $isNew ? 'Save Maintenance' : 'Update Maintenance',
-        [
+    $isNew ? 'Save Maintenance' : 'Update Maintenance',
+    [
             'class' =>
             'btn btn-primary px-4',
         ]

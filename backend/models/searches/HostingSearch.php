@@ -15,7 +15,6 @@ use yii\data\ActiveDataProvider;
  */
 class HostingSearch extends Hosting
 {
-
     use DateRangeSearchTrait;
 
     public ?string $expiry_date_range = null;
@@ -49,10 +48,9 @@ class HostingSearch extends Hosting
     }
 
     public function search(
-            array $params,
-            ?string $formName = null
-    ): ActiveDataProvider
-    {
+        array $params,
+        ?string $formName = null
+    ): ActiveDataProvider {
         $query = Hosting::find()->with('user');
 
         $dataProvider = new ActiveDataProvider([
@@ -69,8 +67,8 @@ class HostingSearch extends Hosting
         ]);
 
         $this->load(
-                $params,
-                $formName
+            $params,
+            $formName
         );
 
         if (!$this->validate()) {
@@ -102,9 +100,9 @@ class HostingSearch extends Hosting
         ]);
 
         $this->applySqlDateRange(
-                $query,
-                'hosting.current_expiry_date',
-                $this->expiry_date_range
+            $query,
+            'hosting.current_expiry_date',
+            $this->expiry_date_range
         );
 
         return $dataProvider;

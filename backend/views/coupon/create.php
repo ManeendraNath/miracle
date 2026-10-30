@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 use yii\helpers\Html;
@@ -20,7 +21,7 @@ $this->params['breadcrumbs'][] = $this->title;
         <h4 class="mb-1">
 <?=
 Html::encode(
-        $this->title
+    $this->title
 )
 ?>
         </h4>
@@ -33,8 +34,8 @@ Html::encode(
 
     <?=
     $this->render(
-            '_form',
-            [
+        '_form',
+        [
                 'model' => $model,
             ]
     )

@@ -10,13 +10,10 @@ use Yii;
 
 final class AutoBillingService
 {
-
     public function __construct(
-            private readonly BillingCollectorService $collector = new BillingCollectorService(),
-            private readonly AutoInvoiceService $invoiceService = new AutoInvoiceService()
-    )
-    {
-        
+        private readonly BillingCollectorService $collector = new BillingCollectorService(),
+        private readonly AutoInvoiceService $invoiceService = new AutoInvoiceService()
+    ) {
     }
 
     public function run(?DateTimeImmutable $today = null): array
@@ -26,36 +23,36 @@ final class AutoBillingService
         try {
             $events = $this->collector->collect((int) $run->id, $today);
             Yii::info(
-                    [
+                [
                         'message' => 'Renewable assets collected.',
                         'billingRunId' => (int) $run->id,
                         'billingRunNumber' => $run->run_number,
                         'billingEventCount' => count($events),
                     ],
-                    __METHOD__
+                __METHOD__
             );
             $invoices = $this->invoiceService->generatePendingInvoices((int) $run->id);
             $this->markCompleted($run);
             Yii::info(
-                    [
+                [
                         'message' => 'Automatic billing run completed.',
                         'billingRunId' => (int) $run->id,
                         'billingRunNumber' => $run->run_number,
                         'invoiceCount' => count($invoices),
                     ],
-                    __METHOD__
+                __METHOD__
             );
             return $invoices;
         } catch (\Throwable $exception) {
             $this->markFailed($run, $exception);
             Yii::error(
-                    [
+                [
                         'message' => 'Automatic billing run failed.',
                         'billingRunId' => (int) $run->id,
                         'billingRunNumber' => $run->run_number,
                         'exception' => $exception->getMessage(),
                     ],
-                    __METHOD__
+                __METHOD__
             );
             throw $exception;
         }
@@ -99,14 +96,14 @@ final class AutoBillingService
         $run->updated_at = $now;
         if (!$run->save()) {
             Yii::error(
-                    [
+                [
                         'message' => 'Unable to persist failed billing run.',
                         'billingRunId' => (int) $run->id,
                         'billingRunNumber' => $run->run_number,
                         'errors' => $run->errors,
                         'exception' => $exception->getMessage(),
                     ],
-                    __METHOD__
+                __METHOD__
             );
         }
     }

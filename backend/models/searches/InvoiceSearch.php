@@ -13,7 +13,6 @@ use common\models\traits\DateRangeSearchTrait;
  */
 class InvoiceSearch extends Invoice
 {
-
     use DateRangeSearchTrait;
 
     public ?string $due_date_range = null;

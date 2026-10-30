@@ -10,24 +10,20 @@ use Yii;
 
 final class PaymentProcessingService
 {
-
     public function __construct(
-            private readonly InvoicePaymentService $paymentService = new InvoicePaymentService(),
-            private readonly RenewalFulfilmentService $fulfilmentService = new RenewalFulfilmentService()
-    )
-    {
-        
+        private readonly InvoicePaymentService $paymentService = new InvoicePaymentService(),
+        private readonly RenewalFulfilmentService $fulfilmentService = new RenewalFulfilmentService()
+    ) {
     }
 
     public function transactionChanged(
-            Transaction $paymentTransaction,
-            bool $useTransaction = true
-    ): void
-    {
+        Transaction $paymentTransaction,
+        bool $useTransaction = true
+    ): void {
         if ((int) $paymentTransaction->invoice_id <= 0) {
             throw new \InvalidArgumentException(
-                            'Transaction must belong to an invoice.'
-                    );
+                'Transaction must belong to an invoice.'
+            );
         }
 
         $dbTransaction = $useTransaction ? Yii::$app->db->beginTransaction() : null;
@@ -35,7 +31,7 @@ final class PaymentProcessingService
         try {
             $invoiceId = Yii::$app->db
                     ->createCommand(
-                            '
+                        '
                         SELECT id
                         FROM {{%invoice}}
                         WHERE id = :id
@@ -43,20 +39,20 @@ final class PaymentProcessingService
                         '
                     )
                     ->bindValue(
-                            ':id',
-                            (int) $paymentTransaction
+                        ':id',
+                        (int) $paymentTransaction
                             ->invoice_id
                     )
                     ->queryScalar();
 
             $invoice = $invoiceId !== false ? Invoice::findOne(
-                            (int) $invoiceId
-                    ) : null;
+                (int) $invoiceId
+            ) : null;
 
             if ($invoice === null) {
                 throw new \RuntimeException(
-                                'Invoice not found for transaction.'
-                        );
+                    'Invoice not found for transaction.'
+                );
             }
 
             if (
@@ -64,9 +60,9 @@ final class PaymentProcessingService
                     Invoice::STATUS_CANCELLED
             ) {
                 throw new \DomainException(
-                                'Payment cannot be applied to '
+                    'Payment cannot be applied to '
                                 . 'a cancelled invoice.'
-                        );
+                );
             }
 
             if (
@@ -74,15 +70,15 @@ final class PaymentProcessingService
                     Invoice::STATUS_CARRIED_FORWARD
             ) {
                 throw new \DomainException(
-                                'This invoice balance has already '
+                    'This invoice balance has already '
                                 . 'been carried forward.'
-                        );
+                );
             }
 
             // Recalculate from the complete captured-payment ledger.
             $this->paymentService->reconcile(
-                            $invoice
-                    );
+                $invoice
+            );
 
             // Renewal fulfilment happens only after full payment.
             if (
@@ -91,8 +87,8 @@ final class PaymentProcessingService
             ) {
                 $this->fulfilmentService
                         ->fulfilInvoice(
-                                $invoice,
-                                false
+                            $invoice,
+                            false
                         );
             }
 

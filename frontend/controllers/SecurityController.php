@@ -12,7 +12,6 @@ use yii\web\Controller;
 
 final class SecurityController extends Controller
 {
-    
     public $layout = 'account';
 
     public function behaviors(): array
@@ -47,8 +46,8 @@ final class SecurityController extends Controller
         ]);
 
         return $this->render(
-                        'index',
-                        [
+            'index',
+            [
                             'dataProvider' =>
                             new ActiveDataProvider([
                                 'query' =>
@@ -58,6 +57,6 @@ final class SecurityController extends Controller
                                 ],
                                     ]),
                         ]
-                );
+        );
     }
 }

@@ -24,8 +24,6 @@ use Yii;
  */
 class Domains extends \yii\db\ActiveRecord
 {
-
-
     /**
      * {@inheritdoc}
      */
@@ -83,5 +81,4 @@ class Domains extends \yii\db\ActiveRecord
     {
         return $this->hasOne(User::class, ['id' => 'user_id']);
     }
-
 }

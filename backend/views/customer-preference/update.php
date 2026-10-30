@@ -43,7 +43,7 @@ $this->params['breadcrumbs'][] = $user->username;
                         <div class="fw-semibold">
 <?=
 Html::encode(
-        $user->username
+    $user->username
 )
 ?>
                         </div>
@@ -51,7 +51,7 @@ Html::encode(
                         <div class="text-muted small">
                             <?=
                             Html::encode(
-                                    $user->email
+                                $user->email
                             )
                             ?>
                         </div>
@@ -65,14 +65,14 @@ Html::encode(
                         <?=
                                 $form
                                 ->field(
-                                        $model,
-                                        'renewal_reminders'
+                                    $model,
+                                    'renewal_reminders'
                                 )
                                 ->checkbox([
                                     'label' =>
                                     'Renewal reminders',
                                 ])
-                        ?>
+                                ?>
 
                         <div class="text-muted small">
                             Receive reminders relating
@@ -86,14 +86,14 @@ Html::encode(
                         <?=
                                 $form
                                 ->field(
-                                        $model,
-                                        'payment_reminders'
+                                    $model,
+                                    'payment_reminders'
                                 )
                                 ->checkbox([
                                     'label' =>
                                     'Payment reminders',
                                 ])
-                        ?>
+                                ?>
 
                         <div class="text-muted small">
                             Receive invoice payment and
@@ -107,14 +107,14 @@ Html::encode(
                         <?=
                                 $form
                                 ->field(
-                                        $model,
-                                        'service_expiry_notifications'
+                                    $model,
+                                    'service_expiry_notifications'
                                 )
                                 ->checkbox([
                                     'label' =>
                                     'Service expiry notifications',
                                 ])
-                        ?>
+                                ?>
 
                         <div class="text-muted small">
                             Receive notifications for
@@ -128,14 +128,14 @@ Html::encode(
                         <?=
                                 $form
                                 ->field(
-                                        $model,
-                                        'support_notifications'
+                                    $model,
+                                    'support_notifications'
                                 )
                                 ->checkbox([
                                     'label' =>
                                     'Support notifications',
                                 ])
-                        ?>
+                                ?>
 
                         <div class="text-muted small">
                             Receive notifications when
@@ -148,8 +148,8 @@ Html::encode(
 
                         <?=
                         Html::submitButton(
-                                'Save Preferences',
-                                [
+                            'Save Preferences',
+                            [
                                     'class' =>
                                     'btn btn-primary',
                                 ]
@@ -158,9 +158,9 @@ Html::encode(
 
                     <?=
                     Html::a(
-                            'Cancel',
-                            ['index'],
-                            [
+                        'Cancel',
+                        ['index'],
+                        [
                                 'class' =>
                                 'btn btn-outline-secondary',
                             ]

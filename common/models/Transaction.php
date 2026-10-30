@@ -2,7 +2,6 @@
 
 namespace common\models;
 
-
 /**
  * This is the model class for table "transaction".
  *
@@ -26,7 +25,6 @@ namespace common\models;
  */
 class Transaction extends base\Transaction
 {
-
     /** gateway_id values (see column comment). */
     public const GATEWAY_MANUAL = 0;
     public const GATEWAY_RAZORPAY = 1;
@@ -38,6 +36,4 @@ class Transaction extends base\Transaction
             [['user_payment_notes'], 'string'],
         ]);
     }
-
 }
-

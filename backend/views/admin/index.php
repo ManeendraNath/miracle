@@ -38,7 +38,7 @@ $this->params['breadcrumbs'][] = $this->title;
                 'label' => 'System ID Reference',
                 'headerOptions' => ['class' => 'text-primary font-weight-bold'],
                 'format' => 'raw',
-                'value' => function($model) {
+                'value' => function ($model) {
                     return '<span class="text-secondary font-weight-bold">' . $model->id . '</span>';
                 }
             ],
@@ -47,7 +47,7 @@ $this->params['breadcrumbs'][] = $this->title;
                 'label' => 'Unique Profile Handle',
                 'headerOptions' => ['class' => 'text-primary font-weight-bold'],
                 'format' => 'raw',
-                'value' => function($model) {
+                'value' => function ($model) {
                     return '<span class="font-weight-bold text-dark">' . Html::encode($model->username) . '</span>';
                 }
             ],
@@ -57,7 +57,7 @@ $this->params['breadcrumbs'][] = $this->title;
                 'headerOptions' => ['class' => 'text-primary font-weight-bold'],
                 'format' => 'email',
             ],
-            
+
             [
                 'class' => 'yii\grid\ActionColumn',
                 'header' => 'Actions Panel',

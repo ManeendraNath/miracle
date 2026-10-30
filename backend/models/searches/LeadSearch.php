@@ -8,11 +8,10 @@ use yii\base\Model;
 use yii\data\ActiveDataProvider;
 
 /**
- * LeadSearch represents the model behind the search form of `common\models\Lead`. 
+ * LeadSearch represents the model behind the search form of `common\models\Lead`.
  */
 class LeadSearch extends Lead
 {
-
     use \common\models\traits\DateRangeSearchTrait;
 
     public ?string $created_at_range = null;
@@ -50,7 +49,7 @@ class LeadSearch extends Lead
     {
         $query = Lead::find();
 
-        // add conditions that should always apply here 
+        // add conditions that should always apply here
         $dataProvider = new ActiveDataProvider([
             'query' => $query,
             'pagination' => [
@@ -63,8 +62,8 @@ class LeadSearch extends Lead
 
         $this->load($params, $formName);
         if (!$this->validate()) {
-            // uncomment the following line if you do not want to return any records when validation fails 
-            // $query->where('0=1'); 
+            // uncomment the following line if you do not want to return any records when validation fails
+            // $query->where('0=1');
             return $dataProvider;
         }
 

@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 use yii\helpers\Html;
@@ -54,10 +55,10 @@ $serviceIcon = match ($type) {
     "
     >
     Hello <?=
-Html::encode(
+    Html::encode(
         $user->username
-)
-?>,
+    )
+    ?>,
 </h2>
 
 <p>
@@ -88,7 +89,7 @@ Html::encode(
                 <?= $serviceIcon ?>
                 <?=
                 Html::encode(
-                        $typeLabel
+                    $typeLabel
                 )
                 ?>
             </strong>
@@ -104,7 +105,7 @@ Html::encode(
             <strong>
                 <?=
                 Html::encode(
-                        $serviceName
+                    $serviceName
                 )
                 ?>
             </strong>
@@ -120,8 +121,8 @@ Html::encode(
             <strong>
                 <?=
                 Yii::$app->formatter->asDate(
-                        $expiryDate,
-                        'php:d M Y'
+                    $expiryDate,
+                    'php:d M Y'
                 )
                 ?>
             </strong>
@@ -163,10 +164,10 @@ Html::encode(
 
     <a
         href="<?=
-Html::encode(
-        $dashboardUrl
-)
-?>"
+        Html::encode(
+            $dashboardUrl
+        )
+        ?>"
         class="button"
         aria-label="Login to Client Area"
         >

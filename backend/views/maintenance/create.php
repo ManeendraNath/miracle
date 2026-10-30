@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 $this->title = 'Add Maintenance Contract';
@@ -15,8 +16,8 @@ $this->params['breadcrumbs'][] = $this->title;
 
 <?=
 $this->render(
-        '_form',
-        [
+    '_form',
+    [
             'model' => $model,
         ]
 )

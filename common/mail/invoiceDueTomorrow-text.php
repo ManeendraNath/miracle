@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 /**
@@ -21,8 +22,8 @@ Invoice Number:
 Due Date:
 <?=
 date(
-        'd M Y',
-        strtotime($invoice->due_date)
+    'd M Y',
+    strtotime($invoice->due_date)
 )
 ?>
 
@@ -30,8 +31,8 @@ date(
 Amount Due:
 INR <?=
 number_format(
-        (float) $invoice->total_payable,
-        2
+    (float) $invoice->total_payable,
+    2
 )
 ?>
 

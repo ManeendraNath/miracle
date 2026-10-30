@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 use common\services\UpcomingExpiryService;
@@ -131,9 +132,9 @@ JS);
 
 <?=
 Html::label(
-        'Service Type',
-        'type',
-        [
+    'Service Type',
+    'type',
+    [
             'class' => 'form-label fw-semibold',
         ]
 )
@@ -141,10 +142,10 @@ Html::label(
 
                     <?=
                     Html::dropDownList(
-                            'type',
-                            $filters['type'],
-                            $typeLabels,
-                            [
+                        'type',
+                        $filters['type'],
+                        $typeLabels,
+                        [
                                 'id' => 'type',
                                 'class' => 'form-control',
                                 'prompt' => 'All Service Types',
@@ -158,9 +159,9 @@ Html::label(
 
                     <?=
                     Html::label(
-                            'Customer',
-                            'user_id',
-                            [
+                        'Customer',
+                        'user_id',
+                        [
                                 'class' => 'form-label fw-semibold',
                             ]
                     )
@@ -168,10 +169,10 @@ Html::label(
 
                     <?=
                     Html::dropDownList(
-                            'user_id',
-                            $filters['user_id'],
-                            $customers,
-                            [
+                        'user_id',
+                        $filters['user_id'],
+                        $customers,
+                        [
                                 'id' => 'user_id',
                                 'class' => 'form-control',
                                 'prompt' => 'All Customers',
@@ -185,9 +186,9 @@ Html::label(
 
                     <?=
                     Html::label(
-                            'Expiry Window',
-                            'window',
-                            [
+                        'Expiry Window',
+                        'window',
+                        [
                                 'class' => 'form-label fw-semibold',
                             ]
                     )
@@ -195,10 +196,10 @@ Html::label(
 
                     <?=
                     Html::dropDownList(
-                            'window',
-                            $filters['window'],
-                            $windowLabels,
-                            [
+                        'window',
+                        $filters['window'],
+                        $windowLabels,
+                        [
                                 'id' => 'window',
                                 'class' => 'form-control',
                             ]
@@ -211,8 +212,8 @@ Html::label(
 
             <?=
             Html::submitButton(
-                    '<i class="fas fa-search mr-1"></i> Apply',
-                    [
+                '<i class="fas fa-search mr-1"></i> Apply',
+                [
                         'class' => 'btn btn-primary w-100',
                     ]
             )
@@ -224,9 +225,9 @@ Html::label(
 
 <?=
 Html::a(
-        '<i class="fas fa-times mr-1"></i> Clear Filters',
-        ['/renewal-monitoring/index'],
-        [
+    '<i class="fas fa-times mr-1"></i> Clear Filters',
+    ['/renewal-monitoring/index'],
+    [
             'class' => 'btn btn-sm btn-outline-secondary',
         ]
 )
@@ -279,9 +280,9 @@ Html::a(
                                 $email = $item['email'] ?: 'Email not available';
 
                                 return Html::tag(
-                                        'span',
-                                        Html::encode($username),
-                                        [
+                                    'span',
+                                    Html::encode($username),
+                                    [
                                             'class' => 'fw-semibold text-primary',
                                             'title' => $email,
                                             'data-bs-toggle' => 'tooltip',
@@ -300,9 +301,9 @@ Html::a(
                             'format' => 'raw',
                             'value' => static function (array $item): string {
                                 return Html::tag(
-                                        'span',
-                                        Html::encode($item['name']),
-                                        [
+                                    'span',
+                                    Html::encode($item['name']),
+                                    [
                                             'class' => 'fw-semibold text-dark',
                                         ]
                                 );
@@ -316,17 +317,17 @@ Html::a(
                             'label' => 'Type',
                             'format' => 'raw',
                             'value' => static function (array $item) use (
-                                    $typeLabels,
-                                    $typeClasses
+                                $typeLabels,
+                                $typeClasses
                             ): string {
                                 $type = (string) $item['type'];
 
                                 return Html::tag(
-                                        'span',
-                                        Html::encode(
-                                                $typeLabels[$type] ?? ucfirst($type)
-                                        ),
-                                        [
+                                    'span',
+                                    Html::encode(
+                                        $typeLabels[$type] ?? ucfirst($type)
+                                    ),
+                                    [
                                             'class' => 'badge '
                                             . ($typeClasses[$type] ?? 'bg-dark'),
                                         ]
@@ -341,8 +342,8 @@ Html::a(
                             'label' => 'Expiry',
                             'value' => static function (array $item): string {
                                 return Yii::$app->formatter->asDate(
-                                        $item['expiry_date'],
-                                        'php:d M Y'
+                                    $item['expiry_date'],
+                                    'php:d M Y'
                                 );
                             },
                             'headerOptions' => [
@@ -387,9 +388,9 @@ Html::a(
                                 }
 
                                 return Html::tag(
-                                        'span',
-                                        Html::encode($label),
-                                        [
+                                    'span',
+                                    Html::encode($label),
+                                    [
                                             'class' => 'badge ' . $class,
                                         ]
                                 );
@@ -405,7 +406,7 @@ Html::a(
                             'label' => 'Action',
                             'format' => 'raw',
                             'value' => static function (array $item) use (
-                                    $routeMap
+                                $routeMap
                             ): string {
                                 $route = $routeMap[$item['type']] ?? null;
 
@@ -414,12 +415,12 @@ Html::a(
                                 }
 
                                 return Html::a(
-                                        '<i class="fas fa-eye"></i>',
-                                        [
+                                    '<i class="fas fa-eye"></i>',
+                                    [
                                             $route,
                                             'id' => $item['id'],
                                         ],
-                                        [
+                                    [
                                             'class' => 'btn btn-sm btn-outline-info',
                                             'title' => 'View Service',
                                             'data-bs-toggle' => 'tooltip',

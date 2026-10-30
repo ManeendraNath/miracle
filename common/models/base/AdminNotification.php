@@ -18,8 +18,6 @@ use Yii;
  */
 class AdminNotification extends \yii\db\ActiveRecord
 {
-
-
     /**
      * {@inheritdoc}
      */
@@ -61,5 +59,4 @@ class AdminNotification extends \yii\db\ActiveRecord
             'created_at' => 'Created At',
         ];
     }
-
 }

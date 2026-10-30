@@ -11,54 +11,50 @@ use yii\db\IntegrityException;
 
 final class BillingEventService
 {
-
     public function __construct(
-            private readonly RenewalPriceCalculator $prices = new RenewalPriceCalculator(),
-            private readonly RenewalPeriodCalculator $periods = new RenewalPeriodCalculator()
-    )
-    {
-        
+        private readonly RenewalPriceCalculator $prices = new RenewalPriceCalculator(),
+        private readonly RenewalPeriodCalculator $periods = new RenewalPeriodCalculator()
+    ) {
     }
 
     public function create(
-            int $runId,
-            BillableRenewal $renewal
-    ): BillingEvent
-    {
+        int $runId,
+        BillableRenewal $renewal
+    ): BillingEvent {
         if ($runId <= 0) {
             throw new \InvalidArgumentException(
-                            'A valid billing run ID is required.'
-                    );
+                'A valid billing run ID is required.'
+            );
         }
 
         if ($renewal->userId <= 0) {
             throw new \InvalidArgumentException(
-                            'A valid client ID is required.'
-                    );
+                'A valid client ID is required.'
+            );
         }
 
         if ($renewal->itemId <= 0) {
             throw new \InvalidArgumentException(
-                            'A valid renewable item ID is required.'
-                    );
+                'A valid renewable item ID is required.'
+            );
         }
 
         if ($renewal->baseAmount <= 0) {
             throw new \InvalidArgumentException(
-                            'Renewal base amount must be greater than zero.'
-                    );
+                'Renewal base amount must be greater than zero.'
+            );
         }
 
         $settings = BillingSettings::forType(
-                $renewal->itemType
+            $renewal->itemType
         );
 
         if (!(bool) $settings->is_active) {
             throw new \DomainException(
-                            'Automatic billing is disabled for service type '
+                'Automatic billing is disabled for service type '
                             . $renewal->itemType
                             . '.'
-                    );
+            );
         }
 
         $cycle = $renewal->cycleMonths ?? (int) $settings->renewal_cycle_months;
@@ -67,67 +63,69 @@ final class BillingEventService
 
         if ($cycle <= 0) {
             throw new \DomainException(
-                            'Renewal cycle must be greater than zero.'
-                    );
+                'Renewal cycle must be greater than zero.'
+            );
         }
 
         if ($increase < 0) {
             throw new \DomainException(
-                            'Renewal increase percentage cannot be negative.'
-                    );
+                'Renewal increase percentage cannot be negative.'
+            );
         }
 
         $period = $this->periods->calculate(
-                $renewal->currentExpiryDate,
-                $cycle
+            $renewal->currentExpiryDate,
+            $cycle
         );
 
         $existing = $this->findExisting(
-    $renewal,
-    $period['start']
-);
+            $renewal,
+            $period['start']
+        );
 
-if ($existing !== null) {
-    if (
-        $existing->status ===
-        BillingEvent::STATUS_PENDING
-        && $existing->invoice_id === null
-        && (int) $existing->billing_run_id
-            !== $runId
-    ) {
-        $existing->billing_run_id =
-            $runId;
+        if ($existing !== null) {
+            if (
+                $existing->status ===
+                BillingEvent::STATUS_PENDING
+                && $existing->invoice_id === null
+                && (int) $existing->billing_run_id
+                !== $runId
+            ) {
+                $existing->billing_run_id =
+                    $runId;
 
-        $existing->updated_at =
-            time();
+                $existing->updated_at =
+                    time();
 
-        if (!$existing->save(
-            false,
-            [
-                'billing_run_id',
-                'updated_at',
-            ]
-        )) {
-            throw new \RuntimeException(
-                'Pending billing event could not '
-                . 'be moved to the current billing run.'
-            );
+                if (
+                    !$existing->save(
+                        false,
+                        [
+                        'billing_run_id',
+                        'updated_at',
+                        ]
+                    )
+                ) {
+                    throw new \RuntimeException(
+                        'Pending billing event could not '
+                        . 'be moved to the current billing run.'
+                    );
+                }
+            }
+
+            return $existing;
         }
-    }
-
-    return $existing;
-}
 
         $price = $this->prices->calculate(
-                $renewal->itemType,
-                $renewal->itemId,
-                $renewal->baseAmount,
-                $increase
+            $renewal->itemType,
+            $renewal->itemId,
+            $renewal->baseAmount,
+            $increase
         );
 
         $paymentDueDays = max(
-                0,
-                (int) $settings->payment_due_days
+            0,
+            (int) $settings->payment_due_days
         );
 
         $event = new BillingEvent();
@@ -154,10 +152,10 @@ if ($existing !== null) {
         $event->is_manual_amount = 0;
 
         $event->due_date = date(
-                'Y-m-d',
-                strtotime(
-                        '+' . $paymentDueDays . ' days'
-                )
+            'Y-m-d',
+            strtotime(
+                '+' . $paymentDueDays . ' days'
+            )
         );
 
         $event->status = BillingEvent::STATUS_PENDING;
@@ -165,12 +163,12 @@ if ($existing !== null) {
         try {
             if (!$event->save()) {
                 throw new \RuntimeException(
-                                'Unable to create billing event: '
+                    'Unable to create billing event: '
                                 . json_encode(
-                                        $event->errors,
-                                        JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES
+                                    $event->errors,
+                                    JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES
                                 )
-                        );
+                );
             }
 
             return $event;
@@ -179,8 +177,8 @@ if ($existing !== null) {
             // service-period event between lookup and INSERT.
 
             $existing = $this->findExisting(
-                    $renewal,
-                    $period['start']
+                $renewal,
+                $period['start']
             );
 
             if ($existing !== null) {
@@ -192,10 +190,9 @@ if ($existing !== null) {
     }
 
     private function findExisting(
-            BillableRenewal $renewal,
-            string $periodStart
-    ): ?BillingEvent
-    {
+        BillableRenewal $renewal,
+        string $periodStart
+    ): ?BillingEvent {
         // Cancelled events release their period so it can be billed again.
         // Matched on period_start only: events created before the month-end
         // fix in RenewalPeriodCalculator carry a different period_end.

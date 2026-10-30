@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 use yii\helpers\Html;
@@ -39,25 +40,25 @@ $form = ActiveForm::begin(['id' => 'profile-form']);
                     </div>
                     <?=
                     $form->field(
-                            $model,
-                            'mobile'
+                        $model,
+                        'mobile'
                     )->textInput([
                         'maxlength' => true,
                         'placeholder' => '919876543210',
                     ])->hint(
-                            'Enter mobile number with country code.'
+                        'Enter mobile number with country code.'
                     )
                     ?>
 
                     <?=
                     $form->field(
-                            $model,
-                            'whatsapp'
+                        $model,
+                        'whatsapp'
                     )->textInput([
                         'maxlength' => true,
                         'placeholder' => '919876543210',
                     ])->hint(
-                            'Enter WhatsApp number with country code.'
+                        'Enter WhatsApp number with country code.'
                     )
                     ?>
 
@@ -92,7 +93,7 @@ $form = ActiveForm::begin(['id' => 'profile-form']);
                             <div class="fw-semibold">
                                 <?=
                                 Html::encode(
-                                        $billingProfile
+                                    $billingProfile
                                         ->legal_name
                                 )
                                 ?>
@@ -107,21 +108,21 @@ $form = ActiveForm::begin(['id' => 'profile-form']);
                             <div>
                                 <?=
                                 Html::encode(
-                                        implode(
-                                                ', ',
-                                                array_filter([
-                                    $billingProfile
-                                    ->address_line_1,
-                                    $billingProfile
-                                    ->address_line_2,
-                                    $billingProfile
-                                    ->city,
-                                    $billingProfile
-                                    ->state,
-                                    $billingProfile
-                                    ->postal_code,
+                                    implode(
+                                        ', ',
+                                        array_filter([
+                                            $billingProfile
+                                            ->address_line_1,
+                                            $billingProfile
+                                            ->address_line_2,
+                                            $billingProfile
+                                            ->city,
+                                            $billingProfile
+                                            ->state,
+                                            $billingProfile
+                                            ->postal_code,
                                                 ])
-                                        )
+                                    )
                                 )
                                 ?>
                             </div>
@@ -144,7 +145,7 @@ $form = ActiveForm::begin(['id' => 'profile-form']);
                         <?php
                         if (
                                 !empty(
-                                        $billingProfile->gstin
+                                    $billingProfile->gstin
                                 )
                         ):
                             ?>
@@ -157,7 +158,7 @@ $form = ActiveForm::begin(['id' => 'profile-form']);
                                 <div>
                                     <?=
                                     Html::encode(
-                                            $billingProfile
+                                        $billingProfile
                                             ->gstin
                                     )
                                     ?>
@@ -169,7 +170,7 @@ $form = ActiveForm::begin(['id' => 'profile-form']);
                         <?php
                         if (
                                 !empty(
-                                        $billingProfile->pan
+                                    $billingProfile->pan
                                 )
                         ):
                             ?>
@@ -182,23 +183,22 @@ $form = ActiveForm::begin(['id' => 'profile-form']);
                                 <div>
                                     <?=
                                     Html::encode(
-                                            $billingProfile
+                                        $billingProfile
                                             ->pan
                                     )
                                     ?>
                                 </div>
                             </div>
 
-    <?php endif; ?>
+                        <?php endif; ?>
 
-<?php else: ?>
-
+                    <?php else: ?>
                         <div class="alert alert-warning mb-0">
                             Billing profile information has not been configured yet.
                             Please contact support before your next invoice is generated.
                         </div>
 
-<?php endif; ?>
+                    <?php endif; ?>
 
                 </div>
 

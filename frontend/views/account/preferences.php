@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 use yii\helpers\Html;
@@ -45,50 +46,50 @@ $form = ActiveForm::begin();
 <?=
         $form
         ->field(
-                $model,
-                'renewal_reminders'
+            $model,
+            'renewal_reminders'
         )
         ->checkbox([
             'label' =>
             'Renewal reminders',
         ])
-?>
+        ?>
 
                     <?=
                             $form
                             ->field(
-                                    $model,
-                                    'payment_reminders'
+                                $model,
+                                'payment_reminders'
                             )
                             ->checkbox([
                                 'label' =>
                                 'Payment reminders',
                             ])
-                    ?>
+                            ?>
 
                     <?=
                             $form
                             ->field(
-                                    $model,
-                                    'service_expiry_notifications'
+                                $model,
+                                'service_expiry_notifications'
                             )
                             ->checkbox([
                                 'label' =>
                                 'Service expiry notifications',
                             ])
-                    ?>
+                            ?>
 
                     <?=
                             $form
                             ->field(
-                                    $model,
-                                    'support_notifications'
+                                $model,
+                                'support_notifications'
                             )
                             ->checkbox([
                                 'label' =>
                                 'Support request updates',
                             ])
-                    ?>
+                            ?>
 
                     <div class="
                          alert
@@ -110,8 +111,8 @@ $form = ActiveForm::begin();
 
                     <?=
                     Html::submitButton(
-                            'Save Preferences',
-                            [
+                        'Save Preferences',
+                        [
                                 'class' =>
                                 'btn btn-primary px-4',
                             ]

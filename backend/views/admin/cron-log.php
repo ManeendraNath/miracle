@@ -1,5 +1,7 @@
 <?php
+
 use yii\helpers\Html;
+
 /** @var yii\web\View $this */
 /** @var array $logLines */
 /** @var array $metrics */
@@ -49,11 +51,17 @@ $this->params['breadcrumbs'][] = $this->title;
         <div class="card-body bg-black p-4 text-monospace" style="max-height: 500px; overflow-y: auto; background-color: #1e1e1e; border-radius: 0 0 4px 4px;">
             <div class="terminal-shell-lines text-sm" style="line-height: 1.8; font-family: 'Courier New', Courier, monospace;">
                 <?php foreach ($logLines as $line): ?>
-                    <?php 
+                    <?php
                     $color = '#dcdcdc'; // Default gray-white line text text
-                    if (stripos($line, 'Successfully') !== false || stripos($line, 'complete') !== false) $color = '#2ecc71'; // Active emerald green
-                    if (stripos($line, 'Skipping') !== false) $color = '#f1c40f'; // Warn gold text
-                    if (stripos($line, 'error') !== false || stripos($line, 'failed') !== false) $color = '#e74c3c'; // Fire red
+                    if (stripos($line, 'Successfully') !== false || stripos($line, 'complete') !== false) {
+                        $color = '#2ecc71'; // Active emerald green
+                    }
+                    if (stripos($line, 'Skipping') !== false) {
+                        $color = '#f1c40f'; // Warn gold text
+                    }
+                    if (stripos($line, 'error') !== false || stripos($line, 'failed') !== false) {
+                        $color = '#e74c3c'; // Fire red
+                    }
                     ?>
                     <div style="color: <?= $color ?>; border-bottom: 1px solid #2d2d2d;" class="py-1">
                         <span class="text-muted mr-2">[⚡]</span> <?= Html::encode($line) ?>

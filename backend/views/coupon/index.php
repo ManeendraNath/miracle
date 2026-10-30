@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 use common\helpers\GridActionHelper;
@@ -37,9 +38,9 @@ GridViewHelper::register($this);
 
                 <?=
                 Html::a(
-                        '<i class="fas fa-plus mr-1"></i> Add Coupon',
-                        ['create'],
-                        [
+                    '<i class="fas fa-plus mr-1"></i> Add Coupon',
+                    ['create'],
+                    [
                             'class' => 'btn btn-sm btn-primary',
                         ]
                 )
@@ -89,14 +90,14 @@ GridViewHelper::register($this);
                             'label' => 'Code',
                             'format' => 'raw',
                             'value' => static function (
-                                    Coupon $model
+                                Coupon $model
                             ): string {
                                 return Html::tag(
-                                        'code',
-                                        Html::encode(
-                                                $model->code
-                                        ),
-                                        [
+                                    'code',
+                                    Html::encode(
+                                        $model->code
+                                    ),
+                                    [
                                             'class' =>
                                             'fw-semibold text-primary',
                                         ]
@@ -118,10 +119,10 @@ GridViewHelper::register($this);
                             'label' => 'Type',
                             'filter' =>
                             GridFilterHelper::select2(
-                                    $searchModel,
-                                    'type',
-                                    Coupon::getTypes(),
-                                    'All Types'
+                                $searchModel,
+                                'type',
+                                Coupon::getTypes(),
+                                'All Types'
                             ),
                             'value' => static fn(
                             Coupon $model
@@ -155,9 +156,9 @@ GridViewHelper::register($this);
                             ): string =>
                                     Yii::$app->formatter
                                     ->asCurrency(
-                                            $model
+                                        $model
                                             ->minimum_order,
-                                            'INR'
+                                        'INR'
                                     ),
                             'headerOptions' => [
                                 'style' => 'min-width: 140px;',
@@ -170,11 +171,11 @@ GridViewHelper::register($this);
                             'attribute' => 'end_date',
                             'label' => 'Expires',
                             'value' => static function (
-                                    Coupon $model
+                                Coupon $model
                             ): string {
                                 if (
                                         empty(
-                                                $model
+                                            $model
                                                 ->end_date
                                         )
                                 ) {
@@ -184,9 +185,9 @@ GridViewHelper::register($this);
                                 return Yii::$app
                                         ->formatter
                                         ->asDatetime(
-                                                $model
+                                            $model
                                                 ->end_date,
-                                                'php:d M Y, h:i A'
+                                            'php:d M Y, h:i A'
                                         );
                             },
                             'headerOptions' => [
@@ -204,19 +205,19 @@ GridViewHelper::register($this);
                             'value' => static function (Coupon $model): string {
                                 $active = $model->is_active === Coupon::IS_ACTIVE_Y;
                                 return Html::tag(
-                                        'span',
-                                        Html::encode($model->getStatusLabel()),
-                                        ['class' => $active ? 'badge bg-success' : 'badge bg-secondary']
+                                    'span',
+                                    Html::encode($model->getStatusLabel()),
+                                    ['class' => $active ? 'badge bg-success' : 'badge bg-secondary']
                                 );
                             },
                             'headerOptions' => ['style' => 'width: 140px;'],
                             'contentOptions' => ['class' => 'text-center'],
                         ],
                         GridActionHelper::crudColumn(
-                                deleteMessage: 'Are you sure you want to delete this coupon?',
-                                urlCreator: static function (string $action, Coupon $model): array {
+                            deleteMessage: 'Are you sure you want to delete this coupon?',
+                            urlCreator: static function (string $action, Coupon $model): array {
                                     return [$action, 'id' => $model->id];
-                                }
+                            }
                         ),
                     ],
                 ])

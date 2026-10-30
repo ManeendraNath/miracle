@@ -11,11 +11,9 @@ use Yii;
 
 final class PaymentConfirmationService
 {
-
     public function send(
-            Transaction $transaction
-    ): void
-    {
+        Transaction $transaction
+    ): void {
         if (
                 $transaction->status !== Transaction::STATUS_CAPTURED
         ) {
@@ -24,7 +22,7 @@ final class PaymentConfirmationService
 
         if (
                 !empty(
-                        $transaction
+                    $transaction
                         ->confirmation_emailed_at
                 )
         ) {
@@ -32,50 +30,50 @@ final class PaymentConfirmationService
         }
 
         $invoice = Invoice::findOne(
-                (int)
+            (int)
                 $transaction->invoice_id
         );
 
         if ($invoice === null) {
             throw new \RuntimeException(
-                            'Invoice not found for '
+                'Invoice not found for '
                             . 'payment confirmation.'
-                    );
+            );
         }
 
         $client = User::findOne(
-                (int) $invoice->user_id
+            (int) $invoice->user_id
         );
 
         if (
                 $client === null || empty($client->email)
         ) {
             throw new \DomainException(
-                            'Customer email address '
+                'Customer email address '
                             . 'is unavailable.'
-                    );
+            );
         }
 
         $paymentService = new InvoicePaymentService();
 
         $outstanding = $paymentService
                 ->getOutstanding(
-                        $invoice
+                    $invoice
                 );
 
         $invoiceUrl = $this->getInvoiceUrl(
-                $invoice
+            $invoice
         );
 
         $message = Yii::$app->mailer
                 ->compose(
-                        [
+                    [
                             'html' =>
                             '@common/mail/payment-confirmation-html',
                             'text' =>
                             '@common/mail/payment-confirmation-text',
                         ],
-                        [
+                    [
                             'invoice' =>
                             $invoice,
                             'transaction' =>
@@ -94,18 +92,18 @@ final class PaymentConfirmationService
                     ->params['senderName'],
                 ])
                 ->setTo(
-                        $client->email
+                    $client->email
                 )
                 ->setSubject(
-                        'Payment received - '
+                    'Payment received - '
                         . $invoice->invoice_number
                 );
 
         if (!$message->send()) {
             throw new \RuntimeException(
-                            'Payment confirmation email '
+                'Payment confirmation email '
                             . 'could not be sent.'
-                    );
+            );
         }
 
         $transaction
@@ -113,42 +111,41 @@ final class PaymentConfirmationService
 
         if (
                 !$transaction->save(
-                        false,
-                        [
+                    false,
+                    [
                             'confirmation_emailed_at',
                         ]
                 )
         ) {
             throw new \RuntimeException(
-                            'Payment confirmation delivery '
+                'Payment confirmation delivery '
                             . 'could not be recorded.'
-                    );
+            );
         }
     }
 
     private function getInvoiceUrl(
-            Invoice $invoice
-    ): string
-    {
+        Invoice $invoice
+    ): string {
         $baseUrl = rtrim(
-                (string)
+            (string)
                 (
                 Yii::$app
                 ->params['frontendBaseUrl'] ?? ''
                 ),
-                '/'
+            '/'
         );
 
         if ($baseUrl === '') {
             throw new \RuntimeException(
-                            'Frontend base URL is not configured.'
-                    );
+                'Frontend base URL is not configured.'
+            );
         }
 
         return $baseUrl
                 . '/invoice/view?number='
                 . rawurlencode(
-                        (string)
+                    (string)
                         $invoice->invoice_number
                 );
     }

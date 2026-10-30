@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 use common\helpers\AdminIndexHelper;
@@ -24,9 +25,9 @@ $users = ArrayHelper::map(User::find()->orderBy(['username' => SORT_ASC])->all()
     <div class="card card-outline card-primary shadow-sm">
         <?=
         AdminIndexHelper::pageHeader(
-                'Manage AMC contracts and maintenance renewals.',
-                'create',
-                'Add Maintenance'
+            'Manage AMC contracts and maintenance renewals.',
+            'create',
+            'Add Maintenance'
         )
         ?>
         <div class="card-body p-0">
@@ -62,7 +63,7 @@ $users = ArrayHelper::map(User::find()->orderBy(['username' => SORT_ASC])->all()
                             'label' => 'Client',
                             'format' => 'raw',
                             'value' => static function (
-                                    Maintenance $model
+                                Maintenance $model
                             ): string {
                                 if ($model->user === null) {
                                     return '-';
@@ -73,9 +74,9 @@ $users = ArrayHelper::map(User::find()->orderBy(['username' => SORT_ASC])->all()
                                 $email = $model->user->email ?: 'Email not available';
 
                                 return Html::tag(
-                                        'span',
-                                        Html::encode($username),
-                                        [
+                                    'span',
+                                    Html::encode($username),
+                                    [
                                             'class' => 'fw-semibold text-primary',
                                             'title' => $email,
                                             'data-bs-toggle' => 'tooltip',
@@ -85,10 +86,10 @@ $users = ArrayHelper::map(User::find()->orderBy(['username' => SORT_ASC])->all()
                                 );
                             },
                             'filter' => GridFilterHelper::select2(
-                                    $searchModel,
-                                    'user_id',
-                                    $users,
-                                    'All Clients'
+                                $searchModel,
+                                'user_id',
+                                $users,
+                                'All Clients'
                             ),
                             'headerOptions' => [
                                 'style' => 'min-width: 160px;',
@@ -102,12 +103,12 @@ $users = ArrayHelper::map(User::find()->orderBy(['username' => SORT_ASC])->all()
                             'label' => 'Website',
                             'format' => 'raw',
                             'value' => static function (
-                                    Maintenance $model
+                                Maintenance $model
                             ): string {
                                 return Html::a(
-                                        Html::encode($model->website_url),
-                                        $model->website_url,
-                                        [
+                                    Html::encode($model->website_url),
+                                    $model->website_url,
+                                    [
                                             'target' => '_blank',
                                             'rel' => 'noopener noreferrer',
                                             'class' => 'fw-semibold',
@@ -136,9 +137,9 @@ $users = ArrayHelper::map(User::find()->orderBy(['username' => SORT_ASC])->all()
                             'attribute' => 'current_expiry_date',
                             'label' => 'Expiry',
                             'filter' => GridFilterHelper::dateRange(
-                                    $searchModel,
-                                    'expiry_date_range',
-                                    'Expiry dates'
+                                $searchModel,
+                                'expiry_date_range',
+                                'Expiry dates'
                             ),
                             'format' => [
                                 'date',
@@ -155,13 +156,13 @@ $users = ArrayHelper::map(User::find()->orderBy(['username' => SORT_ASC])->all()
                             'attribute' => 'status',
                             'format' => 'raw',
                             'filter' => GridFilterHelper::select2(
-                                    $searchModel,
-                                    'status',
-                                    Maintenance::getStatuses(),
-                                    'All Statuses'
+                                $searchModel,
+                                'status',
+                                Maintenance::getStatuses(),
+                                'All Statuses'
                             ),
                             'value' => static function (
-                                    Maintenance $model
+                                Maintenance $model
                             ): string {
                                 $statuses = Maintenance::getStatuses();
                                 $status = (int) $model->status;
@@ -176,9 +177,9 @@ $users = ArrayHelper::map(User::find()->orderBy(['username' => SORT_ASC])->all()
                                 };
 
                                 return Html::tag(
-                                        'span',
-                                        Html::encode($label),
-                                        [
+                                    'span',
+                                    Html::encode($label),
+                                    [
                                             'class' => 'badge ' . $class,
                                         ]
                                 );
@@ -191,7 +192,7 @@ $users = ArrayHelper::map(User::find()->orderBy(['username' => SORT_ASC])->all()
                             ],
                         ],
                         GridActionHelper::crudColumn(
-                                deleteMessage: 'Are you sure you want to delete this maintenance service?'
+                            deleteMessage: 'Are you sure you want to delete this maintenance service?'
                         ),
                     ],
                 ])

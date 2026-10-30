@@ -91,9 +91,9 @@ GridViewHelper::register($this);
                         'format' => 'raw',
                         'value' => static function (Lead $model): string {
                             return Html::tag(
-                                    'span',
-                                    Html::encode($model->lead_name),
-                                    ['class' => 'fw-semibold text-dark']
+                                'span',
+                                Html::encode($model->lead_name),
+                                ['class' => 'fw-semibold text-dark']
                             );
                         },
                         'headerOptions' => ['style' => 'min-width: 170px;'],

@@ -9,7 +9,6 @@ use yii\base\Model;
 
 final class ProfileForm extends Model
 {
-
     public string $username = '';
     public string $email = '';
     public string $mobile = '';
@@ -62,9 +61,8 @@ final class ProfileForm extends Model
     }
 
     public function validateMobileUnique(
-            string $attribute
-    ): void
-    {
+        string $attribute
+    ): void {
 
         if (
                 empty($this->$attribute) || $this->hasErrors()
@@ -84,18 +82,16 @@ final class ProfileForm extends Model
                 ->exists();
 
         if ($exists) {
-
             $this->addError(
-                    $attribute,
-                    'This mobile number is already in use.'
+                $attribute,
+                'This mobile number is already in use.'
             );
         }
     }
 
     public function validateWhatsappUnique(
-            string $attribute
-    ): void
-    {
+        string $attribute
+    ): void {
 
         if (
                 empty($this->$attribute) || $this->hasErrors()
@@ -115,10 +111,9 @@ final class ProfileForm extends Model
                 ->exists();
 
         if ($exists) {
-
             $this->addError(
-                    $attribute,
-                    'This WhatsApp number is already in use.'
+                $attribute,
+                'This WhatsApp number is already in use.'
             );
         }
     }

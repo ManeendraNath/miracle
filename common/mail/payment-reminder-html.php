@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 use yii\helpers\Html;
@@ -35,7 +36,7 @@ $amount = Yii::$app->formatter->asCurrency($outstandingAmount, 'INR');
                     ">
                         <?=
                         Html::encode(
-                                $invoice->invoice_number
+                            $invoice->invoice_number
                         )
                         ?>
                 </td>
@@ -57,7 +58,7 @@ $amount = Yii::$app->formatter->asCurrency($outstandingAmount, 'INR');
                 ">
                     <?=
                     Html::encode(
-                            $headline
+                        $headline
                     )
                     ?>
             </h1>
@@ -69,10 +70,10 @@ $amount = Yii::$app->formatter->asCurrency($outstandingAmount, 'INR');
                color:#4b5563;
                ">
                    <?=
-                   Html::encode(
-                           $subHeadline
-                   )
-                   ?>
+                    Html::encode(
+                        $subHeadline
+                    )
+                    ?>
             </p>
 
             <table
@@ -105,7 +106,7 @@ $amount = Yii::$app->formatter->asCurrency($outstandingAmount, 'INR');
                         >
                             <?=
                             Html::encode(
-                                    $amount
+                                $amount
                             )
                             ?>
                     </td>
@@ -134,9 +135,9 @@ $amount = Yii::$app->formatter->asCurrency($outstandingAmount, 'INR');
 
             <?=
             Html::a(
-                    'View Invoice & Pay →',
-                    $invoiceUrl,
-                    [
+                'View Invoice & Pay →',
+                $invoiceUrl,
+                [
                         'style' =>
                         'display:inline-block;'
                         . 'background:#171717;'

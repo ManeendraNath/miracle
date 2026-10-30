@@ -22,7 +22,6 @@ use Yii;
  */
 class AuditRequest extends \yii\db\ActiveRecord
 {
-
     /**
      * ENUM field values
      */

@@ -26,4 +26,16 @@ class Maintenance extends base\Maintenance
     public const STATUS_CANCELLED = 0;
     public const STATUS_ACTIVE = 1;
     public const STATUS_OVERDUE = 2;
+
+    #[\Override]
+    public function rules()
+    {
+        return array_merge(parent::rules(), [
+            [['start_date', 'current_expiry_date'], 'date', 'format' => 'php:Y-m-d'],
+            ['renewal_cycle_months', 'integer', 'min' => 1],
+            ['renewal_increase_percent', 'number', 'min' => 0, 'max' => 100],
+            ['renewal_base_amount', 'number', 'min' => 0],
+            ['status', 'in', 'range' => [self::STATUS_CANCELLED, self::STATUS_ACTIVE, self::STATUS_OVERDUE]],
+        ]);
+    }
 }

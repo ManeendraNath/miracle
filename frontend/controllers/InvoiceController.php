@@ -70,7 +70,7 @@ final class InvoiceController extends Controller
     public function actionView(string $number)
     {
         $model = $this->findOwnedInvoice($number);
-        $pendingPayment = Transaction::find()->where(['invoice_id' => $model->id, 'gateway_id' => 2, 'status' => Transaction::STATUS_PENDING])->orderBy(['id' => SORT_DESC])->one();
+        $pendingPayment = Transaction::find()->where(['invoice_id' => $model->id, 'gateway_id' => Transaction::GATEWAY_UPI_BANK, 'status' => Transaction::STATUS_PENDING])->orderBy(['id' => SORT_DESC])->one();
         $paymentService = new InvoicePaymentService();
         return $this->render(
                         'view',
@@ -112,7 +112,7 @@ final class InvoiceController extends Controller
             Yii::$app->session->setFlash('warning', 'This invoice has no outstanding balance.');
             return $this->redirect(['view', 'number' => $invoice->invoice_number]);
         }
-        $pendingExists = Transaction::find()->where(['invoice_id' => $invoice->id, 'gateway_id' => 2, 'status' => Transaction::STATUS_PENDING])->exists();
+        $pendingExists = Transaction::find()->where(['invoice_id' => $invoice->id, 'gateway_id' => Transaction::GATEWAY_UPI_BANK, 'status' => Transaction::STATUS_PENDING])->exists();
         if ($pendingExists) {
             Yii::$app->session->setFlash('warning', 'A payment proof for this invoice is already awaiting verification.');
             return $this->redirect(['view', 'number' => $invoice->invoice_number]);
@@ -134,11 +134,6 @@ final class InvoiceController extends Controller
             $form->addError('gateway_payment_id', 'This payment reference has already been submitted.');
             return $this->render('submit-payment', ['model' => $form, 'invoice' => $invoice, 'outstandingAmount' => $outstanding]);
         }
-        $pendingExists = Transaction::find()->where(['invoice_id' => $invoice->id, 'gateway_id' => 2, 'status' => Transaction::STATUS_PENDING])->exists();
-        if ($pendingExists) {
-            Yii::$app->session->setFlash('warning', 'A payment proof for this invoice is already awaiting verification.');
-            return $this->redirect(['view', 'number' => $invoice->invoice_number]);
-        }
         if ($form->receiptFile === null) {
             $form->addError('receiptFile', 'Please upload the payment receipt.');
             return $this->render('submit-payment', ['model' => $form, 'invoice' => $invoice, 'outstandingAmount' => $outstanding]);
@@ -159,12 +154,20 @@ final class InvoiceController extends Controller
         $absolutePath = $directory . DIRECTORY_SEPARATOR . $fileName;
         $dbTransaction = Yii::$app->db->beginTransaction();
         try {
+            // Lock the invoice so two concurrent submissions can't both pass the pending check.
+            Yii::$app->db->createCommand('SELECT id FROM {{%invoice}} WHERE id = :id FOR UPDATE', [':id' => (int) $invoice->id])->queryScalar();
+            $pendingExists = Transaction::find()->where(['invoice_id' => $invoice->id, 'gateway_id' => Transaction::GATEWAY_UPI_BANK, 'status' => Transaction::STATUS_PENDING])->exists();
+            if ($pendingExists) {
+                $dbTransaction->rollBack();
+                Yii::$app->session->setFlash('warning', 'A payment proof for this invoice is already awaiting verification.');
+                return $this->redirect(['view', 'number' => $invoice->invoice_number]);
+            }
             if (!$form->receiptFile->saveAs($absolutePath)) {
                 throw new \RuntimeException('Payment receipt could not be stored.');
             }
             $transaction = new Transaction();
             $transaction->invoice_id = (int) $invoice->id;
-            $transaction->gateway_id = 2;
+            $transaction->gateway_id = Transaction::GATEWAY_UPI_BANK;
             $transaction->gateway_payment_id = $form->gateway_payment_id;
             $transaction->gateway_order_id = null;
             $transaction->amount = round($outstanding, 2);
@@ -179,6 +182,19 @@ final class InvoiceController extends Controller
                 throw new \RuntimeException('Payment submission could not be recorded: ' . json_encode($transaction->errors, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
             }
             $dbTransaction->commit();
+        } catch (\Throwable $e) {
+            if ($dbTransaction->isActive) {
+                $dbTransaction->rollBack();
+            }
+            if (is_file($absolutePath)) {
+                @unlink($absolutePath);
+            }
+            Yii::error(['message' => 'Customer payment proof submission failed.', 'invoiceId' => (int) $invoice->id, 'userId' => (int) Yii::$app->user->id, 'error' => $e->getMessage()], __METHOD__);
+            $form->addError('receiptFile', 'Payment proof could not be submitted. Please try again.');
+            return $this->render('submit-payment', ['model' => $form, 'invoice' => $invoice, 'outstandingAmount' => $outstanding]);
+        }
+        // Committed: notification failures must not undo the submission.
+        try {
             (new NotificationService())->create((int) $invoice->user_id, 'payment', 'Payment Proof Submitted', 'Your payment proof for invoice ' . $invoice->invoice_number . ' is awaiting verification.', '/invoice/view?number=' . rawurlencode($invoice->invoice_number));
             AdminAlertService::paymentSubmitted($invoice->invoice_number, $invoice->user->username, $transaction->amount);
             $components = [
@@ -192,18 +208,10 @@ final class InvoiceController extends Controller
                 ],
             ];
             WhatsAppService::sendTemplate(Yii::$app->params['whatsapp']['adminMobile'], 'payment_submitted', $components, 'payment-submitted-' . $transaction->id);
-            Yii::$app->session->setFlash('success', 'Payment proof submitted successfully. ' . 'The payment is pending verification.');
-            return $this->redirect(['view', 'number' => $invoice->invoice_number]);
         } catch (\Throwable $e) {
-            if ($dbTransaction->isActive) {
-                $dbTransaction->rollBack();
-            }
-            if (is_file($absolutePath)) {
-                @unlink($absolutePath);
-            }
-            Yii::error(['message' => 'Customer payment proof submission failed.', 'invoiceId' => (int) $invoice->id, 'userId' => (int) Yii::$app->user->id, 'error' => $e->getMessage()], __METHOD__);
-            $form->addError('receiptFile', 'Payment proof could not be submitted. Please try again.');
-            return $this->render('submit-payment', ['model' => $form, 'invoice' => $invoice, 'outstandingAmount' => $outstanding]);
+            Yii::error(['message' => 'Payment proof saved but notifications failed.', 'transactionId' => (int) $transaction->id, 'error' => $e->getMessage()], __METHOD__);
         }
+        Yii::$app->session->setFlash('success', 'Payment proof submitted successfully. ' . 'The payment is pending verification.');
+        return $this->redirect(['view', 'number' => $invoice->invoice_number]);
     }
 }

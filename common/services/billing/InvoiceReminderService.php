@@ -7,6 +7,7 @@ namespace common\services\billing;
 use common\models\CustomerPreference;
 use common\models\Invoice;
 use common\models\User;
+use common\services\mail\AdminMailHelper;
 use common\services\notification\WhatsAppService;
 use DateTimeImmutable;
 use Yii;
@@ -88,9 +89,8 @@ final class InvoiceReminderService
                 )
                 ->setFrom([Yii::$app->params['senderEmail'] => Yii::$app->params['senderName']])
                 ->setTo($client->email)
-                ->setBcc(Yii::$app->params['adminBccEmail'])
                 ->setSubject($subject);
-
+        AdminMailHelper::addBillingBcc($message);
         if (!$message->send()) {
             throw new \RuntimeException('Payment reminder email could not be sent.');
         }

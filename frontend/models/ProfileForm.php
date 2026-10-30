@@ -32,14 +32,11 @@ final class ProfileForm extends Model
     public function rules(): array
     {
         return [
-            [['username', 'email'], 'trim'],
-            [['username', 'email'], 'required'],
+            // email is deliberately not a safe attribute: changes go through an administrator.
+            ['username', 'trim'],
+            ['username', 'required'],
             ['username', 'string', 'min' => 2, 'max' => 255],
-            ['email', 'email'],
-            ['email', 'string', 'max' => 255],
             ['username', 'validateUsernameUnique'],
-            ['email', 'validateEmailUnique'],
-            ['email', 'validateEmailChange'],
             ['mobile', 'string', 'max' => 20],
             ['whatsapp', 'string', 'max' => 20],
             [
@@ -61,28 +58,6 @@ final class ProfileForm extends Model
         $exists = User::find()->where(['username' => $this->$attribute])->andWhere(['<>', 'id', $this->user->id])->exists();
         if ($exists) {
             $this->addError($attribute, 'This username is already in use.');
-        }
-    }
-
-    public function validateEmailUnique(string $attribute): void
-    {
-        if ($this->hasErrors()) {
-            return;
-        }
-        $exists = User::find()->where(['email' => $this->$attribute])->andWhere(['<>', 'id', $this->user->id])->exists();
-        if ($exists) {
-            $this->addError($attribute, 'This email address is already in use.');
-        }
-    }
-
-    public function validateEmailChange(string $attribute): void
-    {
-        if ($this->hasErrors()) {
-            return;
-        }
-        $user = User::findOne(['id' => $this->user->id]);
-        if ($user->email == $this->$attribute) {
-            $this->addError($attribute, 'To change email address is not allowed. Kindly contact administrator');
         }
     }
 
@@ -153,16 +128,11 @@ final class ProfileForm extends Model
         if (!$this->validate()) {
             return false;
         }
-        $emailChanged = strcasecmp((string) $this->user->email, $this->email) !== 0;
         $this->user->username = $this->username;
-        $this->user->email = $this->email;
         $this->user->mobile = $this->mobile;
         $this->user->whatsapp = $this->whatsapp;
         if (empty($this->user->whatsapp) && !empty($this->user->mobile)) {
             $this->user->whatsapp = $this->user->mobile;
-        }
-        if ($emailChanged) {
-            $this->user->generateEmailVerificationToken();
         }
         return $this->user->save();
     }

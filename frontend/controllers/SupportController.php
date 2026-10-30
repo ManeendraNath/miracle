@@ -91,6 +91,9 @@ final class SupportController extends Controller
 
         if (Yii::$app->request->isPost && $model->load(Yii::$app->request->post())) {
             $model->user_id = $userId;
+            // Staff-only fields are safe attributes on the model; never take them from the customer.
+            $model->admin_response = null;
+            $model->closed_at = null;
             if (!$this->validateServiceOwnership($model)) {
                 $model->addError('service_id', 'Selected service is not available.');
             }

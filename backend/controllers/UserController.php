@@ -5,6 +5,7 @@ namespace backend\controllers;
 use Yii;
 use backend\models\searches\UserSearch;
 use common\models\User;
+use yii\web\NotFoundHttpException;
 
 class UserController extends BaseController
 {
@@ -31,9 +32,10 @@ class UserController extends BaseController
             throw new NotFoundHttpException('The requested client profile account does not exist.');
         }
 
-        // Standard Yii2 Advanced template state statuses (Active = 1, Inactive = 0)
+        // Suspended (not Inactive): Inactive is the unverified-email state, which
+        // the customer could flip back to Active via the verification link.
         if ((int) $model->status === User::getStatusActive()) {
-            $model->status = User::getStatusInactive();
+            $model->status = User::getStatusSuspended();
             Yii::$app->session->setFlash('warning', "Account for profile '{$model->username}' has been suspended successfully.");
         } else {
             $model->status = User::getStatusActive();

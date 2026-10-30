@@ -20,6 +20,15 @@ class AuditRequest extends base\AuditRequest
     public const STATUS_CONTACTED = 'Contacted';
     public const STATUS_CLOSED = 'Closed';
 
+    #[\Override]
+    public function rules(): array
+    {
+        return array_merge(parent::rules(), [
+            // Only http(s): the value is rendered as a link in the admin panel.
+            ['company_url', 'url', 'defaultScheme' => 'https'],
+        ]);
+    }
+
     /**
      * Available Audit Request statuses.
      */

@@ -8,6 +8,7 @@ use Yii;
 use common\models\CustomerBillingProfile;
 use common\models\CustomerPreference;
 use common\models\User;
+use common\services\customer\CustomerActivityService;
 use frontend\models\ChangePasswordForm;
 use frontend\models\ProfileForm;
 use yii\filters\AccessControl;
@@ -16,7 +17,7 @@ use yii\web\NotFoundHttpException;
 
 final class AccountController extends Controller
 {
-    
+
     public $layout = 'account';
 
     public function behaviors(): array
@@ -63,6 +64,7 @@ final class AccountController extends Controller
     {
         $model = CustomerPreference::forUser((int) Yii::$app->user->id);
         if (Yii::$app->request->isPost && $model->load(Yii::$app->request->post())) {
+            $model->user_id = (int) Yii::$app->user->id; // user_id is a safe attribute; never trust the POST
             $model->updated_at = time();
             if ($model->save()) {
                 Yii::$app->session->setFlash('success', 'Notification preferences updated.');
@@ -70,6 +72,12 @@ final class AccountController extends Controller
             }
         }
         return $this->render('preferences', ['model' => $model]);
+    }
+
+    public function actionActivity()
+    {
+        $activities = CustomerActivityService::getActivities((int) Yii::$app->user->id, 100);
+        return $this->render('activity', ['activities' => $activities]);
     }
 
     private function findCurrentUser(): User

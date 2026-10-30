@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace common\services\notification;
 
-use common\models\WhatsAppLog;
+use common\models\WhatsappLog;
 use Yii;
 use yii\httpclient\Client;
 
@@ -69,7 +69,9 @@ final class WhatsAppService
         try {
 
             $client = new Client(['transport' => 'yii\httpclient\CurlTransport']);
-            $attempts = 3;
+            // Retry (with sleeps) only from cron; a web request gets one short attempt
+            // so a slow MSG91 can't hang the page.
+            $attempts = Yii::$app instanceof \yii\console\Application ? 3 : 1;
             for ($attempt = 1; $attempt <= $attempts; $attempt++) {
                 try {
                     $response = $client
@@ -81,7 +83,8 @@ final class WhatsAppService
                                 'Content-Type' => 'application/json',
                             ])
                             ->setOptions([
-                                CURLOPT_TIMEOUT => 15,
+                                CURLOPT_CONNECTTIMEOUT => 3,
+                                CURLOPT_TIMEOUT => 5,
                             ])
                             ->setContent(json_encode($payload, JSON_THROW_ON_ERROR))
                             ->send();
@@ -172,7 +175,7 @@ final class WhatsAppService
     {
 
         try {
-            $log = new WhatsAppLog();
+            $log = new WhatsappLog();
             $log->mobile = $mobile;
             $log->template_name = $template;
             $log->event_key = $eventKey;
@@ -197,7 +200,7 @@ final class WhatsAppService
 
     private static function wasSentRecently(string $eventKey): bool
     {
-        return WhatsAppLog::find()
+        return WhatsappLog::find()
                         ->where(['event_key' => $eventKey, 'status' => self::STATUS_SUCCESS])
                         ->andWhere(['>', 'created_at', time() - 3600])
                         ->exists();

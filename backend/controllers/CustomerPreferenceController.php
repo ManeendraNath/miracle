@@ -54,6 +54,7 @@ final class CustomerPreferenceController extends BaseController
                 Yii::$app->request->post()
             )
         ) {
+            $model->user_id = (int) $user->id;
             $model->updated_at = time();
 
             if ($model->save()) {

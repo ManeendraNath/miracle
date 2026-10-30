@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace common\models;
 
+use common\components\LoginThrottle;
 use Yii;
 use yii\base\Model;
 
@@ -41,11 +42,17 @@ class LoginForm extends Model
     public function validatePassword(string $attribute, array|null $params): void
     {
         if (!$this->hasErrors()) {
-            $user = $this->getUser();
-
-            if (!$user || !$user->validatePassword($this->password)) {
-                $this->addError($attribute, 'Incorrect username or password.');
+            if (LoginThrottle::isLocked('frontend', (string) $this->username)) {
+                $this->addError($attribute, 'Too many failed attempts. Please try again in 15 minutes.');
+                return;
             }
+            $user = $this->getUser();
+            if (!$user || !$user->validatePassword($this->password)) {
+                LoginThrottle::fail('frontend', (string) $this->username);
+                $this->addError($attribute, 'Incorrect username or password.');
+                return;
+            }
+            LoginThrottle::clear('frontend', (string) $this->username);
         }
     }
 

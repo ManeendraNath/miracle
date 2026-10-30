@@ -279,87 +279,33 @@ $attentionCount = $openInvoices + $pendingPayments + $openSupportTickets;
                     <div class="list-group list-group-flush">
 
                         <?php foreach ($activities as $activity): ?>
-
-                            <div
-                                class="
-                                list-group-item
-                                "
-                                >
-
-                                <div
-                                    class="
-                                    d-flex
-                                    justify-content-between
-                                    "
-                                    >
-
-                                    <div>
-
-                                        <div
-                                            class="
-                                            fw-semibold
-                                            "
-                                            >
-
-                                            <?=
-                                            Html::encode(
-                                                    $activity['title']
-                                            )
-                                            ?>
-
-                                        </div>
-
-                                        <div
-                                            class="
-                                            small
-                                            text-muted
-                                            "
-                                            >
-
-                                            <?=
-                                            Html::encode(
-                                                    $activity['message']
-                                            )
-                                            ?>
-
-                                        </div>
-
+                            <a href="<?= Html::encode($activity['url']) ?>" class="list-group-item list-group-item-action">
+                                <div class="d-flex">
+                                    <div class="me-3">
+                                        <i class="<?= Html::encode($activity['icon']) ?>"></i>
                                     </div>
-
-                                    <div
-                                        class="
-                                        text-muted
-                                        small
-                                        text-nowrap
-                                        "
-                                        >
-
-                                        <?=
-                                                Yii::$app
-                                                ->formatter
-                                                ->asRelativeTime(
-                                                        $activity['time']
-                                                )
-                                        ?>
-
+                                    <div class="flex-grow-1">
+                                        <div class="fw-semibold">
+                                            <?= Html::encode($activity['title']) ?>
+                                        </div>
+                                        <div class="text-muted small">
+                                            <?= Html::encode($activity['description']) ?>
+                                        </div>
                                     </div>
-
+                                    <div class="text-muted small text-nowrap">
+                                        <?= Yii::$app->formatter->asRelativeTime($activity['time']) ?>
+                                    </div>
                                 </div>
-
-                            </div>
-
-    <?php endforeach; ?>
-
+                            </a>
+                        <?php endforeach; ?>
                     </div>
-
-<?php endif; ?>
-
+                <?php endif; ?>
             </div>
-
+            <div class="card-footer text-end">
+                <?= Html::a('View Full Timeline', ['/account/activity'], ['class' => 'btn btn-sm btn-primary']) ?>
+            </div>
         </div>
-
     </div>
-
 </div>
 
 <div class="row g-3 mb-4">
@@ -382,7 +328,7 @@ $attentionCount = $openInvoices + $pendingPayments + $openSupportTickets;
                             </tr>
                         </thead>
                         <tbody>
-                                    <?php foreach ($recentInvoices as $invoice): ?>
+<?php foreach ($recentInvoices as $invoice): ?>
                                 <tr>
                                     <td><?= Html::a(Html::encode($invoice->invoice_number), ['/invoice/view', 'number' => $invoice->invoice_number]) ?></td>
                                     <td><?= Yii::$app->formatter->asDate($invoice->created_at, 'php:d M Y') ?></td>

@@ -36,6 +36,16 @@ use yii\bootstrap4\Breadcrumbs;
 
     <!-- Main content -->
     <div class="content">
+        <div class="container-fluid">
+            <?php foreach (Yii::$app->session->getAllFlashes() as $type => $messages): ?>
+                <?php foreach ((array) $messages as $message): ?>
+                    <?= \yii\bootstrap4\Alert::widget([
+                        'options' => ['class' => 'alert-' . ($type === 'error' ? 'danger' : $type)],
+                        'body' => \yii\helpers\Html::encode($message),
+                    ]) ?>
+                <?php endforeach; ?>
+            <?php endforeach; ?>
+        </div>
         <?= $content ?><!-- /.container-fluid -->
     </div>
     <!-- /.content -->

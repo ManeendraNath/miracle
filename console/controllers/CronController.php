@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace console\controllers;
 
 use Yii;
@@ -10,6 +12,7 @@ use common\services\billing\AutoBillingService;
 use common\services\billing\InvoiceDeliveryService;
 use common\services\billing\InvoiceReminderService;
 use common\services\billing\ServiceRenewalReminderService;
+use common\models\WhatsappLog;
 
 class CronController extends Controller
 {
@@ -70,25 +73,48 @@ class CronController extends Controller
 
     public function actionPaymentReminders(): int
     {
-        try {
+        return $this->runLocked('miracle:payment-reminders', 'Payment reminders', function (): string {
             $count = (new InvoiceReminderService())->sendDueReminders();
-            $this->stdout(sprintf("Payment reminders completed. Sent %d reminder(s).\n", $count));
-            return self::EXIT_CODE_NORMAL;
+            return sprintf('Sent %d reminder(s).', $count);
+        });
+    }
+
+    public function actionSendReminders(): int
+    {
+        return $this->runLocked('miracle:renewal-reminders', 'Renewal reminders', function (): string {
+            $count = (new ServiceRenewalReminderService())->sendReminders();
+            return sprintf('Sent %d reminder(s).', $count);
+        });
+    }
+
+    public function actionWhatsappCleanup(): int
+    {
+        return $this->runLocked('miracle:whatsapp-cleanup', 'WhatsApp log cleanup', function (): string {
+            $deleted = WhatsappLog::deleteAll(['<', 'created_at', strtotime('-90 days')]);
+            return sprintf('Deleted %d log row(s).', $deleted);
+        });
+    }
+
+    /**
+     * Runs a job under a mutex so overlapping cron runs can't send duplicates,
+     * and turns failures into a non-zero exit code cron can see.
+     */
+    private function runLocked(string $lockName, string $label, callable $job): int
+    {
+        $mutex = Yii::$app->mutex;
+        if (!$mutex->acquire($lockName, 0)) {
+            $this->stdout("{$label} already running.\n", Console::FG_YELLOW);
+            return ExitCode::OK;
+        }
+        try {
+            $this->stdout("{$label} completed. " . $job() . PHP_EOL);
+            return ExitCode::OK;
         } catch (\Throwable $e) {
             Yii::error($e, __METHOD__);
-            $this->stderr('Payment reminders failed: ' . $e->getMessage() . PHP_EOL);
-            return self::EXIT_CODE_ERROR;
+            $this->stderr("{$label} failed: " . $e->getMessage() . PHP_EOL, Console::FG_RED);
+            return ExitCode::UNSPECIFIED_ERROR;
+        } finally {
+            $mutex->release($lockName);
         }
-    }
-
-    public function actionSendReminders(): void
-    {
-        $count = (new ServiceRenewalReminderService())->sendReminders();
-        $this->stdout("Sent: {$count}\n");
-    }
-
-    public function actionWhatsappCleanup(): void
-    {
-        WhatsAppLog::deleteAll(['<', 'created_at', strtotime('-90 days')]);
     }
 }

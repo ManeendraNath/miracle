@@ -17,6 +17,23 @@ $config = [
             ]
         ],
 
+        'user' => [
+            'identityCookie' => [
+                'name' => '_identity-backend',
+                'httpOnly' => true,
+                'secure' => $secureCookies,
+                'sameSite' => Cookie::SAME_SITE_LAX,
+            ],
+        ],
+
+        'session' => [
+            'cookieParams' => [
+                'httpOnly' => true,
+                'secure' => $secureCookies,
+                'sameSite' => Cookie::SAME_SITE_LAX,
+            ],
+        ],
+
         'urlManager' => [
             'enablePrettyUrl' => true,
             'showScriptName' => false,

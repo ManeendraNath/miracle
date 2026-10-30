@@ -9,6 +9,7 @@ use common\models\CustomerBillingProfile;
 use common\models\Invoice;
 use common\models\InvoiceItem;
 use common\models\User;
+use common\services\notification\NotificationService;
 use Yii;
 
 final class AutoInvoiceService

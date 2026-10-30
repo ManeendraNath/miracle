@@ -15,6 +15,7 @@ $items = [
     ['label' => 'Notifications', 'icon' => 'fas fa-bell', 'url' => ['/notification/index'], 'controller' => 'notification'],
     ['label' => 'Security', 'icon' => 'fas fa-shield-alt', 'url' => ['/security/index'], 'controller' => 'security'],
     ['label' => 'My Profile', 'icon' => 'fas fa-user', 'url' => ['/account/profile'], 'controller' => 'account'],
+    ['label' => 'Activity Timeline', 'icon' => 'fas fa-history', 'url' => ['/account/activity'], 'controller' => 'account'],
 ];
 ?>
 

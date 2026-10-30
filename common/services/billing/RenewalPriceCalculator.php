@@ -73,22 +73,33 @@ final class RenewalPriceCalculator
                 $itemId
         );
 
-        $threeYearBlocks = intdiv($completed, 3);
-
-        $multiplier = pow(
-                1 + ($increasePercent / 100),
-                $threeYearBlocks
+        $previous = BillingEvent::previousFulfilled(
+                InvoiceItem::TYPE_MAINTENANCE,
+                $itemId
         );
 
-        $amount = round(
-                $baseAmount * $multiplier,
-                2
-        );
+        if ($previous === null) {
+            $amount = round($baseAmount, 2);
+
+            return new RenewalPriceResult(
+                    $amount,
+                    round($increasePercent, 2),
+                    $amount
+            );
+        }
+
+        // The previous final billed amount (including manual overrides) is the
+        // base; the increase applies once at the start of every 3-renewal block.
+        $previousAmount = (float) $previous->amount;
+
+        $multiplier = $completed % 3 === 0
+                ? 1 + ($increasePercent / 100)
+                : 1;
 
         return new RenewalPriceResult(
-                $amount,
+                round($previousAmount, 2),
                 round($increasePercent, 2),
-                $amount
+                round($previousAmount * $multiplier, 2)
         );
     }
 }

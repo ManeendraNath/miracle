@@ -11,6 +11,8 @@ use common\services\billing\PaymentConfirmationService;
 use common\services\billing\PaymentProcessingService;
 use Yii;
 use yii\web\NotFoundHttpException;
+use common\services\notification\NotificationService;
+use yii\web\BadRequestHttpException;
 
 /**
  * TransactionController
@@ -150,6 +152,9 @@ class TransactionController extends BaseController
         $paymentTransaction = $this->findModel($id);
         $dbTransaction = Yii::$app->db->beginTransaction();
         try {
+            // Lock and re-read so a concurrent reject can't be overwritten to Captured.
+            Yii::$app->db->createCommand('SELECT id FROM {{%transaction}} WHERE id = :id FOR UPDATE')->bindValue(':id', $id)->queryScalar();
+            $paymentTransaction->refresh();
             if ($paymentTransaction->status !== Transaction::STATUS_PENDING) {
                 throw new \DomainException('Only pending payments can be approved.');
             }
@@ -239,7 +244,7 @@ class TransactionController extends BaseController
         $fileName = basename((string) $model->payment_receipt_file);
         $path = Yii::getAlias('@storage/payment-receipts/' . $fileName);
         if (!is_file($path) || !is_readable($path)) {
-            throw new NotFoundHttpException('Payment receipt does not exist.' . $path);
+            throw new NotFoundHttpException('Payment receipt does not exist.');
         }
         return Yii::$app->response->sendFile($path, 'payment-receipt-' . $model->id . '.' . pathinfo($fileName, PATHINFO_EXTENSION), ['inline' => true]);
     }

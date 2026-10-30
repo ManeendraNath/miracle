@@ -84,7 +84,6 @@ final class SupportTicketController extends BaseController
                             'A new response was added to ' . 'support request ' . $ticket->ticket_number . '.',
                             '/support/view?number=' . rawurlencode($ticket->ticket_number)
                     );
-            SupportTicketMailer::adminReply($ticket);
             $transaction->commit();
         } catch (\Throwable $e) {
             if ($transaction->isActive) {
@@ -94,6 +93,7 @@ final class SupportTicketController extends BaseController
             Yii::$app->session->setFlash('error', 'The support reply ' . 'could not be saved.');
             return $this->redirect(['view', 'number' => $ticket->ticket_number]);
         }
+        SupportTicketMailer::adminReply($ticket);
         Yii::$app->session->setFlash('success', 'Reply sent successfully.');
         return $this->redirect(['view', 'number' => $ticket->ticket_number]);
     }

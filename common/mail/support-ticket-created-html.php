@@ -3,7 +3,10 @@
 use yii\helpers\Html;
 
 /** @var \common\models\SupportTicket $ticket */
-$ticketLink = $_ENV['FRONTEND_BASE_URL'] . '/support/view?number=' . $ticket->ticket_number;
+// Sent to the support team, so link to the admin panel (falls back to the customer portal if BACKEND_BASE_URL isn't set).
+$ticketLink = !empty($_ENV['BACKEND_BASE_URL'])
+        ? rtrim($_ENV['BACKEND_BASE_URL'], '/') . '/support-ticket/view?number=' . rawurlencode($ticket->ticket_number)
+        : $_ENV['FRONTEND_BASE_URL'] . '/support/view?number=' . rawurlencode($ticket->ticket_number);
 ?>
 <div style="font-family:Arial,sans-serif;max-width:700px;margin:0 auto;">
     <div style="background:#1565c0;color:#fff;padding:20px;">

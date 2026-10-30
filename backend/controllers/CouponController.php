@@ -40,8 +40,8 @@ final class CouponController extends BaseController
     public function actionCreate(): Response|string
     {
         $model = new Coupon();
-        $model->type = Coupon::TYPE_FIXED;
-        $model->is_active = Coupon::ACTIVE_YES;
+        $model->type = Coupon::TYPE_F;
+        $model->is_active = Coupon::IS_ACTIVE_Y;
         $model->uses_per_coupon = 1;
         $model->uses_per_user = 0;
         if (Yii::$app->request->isPost && $model->load(Yii::$app->request->post()) && $model->save()) {

@@ -41,13 +41,16 @@ class m260918_000001_create_admin_table extends Migration
             $this->createIndex('{{%idx-admin-role}}', '{{%admin}}', 'role');
 
             // DEFAULT SUPERADMIN SEED LOGIC
-            // Password defaults to: Maneendra@123
-            // Generates an out-of-the-box account so you don't get locked out on your fresh volumes
+            // Password comes from ADMIN_INITIAL_PASSWORD in .env (never commit it)
+            $initialPassword = $_ENV['ADMIN_INITIAL_PASSWORD'] ?? '';
+            if (strlen($initialPassword) < 12) {
+                throw new \RuntimeException('Set ADMIN_INITIAL_PASSWORD (min 12 chars) in .env before running this migration.');
+            }
             $this->insert($this->tableName, [
                 'username' => 'superadmin',
                 'email' => 'miraclewebtechnologies@gmail.com',
                 'auth_key' => Yii::$app->security->generateRandomString(),
-                'password_hash' => Yii::$app->security->generatePasswordHash('Maneendra@123'),
+                'password_hash' => Yii::$app->security->generatePasswordHash($initialPassword),
                 'role' => 'Superadmin',
                 'status' => 1,
                 'created_at' => time(),

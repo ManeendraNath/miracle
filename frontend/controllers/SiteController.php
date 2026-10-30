@@ -6,6 +6,7 @@ namespace frontend\controllers;
 
 use common\models\LoginForm;
 use common\models\AuditRequest;
+use common\components\CustomYii;
 use common\services\UserLoginHistoryService;
 use frontend\models\ContactForm;
 use frontend\models\PasswordResetRequestForm;
@@ -169,6 +170,7 @@ class SiteController extends Controller
         $model = new AuditRequest();
         if ($model->load(Yii::$app->request->post())) {
             $model->user_ip = Yii::$app->request->userIP;
+            $model->status = AuditRequest::STATUS_PENDING;
             if ($model->save()) {
                 $adminEmail = CustomYii::getSetting('email_1', 'info@miraclewebtechnologies.com');
 
@@ -243,7 +245,10 @@ class SiteController extends Controller
                 return $this->goHome();
             }
 
-            Yii::$app->session->setFlash('error', 'Sorry, we are unable to reset password for the provided email address.');
+            // Same response whether or not the address exists, so the form can't be used to discover accounts.
+            Yii::warning(['message' => 'Account email not sent (unknown address or mail failure).', 'email' => $model->email], __METHOD__);
+            Yii::$app->session->setFlash('success', 'Check your email for further instructions.');
+            return $this->goHome();
         }
 
         return $this->render('requestPasswordResetToken', [
@@ -322,7 +327,10 @@ class SiteController extends Controller
                 return $this->goHome();
             }
 
-            Yii::$app->session->setFlash('error', 'Sorry, we are unable to resend verification email for the provided email address.');
+            // Same response whether or not the address exists, so the form can't be used to discover accounts.
+            Yii::warning(['message' => 'Account email not sent (unknown address or mail failure).', 'email' => $model->email], __METHOD__);
+            Yii::$app->session->setFlash('success', 'Check your email for further instructions.');
+            return $this->goHome();
         }
 
         return $this->render('resendVerificationEmail', [

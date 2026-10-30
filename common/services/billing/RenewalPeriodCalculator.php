@@ -49,11 +49,18 @@ final class RenewalPeriodCalculator
 
         $start = $expiry->modify('+1 day');
 
-        $end = $start
-                ->modify(
-                        '+' . $months . ' months'
-                )
-                ->modify('-1 day');
+        // Same day-of-month N months later, clamped to the target month's
+        // length ("+N months" would overflow 30 Jan -> 2 Mar). A month-end
+        // expiry stays at month end (28 Feb -> 31 Mar).
+        $target = $expiry->modify('first day of +' . $months . ' months');
+        $day = $expiry->format('j') === $expiry->format('t')
+                ? (int) $target->format('t')
+                : min((int) $expiry->format('j'), (int) $target->format('t'));
+        $end = $target->setDate(
+                (int) $target->format('Y'),
+                (int) $target->format('n'),
+                $day
+        );
 
         return [
             'start' =>

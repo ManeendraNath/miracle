@@ -54,6 +54,11 @@ class Domains extends base\Domains
                         parent::rules(),
                         [
                             [['registered_date', 'current_expiry_date'], 'required'],
+                            [['registered_date', 'current_expiry_date'], 'date', 'format' => 'php:Y-m-d'],
+                            ['renewal_cycle_months', 'integer', 'min' => 1],
+                            ['renewal_increase_percent', 'number', 'min' => 0, 'max' => 100],
+                            ['renewal_base_amount', 'number', 'min' => 0],
+                            ['status', 'in', 'range' => array_keys(self::getStatuses())],
                         ]
                 );
     }

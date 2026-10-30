@@ -44,7 +44,7 @@ final class RenewalFulfilmentService
         try {
             $events = BillingEvent::find()
                     ->where([
-                        'invoice_id' => $invoice->id,
+                        'invoice_id' => $this->coveredInvoiceIds((int) $invoice->id),
                         'status' => BillingEvent::STATUS_INVOICED,
                     ])
                     ->orderBy(['id' => SORT_ASC])
@@ -76,6 +76,35 @@ final class RenewalFulfilmentService
 
             throw $e;
         }
+    }
+
+    /**
+     * The paid invoice plus every invoice whose balance was carried
+     * forward into it (recursively), since their BillingEvents keep
+     * pointing at the original source invoice.
+     *
+     * @return int[]
+     */
+    private function coveredInvoiceIds(int $invoiceId): array
+    {
+        $ids = [$invoiceId];
+        $pending = [$invoiceId];
+
+        while ($pending) {
+            $sourceIds = InvoiceItem::find()
+                    ->select('source_invoice_id')
+                    ->where([
+                        'invoice_id' => $pending,
+                        'item_type' => InvoiceItem::TYPE_ARREARS,
+                    ])
+                    ->andWhere(['not', ['source_invoice_id' => null]])
+                    ->column();
+
+            $pending = array_diff(array_map('intval', $sourceIds), $ids);
+            $ids = array_merge($ids, $pending);
+        }
+
+        return $ids;
     }
 
     private function fulfilEvent(
@@ -133,7 +162,10 @@ final class RenewalFulfilmentService
 
         $now = time();
 
-        $asset->current_expiry_date = $event->period_end;
+        // Never shorten: an admin may have extended the asset by hand meanwhile.
+        if ((string) $asset->current_expiry_date < (string) $event->period_end) {
+            $asset->current_expiry_date = $event->period_end;
+        }
 
         $asset->updated_at = $now;
 

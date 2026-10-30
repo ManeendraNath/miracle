@@ -5,6 +5,7 @@ namespace backend\controllers;
 use backend\models\searches\AdminSearch;
 use common\models\Admin;
 use yii\web\NotFoundHttpException;
+use Yii;
 
 /**
  * AdminController implements the CRUD actions for Admin model.
@@ -133,29 +134,6 @@ class AdminController extends BaseController
                     'metrics' => $metrics,
                     'logPath' => $logPath
         ]);
-    }
-
-    /**
-     * test msg91 whatsapp service
-     */
-    public function actionWhatsappTest()
-    {
-        $result = WhatsAppService::sendTemplate(
-                '919654511842',
-                'admin_alert',
-                [
-                    'body_1' => [
-                        'type' => 'text',
-                        'value' => 'Testing',
-                    ],
-                    'body_2' => [
-                        'type' => 'text',
-                        'value' => 'MSG91 Integration',
-                    ],
-                ]
-        );
-        var_dump($result);
-        exit;
     }
 
     /**

@@ -20,10 +20,4 @@ class SiteController extends BaseController
         return $this->render('index');
     }
 
-    public function actionDemo()
-    {
-        // Re-enable the layout wrapper so Yii's Asset bundle injects everything perfectly
-        $this->layout = 'main';
-        return $this->render('demo');
-    }
 }

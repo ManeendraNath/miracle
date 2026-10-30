@@ -11,6 +11,8 @@ return [
         '@npm'   => '@vendor/npm-asset',
     ],
     'vendorPath' => dirname(dirname(__DIR__)) . '/vendor',
+    // Business runs on IST: "today" for reminders, due dates and billing periods.
+    'timeZone' => 'Asia/Kolkata',
     'components' => [
         'cache' => [
             'class' => \yii\caching\FileCache::class,

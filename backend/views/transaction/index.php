@@ -48,7 +48,7 @@ GridViewHelper::register($this);
                         'filter' => [1 => 'Razorpay', 2 => 'Manual UPI / Bank'],
                         'format' => 'raw',
                         'value' => function ($model) {
-                            if ($model->gateway_id == 2) {
+                            if ((int) $model->gateway_id === Transaction::GATEWAY_UPI_BANK) {
                                 return Html::tag('span', '<i class="fas fa-university me-1"></i> Manual UPI', ['class' => 'badge bg-info text-white px-2 py-1']);
                             }
                             return Html::tag('span', '<i class="fas fa-credit-card me-1"></i> Razorpay', ['class' => 'badge bg-dark text-white px-2 py-1']);

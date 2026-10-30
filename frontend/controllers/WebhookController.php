@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace frontend\controllers;
 
 use common\models\Transaction;
+use common\services\billing\PaymentConfirmationService;
 use common\services\billing\PaymentProcessingService;
 use Yii;
 use yii\web\BadRequestHttpException;

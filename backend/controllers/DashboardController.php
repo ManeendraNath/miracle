@@ -48,7 +48,7 @@ class DashboardController extends BaseController
             'unpaidBalance' => (float) Invoice::find()->where(['status' => ['Unpaid', 'Partially_Paid']])->sum('total_payable') ?? 0.00,
             // 2. Gateway Ledger Verification Streams
             'totalRevenueCollected' => Invoice::find()->andWhere(['status' => 'Paid'])->sum('total_payable') ?: 0.00,
-            'pendingUpiVerifications' => Transaction::find()->andWhere(['gateway_id' => 2, 'status' => 'Pending'])->count(),
+            'pendingUpiVerifications' => Transaction::find()->andWhere(['gateway_id' => Transaction::GATEWAY_UPI_BANK, 'status' => 'Pending'])->count(),
             'capturedRevenueToday' => Transaction::find()
                     ->andWhere(['status' => 'Captured'])
                     ->andWhere(['between', 'paid_at', strtotime('today'), strtotime('tomorrow') - 1])

@@ -12,7 +12,7 @@ class TransactionQuery extends ActiveQuery
      */
     public function pendingManualReviews()
     {
-        return $this->andWhere(['gateway_id' => 2, 'status' => 'Pending']);
+        return $this->andWhere(['gateway_id' => Transaction::GATEWAY_UPI_BANK, 'status' => 'Pending']);
     }
 
     /**

@@ -2,8 +2,6 @@
 
 namespace common\models;
 
-use Yii;
-use yii\web\UploadedFile;
 
 /**
  * This is the model class for table "transaction".
@@ -28,40 +26,18 @@ use yii\web\UploadedFile;
  */
 class Transaction extends base\Transaction
 {
-    /**
-     * @var UploadedFile
-     */
-    public $receiptFile; // Form helper attribute placeholder
 
+    /** gateway_id values (see column comment). */
+    public const GATEWAY_MANUAL = 0;
+    public const GATEWAY_RAZORPAY = 1;
+    public const GATEWAY_UPI_BANK = 2;
     public function rules()
     {
         return array_merge(parent::rules(), [
             // Safe assignment for custom customer notes
             [['user_payment_notes'], 'string'],
-            // Secure validation parameters for uploaded images or PDF billing files
-            [['receiptFile'], 'file', 'skipOnEmpty' => true, 'extensions' => 'png, jpg, jpeg, pdf', 'maxSize' => 1024 * 1024 * 5, 'message' => 'Receipt file must be an image or PDF under 5MB.'],
         ]);
     }
 
-    /**
-     * Handles safe server directory migration operations for transaction receipts.
-     */
-    public function uploadReceipt()
-    {
-        if ($this->receiptFile instanceof UploadedFile && $this->validate(['receiptFile'])) {
-            // Secure isolated naming mapping to prevent directory injection tracking bugs
-            $directory = Yii::getAlias('@backend/web/uploads/receipts/');
-            if (!is_dir($directory)) {
-                mkdir($directory, 0777, true);
-            }
-            
-            $fileName = 'receipt_' . $this->invoice_id . '_' . time() . '.' . $this->receiptFile->extension;
-            if ($this->receiptFile->saveAs($directory . $fileName)) {
-                $this->payment_receipt_file = 'uploads/receipts/' . $fileName;
-                return true;
-            }
-        }
-        return false;
-    }
 }
 

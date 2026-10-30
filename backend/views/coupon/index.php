@@ -202,7 +202,7 @@ GridViewHelper::register($this);
                             'format' => 'raw',
                             'filter' => GridFilterHelper::select2($searchModel, 'is_active', Coupon::getStatuses(), 'All Statuses'),
                             'value' => static function (Coupon $model): string {
-                                $active = $model->is_active === Coupon::ACTIVE_YES;
+                                $active = $model->is_active === Coupon::IS_ACTIVE_Y;
                                 return Html::tag(
                                         'span',
                                         Html::encode($model->getStatusLabel()),

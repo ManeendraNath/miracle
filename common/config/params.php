@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 return [
     'adminEmail' => $_ENV['ADMIN_EMAIL'],
-    'adminBccEmail' =>  $_ENV['ADMIN_BCC_EMAIL'],
+    'adminBillingEmail' => $_ENV['ADMIN_BILLING_EMAIL'] ?? null, // optional BCC on billing mails
     'supportEmail' => $_ENV['SUPPORT_EMAIL'],
     'senderEmail' => $_ENV['SENDER_EMAIL'],
     'senderName' => $_ENV['SENDER_NAME'],
@@ -35,12 +35,12 @@ return [
     ],
     'frontendBaseUrl' => rtrim($_ENV['FRONTEND_BASE_URL'] ?? '', '/'),
     'whatsapp' => [
-        'provider' => $_ENV['WHATSAPP_PROVIDER'],
-        'enabled' => false,
-        'apiKey' => $_ENV['WHATSAPP_API_KEY'],
+        'provider' => $_ENV['WHATSAPP_PROVIDER'] ?? '',
+        'enabled' => filter_var($_ENV['WHATSAPP_ENABLED'] ?? false, FILTER_VALIDATE_BOOLEAN),
+        'apiKey' => $_ENV['WHATSAPP_API_KEY'] ?? '',
         'templateNamespace' => '',
         'sender' => $_ENV['SENDER_NAME'],
-        'integratedNumber' => $_ENV['PROVIDER_INTEGRATED_NUMBER'],
-        'adminMobile' => $_ENV['ADMIN_WHATSAPP_MOBILE'],
+        'integratedNumber' => $_ENV['PROVIDER_INTEGRATED_NUMBER'] ?? '',
+        'adminMobile' => $_ENV['ADMIN_WHATSAPP_MOBILE'] ?? '',
     ],
 ];

@@ -48,6 +48,8 @@ class Hosting extends base\Hosting
                     'min' => 0,
                 ],
 
+                [['primary_domain'], 'unique'],
+
                 [
                     ['status'],
                     'in',

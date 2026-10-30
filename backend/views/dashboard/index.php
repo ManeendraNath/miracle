@@ -1,6 +1,7 @@
 <?php
 
 use common\models\SupportTicket;
+use common\models\Transaction;
 use hail812\adminlte3\assets\AdminLteAsset;
 use hail812\adminlte3\assets\PluginAsset;
 use yii\bootstrap5\Html;
@@ -324,7 +325,7 @@ $this->title = 'Miracle Corporate Control Center';
                         </div>
                         <div>
                             <?php if ($metrics['pendingUpiVerifications'] > 0): ?>
-                                <a href="<?= Url::to(['transaction/index', 'TransactionSearch' => ['status' => 'Pending', 'gateway_id' => 2]]) ?>" class="btn btn-sm btn-warning fw-bold px-3 position-relative animate-pulse">
+                                <a href="<?= Url::to(['transaction/index', 'TransactionSearch' => ['status' => 'Pending', 'gateway_id' => Transaction::GATEWAY_UPI_BANK]]) ?>" class="btn btn-sm btn-warning fw-bold px-3 position-relative animate-pulse">
                                 <?= $metrics['pendingUpiVerifications'] ?> Review Required
                                 </a>
 <?php else: ?>

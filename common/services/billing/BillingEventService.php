@@ -84,8 +84,7 @@ final class BillingEventService
 
         $existing = $this->findExisting(
     $renewal,
-    $period['start'],
-    $period['end']
+    $period['start']
 );
 
 if ($existing !== null) {
@@ -181,8 +180,7 @@ if ($existing !== null) {
 
             $existing = $this->findExisting(
                     $renewal,
-                    $period['start'],
-                    $period['end']
+                    $period['start']
             );
 
             if ($existing !== null) {
@@ -195,15 +193,19 @@ if ($existing !== null) {
 
     private function findExisting(
             BillableRenewal $renewal,
-            string $periodStart,
-            string $periodEnd
+            string $periodStart
     ): ?BillingEvent
     {
-        return BillingEvent::findOne([
-                    'item_type' => $renewal->itemType,
-                    'item_id' => $renewal->itemId,
-                    'period_start' => $periodStart,
-                    'period_end' => $periodEnd,
-        ]);
+        // Cancelled events release their period so it can be billed again.
+        // Matched on period_start only: events created before the month-end
+        // fix in RenewalPeriodCalculator carry a different period_end.
+        return BillingEvent::find()
+                        ->where([
+                            'item_type' => $renewal->itemType,
+                            'item_id' => $renewal->itemId,
+                            'period_start' => $periodStart,
+                        ])
+                        ->andWhere(['<>', 'status', BillingEvent::STATUS_CANCELLED])
+                        ->one();
     }
 }

@@ -12,66 +12,50 @@ final class SupportTicketMailer
 
     public static function ticketCreated(SupportTicket $ticket): void
     {
-        Yii::$app->mailer
-                ->compose(
-                        ['html' => 'support-ticket-created-html', 'text' => 'support-ticket-created-text'], 
-                        ['ticket' => $ticket]
-                )
-                ->setFrom([Yii::$app->params['senderEmail'] => Yii::$app->params['senderName']])
-                ->setTo(Yii::$app->params['supportEmail'])
-                ->setSubject(sprintf('New Support Ticket %s', $ticket->ticket_number))
-                ->send();
+        self::send($ticket, 'support-ticket-created', Yii::$app->params['supportEmail'], 'New Support Ticket %s');
     }
 
     public static function customerReply(SupportTicket $ticket): void
     {
-        Yii::$app->mailer
-                ->compose(
-                        ['html' => 'support-ticket-customer-reply-html', 'text' => 'support-ticket-customer-reply-text'], 
-                        ['ticket' => $ticket]
-                )
-                ->setFrom([Yii::$app->params['senderEmail'] => Yii::$app->params['senderName']])
-                ->setTo(Yii::$app->params['supportEmail'])
-                ->setSubject(sprintf('[Ticket #%s Customer Replied]', $ticket->ticket_number))
-                ->send();
+        self::send($ticket, 'support-ticket-customer-reply', Yii::$app->params['supportEmail'], '[Ticket #%s Customer Replied]');
     }
 
     public static function adminReply(SupportTicket $ticket): void
     {
-        Yii::$app->mailer
-                ->compose(
-                        ['html' => 'support-ticket-admin-reply-html', 'text' => 'support-ticket-admin-reply-text'], 
-                        ['ticket' => $ticket]
-                )
-                ->setFrom([Yii::$app->params['senderEmail'] => Yii::$app->params['senderName']])
-                ->setTo($ticket->user->email)
-                ->setSubject(sprintf('[Ticket #%s Support Team Replied]', $ticket->ticket_number))
-                ->send();
+        self::send($ticket, 'support-ticket-admin-reply', $ticket->user->email, '[Ticket #%s Support Team Replied]');
     }
 
     public static function ticketResolved(SupportTicket $ticket): void
     {
-        Yii::$app->mailer
-                ->compose(
-                        ['html' => 'support-ticket-resolved-html', 'text' => 'support-ticket-resolved-text'],
-                        ['ticket' => $ticket]
-                )
-                ->setFrom([Yii::$app->params['senderEmail'] => Yii::$app->params['senderName']])
-                ->setTo($ticket->user->email)
-                ->setSubject(sprintf('[Ticket #%s Support Request Resolved]', $ticket->ticket_number))
-                ->send();
+        self::send($ticket, 'support-ticket-resolved', $ticket->user->email, '[Ticket #%s Support Request Resolved]');
     }
 
     public static function ticketClosed(SupportTicket $ticket): void
     {
-        Yii::$app->mailer
-                ->compose(
-                        ['html' => 'support-ticket-closed-html', 'text' => 'support-ticket-closed-text'],
-                        ['ticket' => $ticket]
-                )
-                ->setFrom([Yii::$app->params['senderEmail'] => Yii::$app->params['senderName']])
-                ->setTo($ticket->user->email)
-                ->setSubject(sprintf('[Ticket #%s Support Request Closed]', $ticket->ticket_number))
-                ->send();
+        self::send($ticket, 'support-ticket-closed', $ticket->user->email, '[Ticket #%s Support Request Closed]');
+    }
+
+    /**
+     * Mail is a side effect of an already-saved ticket change: a mail outage
+     * is logged, never allowed to fail (or roll back) the caller.
+     */
+    private static function send(SupportTicket $ticket, string $view, string $to, string $subject): void
+    {
+        try {
+            $sent = Yii::$app->mailer
+                    ->compose(
+                            ['html' => $view . '-html', 'text' => $view . '-text'],
+                            ['ticket' => $ticket]
+                    )
+                    ->setFrom([Yii::$app->params['senderEmail'] => Yii::$app->params['senderName']])
+                    ->setTo($to)
+                    ->setSubject(sprintf($subject, $ticket->ticket_number))
+                    ->send();
+            if (!$sent) {
+                Yii::warning(['message' => 'Support ticket mail not sent.', 'view' => $view, 'ticket' => $ticket->ticket_number], __METHOD__);
+            }
+        } catch (\Throwable $e) {
+            Yii::error(['message' => 'Support ticket mail failed.', 'view' => $view, 'ticket' => $ticket->ticket_number, 'error' => $e->getMessage()], __METHOD__);
+        }
     }
 }

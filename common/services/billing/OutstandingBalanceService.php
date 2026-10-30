@@ -47,6 +47,7 @@ final class OutstandingBalanceService
         WHERE user_id = :userId
           AND id <> :targetInvoiceId
           AND status IN (:unpaid, :partiallyPaid)
+          AND (due_date IS NULL OR due_date < :today)
           AND (
               billing_run_id IS NULL
               OR billing_run_id <> :billingRunId
@@ -64,6 +65,7 @@ final class OutstandingBalanceService
                     Invoice::STATUS_UNPAID,
                     ':partiallyPaid' =>
                     Invoice::STATUS_PARTIALLY_PAID,
+                    ':today' => date('Y-m-d'),
                     ':billingRunId' =>
                     (int) $targetInvoice
                     ->billing_run_id,

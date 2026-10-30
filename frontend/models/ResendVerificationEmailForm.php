@@ -20,11 +20,6 @@ class ResendVerificationEmailForm extends Model
             ['email', 'trim'],
             ['email', 'required'],
             ['email', 'email'],
-            ['email', 'exist',
-                'targetClass' => User::class,
-                'filter' => ['status' => User::getStatusInactive()],
-                'message' => 'There is no user with this email address.',
-            ],
         ];
     }
 

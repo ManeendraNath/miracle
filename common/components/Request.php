@@ -7,7 +7,7 @@ class Request extends \yii\web\Request {
     public $adminUrl;
 
     public function getBaseUrl(){
-        if (strpos($this->getUrl() ?? '', '/gii') !== false) {
+        if ($this->isGii()) {
             return '';
         }
 
@@ -21,7 +21,7 @@ class Request extends \yii\web\Request {
     public function resolvePathInfo(){
         // 💡 THE CURE: If a request is for Gii, bypass custom routing rules completely
         // and return parent::resolvePathInfo() so deep routes like /gii/model work perfectly!
-        if (strpos($this->getUrl(), '/gii') !== false) {
+        if ($this->isGii()) {
             return parent::resolvePathInfo();
         }
 
@@ -30,5 +30,13 @@ class Request extends \yii\web\Request {
         }else{
             return parent::resolvePathInfo();
         }
+    }
+
+    /**
+     * Gii only exists in dev; match the path prefix, not "/gii" anywhere in the URL.
+     */
+    private function isGii(): bool
+    {
+        return YII_ENV_DEV && str_starts_with((string) parse_url((string) $this->getUrl(), PHP_URL_PATH), '/gii');
     }
 }

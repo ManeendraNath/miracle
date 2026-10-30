@@ -11,6 +11,7 @@ use common\models\Maintenance;
 use common\models\CustomerNotification;
 use common\models\SupportTicket;
 use common\models\Transaction;
+use common\services\customer\CustomerActivityService;
 use Yii;
 use yii\filters\AccessControl;
 use yii\web\Controller;
@@ -73,7 +74,7 @@ final class DashboardController extends Controller
                             'openSupportTickets' => $openSupportTickets,
                             'upcomingServices' => $upcomingServices,
                             'renewalCount' => count($upcomingServices),
-                            'activities' => $this->getRecentActivities(),
+                            'activities' => CustomerActivityService::getActivities($userId, 15),
                         ]
                 );
     }
@@ -113,25 +114,4 @@ final class DashboardController extends Controller
         return ['type' => $type, 'id' => $id, 'name' => $name, 'expiry' => $expiry];
     }
 
-    private function getRecentActivities(): array
-    {
-        $userId = (int) Yii::$app->user->id;
-        $activities = [];
-        $notifications = CustomerNotification::find()
-                        ->where(['user_id' => $userId])
-                        ->orderBy(['created_at' => SORT_DESC])
-                        ->limit(20)->all();
-        foreach ($notifications as $notification) {
-            $activities[] = [
-                'title' => $notification->title,
-                'message' => $notification->message,
-                'time' => $notification->created_at,
-                'type' => $notification->type,
-                'route' => $notification->route,
-            ];
-        }
-        usort($activities, static fn($a, $b) => $b['time'] <=> $a['time']);
-
-        return array_slice($activities, 0, 10);
-    }
 }

@@ -56,6 +56,8 @@ trait PasswordManagementTrait
     {
         if ($this->password !== null && $this->password !== '') {
             $this->setPassword($this->password);
+            // New auth key invalidates existing remember-me cookies after a reset.
+            $this->generateAuthKey();
         }
 
         if ($this->isNewRecord && empty($this->auth_key)) {

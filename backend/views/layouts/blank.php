@@ -23,6 +23,11 @@ AppAsset::register($this);
 <body class="d-flex flex-column justify-content-center align-items-center vh-100">
 <?php $this->beginBody() ?>
 
+<?php foreach (Yii::$app->session->getAllFlashes() as $type => $messages): ?>
+    <?php foreach ((array) $messages as $message): ?>
+        <div class="alert alert-<?= $type === 'error' ? 'danger' : \yii\helpers\Html::encode($type) ?>"><?= \yii\helpers\Html::encode($message) ?></div>
+    <?php endforeach; ?>
+<?php endforeach; ?>
 <?= $content ?>
 
 <?php $this->endBody() ?>

@@ -65,7 +65,7 @@ class Coupon extends base\Coupon
             $this->addError($attribute, 'Discount must be greater than zero.');
             return;
         }
-        if ($this->type === self::TYPE_PERCENTAGE && $amount > 100) {
+        if ($this->type === self::TYPE_P && $amount > 100) {
             $this->addError($attribute, 'Percentage discount cannot exceed 100%.');
         }
     }
@@ -94,7 +94,7 @@ class Coupon extends base\Coupon
 
     public function getDiscountLabel(): string
     {
-        if ($this->type === self::TYPE_PERCENTAGE) {
+        if ($this->type === self::TYPE_P) {
             return number_format((float) $this->amount, 2) . '%';
         }
         return '₹' . number_format((float) $this->amount, 2);

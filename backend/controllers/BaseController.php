@@ -46,6 +46,7 @@ class BaseController extends Controller
                     'reject' => ['POST'],
                     'cancel' => ['POST'],
                     'resend-invoice' => ['POST'],
+                    'toggle-status' => ['POST'],
                 ],
             ],
         ];

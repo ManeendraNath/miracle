@@ -6,6 +6,7 @@ namespace common\services\billing;
 
 use common\models\Invoice;
 use common\models\User;
+use common\services\mail\AdminMailHelper;
 use Yii;
 
 final class InvoiceDeliveryService
@@ -42,7 +43,6 @@ final class InvoiceDeliveryService
                     Yii::$app->params['senderEmail'] => Yii::$app->params['senderName'],
                 ])
                 ->setTo($client->email)
-                ->setBcc(Yii::$app->params['adminBccEmail'])
                 ->setSubject('Invoice ' . $invoice->invoice_number . ' - Miracle Web Technologies')
                 ->attachContent(
                         $pdf,
@@ -51,7 +51,7 @@ final class InvoiceDeliveryService
                             'contentType' => 'application/pdf',
                         ]
                 );
-
+        AdminMailHelper::addBillingBcc($message);
         if (!$message->send()) {
             throw new \RuntimeException('Invoice email could not be sent.');
         }

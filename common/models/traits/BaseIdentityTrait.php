@@ -180,7 +180,7 @@ trait BaseIdentityTrait
      */
     public function validateAuthKey($authKey): bool
     {
-        return $this->getAuthKey() === $authKey;
+        return hash_equals((string) $this->getAuthKey(), (string) $authKey);
     }
 
     /**

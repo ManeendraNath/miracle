@@ -16,7 +16,6 @@ use yii\web\Controller;
 
 final class RenewalController extends Controller
 {
-
     public $layout = 'account';
 
     public function behaviors(): array
@@ -40,8 +39,8 @@ final class RenewalController extends Controller
         $historyQuery = ServiceRenewalHistory::find()
                 ->alias('rh')
                 ->innerJoin(
-                        ['i' => Invoice::tableName()],
-                        'i.id = rh.invoice_id'
+                    ['i' => Invoice::tableName()],
+                    'i.id = rh.invoice_id'
                 )
                 ->where([
                     'i.user_id' => (int) Yii::$app->user->id,
@@ -52,8 +51,8 @@ final class RenewalController extends Controller
         ]);
 
         return $this->render(
-                        'index',
-                        [
+            'index',
+            [
                             'dataProvider' => new ActiveDataProvider([
                                 'query' => $historyQuery,
                                 'pagination' => [
@@ -62,77 +61,36 @@ final class RenewalController extends Controller
                                     ]),
                             'upcomingServices' => $this->getUpcomingServices(),
                         ]
-                );
+        );
     }
 
     private function getUpcomingServices(): array
     {
         $until = date('Y-m-d', strtotime('+60 days'));
+        $sources = [
+            ['Domain', Domains::class, 'domain_url'],
+            ['Hosting', Hosting::class, 'primary_domain'],
+            ['Maintenance', Maintenance::class, 'website_url'],
+        ];
 
         $services = [];
-
-        foreach (
-                Domains::find()
-                        ->where([
-                            'user_id' => (int) Yii::$app->user->id,
-                        ])
-                        ->andWhere(['<=', 'current_expiry_date', $until])
-                        ->andWhere(['status' => 1]) // active only; overdue ones stay listed
-                        ->all()
-        as $domain
-        ) {
-
-            $services[] = [
-                'type' => 'Domain',
-                'id' => $domain->id,
-                'name' => $domain->domain_url,
-                'expiry' => $domain->current_expiry_date,
-            ];
+        foreach ($sources as [$type, $class, $nameAttribute]) {
+            // Active only; overdue ones stay listed because they most need renewing.
+            $models = $class::find()
+                ->where(['user_id' => (int) Yii::$app->user->id, 'status' => $class::STATUS_ACTIVE])
+                ->andWhere(['<=', 'current_expiry_date', $until])
+                ->all();
+            foreach ($models as $model) {
+                $services[] = [
+                    'type' => $type,
+                    'id' => $model->id,
+                    'name' => $model->$nameAttribute,
+                    'expiry' => $model->current_expiry_date,
+                ];
+            }
         }
 
-        foreach (
-                Hosting::find()
-                        ->where([
-                            'user_id' => (int) Yii::$app->user->id,
-                        ])
-                        ->andWhere(['<=', 'current_expiry_date', $until])
-                        ->andWhere(['status' => 1]) // active only; overdue ones stay listed
-                        ->all()
-        as $hosting
-        ) {
-
-            $services[] = [
-                'type' => 'Hosting',
-                'id' => $hosting->id,
-                'name' => $hosting->primary_domain,
-                'expiry' => $hosting->current_expiry_date,
-            ];
-        }
-
-        foreach (
-                Maintenance::find()
-                        ->where([
-                            'user_id' => (int) Yii::$app->user->id,
-                        ])
-                        ->andWhere(['<=', 'current_expiry_date', $until])
-                        ->andWhere(['status' => 1]) // active only; overdue ones stay listed
-                        ->all()
-        as $maintenance
-        ) {
-
-            $services[] = [
-                'type' => 'Maintenance',
-                'id' => $maintenance->id,
-                'name' => $maintenance->website_url,
-                'expiry' => $maintenance->current_expiry_date,
-            ];
-        }
-
-        usort(
-                $services,
-                static fn($a, $b) =>
-                strcmp($a['expiry'], $b['expiry'])
-        );
+        usort($services, static fn($a, $b) => strcmp($a['expiry'], $b['expiry']));
 
         return $services;
     }

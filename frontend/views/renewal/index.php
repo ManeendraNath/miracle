@@ -42,7 +42,7 @@ $this->params['breadcrumbs'][] = $this->title;
                             'Maintenance' => 'badge bg-warning text-dark',
                             default => '',
                         };
-                        ?>
+    ?>
                     
                         <div class="col-lg-4 col-md-6">
                             <div class="card border-warning h-100">

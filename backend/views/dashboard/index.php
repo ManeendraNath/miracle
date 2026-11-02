@@ -21,8 +21,8 @@ PluginAsset::register($this, ['fontawesome']);
 $chartJsUrl = Yii::$app->assetManager->publish('@vendor/almasaeed2010/adminlte/plugins/chart.js/Chart.min.js')[1];
 
 $this->registerJsFile(
-        $chartJsUrl,
-        [
+    $chartJsUrl,
+    [
             'depends' => [
                 \yii\web\JqueryAsset::class,
             ],
@@ -39,6 +39,11 @@ $kpis = [
     ['bg-success', '₹' . number_format((float) $metrics['totalRevenueCollected'], 2), 'Total Revenue Settled', 'fas fa-cash-register', 'Review Paid Invoices', ['/invoice/index']],
     ['bg-warning', '₹' . number_format((float) $metrics['unpaidBalance'], 2), 'Outstanding Due Balance', 'fas fa-comments-dollar', 'Track Accounts Due', ['/invoice/index']],
     ['bg-secondary', (int) $metrics['totalInvoicesCount'], 'Invoices Generated', 'fas fa-file-invoice-dollar', 'View Billing History', ['/invoice/index']],
+];
+$assets = [
+    ['fas fa-globe text-primary', 'Domains', $metrics['activeDomainsCount'], ['/domains/index']],
+    ['fas fa-cloud text-success', 'Web Hosting', $metrics['activeHostingCount'], ['/hosting/index']],
+    ['fas fa-tools text-warning', 'Maintenance (AMC)', $metrics['underCareAmcCount'], ['/maintenance/index']],
 ];
 ?>
 <div class="container-fluid">
@@ -159,11 +164,7 @@ $kpis = [
                             </tr>
                         </thead>
                         <tbody>
-                            <?php foreach ([
-                                ['fas fa-globe text-primary', 'Domains', $metrics['activeDomainsCount'], ['/domains/index']],
-                                ['fas fa-cloud text-success', 'Web Hosting', $metrics['activeHostingCount'], ['/hosting/index']],
-                                ['fas fa-tools text-warning', 'Maintenance (AMC)', $metrics['underCareAmcCount'], ['/maintenance/index']],
-                            ] as [$icon, $label, $count, $url]): ?>
+                            <?php foreach ($assets as [$icon, $label, $count, $url]): ?>
                                 <tr>
                                     <td><i class="<?= $icon ?> fa-fw mr-2"></i><?= $label ?></td>
                                     <td class="text-center font-weight-bold"><?= (int) $count ?></td>

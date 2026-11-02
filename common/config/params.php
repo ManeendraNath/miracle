@@ -22,7 +22,7 @@ return [
           'cgst' => 9.00,
           'sgst' => 9.00,
           'igst' => 18.00,
-         * 
+         *
          */
         ],
         'payment' => [

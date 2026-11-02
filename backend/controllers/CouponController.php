@@ -13,6 +13,8 @@ use yii\web\Response;
 
 final class CouponController extends BaseController
 {
+    use ToggleStatusTrait;
+
     public function actionIndex(): string
     {
         $searchModel = new CouponSearch();
@@ -60,7 +62,6 @@ final class CouponController extends BaseController
         return $this->render('update', ['model' => $model]);
     }
 
-    use ToggleStatusTrait;
 
     /** Services are disabled, never deleted: invoices, billing events and history reference them. */
     protected function statusToggle(): array

@@ -26,23 +26,23 @@ final class RazorpayService
 {
     private const API_URL = 'https://api.razorpay.com/v1/';
 
-    private array $config;
+    private array $_config;
 
     public function __construct(?array $config = null)
     {
-        $this->config = $config ?? (Yii::$app->params['razorpay'] ?? []);
+        $this->_config = $config ?? (Yii::$app->params['razorpay'] ?? []);
     }
 
     public function isEnabled(): bool
     {
-        return !empty($this->config['enabled'])
-            && ($this->config['keyId'] ?? '') !== ''
-            && ($this->config['keySecret'] ?? '') !== '';
+        return !empty($this->_config['enabled'])
+            && ($this->_config['keyId'] ?? '') !== ''
+            && ($this->_config['keySecret'] ?? '') !== '';
     }
 
     public function getKeyId(): string
     {
-        return (string) ($this->config['keyId'] ?? '');
+        return (string) ($this->_config['keyId'] ?? '');
     }
 
     /**
@@ -80,7 +80,7 @@ final class RazorpayService
                 'notes' => ['invoice_number' => (string) $invoice->invoice_number],
             ])
             ->setFormat(Client::FORMAT_JSON)
-            ->addHeaders(['Authorization' => 'Basic ' . base64_encode($this->config['keyId'] . ':' . $this->config['keySecret'])])
+            ->addHeaders(['Authorization' => 'Basic ' . base64_encode($this->_config['keyId'] . ':' . $this->_config['keySecret'])])
             ->setOptions(['timeout' => 20])
             ->send();
 
@@ -109,13 +109,13 @@ final class RazorpayService
     /** Signature returned to the browser by Checkout: HMAC(order_id|payment_id, key_secret). */
     public function verifyCheckoutSignature(string $orderId, string $paymentId, string $signature): bool
     {
-        $expected = hash_hmac('sha256', $orderId . '|' . $paymentId, (string) ($this->config['keySecret'] ?? ''));
+        $expected = hash_hmac('sha256', $orderId . '|' . $paymentId, (string) ($this->_config['keySecret'] ?? ''));
         return $signature !== '' && hash_equals($expected, $signature);
     }
 
     public function verifyWebhookSignature(string $body, string $signature): bool
     {
-        $secret = (string) ($this->config['webhookSecret'] ?? '');
+        $secret = (string) ($this->_config['webhookSecret'] ?? '');
         if ($secret === '') {
             throw new \RuntimeException('Razorpay webhook secret is not configured.');
         }

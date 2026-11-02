@@ -22,7 +22,7 @@ defined('YII_ENV') or define('YII_ENV', $_ENV['YII_ENV'] ?? 'prod');
 
 // 4. Boot up standard framework core engines
 require __DIR__ . '/../../vendor/yiisoft/yii2/Yii.php';
-require __DIR__ . '/../../common/components/CustomYii.php'; 
+require __DIR__ . '/../../common/components/CustomYii.php';
 require __DIR__ . '/../../common/config/bootstrap.php';
 require __DIR__ . '/../config/bootstrap.php';
 

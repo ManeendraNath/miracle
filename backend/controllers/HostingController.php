@@ -12,6 +12,8 @@ use yii\web\NotFoundHttpException;
  */
 class HostingController extends BaseController
 {
+    use ToggleStatusTrait;
+
     /**
      * Lists all Hosting models.
      *
@@ -90,7 +92,6 @@ class HostingController extends BaseController
      * @return \yii\web\Response
      * @throws NotFoundHttpException if the model cannot be found
      */
-    use ToggleStatusTrait;
 
     /** Services are disabled, never deleted: invoices, billing events and history reference them. */
     protected function statusToggle(): array

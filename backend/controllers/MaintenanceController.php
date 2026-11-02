@@ -12,6 +12,8 @@ use yii\web\NotFoundHttpException;
  */
 class MaintenanceController extends BaseController
 {
+    use ToggleStatusTrait;
+
     /**
      * Lists all Maintenance models.
      *
@@ -90,7 +92,6 @@ class MaintenanceController extends BaseController
      * @return \yii\web\Response
      * @throws NotFoundHttpException if the model cannot be found
      */
-    use ToggleStatusTrait;
 
     /** Services are disabled, never deleted: invoices, billing events and history reference them. */
     protected function statusToggle(): array

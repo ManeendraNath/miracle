@@ -13,11 +13,11 @@ final class ProfileForm extends Model
     public string $email = '';
     public string $mobile = '';
     public string $whatsapp = '';
-    private User $user;
+    private User $_user;
 
     public function __construct(User $user, array $config = [])
     {
-        $this->user = $user;
+        $this->_user = $user;
 
         $this->username = (string) $user->username;
         $this->email = (string) $user->email;
@@ -54,7 +54,7 @@ final class ProfileForm extends Model
         if ($this->hasErrors()) {
             return;
         }
-        $exists = User::find()->where(['username' => $this->$attribute])->andWhere(['<>', 'id', $this->user->id])->exists();
+        $exists = User::find()->where(['username' => $this->$attribute])->andWhere(['<>', 'id', $this->_user->id])->exists();
         if ($exists) {
             $this->addError($attribute, 'This username is already in use.');
         }
@@ -77,7 +77,7 @@ final class ProfileForm extends Model
                 ->andWhere([
                     '<>',
                     'id',
-                    $this->user->id,
+                    $this->_user->id,
                 ])
                 ->exists();
 
@@ -106,7 +106,7 @@ final class ProfileForm extends Model
                 ->andWhere([
                     '<>',
                     'id',
-                    $this->user->id,
+                    $this->_user->id,
                 ])
                 ->exists();
 
@@ -127,11 +127,11 @@ final class ProfileForm extends Model
         if (!$this->validate()) {
             return false;
         }
-        $this->user->username = $this->username;
-        $this->user->mobile = $this->mobile;
-        $this->user->whatsapp = $this->whatsapp;
-        if (!$this->user->save()) {
-            $this->addErrors($this->user->getErrors());
+        $this->_user->username = $this->username;
+        $this->_user->mobile = $this->mobile;
+        $this->_user->whatsapp = $this->whatsapp;
+        if (!$this->_user->save()) {
+            $this->addErrors($this->_user->getErrors());
             return false;
         }
         return true;
@@ -139,6 +139,6 @@ final class ProfileForm extends Model
 
     public function getUser(): User
     {
-        return $this->user;
+        return $this->_user;
     }
 }

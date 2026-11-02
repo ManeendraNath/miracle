@@ -34,13 +34,7 @@ $this->params['breadcrumbs'][] = $this->title;
 
                         <div>
 
-                            <h3 class="card-title">
-                                Login Details
-                            </h3>
-
-                            <div class="text-muted small">
-                                Recorded customer authentication activity.
-                            </div>
+                            <div class="text-muted">Recorded customer authentication activity.</div>
 
                         </div>
 

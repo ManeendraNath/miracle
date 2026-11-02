@@ -23,8 +23,7 @@ GridViewHelper::register($this);
         <div class="card-header">
             <div class="d-flex justify-content-between align-items-center">
                 <div>
-                    <h3 class="card-title mb-1">Invoices</h3>
-                    <div class="text-muted small">Manage client invoices, payments and due dates.</div>
+                    <div class="text-muted">Manage client invoices, payments and due dates.</div>
                 </div>
                 <?= Html::a('<i class="fas fa-plus me-1"></i> Create Invoice', ['create'], ['class' => 'btn btn-primary']) ?>
             </div>

@@ -51,14 +51,7 @@ $badge = static function ($value): string {
 
                 <div>
 
-                    <h3 class="card-title mb-1">
-                        Customer Notification Preferences
-                    </h3>
-
-                    <div class="text-muted small">
-                        Review customer communication
-                        and reminder preferences.
-                    </div>
+                    <div class="text-muted">Review customer communication and reminder preferences.</div>
 
                 </div>
 

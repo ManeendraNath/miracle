@@ -32,14 +32,7 @@ GridActionHelper::registerTooltips($this);
 
                 <div>
 
-                    <h3 class="card-title mb-1">
-                        Login & Security History
-                    </h3>
-
-                    <div class="text-muted small">
-                        Review customer account login activity,
-                        IP addresses and browser/device information.
-                    </div>
+                    <div class="text-muted">Review customer account login activity, IP addresses and browser/device information.</div>
 
                 </div>
 

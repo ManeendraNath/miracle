@@ -26,13 +26,7 @@ GridViewHelper::register($this);
 
                 <div>
 
-                    <h3 class="card-title mb-1">
-                        Promotional Coupon
-                    </h3>
-
-                    <div class="text-muted small">
-                        Manage discount codes, validity periods and usage limits.
-                    </div>
+                    <div class="text-muted">Manage discount codes, validity periods and usage limits.</div>
 
                 </div>
 

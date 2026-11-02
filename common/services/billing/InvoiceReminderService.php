@@ -114,10 +114,10 @@ final class InvoiceReminderService
                 ],
                 'body_2' => [
                     'type' => 'text',
-                    'value' => $invoice->id,
+                    'value' => $invoice->invoice_number,
                 ],
             ];
-            WhatsAppService::sendTemplate($client->getWhatsappNumber(), 'invoice_reminder', $components, 'renewal-' . $invoice->id . '-' . $daysUntilDue . 'days');
+            WhatsAppService::sendTemplate($client->getWhatsappNumber(), 'invoice_reminder', $components, 'invoice-reminder-' . $invoice->id . '-' . $daysUntilDue . 'days');
         } catch (IntegrityException) {
             return false;
         }

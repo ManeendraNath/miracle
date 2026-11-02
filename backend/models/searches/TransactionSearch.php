@@ -5,12 +5,15 @@ namespace backend\models\searches;
 use yii\base\Model;
 use yii\data\ActiveDataProvider;
 use common\models\Transaction;
+use common\models\traits\DateRangeSearchTrait;
 
 /**
  * TransactionSearch represents the model behind the search form of `common\models\Transaction`.
  */
 class TransactionSearch extends Transaction
 {
+    use DateRangeSearchTrait;
+
     // Transient placeholder to handle the composite range string text
     public $date_range;
 
@@ -75,17 +78,13 @@ class TransactionSearch extends Transaction
 
         $query->andFilterWhere(['like', 'gateway_payment_id', $this->gateway_payment_id])
                 ->andFilterWhere(['like', 'gateway_order_id', $this->gateway_order_id])
-                ->andFilterWhere(['like', 'status', $this->status])
+                ->andFilterWhere(['status' => $this->status])
                 ->andFilterWhere(['like', 'user_payment_notes', $this->user_payment_notes])
                 ->andFilterWhere(['like', 'payment_receipt_file', $this->payment_receipt_file])
                 ->andFilterWhere(['like', 'raw_payload', $this->raw_payload]);
 
         // 📅 DYNAMIC DATE RANGE FILTERING LOGIC
-        if (!empty($this->date_range) && strpos($this->date_range, ' - ') !== false) {
-            list($start_date, $end_date) = explode(' - ', $this->date_range);
-            // Formats search against your core database 'created_at' or 'due_date' timestamp rows safely
-            $query->andFilterWhere(['between', 'DATE(created_at)', $start_date, $end_date]);
-        }
+        $this->applyTimestampDateRange($query, 'paid_at', $this->date_range);
 
         return $dataProvider;
     }

@@ -11,7 +11,6 @@ use common\models\InvoiceItem;
 use common\models\Maintenance;
 use Yii;
 use yii\filters\AccessControl;
-use yii\filters\VerbFilter;
 use yii\web\Controller;
 use yii\web\NotFoundHttpException;
 
@@ -32,12 +31,6 @@ final class CheckoutController extends Controller
                 ],
             ],
 
-            'verbs' => [
-                'class' => VerbFilter::class,
-                'actions' => [
-                    'renew' => ['POST'],
-                ],
-            ],
         ];
     }
 

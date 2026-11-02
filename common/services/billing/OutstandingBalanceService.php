@@ -7,6 +7,7 @@ namespace common\services\billing;
 use Yii;
 use common\models\Invoice;
 use common\models\InvoiceItem;
+use common\models\Transaction;
 
 final class OutstandingBalanceService
 {
@@ -44,6 +45,11 @@ final class OutstandingBalanceService
           AND id <> :targetInvoiceId
           AND status IN (:unpaid, :partiallyPaid)
           AND (due_date IS NULL OR due_date < :today)
+          AND NOT EXISTS (
+              SELECT 1 FROM {{%transaction}} t
+              WHERE t.invoice_id = {{%invoice}}.id
+                AND t.status = :pendingPayment
+          )
           AND (
               billing_run_id IS NULL
               OR billing_run_id <> :billingRunId
@@ -62,6 +68,8 @@ final class OutstandingBalanceService
                     ':partiallyPaid' =>
                     Invoice::STATUS_PARTIALLY_PAID,
                     ':today' => date('Y-m-d'),
+                    // A submitted proof awaiting approval must not be billed again as arrears.
+                    ':pendingPayment' => Transaction::STATUS_PENDING,
                     ':billingRunId' =>
                     (int) $targetInvoice
                     ->billing_run_id,

@@ -9,6 +9,7 @@ use common\models\CustomerBillingProfile;
 use common\models\Invoice;
 use common\models\InvoiceItem;
 use common\models\User;
+use common\services\admin\AdminAlertService;
 use common\services\notification\NotificationService;
 use Yii;
 
@@ -44,7 +45,16 @@ final class AutoInvoiceService
         $invoices = [];
 
         foreach ($userIds as $userId) {
-            $invoice = $this->generateForUser($runId, (int) $userId);
+            // One customer's bad data (e.g. missing billing profile) must not block
+            // everyone else or lose invoices already created in this run. The
+            // failed user's events stay Pending and are retried on the next run.
+            try {
+                $invoice = $this->generateForUser($runId, (int) $userId);
+            } catch (\Throwable $exception) {
+                Yii::error(['message' => 'Automatic invoice failed for user.', 'userId' => (int) $userId, 'billingRunId' => $runId, 'error' => $exception->getMessage()], __METHOD__);
+                AdminAlertService::invoiceGenerationFailed((int) $userId, $exception->getMessage());
+                continue;
+            }
             if ($invoice !== null) {
                 $invoices[] = $invoice;
             }
@@ -166,6 +176,9 @@ final class AutoInvoiceService
                 $invoice
             );
 
+            // After assign(): before it the number is a TMP- placeholder.
+            (new NotificationService())->create((int) $invoice->user_id, 'invoice', 'New Invoice Generated', 'Invoice ' . $invoice->invoice_number . ' has been generated.', '/invoice/view?number=' . rawurlencode($invoice->invoice_number));
+
             $dbTransaction->commit();
 
             $invoice->refresh();
@@ -219,7 +232,6 @@ final class AutoInvoiceService
         if (!$invoice->save()) {
             throw new \RuntimeException('Unable to create automatic invoice: ' . json_encode($invoice->errors, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
         }
-        (new NotificationService())->create((int) $invoice->user_id, 'invoice', 'New Invoice Generated', 'Invoice ' . $invoice->invoice_number . ' has been generated.', '/invoice/view?number=' . rawurlencode($invoice->invoice_number));
         return $invoice;
     }
 

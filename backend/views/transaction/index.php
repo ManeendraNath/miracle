@@ -45,7 +45,7 @@ GridViewHelper::register($this);
                     [
                         'attribute' => 'gateway_id',
                         'label' => 'Method',
-                        'filter' => [1 => 'Razorpay', 2 => 'Manual UPI / Bank'],
+                        'filter' => GridFilterHelper::select2($searchModel, 'gateway_id', [1 => 'Razorpay', 2 => 'Manual UPI / Bank'], 'All Methods'),
                         'format' => 'raw',
                         'value' => function ($model) {
                             if ((int) $model->gateway_id === Transaction::GATEWAY_UPI_BANK) {
@@ -110,16 +110,7 @@ GridViewHelper::register($this);
                                 'php:d M Y, h:i A'
                             );
                         },
-                        'filter' => \kartik\daterange\DateRangePicker::widget([
-                            'model' => $searchModel,
-                            'attribute' => 'date_range',
-                            'convertFormat' => true,
-                            'pluginOptions' => [
-                                'locale' => ['format' => 'Y-m-d', 'separator' => ' - '],
-                                'opens' => 'left'
-                            ],
-                            'options' => ['class' => 'form-control form-control-sm', 'placeholder' => 'Filter Sales Spread...']
-                        ]),
+                        'filter' => GridFilterHelper::dateRange($searchModel, 'date_range', 'Paid date'),
                     ],
                     GridActionHelper::crudColumn(template: '{view} {update}'),
                 ],

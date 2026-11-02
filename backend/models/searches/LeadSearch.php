@@ -24,7 +24,7 @@ class LeadSearch extends Lead
     {
         return [
             [['id', 'created_at', 'updated_at'], 'integer'],
-            [['lead_name', 'phone_number', 'source', 'status', 'date_range', 'search_keyword'], 'safe'],
+            [['lead_name', 'phone_number', 'source', 'status', 'created_at_range', 'search_keyword'], 'safe'],
         ];
     }
 

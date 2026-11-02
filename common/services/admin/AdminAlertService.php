@@ -64,6 +64,13 @@ final class AdminAlertService extends AdminNotificationService
         self::send($title, $message);
     }
 
+    public static function invoiceGenerationFailed(int $userId, string $reason): void
+    {
+        $title = 'Automatic Invoice Failed';
+        $message = "Client ID: {$userId}\n" . "Reason: {$reason}\n" . 'It will be retried on the next billing run.';
+        self::send($title, $message);
+    }
+
     private static function send(string $title, string $message, bool $whatsappNotification = false): void
     {
         (new AdminNotificationService())->create('support', $title, $message);

@@ -3,6 +3,7 @@
 use backend\models\searches\CustomerPreferenceSearch;
 use common\models\CustomerPreference;
 use yii\data\ActiveDataProvider;
+use common\helpers\GridFilterHelper;
 use yii\grid\GridView;
 use yii\helpers\Html;
 
@@ -148,7 +149,7 @@ GridView::widget([
                 $model
                     ->renewal_reminders
             ),
-            'filter' => $booleanFilter,
+            'filter' => GridFilterHelper::select2($searchModel, 'renewal_reminders', $booleanFilter, 'All'),
             'contentOptions' => [
                 'class' =>
                 'text-center',
@@ -168,7 +169,7 @@ GridView::widget([
                 $model
                     ->payment_reminders
             ),
-            'filter' => $booleanFilter,
+            'filter' => GridFilterHelper::select2($searchModel, 'payment_reminders', $booleanFilter, 'All'),
             'contentOptions' => [
                 'class' =>
                 'text-center',
@@ -188,7 +189,7 @@ GridView::widget([
                 $model
                     ->service_expiry_notifications
             ),
-            'filter' => $booleanFilter,
+            'filter' => GridFilterHelper::select2($searchModel, 'service_expiry_notifications', $booleanFilter, 'All'),
             'contentOptions' => [
                 'class' =>
                 'text-center',
@@ -208,7 +209,7 @@ GridView::widget([
                 $model
                     ->support_notifications
             ),
-            'filter' => $booleanFilter,
+            'filter' => GridFilterHelper::select2($searchModel, 'support_notifications', $booleanFilter, 'All'),
             'contentOptions' => [
                 'class' =>
                 'text-center',

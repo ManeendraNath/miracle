@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use common\helpers\AdminIndexHelper;
 use common\helpers\GridActionHelper;
+use common\helpers\GridFilterHelper;
 use common\helpers\GridPaginationHelper;
 use common\helpers\GridViewHelper;
 use common\models\SupportTicket;
@@ -91,7 +92,7 @@ GridViewHelper::register($this);
                     ],
                     [
                         'attribute' => 'priority',
-                        'filter' => SupportTicket::getPriorities(),
+                        'filter' => GridFilterHelper::select2($searchModel, 'priority', SupportTicket::getPriorities(), 'All Priorities'),
                         'format' => 'raw',
                         'value' => static function (SupportTicket $model): string {
                             $class = match ($model->priority) {
@@ -108,7 +109,7 @@ GridViewHelper::register($this);
                     ],
                     [
                         'attribute' => 'status',
-                        'filter' => SupportTicket::getStatuses(),
+                        'filter' => GridFilterHelper::select2($searchModel, 'status', SupportTicket::getStatuses(), 'All Statuses'),
                         'format' => 'raw',
                         'value' => static function (SupportTicket $model): string {
                             $class = match ($model->status) {

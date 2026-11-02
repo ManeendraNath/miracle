@@ -81,9 +81,7 @@ class InvoiceSearch extends Invoice
 
         $this->applySqlDateRange($query, 'invoice.due_date', $this->due_date_range);
         // 📅 DYNAMIC DATE RANGE FILTERING LOGIC
-        if (!empty($this->date_range) && strpos($this->date_range, ' - ') !== false) {
-            $this->applyTimestampDateRange($query, 'invoice.created_at', $this->created_at_range);
-        }
+        $this->applyTimestampDateRange($query, 'invoice.created_at', $this->created_at_range);
 
         return $dataProvider;
     }

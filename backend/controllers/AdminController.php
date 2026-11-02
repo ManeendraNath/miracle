@@ -56,6 +56,8 @@ class AdminController extends BaseController
             }
         } else {
             $model->loadDefaultValues();
+            $model->role = Admin::getRoleSuperAdmin();
+            $model->status = Admin::getStatusActive();
         }
 
         return $this->render('create', [
@@ -75,15 +77,10 @@ class AdminController extends BaseController
         $model = $this->findModel($id);
 
         if ($this->request->isPost && $model->load($this->request->post())) {
-            $newPassword = $this->request->post('new_password_string');
-
-            // Cryptographic Hashing Protocol: Only update if a new password string is supplied
-            if (!empty($newPassword)) {
-                $model->setPassword($newPassword);
-                $model->generateAuthKey();
-            }
-
-            if ($model->save()) {
+            // Admin hashes a non-empty `password` in beforeValidate; blank keeps the current one.
+            if (!$this->hasOtherActiveSuperadmin($model) && !$this->isActiveSuperadmin($model)) {
+                Yii::$app->session->setFlash('error', 'At least one active Superadmin must remain.');
+            } elseif ($model->save()) {
                 Yii::$app->session->setFlash('success', 'Administrative security profile parameters updated perfectly.');
                 return $this->redirect(['view', 'id' => $model->id]);
             }
@@ -145,9 +142,34 @@ class AdminController extends BaseController
      */
     public function actionDelete($id)
     {
-        $this->findModel($id)->delete();
+        $model = $this->findModel($id);
+
+        if ((int) $model->id === (int) Yii::$app->user->id) {
+            Yii::$app->session->setFlash('error', 'You cannot delete your own account.');
+        } elseif (!$this->hasOtherActiveSuperadmin($model)) {
+            Yii::$app->session->setFlash('error', 'The last active Superadmin cannot be deleted.');
+        } else {
+            $model->delete();
+        }
 
         return $this->redirect(['index']);
+    }
+
+    private function isActiveSuperadmin(Admin $model): bool
+    {
+        return strtolower((string) $model->role) === 'superadmin'
+            && (int) $model->status === Admin::getStatusActive();
+    }
+
+    /**
+     * Whether some admin other than $model can still log in to the panel.
+     */
+    private function hasOtherActiveSuperadmin(Admin $model): bool
+    {
+        return Admin::find()
+            ->where(['role' => Admin::getRoleSuperAdmin(), 'status' => Admin::getStatusActive()])
+            ->andWhere(['<>', 'id', $model->id])
+            ->exists();
     }
 
     /**

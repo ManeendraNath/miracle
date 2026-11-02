@@ -58,8 +58,8 @@ class SignupForm extends Model
         $user->username = $this->username;
         $user->email = $this->email;
         $user->status = User::getStatusInactive();
-        $user->setPassword($this->password);
-        $user->generateAuthKey();
+        // User hashes `password` itself in beforeValidate and requires it on new records.
+        $user->password = $this->password;
         $user->generateEmailVerificationToken();
         return $user->save() && $this->sendEmail($mailer, $user, $supportEmail, $appName);
     }

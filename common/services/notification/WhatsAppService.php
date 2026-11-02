@@ -15,8 +15,13 @@ final class WhatsAppService
     private const STATUS_SUCCESS = 'success';
     private const STATUS_FAILED = 'failed';
 
-    public static function sendTemplate(string $mobile, string $templateName, array $components = [], ?string $eventKey = null): bool
+    public static function sendTemplate(?string $mobile, string $templateName, array $components = [], ?string $eventKey = null): bool
     {
+        // Clients without a mobile/WhatsApp number are skipped, not treated as errors.
+        if ($mobile === null || trim($mobile) === '') {
+            Yii::info(['reason' => 'no mobile number', 'template' => $templateName, 'eventKey' => $eventKey], __METHOD__);
+            return false;
+        }
         if ($eventKey !== null && self::wasSentRecently($eventKey)) {
             self::log(
                 mobile: $mobile,

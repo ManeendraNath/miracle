@@ -152,6 +152,14 @@ $this->params['breadcrumbs'][] = $this->title;
                                             'php:d M Y, h:i A'
                                         ) : '-',
                     ],
+                    [
+                        'format' => 'raw',
+                        'contentOptions' => ['class' => 'text-end text-nowrap'],
+                        'value' => static fn(Transaction $model): string => Html::a('View', ['view', 'id' => $model->id], ['class' => 'btn btn-sm btn-outline-primary'])
+                            . ($model->status === Transaction::STATUS_CAPTURED
+                                ? ' ' . Html::a('Receipt', ['receipt', 'id' => $model->id], ['class' => 'btn btn-sm btn-outline-secondary', 'target' => '_blank'])
+                                : ''),
+                    ],
                 ],
             ])
             ?>

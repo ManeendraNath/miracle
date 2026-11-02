@@ -10,6 +10,27 @@ class BillingEvent extends base\BillingEvent
 {
     use AutoTimestampTrait;
 
+    /**
+     * Cancelled events release their period (DB index uses live_slot), so the
+     * generated unique rule must ignore them too or rebilling fails validation.
+     */
+    #[\Override]
+    public function rules()
+    {
+        $rules = array_filter(
+            parent::rules(),
+            static fn(array $rule): bool => ($rule[1] ?? null) !== 'unique'
+        );
+        $rules[] = [
+            ['item_type', 'item_id', 'period_start', 'period_end'],
+            'unique',
+            'targetAttribute' => ['item_type', 'item_id', 'period_start', 'period_end'],
+            'filter' => ['<>', 'status', self::STATUS_CANCELLED],
+            'when' => static fn(self $model): bool => $model->status !== self::STATUS_CANCELLED,
+        ];
+        return array_values($rules);
+    }
+
     public static function getStatuses(): array
     {
         return parent::optsStatus();

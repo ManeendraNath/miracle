@@ -3,6 +3,7 @@
 namespace backend\controllers;
 
 use backend\models\LoginForm;
+use backend\models\TwoFactorForm;
 use Yii;
 use yii\filters\VerbFilter;
 use yii\filters\AccessControl;
@@ -36,7 +37,7 @@ class AuthController extends Controller
                 },
                 'rules' => [
                     [
-                        'actions' => ['login', 'error'],
+                        'actions' => ['login', 'two-factor', 'error'],
                         'allow' => true,
                     ],
                     [
@@ -93,7 +94,8 @@ class AuthController extends Controller
         // Fixed duplicate load tracking method bug
         if ($model->load(Yii::$app->request->post())) {
             if ($model->login()) {
-                return $this->redirect(['dashboard/index']);
+                // Still a guest when the account has two-factor on: the code comes next.
+                return $this->redirect(Yii::$app->user->isGuest ? ['auth/two-factor'] : ['dashboard/index']);
             } else {
                 // Debug fallback block for verification issues
                 Yii::error('Admin panel login attempt failed for user: ' . $model->username, 'admin-auth');
@@ -105,6 +107,31 @@ class AuthController extends Controller
         return $this->render('login', [
                     'model' => $model,
         ]);
+    }
+
+    /**
+     * Second login step: the authenticator code for an account with two-factor on.
+     *
+     * @return string|Response
+     */
+    public function actionTwoFactor()
+    {
+        if (!Yii::$app->user->isGuest) {
+            return $this->redirect(['dashboard/index']);
+        }
+        if (TwoFactorForm::pendingAdmin() === null) {
+            Yii::$app->session->setFlash('error', 'Your sign-in expired. Please log in again.');
+            return $this->redirect(['auth/login']);
+        }
+
+        $this->layout = 'blank';
+        $model = new TwoFactorForm();
+        if ($model->load(Yii::$app->request->post()) && $model->login()) {
+            return $this->redirect(['dashboard/index']);
+        }
+        $model->code = '';
+
+        return $this->render('two-factor', ['model' => $model]);
     }
 
     /**

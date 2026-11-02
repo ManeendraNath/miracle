@@ -24,7 +24,8 @@
         "kartik-v/yii2-date-range": "dev-master",
         "kartik-v/yii2-widget-select2": "^2.2",
         "mpdf/mpdf": "^8.3",
-        "yiisoft/yii2-httpclient": "~2.0.15"
+        "yiisoft/yii2-httpclient": "~2.0.15",
+        "mpdf/qrcode": "^1.2"
     },
     "require-dev": {
         "codeception/c3": "^2.8",

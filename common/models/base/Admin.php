@@ -13,6 +13,8 @@ use Yii;
  * @property string $auth_key
  * @property string $password_hash
  * @property string|null $password_reset_token
+ * @property string|null $totp_secret
+ * @property int|null $totp_last_step
  * @property string $role
  * @property int $status
  * @property int $created_at
@@ -34,13 +36,14 @@ class Admin extends \yii\db\ActiveRecord
     public function rules()
     {
         return [
-            [['password_reset_token'], 'default', 'value' => null],
+            [['password_reset_token', 'totp_secret', 'totp_last_step'], 'default', 'value' => null],
             [['role'], 'default', 'value' => 'Manager'],
             [['status'], 'default', 'value' => 1],
             [['username', 'email', 'auth_key', 'password_hash', 'created_at', 'updated_at'], 'required'],
-            [['status', 'created_at', 'updated_at'], 'integer'],
+            [['totp_last_step', 'status', 'created_at', 'updated_at'], 'integer'],
             [['username', 'email', 'password_hash', 'password_reset_token'], 'string', 'max' => 255],
             [['auth_key'], 'string', 'max' => 32],
+            [['totp_secret'], 'string', 'max' => 64],
             [['role'], 'string', 'max' => 50],
             [['username'], 'unique'],
             [['email'], 'unique'],
@@ -60,6 +63,8 @@ class Admin extends \yii\db\ActiveRecord
             'auth_key' => 'Auth Key',
             'password_hash' => 'Password Hash',
             'password_reset_token' => 'Password Reset Token',
+            'totp_secret' => 'Totp Secret',
+            'totp_last_step' => 'Totp Last Step',
             'role' => 'Role',
             'status' => 'Status',
             'created_at' => 'Created At',

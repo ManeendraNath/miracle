@@ -3,6 +3,8 @@
 namespace backend\controllers;
 
 use backend\models\searches\AdminSearch;
+use common\components\LoginThrottle;
+use common\components\Totp;
 use common\models\Admin;
 use yii\web\NotFoundHttpException;
 use Yii;
@@ -12,6 +14,16 @@ use Yii;
  */
 class AdminController extends BaseController
 {
+    /** Session key of a two-factor secret shown for setup but not yet confirmed. */
+    private const TOTP_SETUP_KEY = 'adminTotpSetup';
+
+    public function behaviors()
+    {
+        $behaviors = parent::behaviors();
+        $behaviors['verbs']['actions']['reset-two-factor'] = ['POST'];
+        return $behaviors;
+    }
+
     /**
      * Lists all Admin models.
      *
@@ -98,6 +110,11 @@ class AdminController extends BaseController
     public function actionAccount()
     {
         $model = $this->findModel(Yii::$app->user->id);
+        $twoFactorStep = $this->request->post('two_factor');
+        if ($this->request->isPost && $twoFactorStep !== null) {
+            $this->handleTwoFactor($model, (string) $twoFactorStep, (string) $this->request->post('code', ''));
+            return $this->refresh();
+        }
         if ($this->request->isPost) {
             $posted = $this->request->post($model->formName(), []);
             $model->setAttributes(array_intersect_key($posted, array_flip(['email', 'password'])));
@@ -107,7 +124,59 @@ class AdminController extends BaseController
             }
         }
         $model->password = '';
-        return $this->render('account', ['model' => $model]);
+        $setupSecret = $model->hasTwoFactor() ? null : Yii::$app->session->get(self::TOTP_SETUP_KEY);
+        return $this->render('account', [
+                    'model' => $model,
+                    'setupSecret' => $setupSecret,
+                    'setupUri' => $setupSecret === null ? null : Totp::uri($setupSecret, $model->username, Yii::$app->name),
+        ]);
+    }
+
+    /**
+     * "My account" two-factor steps: setup (new secret, kept in the session only),
+     * enable (first valid code saves it), cancel, disable (needs a current code).
+     */
+    private function handleTwoFactor(Admin $model, string $step, string $code): void
+    {
+        $session = Yii::$app->session;
+        if ($step === 'setup' && !$model->hasTwoFactor()) {
+            $session->set(self::TOTP_SETUP_KEY, Totp::generateSecret());
+        } elseif ($step === 'cancel') {
+            $session->remove(self::TOTP_SETUP_KEY);
+        } elseif ($step === 'enable') {
+            $secret = $session->get(self::TOTP_SETUP_KEY);
+            if (is_string($secret) && !$model->hasTwoFactor() && $model->enableTwoFactor($secret, $code)) {
+                $session->remove(self::TOTP_SETUP_KEY);
+                // New auth key: keep this session signed in, drop the old remember-me cookie.
+                Yii::$app->user->switchIdentity($model, 0);
+                $session->setFlash('success', 'Two-factor sign-in is on. You will need a code from your app at every login.');
+            } else {
+                $session->setFlash('error', 'That code is not valid. Check the time on your phone and try again.');
+            }
+        } elseif ($step === 'disable' && $model->hasTwoFactor()) {
+            if (LoginThrottle::isLocked('backend', $model->username)) {
+                $session->setFlash('error', 'Too many failed attempts. Please try again in 15 minutes.');
+            } elseif ($model->consumeTotpCode($code)) {
+                $model->disableTwoFactor();
+                $session->setFlash('success', 'Two-factor sign-in is off.');
+            } else {
+                LoginThrottle::fail('backend', $model->username);
+                $session->setFlash('error', 'That code is not valid. Two-factor sign-in is still on.');
+            }
+        }
+    }
+
+    /**
+     * Superadmin only (MIN_ROLE 'admin'): turns off another admin's two-factor when
+     * they lost their phone. They can set it up again under My account.
+     */
+    public function actionResetTwoFactor($id)
+    {
+        $model = $this->findModel($id);
+        $model->disableTwoFactor();
+        Yii::info("Two-factor sign-in reset for admin #{$model->id} by admin #" . Yii::$app->user->id, 'admin-auth');
+        Yii::$app->session->setFlash('success', 'Two-factor sign-in is off for ' . $model->username . '.');
+        return $this->redirect(['update', 'id' => $model->id]);
     }
 
     /**

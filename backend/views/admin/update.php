@@ -22,4 +22,19 @@ $this->params['breadcrumbs'][] = 'Update';
         'model' => $model,
     ]) ?>
 
+    <div class="border-top pt-3 d-flex align-items-center">
+        <span class="mr-3">Two-factor sign-in:
+            <?= $model->hasTwoFactor() ? '<span class="badge badge-success">On</span>' : '<span class="badge badge-secondary">Off</span>' ?>
+        </span>
+        <?php if ($model->hasTwoFactor()): ?>
+            <?= Html::a('Turn off two-factor', ['reset-two-factor', 'id' => $model->id], [
+                'class' => 'btn btn-sm btn-outline-danger',
+                'data' => [
+                    'method' => 'post',
+                    'confirm' => 'Turn off two-factor sign-in for ' . $model->username . '? Use this only when they lost their authenticator app; they can log in with just a password until they set it up again.',
+                ],
+            ]) ?>
+        <?php endif; ?>
+    </div>
+
 </div>

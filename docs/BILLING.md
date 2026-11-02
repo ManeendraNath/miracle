@@ -95,6 +95,13 @@ Coupons are applied by an admin on manual invoices (coupon code field).
 - **Only For These Customers**: empty = anyone; otherwise only the listed customers.
 - Usage limits: `0` means no limit.
 
+Customers can also apply / remove a coupon themselves on the invoice page (any invoice,
+including automatic renewals), via `InvoiceCouponService`. Allowed only while the invoice is
+Unpaid, has no payment of any kind (captured, refunded, proof under review, or a started online
+payment: a Razorpay order is fixed at the old amount), and has no admin discount without a coupon.
+Previous-outstanding (arrears) lines are never discounted. Totals are recomputed with
+`AutoInvoiceService::calculateInvoiceTotals()`.
+
 ## Admin roles
 
 | Role | Access |
@@ -105,6 +112,23 @@ Coupons are applied by an admin on manual invoices (coupon code field).
 
 The table lives in `BaseController::MIN_ROLE`; `RoleAccessTest` pins it. Every role can
 change its own email and password under **My account** (user icon in the top bar).
+
+### Two-factor sign-in (optional, per admin)
+
+- **Turn on:** My account → *Set up two-factor sign-in* → scan the QR code (or type the key)
+  in an authenticator app → enter the 6-digit code it shows. Turning it on signs out
+  "remember me" logins on other devices.
+- **Login:** after the password, the panel asks for a code (5 minutes to enter it). Wrong
+  codes count toward the normal login lock (5 failures → 15 minutes). "Remember me" applies
+  only after the code. Each code works once.
+- **Turn off:** My account → enter a current code → *Turn off*.
+- **Lost phone:** a Superadmin opens the admin's edit page → *Turn off two-factor*. If the
+  only Superadmin is locked out: `php yii admin-2fa/reset <username>` on the server.
+  Managers and Admins can't turn off anyone else's.
+
+Codes are standard TOTP (RFC 6238, SHA1, 30 s), checked offline (`common\components\Totp`).
+The secret is stored in `admin.totp_secret` in plain text (it must be readable to check
+codes), so treat database backups as sensitive.
 
 ## Admin WhatsApp alerts
 

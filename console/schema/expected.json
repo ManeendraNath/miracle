@@ -1,5 +1,5 @@
 {
-    "migrations": 45,
+    "migrations": 46,
     "columns": {
         "admin": {
             "auth_key": {
@@ -48,6 +48,18 @@
                 "type": "smallint",
                 "null": false,
                 "default": "1",
+                "extra": ""
+            },
+            "totp_last_step": {
+                "type": "int",
+                "null": true,
+                "default": null,
+                "extra": ""
+            },
+            "totp_secret": {
+                "type": "varchar(64)",
+                "null": true,
+                "default": null,
                 "extra": ""
             },
             "updated_at": {

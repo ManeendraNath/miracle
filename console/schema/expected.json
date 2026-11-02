@@ -1,0 +1,2506 @@
+{
+    "migrations": 42,
+    "columns": {
+        "admin": {
+            "auth_key": {
+                "type": "varchar(32)",
+                "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "created_at": {
+                "type": "int",
+                "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "email": {
+                "type": "varchar(255)",
+                "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "id": {
+                "type": "int",
+                "null": false,
+                "default": null,
+                "extra": "auto_increment"
+            },
+            "password_hash": {
+                "type": "varchar(255)",
+                "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "password_reset_token": {
+                "type": "varchar(255)",
+                "null": true,
+                "default": null,
+                "extra": ""
+            },
+            "role": {
+                "type": "varchar(50)",
+                "null": false,
+                "default": "Manager",
+                "extra": ""
+            },
+            "status": {
+                "type": "smallint",
+                "null": false,
+                "default": "10",
+                "extra": ""
+            },
+            "updated_at": {
+                "type": "int",
+                "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "username": {
+                "type": "varchar(255)",
+                "null": false,
+                "default": null,
+                "extra": ""
+            }
+        },
+        "admin_notification": {
+            "created_at": {
+                "type": "int",
+                "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "id": {
+                "type": "bigint",
+                "null": false,
+                "default": null,
+                "extra": "auto_increment"
+            },
+            "is_read": {
+                "type": "tinyint",
+                "null": false,
+                "default": "0",
+                "extra": ""
+            },
+            "message": {
+                "type": "text",
+                "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "read_at": {
+                "type": "int",
+                "null": true,
+                "default": null,
+                "extra": ""
+            },
+            "route": {
+                "type": "varchar(500)",
+                "null": true,
+                "default": null,
+                "extra": ""
+            },
+            "title": {
+                "type": "varchar(255)",
+                "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "type": {
+                "type": "varchar(50)",
+                "null": false,
+                "default": null,
+                "extra": ""
+            }
+        },
+        "audit_request": {
+            "company_url": {
+                "type": "varchar(255)",
+                "null": true,
+                "default": null,
+                "extra": ""
+            },
+            "created_at": {
+                "type": "int",
+                "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "current_framework": {
+                "type": "varchar(255)",
+                "null": true,
+                "default": null,
+                "extra": ""
+            },
+            "email": {
+                "type": "varchar(255)",
+                "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "hosting_environment": {
+                "type": "varchar(255)",
+                "null": true,
+                "default": null,
+                "extra": ""
+            },
+            "id": {
+                "type": "int",
+                "null": false,
+                "default": null,
+                "extra": "auto_increment"
+            },
+            "message": {
+                "type": "text",
+                "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "name": {
+                "type": "varchar(255)",
+                "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "phone": {
+                "type": "varchar(50)",
+                "null": true,
+                "default": null,
+                "extra": ""
+            },
+            "status": {
+                "type": "enum('Pending','In_Review','Contacted','Closed')",
+                "null": false,
+                "default": "Pending",
+                "extra": ""
+            },
+            "updated_at": {
+                "type": "int",
+                "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "user_ip": {
+                "type": "varchar(50)",
+                "null": true,
+                "default": null,
+                "extra": ""
+            }
+        },
+        "auth_assignment": {
+            "created_at": {
+                "type": "int",
+                "null": true,
+                "default": null,
+                "extra": ""
+            },
+            "item_name": {
+                "type": "varchar(64)",
+                "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "user_id": {
+                "type": "int",
+                "null": false,
+                "default": null,
+                "extra": ""
+            }
+        },
+        "auth_item": {
+            "created_at": {
+                "type": "int",
+                "null": true,
+                "default": null,
+                "extra": ""
+            },
+            "data": {
+                "type": "text",
+                "null": true,
+                "default": null,
+                "extra": ""
+            },
+            "description": {
+                "type": "text",
+                "null": true,
+                "default": null,
+                "extra": ""
+            },
+            "group_code": {
+                "type": "varchar(64)",
+                "null": true,
+                "default": null,
+                "extra": ""
+            },
+            "name": {
+                "type": "varchar(64)",
+                "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "rule_name": {
+                "type": "varchar(64)",
+                "null": true,
+                "default": null,
+                "extra": ""
+            },
+            "type": {
+                "type": "int",
+                "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "updated_at": {
+                "type": "int",
+                "null": true,
+                "default": null,
+                "extra": ""
+            }
+        },
+        "auth_item_child": {
+            "child": {
+                "type": "varchar(64)",
+                "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "parent": {
+                "type": "varchar(64)",
+                "null": false,
+                "default": null,
+                "extra": ""
+            }
+        },
+        "auth_item_group": {
+            "code": {
+                "type": "varchar(64)",
+                "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "created_at": {
+                "type": "int",
+                "null": true,
+                "default": null,
+                "extra": ""
+            },
+            "name": {
+                "type": "varchar(255)",
+                "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "updated_at": {
+                "type": "int",
+                "null": true,
+                "default": null,
+                "extra": ""
+            }
+        },
+        "auth_rule": {
+            "created_at": {
+                "type": "int",
+                "null": true,
+                "default": null,
+                "extra": ""
+            },
+            "data": {
+                "type": "text",
+                "null": true,
+                "default": null,
+                "extra": ""
+            },
+            "name": {
+                "type": "varchar(64)",
+                "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "updated_at": {
+                "type": "int",
+                "null": true,
+                "default": null,
+                "extra": ""
+            }
+        },
+        "billing_event": {
+            "amount": {
+                "type": "decimal(10,2)",
+                "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "billing_run_id": {
+                "type": "bigint",
+                "null": true,
+                "default": null,
+                "extra": ""
+            },
+            "calculated_amount": {
+                "type": "decimal(10,2)",
+                "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "created_at": {
+                "type": "int",
+                "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "description": {
+                "type": "varchar(500)",
+                "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "due_date": {
+                "type": "date",
+                "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "id": {
+                "type": "bigint",
+                "null": false,
+                "default": null,
+                "extra": "auto_increment"
+            },
+            "increase_percent": {
+                "type": "decimal(5,2)",
+                "null": false,
+                "default": "0.00",
+                "extra": ""
+            },
+            "invoice_id": {
+                "type": "int",
+                "null": true,
+                "default": null,
+                "extra": ""
+            },
+            "is_manual_amount": {
+                "type": "tinyint",
+                "null": false,
+                "default": "0",
+                "extra": ""
+            },
+            "item_id": {
+                "type": "int",
+                "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "item_type": {
+                "type": "smallint",
+                "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "live_slot": {
+                "type": "tinyint",
+                "null": true,
+                "default": null,
+                "extra": "STORED GENERATED"
+            },
+            "notes": {
+                "type": "varchar(500)",
+                "null": true,
+                "default": null,
+                "extra": ""
+            },
+            "period_end": {
+                "type": "date",
+                "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "period_start": {
+                "type": "date",
+                "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "previous_amount": {
+                "type": "decimal(10,2)",
+                "null": true,
+                "default": null,
+                "extra": ""
+            },
+            "status": {
+                "type": "enum('Pending','Invoiced','Fulfilled','Cancelled')",
+                "null": false,
+                "default": "Pending",
+                "extra": ""
+            },
+            "updated_at": {
+                "type": "int",
+                "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "user_id": {
+                "type": "int",
+                "null": false,
+                "default": null,
+                "extra": ""
+            }
+        },
+        "billing_run": {
+            "completed_at": {
+                "type": "int",
+                "null": true,
+                "default": null,
+                "extra": ""
+            },
+            "created_at": {
+                "type": "int",
+                "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "failure_message": {
+                "type": "text",
+                "null": true,
+                "default": null,
+                "extra": ""
+            },
+            "id": {
+                "type": "bigint",
+                "null": false,
+                "default": null,
+                "extra": "auto_increment"
+            },
+            "run_number": {
+                "type": "varchar(100)",
+                "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "started_at": {
+                "type": "int",
+                "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "status": {
+                "type": "enum('Running','Completed','Failed')",
+                "null": false,
+                "default": "Running",
+                "extra": ""
+            },
+            "updated_at": {
+                "type": "int",
+                "null": false,
+                "default": null,
+                "extra": ""
+            }
+        },
+        "billing_settings": {
+            "created_at": {
+                "type": "int",
+                "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "id": {
+                "type": "int",
+                "null": false,
+                "default": null,
+                "extra": "auto_increment"
+            },
+            "invoice_before_days": {
+                "type": "int",
+                "null": false,
+                "default": "30",
+                "extra": ""
+            },
+            "is_active": {
+                "type": "tinyint",
+                "null": false,
+                "default": "1",
+                "extra": ""
+            },
+            "payment_due_days": {
+                "type": "int",
+                "null": false,
+                "default": "15",
+                "extra": ""
+            },
+            "renewal_cycle_months": {
+                "type": "int",
+                "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "renewal_increase_percent": {
+                "type": "decimal(5,2)",
+                "null": false,
+                "default": "0.00",
+                "extra": ""
+            },
+            "service_type": {
+                "type": "smallint",
+                "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "updated_at": {
+                "type": "int",
+                "null": false,
+                "default": null,
+                "extra": ""
+            }
+        },
+        "coupon": {
+            "amount": {
+                "type": "decimal(15,2)",
+                "null": false,
+                "default": "0.00",
+                "extra": ""
+            },
+            "code": {
+                "type": "varchar(32)",
+                "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "created_at": {
+                "type": "int",
+                "null": true,
+                "default": null,
+                "extra": ""
+            },
+            "description": {
+                "type": "text",
+                "null": true,
+                "default": null,
+                "extra": ""
+            },
+            "end_date": {
+                "type": "datetime",
+                "null": true,
+                "default": null,
+                "extra": ""
+            },
+            "id": {
+                "type": "int",
+                "null": false,
+                "default": null,
+                "extra": "auto_increment"
+            },
+            "is_active": {
+                "type": "enum('Y','N')",
+                "null": false,
+                "default": "Y",
+                "extra": ""
+            },
+            "minimum_order": {
+                "type": "decimal(15,2)",
+                "null": false,
+                "default": "0.00",
+                "extra": ""
+            },
+            "name": {
+                "type": "varchar(32)",
+                "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "start_date": {
+                "type": "datetime",
+                "null": true,
+                "default": null,
+                "extra": ""
+            },
+            "type": {
+                "type": "enum('F','P')",
+                "null": false,
+                "default": "F",
+                "extra": ""
+            },
+            "updated_at": {
+                "type": "int",
+                "null": true,
+                "default": null,
+                "extra": ""
+            },
+            "uses_per_coupon": {
+                "type": "smallint",
+                "null": false,
+                "default": "1",
+                "extra": ""
+            },
+            "uses_per_user": {
+                "type": "smallint",
+                "null": false,
+                "default": "0",
+                "extra": ""
+            }
+        },
+        "coupon_applicability": {
+            "coupon_id": {
+                "type": "int",
+                "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "created_at": {
+                "type": "int",
+                "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "id": {
+                "type": "int",
+                "null": false,
+                "default": null,
+                "extra": "auto_increment"
+            },
+            "item_id": {
+                "type": "int",
+                "null": true,
+                "default": null,
+                "extra": ""
+            },
+            "item_type": {
+                "type": "int",
+                "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "updated_at": {
+                "type": "int",
+                "null": false,
+                "default": null,
+                "extra": ""
+            }
+        },
+        "coupon_assigned_user": {
+            "assigned_at": {
+                "type": "int",
+                "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "coupon_id": {
+                "type": "int",
+                "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "created_at": {
+                "type": "int",
+                "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "id": {
+                "type": "int",
+                "null": false,
+                "default": null,
+                "extra": "auto_increment"
+            },
+            "updated_at": {
+                "type": "int",
+                "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "user_id": {
+                "type": "int",
+                "null": false,
+                "default": null,
+                "extra": ""
+            }
+        },
+        "coupon_email_track": {
+            "coupon_id": {
+                "type": "int",
+                "null": false,
+                "default": "0",
+                "extra": ""
+            },
+            "customer_id_sent": {
+                "type": "int",
+                "null": false,
+                "default": "0",
+                "extra": ""
+            },
+            "date_sent": {
+                "type": "datetime",
+                "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "emailed_to": {
+                "type": "varchar(32)",
+                "null": true,
+                "default": null,
+                "extra": ""
+            },
+            "sent_firstname": {
+                "type": "varchar(32)",
+                "null": true,
+                "default": null,
+                "extra": ""
+            },
+            "sent_lastname": {
+                "type": "varchar(32)",
+                "null": true,
+                "default": null,
+                "extra": ""
+            },
+            "unique_id": {
+                "type": "int",
+                "null": false,
+                "default": null,
+                "extra": "auto_increment"
+            }
+        },
+        "coupon_redeem_track": {
+            "coupon_id": {
+                "type": "int",
+                "null": false,
+                "default": "0",
+                "extra": ""
+            },
+            "order_id": {
+                "type": "int",
+                "null": false,
+                "default": "0",
+                "extra": ""
+            },
+            "redeem_date": {
+                "type": "datetime",
+                "null": false,
+                "default": "0001-01-01 00:00:00",
+                "extra": ""
+            },
+            "redeem_id": {
+                "type": "int",
+                "null": false,
+                "default": null,
+                "extra": "auto_increment"
+            },
+            "redeem_ip": {
+                "type": "varchar(32)",
+                "null": false,
+                "default": "",
+                "extra": ""
+            },
+            "user_id": {
+                "type": "int",
+                "null": false,
+                "default": "0",
+                "extra": ""
+            }
+        },
+        "coupon_redemption": {
+            "coupon_code": {
+                "type": "varchar(32)",
+                "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "coupon_id": {
+                "type": "int",
+                "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "discount_amount": {
+                "type": "decimal(15,2)",
+                "null": false,
+                "default": "0.00",
+                "extra": ""
+            },
+            "id": {
+                "type": "int",
+                "null": false,
+                "default": null,
+                "extra": "auto_increment"
+            },
+            "invoice_id": {
+                "type": "int",
+                "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "redeemed_at": {
+                "type": "int",
+                "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "user_id": {
+                "type": "int",
+                "null": false,
+                "default": null,
+                "extra": ""
+            }
+        },
+        "customer_billing_profile": {
+            "address_line_1": {
+                "type": "varchar(255)",
+                "null": true,
+                "default": null,
+                "extra": ""
+            },
+            "address_line_2": {
+                "type": "varchar(255)",
+                "null": true,
+                "default": null,
+                "extra": ""
+            },
+            "city": {
+                "type": "varchar(100)",
+                "null": true,
+                "default": null,
+                "extra": ""
+            },
+            "created_at": {
+                "type": "int",
+                "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "default_discount_amount": {
+                "type": "decimal(12,2)",
+                "null": false,
+                "default": "0.00",
+                "extra": ""
+            },
+            "gstin": {
+                "type": "varchar(15)",
+                "null": true,
+                "default": null,
+                "extra": ""
+            },
+            "id": {
+                "type": "int",
+                "null": false,
+                "default": null,
+                "extra": "auto_increment"
+            },
+            "is_gst_applicable": {
+                "type": "tinyint",
+                "null": false,
+                "default": "0",
+                "extra": ""
+            },
+            "legal_name": {
+                "type": "varchar(255)",
+                "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "pan": {
+                "type": "varchar(10)",
+                "null": true,
+                "default": null,
+                "extra": ""
+            },
+            "postal_code": {
+                "type": "varchar(20)",
+                "null": true,
+                "default": null,
+                "extra": ""
+            },
+            "state": {
+                "type": "varchar(100)",
+                "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "state_code": {
+                "type": "varchar(10)",
+                "null": true,
+                "default": null,
+                "extra": ""
+            },
+            "updated_at": {
+                "type": "int",
+                "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "user_id": {
+                "type": "int",
+                "null": false,
+                "default": null,
+                "extra": ""
+            }
+        },
+        "customer_notification": {
+            "created_at": {
+                "type": "int",
+                "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "id": {
+                "type": "bigint",
+                "null": false,
+                "default": null,
+                "extra": "auto_increment"
+            },
+            "is_read": {
+                "type": "tinyint",
+                "null": false,
+                "default": "0",
+                "extra": ""
+            },
+            "message": {
+                "type": "text",
+                "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "read_at": {
+                "type": "int",
+                "null": true,
+                "default": null,
+                "extra": ""
+            },
+            "route": {
+                "type": "varchar(500)",
+                "null": true,
+                "default": null,
+                "extra": ""
+            },
+            "title": {
+                "type": "varchar(255)",
+                "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "type": {
+                "type": "varchar(50)",
+                "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "user_id": {
+                "type": "int",
+                "null": false,
+                "default": null,
+                "extra": ""
+            }
+        },
+        "customer_preference": {
+            "created_at": {
+                "type": "int",
+                "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "id": {
+                "type": "int",
+                "null": false,
+                "default": null,
+                "extra": "auto_increment"
+            },
+            "payment_reminders": {
+                "type": "tinyint",
+                "null": false,
+                "default": "1",
+                "extra": ""
+            },
+            "renewal_reminders": {
+                "type": "tinyint",
+                "null": false,
+                "default": "1",
+                "extra": ""
+            },
+            "service_expiry_notifications": {
+                "type": "tinyint",
+                "null": false,
+                "default": "1",
+                "extra": ""
+            },
+            "support_notifications": {
+                "type": "tinyint",
+                "null": false,
+                "default": "1",
+                "extra": ""
+            },
+            "updated_at": {
+                "type": "int",
+                "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "user_id": {
+                "type": "int",
+                "null": false,
+                "default": null,
+                "extra": ""
+            }
+        },
+        "domains": {
+            "created_at": {
+                "type": "int",
+                "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "current_expiry_date": {
+                "type": "date",
+                "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "domain_url": {
+                "type": "varchar(255)",
+                "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "id": {
+                "type": "int",
+                "null": false,
+                "default": null,
+                "extra": "auto_increment"
+            },
+            "registered_date": {
+                "type": "date",
+                "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "registrar": {
+                "type": "varchar(100)",
+                "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "renewal_base_amount": {
+                "type": "decimal(10,2)",
+                "null": true,
+                "default": null,
+                "extra": ""
+            },
+            "renewal_cycle_months": {
+                "type": "int",
+                "null": true,
+                "default": null,
+                "extra": ""
+            },
+            "renewal_increase_percent": {
+                "type": "decimal(5,2)",
+                "null": true,
+                "default": null,
+                "extra": ""
+            },
+            "status": {
+                "type": "smallint",
+                "null": false,
+                "default": "1",
+                "extra": ""
+            },
+            "updated_at": {
+                "type": "int",
+                "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "user_id": {
+                "type": "int",
+                "null": false,
+                "default": null,
+                "extra": ""
+            }
+        },
+        "hosting": {
+            "cpanel_ip": {
+                "type": "varchar(45)",
+                "null": true,
+                "default": null,
+                "extra": ""
+            },
+            "cpanel_password": {
+                "type": "varchar(255)",
+                "null": true,
+                "default": null,
+                "extra": ""
+            },
+            "cpanel_username": {
+                "type": "varchar(100)",
+                "null": true,
+                "default": null,
+                "extra": ""
+            },
+            "created_at": {
+                "type": "int",
+                "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "current_expiry_date": {
+                "type": "date",
+                "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "id": {
+                "type": "int",
+                "null": false,
+                "default": null,
+                "extra": "auto_increment"
+            },
+            "primary_domain": {
+                "type": "varchar(255)",
+                "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "renewal_base_amount": {
+                "type": "decimal(10,2)",
+                "null": true,
+                "default": null,
+                "extra": ""
+            },
+            "renewal_cycle_months": {
+                "type": "int",
+                "null": true,
+                "default": null,
+                "extra": ""
+            },
+            "renewal_increase_percent": {
+                "type": "decimal(5,2)",
+                "null": true,
+                "default": null,
+                "extra": ""
+            },
+            "status": {
+                "type": "smallint",
+                "null": false,
+                "default": "1",
+                "extra": ""
+            },
+            "updated_at": {
+                "type": "int",
+                "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "user_id": {
+                "type": "int",
+                "null": false,
+                "default": null,
+                "extra": ""
+            }
+        },
+        "invoice": {
+            "billing_run_id": {
+                "type": "bigint",
+                "null": true,
+                "default": null,
+                "extra": ""
+            },
+            "cgst_percent": {
+                "type": "decimal(5,2)",
+                "null": true,
+                "default": "9.00",
+                "extra": ""
+            },
+            "client_address_line_1": {
+                "type": "varchar(255)",
+                "null": true,
+                "default": null,
+                "extra": ""
+            },
+            "client_address_line_2": {
+                "type": "varchar(255)",
+                "null": true,
+                "default": null,
+                "extra": ""
+            },
+            "client_city": {
+                "type": "varchar(100)",
+                "null": true,
+                "default": null,
+                "extra": ""
+            },
+            "client_gstin": {
+                "type": "varchar(15)",
+                "null": true,
+                "default": null,
+                "extra": ""
+            },
+            "client_name": {
+                "type": "varchar(255)",
+                "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "client_pan": {
+                "type": "varchar(10)",
+                "null": true,
+                "default": null,
+                "extra": ""
+            },
+            "client_postal_code": {
+                "type": "varchar(20)",
+                "null": true,
+                "default": null,
+                "extra": ""
+            },
+            "client_state": {
+                "type": "varchar(100)",
+                "null": true,
+                "default": null,
+                "extra": ""
+            },
+            "client_state_code": {
+                "type": "varchar(10)",
+                "null": true,
+                "default": null,
+                "extra": ""
+            },
+            "coupon_code": {
+                "type": "varchar(32)",
+                "null": true,
+                "default": null,
+                "extra": ""
+            },
+            "coupon_id": {
+                "type": "int",
+                "null": true,
+                "default": null,
+                "extra": ""
+            },
+            "created_at": {
+                "type": "int",
+                "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "discount_amount": {
+                "type": "decimal(10,2)",
+                "null": false,
+                "default": "0.00",
+                "extra": ""
+            },
+            "due_date": {
+                "type": "date",
+                "null": true,
+                "default": null,
+                "extra": ""
+            },
+            "emailed_at": {
+                "type": "int",
+                "null": true,
+                "default": null,
+                "extra": ""
+            },
+            "id": {
+                "type": "int",
+                "null": false,
+                "default": null,
+                "extra": "auto_increment"
+            },
+            "igst_percent": {
+                "type": "decimal(5,2)",
+                "null": true,
+                "default": "0.00",
+                "extra": ""
+            },
+            "invoice_number": {
+                "type": "varchar(100)",
+                "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "place_of_supply": {
+                "type": "varchar(100)",
+                "null": true,
+                "default": null,
+                "extra": ""
+            },
+            "sgst_percent": {
+                "type": "decimal(5,2)",
+                "null": true,
+                "default": "9.00",
+                "extra": ""
+            },
+            "status": {
+                "type": "enum('Unpaid','Partially_Paid','Paid','Carried_Forward','Cancelled','Refunded')",
+                "null": false,
+                "default": "Unpaid",
+                "extra": ""
+            },
+            "subtotal_amount": {
+                "type": "decimal(10,2)",
+                "null": false,
+                "default": "0.00",
+                "extra": ""
+            },
+            "total_payable": {
+                "type": "decimal(10,2)",
+                "null": false,
+                "default": "0.00",
+                "extra": ""
+            },
+            "updated_at": {
+                "type": "int",
+                "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "user_id": {
+                "type": "int",
+                "null": false,
+                "default": null,
+                "extra": ""
+            }
+        },
+        "invoice_item": {
+            "billing_event_id": {
+                "type": "bigint",
+                "null": true,
+                "default": null,
+                "extra": ""
+            },
+            "category": {
+                "type": "varchar(100)",
+                "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "description": {
+                "type": "text",
+                "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "id": {
+                "type": "int",
+                "null": false,
+                "default": null,
+                "extra": "auto_increment"
+            },
+            "invoice_id": {
+                "type": "int",
+                "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "item_id": {
+                "type": "int",
+                "null": true,
+                "default": null,
+                "extra": ""
+            },
+            "item_type": {
+                "type": "tinyint",
+                "null": true,
+                "default": "4",
+                "extra": ""
+            },
+            "quantity": {
+                "type": "int",
+                "null": false,
+                "default": "1",
+                "extra": ""
+            },
+            "source_invoice_id": {
+                "type": "int",
+                "null": true,
+                "default": null,
+                "extra": ""
+            },
+            "total_price": {
+                "type": "decimal(10,2)",
+                "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "unit_price": {
+                "type": "decimal(10,2)",
+                "null": false,
+                "default": null,
+                "extra": ""
+            }
+        },
+        "invoice_reminder_log": {
+            "created_at": {
+                "type": "int",
+                "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "days_from_due": {
+                "type": "int",
+                "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "id": {
+                "type": "bigint",
+                "null": false,
+                "default": null,
+                "extra": "auto_increment"
+            },
+            "invoice_id": {
+                "type": "int",
+                "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "recipient_email": {
+                "type": "varchar(255)",
+                "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "reminder_key": {
+                "type": "varchar(50)",
+                "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "sent_at": {
+                "type": "int",
+                "null": false,
+                "default": null,
+                "extra": ""
+            }
+        },
+        "lead": {
+            "created_at": {
+                "type": "int",
+                "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "id": {
+                "type": "int",
+                "null": false,
+                "default": null,
+                "extra": "auto_increment"
+            },
+            "lead_name": {
+                "type": "varchar(150)",
+                "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "phone_number": {
+                "type": "varchar(30)",
+                "null": true,
+                "default": null,
+                "extra": ""
+            },
+            "source": {
+                "type": "varchar(100)",
+                "null": true,
+                "default": null,
+                "extra": ""
+            },
+            "status": {
+                "type": "varchar(50)",
+                "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "updated_at": {
+                "type": "int",
+                "null": false,
+                "default": null,
+                "extra": ""
+            }
+        },
+        "maintenance": {
+            "created_at": {
+                "type": "int",
+                "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "current_expiry_date": {
+                "type": "date",
+                "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "id": {
+                "type": "int",
+                "null": false,
+                "default": null,
+                "extra": "auto_increment"
+            },
+            "renewal_base_amount": {
+                "type": "decimal(10,2)",
+                "null": true,
+                "default": null,
+                "extra": ""
+            },
+            "renewal_cycle_months": {
+                "type": "int",
+                "null": true,
+                "default": null,
+                "extra": ""
+            },
+            "renewal_increase_percent": {
+                "type": "decimal(5,2)",
+                "null": true,
+                "default": null,
+                "extra": ""
+            },
+            "start_date": {
+                "type": "date",
+                "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "status": {
+                "type": "smallint",
+                "null": false,
+                "default": "1",
+                "extra": ""
+            },
+            "updated_at": {
+                "type": "int",
+                "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "user_id": {
+                "type": "int",
+                "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "website_url": {
+                "type": "varchar(255)",
+                "null": false,
+                "default": null,
+                "extra": ""
+            }
+        },
+        "service_reminder_log": {
+            "created_at": {
+                "type": "int",
+                "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "days_before": {
+                "type": "int",
+                "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "id": {
+                "type": "bigint",
+                "null": false,
+                "default": null,
+                "extra": "auto_increment"
+            },
+            "reminder_key": {
+                "type": "varchar(100)",
+                "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "sent_at": {
+                "type": "int",
+                "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "service_id": {
+                "type": "int",
+                "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "service_type": {
+                "type": "varchar(50)",
+                "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "user_id": {
+                "type": "int",
+                "null": false,
+                "default": null,
+                "extra": ""
+            }
+        },
+        "service_renewal_history": {
+            "billed_amount": {
+                "type": "decimal(10,2)",
+                "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "billing_event_id": {
+                "type": "bigint",
+                "null": true,
+                "default": null,
+                "extra": ""
+            },
+            "end_date": {
+                "type": "date",
+                "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "id": {
+                "type": "int",
+                "null": false,
+                "default": null,
+                "extra": "auto_increment"
+            },
+            "invoice_id": {
+                "type": "int",
+                "null": true,
+                "default": null,
+                "extra": ""
+            },
+            "item_id": {
+                "type": "int",
+                "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "item_type": {
+                "type": "enum('domain','hosting','maintenance')",
+                "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "logged_at": {
+                "type": "int",
+                "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "renewal_period_months": {
+                "type": "int",
+                "null": false,
+                "default": "12",
+                "extra": ""
+            },
+            "start_date": {
+                "type": "date",
+                "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "transaction_id": {
+                "type": "int",
+                "null": true,
+                "default": null,
+                "extra": ""
+            }
+        },
+        "site_setting": {
+            "address_line_1": {
+                "type": "varchar(255)",
+                "null": true,
+                "default": null,
+                "extra": ""
+            },
+            "address_line_2": {
+                "type": "varchar(255)",
+                "null": true,
+                "default": null,
+                "extra": ""
+            },
+            "address_line_3": {
+                "type": "varchar(255)",
+                "null": true,
+                "default": null,
+                "extra": ""
+            },
+            "email_1": {
+                "type": "varchar(255)",
+                "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "email_2": {
+                "type": "varchar(255)",
+                "null": true,
+                "default": null,
+                "extra": ""
+            },
+            "email_3": {
+                "type": "varchar(255)",
+                "null": true,
+                "default": null,
+                "extra": ""
+            },
+            "facebook": {
+                "type": "varchar(255)",
+                "null": true,
+                "default": null,
+                "extra": ""
+            },
+            "id": {
+                "type": "int",
+                "null": false,
+                "default": null,
+                "extra": "auto_increment"
+            },
+            "instagram": {
+                "type": "varchar(255)",
+                "null": true,
+                "default": null,
+                "extra": ""
+            },
+            "linkedin": {
+                "type": "varchar(255)",
+                "null": true,
+                "default": null,
+                "extra": ""
+            },
+            "mobile_1": {
+                "type": "bigint",
+                "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "mobile_2": {
+                "type": "bigint",
+                "null": true,
+                "default": null,
+                "extra": ""
+            },
+            "site_name": {
+                "type": "varchar(255)",
+                "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "site_url": {
+                "type": "varchar(255)",
+                "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "updated_at": {
+                "type": "int",
+                "null": true,
+                "default": null,
+                "extra": ""
+            },
+            "x": {
+                "type": "varchar(255)",
+                "null": true,
+                "default": null,
+                "extra": ""
+            },
+            "youtube": {
+                "type": "varchar(255)",
+                "null": true,
+                "default": null,
+                "extra": ""
+            }
+        },
+        "support_ticket": {
+            "admin_response": {
+                "type": "text",
+                "null": true,
+                "default": null,
+                "extra": ""
+            },
+            "closed_at": {
+                "type": "int",
+                "null": true,
+                "default": null,
+                "extra": ""
+            },
+            "created_at": {
+                "type": "int",
+                "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "id": {
+                "type": "int",
+                "null": false,
+                "default": null,
+                "extra": "auto_increment"
+            },
+            "message": {
+                "type": "text",
+                "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "priority": {
+                "type": "varchar(20)",
+                "null": false,
+                "default": "Normal",
+                "extra": ""
+            },
+            "service_id": {
+                "type": "int",
+                "null": true,
+                "default": null,
+                "extra": ""
+            },
+            "service_type": {
+                "type": "varchar(30)",
+                "null": true,
+                "default": null,
+                "extra": ""
+            },
+            "status": {
+                "type": "varchar(30)",
+                "null": false,
+                "default": "Open",
+                "extra": ""
+            },
+            "subject": {
+                "type": "varchar(255)",
+                "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "ticket_number": {
+                "type": "varchar(30)",
+                "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "updated_at": {
+                "type": "int",
+                "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "user_id": {
+                "type": "int",
+                "null": false,
+                "default": null,
+                "extra": ""
+            }
+        },
+        "support_ticket_attachment": {
+            "created_at": {
+                "type": "int",
+                "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "file_name": {
+                "type": "varchar(255)",
+                "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "file_path": {
+                "type": "varchar(500)",
+                "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "file_size": {
+                "type": "int",
+                "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "id": {
+                "type": "bigint",
+                "null": false,
+                "default": null,
+                "extra": "auto_increment"
+            },
+            "mime_type": {
+                "type": "varchar(100)",
+                "null": true,
+                "default": null,
+                "extra": ""
+            },
+            "ticket_id": {
+                "type": "int",
+                "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "ticket_message_id": {
+                "type": "bigint",
+                "null": true,
+                "default": null,
+                "extra": ""
+            },
+            "uploaded_by": {
+                "type": "int",
+                "null": false,
+                "default": null,
+                "extra": ""
+            }
+        },
+        "support_ticket_message": {
+            "created_at": {
+                "type": "int",
+                "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "id": {
+                "type": "bigint",
+                "null": false,
+                "default": null,
+                "extra": "auto_increment"
+            },
+            "message": {
+                "type": "text",
+                "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "sender_id": {
+                "type": "int",
+                "null": true,
+                "default": null,
+                "extra": ""
+            },
+            "sender_type": {
+                "type": "varchar(20)",
+                "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "ticket_id": {
+                "type": "int",
+                "null": false,
+                "default": null,
+                "extra": ""
+            }
+        },
+        "transaction": {
+            "amount": {
+                "type": "decimal(10,2)",
+                "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "confirmation_emailed_at": {
+                "type": "int",
+                "null": true,
+                "default": null,
+                "extra": ""
+            },
+            "created_at": {
+                "type": "int",
+                "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "gateway_fee": {
+                "type": "decimal(10,2)",
+                "null": true,
+                "default": "0.00",
+                "extra": ""
+            },
+            "gateway_id": {
+                "type": "tinyint",
+                "null": true,
+                "default": null,
+                "extra": ""
+            },
+            "gateway_order_id": {
+                "type": "varchar(100)",
+                "null": true,
+                "default": null,
+                "extra": ""
+            },
+            "gateway_payment_id": {
+                "type": "varchar(100)",
+                "null": true,
+                "default": null,
+                "extra": ""
+            },
+            "id": {
+                "type": "int",
+                "null": false,
+                "default": null,
+                "extra": "auto_increment"
+            },
+            "invoice_id": {
+                "type": "int",
+                "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "paid_at": {
+                "type": "int",
+                "null": true,
+                "default": null,
+                "extra": ""
+            },
+            "payment_receipt_file": {
+                "type": "varchar(255)",
+                "null": true,
+                "default": null,
+                "extra": ""
+            },
+            "raw_payload": {
+                "type": "longtext",
+                "null": true,
+                "default": null,
+                "extra": ""
+            },
+            "status": {
+                "type": "enum('Pending','Authorized','Captured','Failed','Refunded')",
+                "null": false,
+                "default": "Pending",
+                "extra": ""
+            },
+            "updated_at": {
+                "type": "int",
+                "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "user_payment_notes": {
+                "type": "text",
+                "null": true,
+                "default": null,
+                "extra": ""
+            }
+        },
+        "user": {
+            "auth_key": {
+                "type": "varchar(32)",
+                "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "created_at": {
+                "type": "int",
+                "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "email": {
+                "type": "varchar(255)",
+                "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "id": {
+                "type": "int",
+                "null": false,
+                "default": null,
+                "extra": "auto_increment"
+            },
+            "mobile": {
+                "type": "varchar(20)",
+                "null": true,
+                "default": null,
+                "extra": ""
+            },
+            "password_hash": {
+                "type": "varchar(255)",
+                "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "password_reset_token": {
+                "type": "varchar(255)",
+                "null": true,
+                "default": null,
+                "extra": ""
+            },
+            "status": {
+                "type": "smallint",
+                "null": false,
+                "default": "0",
+                "extra": ""
+            },
+            "updated_at": {
+                "type": "int",
+                "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "username": {
+                "type": "varchar(255)",
+                "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "verification_token": {
+                "type": "varchar(255)",
+                "null": true,
+                "default": null,
+                "extra": ""
+            },
+            "whatsapp": {
+                "type": "varchar(20)",
+                "null": true,
+                "default": null,
+                "extra": ""
+            }
+        },
+        "user_login_history": {
+            "id": {
+                "type": "bigint",
+                "null": false,
+                "default": null,
+                "extra": "auto_increment"
+            },
+            "ip_address": {
+                "type": "varchar(45)",
+                "null": true,
+                "default": null,
+                "extra": ""
+            },
+            "logged_in_at": {
+                "type": "int",
+                "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "user_agent": {
+                "type": "varchar(1000)",
+                "null": true,
+                "default": null,
+                "extra": ""
+            },
+            "user_id": {
+                "type": "int",
+                "null": false,
+                "default": null,
+                "extra": ""
+            }
+        },
+        "whatsapp_log": {
+            "created_at": {
+                "type": "int",
+                "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "error_message": {
+                "type": "text",
+                "null": true,
+                "default": null,
+                "extra": ""
+            },
+            "event_key": {
+                "type": "varchar(255)",
+                "null": true,
+                "default": null,
+                "extra": ""
+            },
+            "id": {
+                "type": "bigint",
+                "null": false,
+                "default": null,
+                "extra": "auto_increment"
+            },
+            "message": {
+                "type": "text",
+                "null": true,
+                "default": null,
+                "extra": ""
+            },
+            "mobile": {
+                "type": "varchar(30)",
+                "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "request_payload": {
+                "type": "text",
+                "null": true,
+                "default": null,
+                "extra": ""
+            },
+            "response_payload": {
+                "type": "text",
+                "null": true,
+                "default": null,
+                "extra": ""
+            },
+            "status": {
+                "type": "varchar(30)",
+                "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "template_name": {
+                "type": "varchar(100)",
+                "null": true,
+                "default": null,
+                "extra": ""
+            }
+        }
+    },
+    "indexes": {
+        "admin": {
+            "email": "unique",
+            "id": "primary",
+            "password_reset_token": "unique",
+            "role": "index",
+            "status": "index",
+            "username": "unique"
+        },
+        "admin_notification": {
+            "created_at": "index",
+            "id": "primary",
+            "is_read": "index"
+        },
+        "audit_request": {
+            "id": "primary",
+            "status": "index"
+        },
+        "auth_assignment": {
+            "item_name,user_id": "primary",
+            "user_id": "index"
+        },
+        "auth_item": {
+            "name": "primary",
+            "type": "index"
+        },
+        "auth_item_child": {
+            "parent,child": "primary"
+        },
+        "auth_item_group": {
+            "code": "primary"
+        },
+        "auth_rule": {
+            "name": "primary"
+        },
+        "billing_event": {
+            "billing_run_id,user_id": "index",
+            "due_date": "index",
+            "id": "primary",
+            "invoice_id": "index",
+            "item_type,item_id,period_start,period_end,live_slot": "unique",
+            "user_id,status": "index"
+        },
+        "billing_run": {
+            "id": "primary",
+            "run_number": "unique",
+            "status": "index"
+        },
+        "billing_settings": {
+            "id": "primary",
+            "service_type": "unique"
+        },
+        "coupon": {
+            "code": "unique",
+            "id": "primary"
+        },
+        "coupon_applicability": {
+            "coupon_id": "unique",
+            "id": "primary"
+        },
+        "coupon_assigned_user": {
+            "coupon_id": "unique",
+            "id": "primary",
+            "user_id": "index"
+        },
+        "coupon_email_track": {
+            "unique_id": "primary"
+        },
+        "coupon_redeem_track": {
+            "redeem_id": "primary"
+        },
+        "coupon_redemption": {
+            "coupon_id": "index",
+            "coupon_id,user_id": "index",
+            "id": "primary",
+            "invoice_id": "unique",
+            "user_id": "index"
+        },
+        "customer_billing_profile": {
+            "id": "primary",
+            "user_id": "unique"
+        },
+        "customer_notification": {
+            "id": "primary",
+            "user_id,created_at": "index",
+            "user_id,is_read": "index"
+        },
+        "customer_preference": {
+            "id": "primary",
+            "user_id": "unique"
+        },
+        "domains": {
+            "domain_url": "unique",
+            "id": "primary",
+            "status": "index",
+            "user_id": "index"
+        },
+        "hosting": {
+            "id": "primary",
+            "user_id": "index"
+        },
+        "invoice": {
+            "billing_run_id,user_id": "index",
+            "coupon_id": "index",
+            "emailed_at": "index",
+            "id": "primary",
+            "invoice_number": "unique",
+            "status": "index",
+            "user_id": "index"
+        },
+        "invoice_item": {
+            "billing_event_id": "unique",
+            "id": "primary",
+            "invoice_id": "index",
+            "item_type,item_id": "index",
+            "source_invoice_id": "unique"
+        },
+        "invoice_reminder_log": {
+            "id": "primary",
+            "invoice_id,reminder_key": "unique",
+            "sent_at": "index"
+        },
+        "lead": {
+            "created_at": "index",
+            "id": "primary",
+            "phone_number": "index",
+            "status": "index"
+        },
+        "maintenance": {
+            "id": "primary",
+            "status": "index",
+            "user_id": "index"
+        },
+        "service_reminder_log": {
+            "id": "primary",
+            "service_type,service_id,reminder_key": "unique",
+            "user_id": "index"
+        },
+        "service_renewal_history": {
+            "billing_event_id": "unique",
+            "id": "primary",
+            "invoice_id": "index",
+            "item_type,item_id": "index",
+            "start_date,end_date": "index",
+            "transaction_id": "index"
+        },
+        "site_setting": {
+            "id": "primary"
+        },
+        "support_ticket": {
+            "id": "primary",
+            "ticket_number": "unique",
+            "user_id,status": "index"
+        },
+        "support_ticket_attachment": {
+            "id": "primary",
+            "ticket_id": "index",
+            "ticket_message_id": "index",
+            "uploaded_by": "index"
+        },
+        "support_ticket_message": {
+            "id": "primary",
+            "ticket_id,created_at": "index"
+        },
+        "transaction": {
+            "gateway_id": "index",
+            "gateway_order_id": "unique",
+            "gateway_payment_id": "unique",
+            "id": "primary",
+            "invoice_id": "index",
+            "invoice_id,status": "index",
+            "status": "index"
+        },
+        "user": {
+            "email": "unique",
+            "id": "primary",
+            "mobile": "unique",
+            "password_reset_token": "unique",
+            "username": "unique",
+            "whatsapp": "unique"
+        },
+        "user_login_history": {
+            "id": "primary",
+            "user_id,logged_in_at": "index"
+        },
+        "whatsapp_log": {
+            "created_at": "index",
+            "event_key": "index",
+            "id": "primary",
+            "status": "index"
+        }
+    },
+    "foreignKeys": {
+        "billing_event": {
+            "billing_run_id": "billing_run(id) ON DELETE RESTRICT ON UPDATE CASCADE",
+            "invoice_id": "invoice(id) ON DELETE RESTRICT ON UPDATE CASCADE",
+            "user_id": "user(id) ON DELETE RESTRICT ON UPDATE CASCADE"
+        },
+        "coupon_applicability": {
+            "coupon_id": "coupon(id) ON DELETE RESTRICT ON UPDATE CASCADE"
+        },
+        "coupon_assigned_user": {
+            "coupon_id": "coupon(id) ON DELETE RESTRICT ON UPDATE CASCADE",
+            "user_id": "user(id) ON DELETE RESTRICT ON UPDATE CASCADE"
+        },
+        "coupon_redemption": {
+            "coupon_id": "coupon(id) ON DELETE RESTRICT ON UPDATE CASCADE",
+            "invoice_id": "invoice(id) ON DELETE CASCADE ON UPDATE CASCADE",
+            "user_id": "user(id) ON DELETE RESTRICT ON UPDATE CASCADE"
+        },
+        "customer_billing_profile": {
+            "user_id": "user(id) ON DELETE CASCADE ON UPDATE CASCADE"
+        },
+        "customer_notification": {
+            "user_id": "user(id) ON DELETE CASCADE ON UPDATE CASCADE"
+        },
+        "customer_preference": {
+            "user_id": "user(id) ON DELETE CASCADE ON UPDATE CASCADE"
+        },
+        "domains": {
+            "user_id": "user(id) ON DELETE CASCADE ON UPDATE CASCADE"
+        },
+        "hosting": {
+            "user_id": "user(id) ON DELETE CASCADE ON UPDATE CASCADE"
+        },
+        "invoice": {
+            "billing_run_id": "billing_run(id) ON DELETE SET NULL ON UPDATE CASCADE",
+            "coupon_id": "coupon(id) ON DELETE SET NULL ON UPDATE CASCADE",
+            "user_id": "user(id) ON DELETE RESTRICT ON UPDATE CASCADE"
+        },
+        "invoice_item": {
+            "billing_event_id": "billing_event(id) ON DELETE RESTRICT ON UPDATE CASCADE",
+            "invoice_id": "invoice(id) ON DELETE CASCADE ON UPDATE CASCADE",
+            "source_invoice_id": "invoice(id) ON DELETE RESTRICT ON UPDATE CASCADE"
+        },
+        "invoice_reminder_log": {
+            "invoice_id": "invoice(id) ON DELETE CASCADE ON UPDATE CASCADE"
+        },
+        "maintenance": {
+            "user_id": "user(id) ON DELETE CASCADE ON UPDATE CASCADE"
+        },
+        "service_reminder_log": {
+            "user_id": "user(id) ON DELETE CASCADE ON UPDATE CASCADE"
+        },
+        "service_renewal_history": {
+            "billing_event_id": "billing_event(id) ON DELETE RESTRICT ON UPDATE CASCADE",
+            "invoice_id": "invoice(id) ON DELETE SET NULL ON UPDATE CASCADE",
+            "transaction_id": "transaction(id) ON DELETE SET NULL ON UPDATE CASCADE"
+        },
+        "support_ticket": {
+            "user_id": "user(id) ON DELETE RESTRICT ON UPDATE CASCADE"
+        },
+        "support_ticket_attachment": {
+            "ticket_id": "support_ticket(id) ON DELETE CASCADE ON UPDATE NO ACTION",
+            "ticket_message_id": "support_ticket_message(id) ON DELETE CASCADE ON UPDATE NO ACTION",
+            "uploaded_by": "user(id) ON DELETE CASCADE ON UPDATE NO ACTION"
+        },
+        "support_ticket_message": {
+            "ticket_id": "support_ticket(id) ON DELETE CASCADE ON UPDATE CASCADE"
+        },
+        "transaction": {
+            "invoice_id": "invoice(id) ON DELETE RESTRICT ON UPDATE CASCADE"
+        },
+        "user_login_history": {
+            "user_id": "user(id) ON DELETE CASCADE ON UPDATE CASCADE"
+        }
+    }
+}

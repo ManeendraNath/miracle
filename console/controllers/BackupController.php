@@ -26,42 +26,20 @@ class BackupController extends Controller
             return ExitCode::CANTCREAT;
         }
 
-        $db = Yii::$app->db;
-        $dsn = $db->dsn;
-        $host = preg_match('/host=([^;]+)/', $dsn, $m) ? $m[1] : 'localhost';
-        $port = preg_match('/port=([^;]+)/', $dsn, $m) ? $m[1] : '3306';
-        $dbName = preg_match('/dbname=([^;]+)/', $dsn, $m) ? $m[1] : '';
-
-        $sqlFile = $backupDir . '/db_backup_' . date('Ymd_His') . '.sql';
-
-        // Password via MYSQL_PWD, not argv, so it doesn't show up in `ps` on shared hosting.
-        putenv('MYSQL_PWD=' . $db->password);
+        $file = $backupDir . '/db_backup_' . date('Ymd_His') . '.sql.gz';
         $oldUmask = umask(0077);
-        $command = 'mysqldump --no-tablespaces --single-transaction'
-                . ' -h ' . escapeshellarg($host)
-                . ' -P ' . escapeshellarg($port)
-                . ' -u ' . escapeshellarg((string) $db->username)
-                . ' ' . escapeshellarg($dbName)
-                . ' > ' . escapeshellarg($sqlFile);
-        system($command, $dumpStatus);
-        putenv('MYSQL_PWD');
-
-        if ($dumpStatus !== 0) {
+        try {
+            $this->dump($file);
+        } catch (\Throwable $e) {
+            @unlink($file);
+            $this->stderr('Database dump failed: ' . $e->getMessage() . "\n", Console::FG_RED);
+            return ExitCode::UNSPECIFIED_ERROR;
+        } finally {
             umask($oldUmask);
-            @unlink($sqlFile);
-            $this->stderr("Database dump failed (exit {$dumpStatus}).\n", Console::FG_RED);
-            return ExitCode::UNSPECIFIED_ERROR;
         }
+        $this->stdout("✓ Database backup written: {$file}\n", Console::FG_GREEN);
 
-        system('gzip -f ' . escapeshellarg($sqlFile), $gzipStatus);
-        umask($oldUmask);
-        if ($gzipStatus !== 0) {
-            $this->stderr("Compression failed; uncompressed dump kept at {$sqlFile}.\n", Console::FG_RED);
-            return ExitCode::UNSPECIFIED_ERROR;
-        }
-        $this->stdout("✓ Database backup written: {$sqlFile}.gz\n", Console::FG_GREEN);
-
-        $offsiteStatus = $this->copyOffsite($sqlFile . '.gz');
+        $offsiteStatus = $this->copyOffsite($file);
 
         foreach (glob($backupDir . '/db_backup_*.sql.gz') ?: [] as $old) {
             if (filemtime($old) < time() - self::KEEP_DAYS * 86400) {
@@ -70,6 +48,49 @@ class BackupController extends Controller
         }
 
         return $offsiteStatus;
+    }
+
+    /**
+     * Writes a gzipped SQL dump (tables + rows) through the app's DB connection.
+     * Pure PHP: shared hosting disables system()/exec(), so mysqldump can't be used.
+     * Restore: gunzip -c <file> | mysql <database>
+     * ponytail: tables only (the schema has no views/triggers/routines); each table
+     * is read in one buffered query, switch to unbuffered reads if a table outgrows memory.
+     */
+    private function dump(string $file): void
+    {
+        $db = Yii::$app->db;
+        $gz = gzopen($file, 'wb6');
+        if ($gz === false) {
+            throw new \RuntimeException("cannot write {$file}");
+        }
+        try {
+            gzwrite($gz, "SET NAMES utf8mb4;\nSET FOREIGN_KEY_CHECKS=0;\n\n");
+            // One snapshot for all tables, so rows written meanwhile can't half-appear.
+            $db->createCommand('START TRANSACTION WITH CONSISTENT SNAPSHOT')->execute();
+            foreach ($db->createCommand("SHOW FULL TABLES WHERE Table_type = 'BASE TABLE'")->queryColumn() as $table) {
+                $name = $db->quoteTableName($table);
+                gzwrite($gz, "DROP TABLE IF EXISTS {$name};\n" . $db->createCommand("SHOW CREATE TABLE {$name}")->queryOne()['Create Table'] . ";\n");
+                $rows = [];
+                foreach ($db->createCommand("SELECT * FROM {$name}")->queryAll() as $row) {
+                    $rows[] = '(' . implode(',', array_map(static fn($v): string => $v === null ? 'NULL' : $db->quoteValue((string) $v), $row)) . ')';
+                    if (count($rows) === 200) {
+                        gzwrite($gz, "INSERT INTO {$name} VALUES\n" . implode(",\n", $rows) . ";\n");
+                        $rows = [];
+                    }
+                }
+                if ($rows !== []) {
+                    gzwrite($gz, "INSERT INTO {$name} VALUES\n" . implode(",\n", $rows) . ";\n");
+                }
+                gzwrite($gz, "\n");
+            }
+            $db->createCommand('COMMIT')->execute();
+            gzwrite($gz, "SET FOREIGN_KEY_CHECKS=1;\n");
+        } finally {
+            if (!gzclose($gz)) {
+                throw new \RuntimeException("cannot finish writing {$file}");
+            }
+        }
     }
 
     /**
@@ -87,6 +108,10 @@ class BackupController extends Controller
         }
         if (!str_contains($template, '{file}')) {
             $this->stderr("BACKUP_OFFSITE_COMMAND must contain {file}.\n", Console::FG_RED);
+            return ExitCode::CONFIG;
+        }
+        if (!function_exists('exec')) {
+            $this->stderr("BACKUP_OFFSITE_COMMAND is set but exec() is disabled on this server; backup is local only.\n", Console::FG_RED);
             return ExitCode::CONFIG;
         }
 

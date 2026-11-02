@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
-# Miracle production deploy. Update the checkout first, then run it:
+# Miracle production deploy:
 #
-#   cd /home/rpocncwk/repositories/miracle && git fetch origin && git reset --hard origin/main && bash deploy.sh
+#   cd /home/rpocncwk/repositories/miracle && bash deploy.sh
 #
+# Resets the checkout to origin/main (restarting itself if that changed deploy.sh).
 # Copies common/frontend/backend/console into $APP, keeping each one's runtime/,
 # web/assets/ and config/params-local.php. Publishes frontend/web into public_html
 # without touching anything else there. Runs composer, backs up the database
@@ -152,6 +153,16 @@ flock -n 9 || die "another deployment is running"
 [ -r "$APP/yii" ] || die "$APP/yii is missing"
 
 cd "$REPO"
+if [ -z "${DEPLOY_RESTARTED:-}" ]; then
+    BEFORE=$(git hash-object deploy.sh)
+    git fetch origin
+    git reset --hard origin/main
+    if [ "$(git hash-object deploy.sh)" != "$BEFORE" ]; then
+        echo "deploy.sh changed: restarting with the new version."
+        exec 9>&-
+        DEPLOY_RESTARTED=1 exec bash deploy.sh
+    fi
+fi
 echo "Deploying commit $(git rev-parse --short HEAD)"
 TRACKED=$(git ls-files .env yii {common,frontend,backend,console}/config/params-local.php)
 [ -z "$TRACKED" ] || die "production-only files are tracked by Git: $TRACKED"

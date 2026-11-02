@@ -25,6 +25,9 @@ final class ManualInvoiceServiceTest extends Unit
     {
         parent::_before();
 
+        // Assertions assume standard GST, independent of the live params (currently 0%).
+        Yii::$app->params['billing']['gst'] = ['cgst' => 9.00, 'sgst' => 9.00, 'igst' => 18.00];
+
         $this->dbTransaction = Yii::$app->db->beginTransaction();
 
         $this->createClient();
@@ -383,21 +386,10 @@ final class ManualInvoiceServiceTest extends Unit
         $this->user->email = 'billing-' . $suffix
                 . '@example.test';
 
-        /*
-         * Adapt these authentication assignments if your custom User
-         * model already encapsulates password/auth key generation.
-         */
-        $this->user->auth_key = Yii::$app
-                ->security
-                ->generateRandomString();
+        // User hashes `password` and generates auth_key itself on save.
+        $this->user->password = 'BillingTestPassword';
 
-        $this->user->password_hash = Yii::$app
-                ->security
-                ->generatePasswordHash(
-                        'BillingTestPassword'
-                );
-
-        $this->user->status = 10;
+        $this->user->status = User::getStatusActive();
 
         $this->user->created_at = time();
         $this->user->updated_at = time();
@@ -422,6 +414,8 @@ final class ManualInvoiceServiceTest extends Unit
         $this->profile->state = 'Delhi';
 
         $this->profile->state_code = '07';
+
+        $this->profile->is_gst_applicable = 1;
 
         $this->profile->postal_code = '110001';
 

@@ -15,17 +15,17 @@ final class ContactCest
 
     public function checkContact(FunctionalTester $I): void
     {
-        $I->see('Contact us', 'h1');
+        $I->see("Let's Connect", 'h1');
     }
 
     public function checkContactSubmitNoData(FunctionalTester $I): void
     {
         $I->submitForm('#contact-form', []);
-        $I->see('Contact us', 'h1');
-        $I->seeValidationError('Name cannot be blank');
-        $I->seeValidationError('Email cannot be blank');
-        $I->seeValidationError('Subject cannot be blank');
-        $I->seeValidationError('Body cannot be blank');
+        $I->see("Let's Connect", 'h1');
+        $I->seeValidationError('Full Name cannot be blank');
+        $I->seeValidationError('Email Address cannot be blank');
+        $I->seeValidationError('Inquiry Subject cannot be blank');
+        $I->seeValidationError('Message Body cannot be blank');
         $I->seeValidationError('The verification code is incorrect');
     }
 
@@ -41,10 +41,10 @@ final class ContactCest
                 'ContactForm[verifyCode]' => 'testme',
             ],
         );
-        $I->seeValidationError('Email is not a valid email address.');
-        $I->dontSeeValidationError('Name cannot be blank');
-        $I->dontSeeValidationError('Subject cannot be blank');
-        $I->dontSeeValidationError('Body cannot be blank');
+        $I->seeValidationError('Email Address is not a valid email address.');
+        $I->dontSeeValidationError('Full Name cannot be blank');
+        $I->dontSeeValidationError('Inquiry Subject cannot be blank');
+        $I->dontSeeValidationError('Message Body cannot be blank');
         $I->dontSeeValidationError('The verification code is incorrect');
     }
 
@@ -61,6 +61,6 @@ final class ContactCest
             ],
         );
         $I->seeEmailIsSent();
-        $I->see('Thank you for contacting us. We will respond to you as soon as possible.');
+        $I->see('Thank you for contacting us. We will respond shortly.');
     }
 }

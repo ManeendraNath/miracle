@@ -2,6 +2,7 @@
 
 use yii\bootstrap5\ActiveForm;
 use yii\bootstrap5\Html;
+use yii\captcha\Captcha;
 
 $this->title = 'Contact General Inquiries | Miracle Web Technologies';
 ?>
@@ -19,6 +20,9 @@ $this->title = 'Contact General Inquiries | Miracle Web Technologies';
                     <?= $form->field($model, 'email')->textInput(['class' => 'form-control py-2']) ?>
                     <?= $form->field($model, 'subject')->textInput(['class' => 'form-control py-2']) ?>
                     <?= $form->field($model, 'body')->textarea(['rows' => 4, 'class' => 'form-control'])->label('Your Message') ?>
+                    <?= $form->field($model, 'verifyCode')->widget(Captcha::class, [
+                        'template' => '<div class="row g-2 align-items-center"><div class="col-auto">{image}</div><div class="col">{input}</div></div>',
+                    ]) ?>
                     <div class="form-group text-end mt-4">
                         <?= Html::submitButton('Send Secure Message ✓', ['class' => 'btn btn-lg fw-bold text-white px-5', 'style' => 'background-color: #00a3e0 !important; border-radius: 0.5rem;']) ?>
                     </div>

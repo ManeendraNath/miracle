@@ -1,5 +1,7 @@
 <?php
 
+// Status codes follow common\models\traits\BaseIdentityTrait: 0 inactive, 1 active, 3 deleted.
+
 return [
     [
         'username' => 'okirlin',
@@ -9,6 +11,7 @@ return [
         'created_at' => '1391885313',
         'updated_at' => '1391885313',
         'email' => 'brady.renner@rutherford.com',
+        'status' => '1',
     ],
     [
         'username' => 'troy.becker',
@@ -18,7 +21,7 @@ return [
         'created_at' => '1391885313',
         'updated_at' => '1391885313',
         'email' => 'nicolas.dianna@hotmail.com',
-        'status' => '0',
+        'status' => '3',
     ],
     [
         'username' => 'test.test',
@@ -26,7 +29,7 @@ return [
         //Test1234
         'password_hash' => '$2y$13$d17z0w/wKC4LFwtzBcmx6up4jErQuandJqhzKGKczfWuiEhLBtQBK',
         'email' => 'test@mail.com',
-        'status' => '9',
+        'status' => '0',
         'created_at' => '1548675330',
         'updated_at' => '1548675330',
         'verification_token' => '4ch0qbfhvWwkcuWqjN8SWRq72SOw1KYT_1548675330',
@@ -37,7 +40,7 @@ return [
         //Test1234
         'password_hash' => '$2y$13$d17z0w/wKC4LFwtzBcmx6up4jErQuandJqhzKGKczfWuiEhLBtQBK',
         'email' => 'test2@mail.com',
-        'status' => '10',
+        'status' => '1',
         'created_at' => '1548675330',
         'updated_at' => '1548675330',
         'verification_token' => 'already_used_token_1548675330',

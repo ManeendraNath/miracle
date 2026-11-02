@@ -11,10 +11,9 @@ final class HomeCest
 {
     public function checkOpen(FunctionalTester $I): void
     {
-        $I->amOnRoute(Yii::$app->homeUrl);
-        $I->see('My Application');
-        $I->seeLink('About');
-        $I->click('About');
+        $I->amOnRoute('site/index');
+        $I->see('Modern Systems.', 'h1');
+        $I->amOnRoute('site/about');
         $I->see('This is the About page.');
     }
 }

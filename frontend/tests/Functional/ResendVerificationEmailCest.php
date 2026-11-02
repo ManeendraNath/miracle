@@ -53,14 +53,17 @@ final class ResendVerificationEmailCest
 
     public function checkWrongEmail(FunctionalTester $I): void
     {
+        // Same response as success, so the form can't be used to discover accounts.
         $I->submitForm($this->formId, $this->formParams('wrong@email.com'));
-        $I->seeValidationError('There is no user with this email address.');
+        $I->see('Check your email for further instructions.');
+        $I->dontSeeEmailIsSent();
     }
 
     public function checkAlreadyVerifiedEmail(FunctionalTester $I): void
     {
         $I->submitForm($this->formId, $this->formParams('test2@mail.com'));
-        $I->seeValidationError('There is no user with this email address.');
+        $I->see('Check your email for further instructions.');
+        $I->dontSeeEmailIsSent();
     }
 
     public function checkSendSuccessfully(FunctionalTester $I): void

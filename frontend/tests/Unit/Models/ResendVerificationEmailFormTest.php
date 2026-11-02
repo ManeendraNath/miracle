@@ -32,12 +32,13 @@ final class ResendVerificationEmailFormTest extends Unit
 
         $model->attributes = ['email' => 'aaa@bbb.cc'];
 
+        // Unknown or already-verified emails validate fine (no account enumeration)
+        // but no email is sent.
         verify($model->validate())
-            ->false();
-        verify($model->hasErrors())
             ->true();
-        verify($model->getFirstError('email'))
-            ->equals('There is no user with this email address.');
+        verify($model->sendEmail(Yii::$app->mailer, Yii::$app->params['supportEmail'], Yii::$app->name))
+            ->false();
+        $this->tester->dontSeeEmailIsSent();
     }
 
     public function testEmptyEmailAddress(): void
@@ -60,12 +61,13 @@ final class ResendVerificationEmailFormTest extends Unit
 
         $model->attributes = ['email' => 'test2@mail.com'];
 
+        // Unknown or already-verified emails validate fine (no account enumeration)
+        // but no email is sent.
         verify($model->validate())
-            ->false();
-        verify($model->hasErrors())
             ->true();
-        verify($model->getFirstError('email'))
-            ->equals('There is no user with this email address.');
+        verify($model->sendEmail(Yii::$app->mailer, Yii::$app->params['supportEmail'], Yii::$app->name))
+            ->false();
+        $this->tester->dontSeeEmailIsSent();
     }
 
     public function testSuccessfullyResend(): void

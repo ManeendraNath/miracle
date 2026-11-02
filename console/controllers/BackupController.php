@@ -61,12 +61,42 @@ class BackupController extends Controller
         }
         $this->stdout("✓ Database backup written: {$sqlFile}.gz\n", Console::FG_GREEN);
 
+        $offsiteStatus = $this->copyOffsite($sqlFile . '.gz');
+
         foreach (glob($backupDir . '/db_backup_*.sql.gz') ?: [] as $old) {
             if (filemtime($old) < time() - self::KEEP_DAYS * 86400) {
                 unlink($old);
             }
         }
 
+        return $offsiteStatus;
+    }
+
+    /**
+     * Runs BACKUP_OFFSITE_COMMAND from .env with {file} replaced by the dump path,
+     * e.g. `rclone copy {file} gdrive:miracle-backups` or `scp -q {file} backup@host:/backups/`.
+     * Not set = local copy only. A failed upload exits non-zero so cron reports it;
+     * the local dump is kept either way.
+     */
+    private function copyOffsite(string $file): int
+    {
+        $template = trim((string) (Yii::$app->params['backupOffsiteCommand'] ?? ''));
+        if ($template === '') {
+            $this->stdout("Off-site copy not configured (BACKUP_OFFSITE_COMMAND); backup is local only.\n", Console::FG_YELLOW);
+            return ExitCode::OK;
+        }
+        if (!str_contains($template, '{file}')) {
+            $this->stderr("BACKUP_OFFSITE_COMMAND must contain {file}.\n", Console::FG_RED);
+            return ExitCode::CONFIG;
+        }
+
+        exec(str_replace('{file}', escapeshellarg($file), $template) . ' 2>&1', $output, $status);
+        if ($status !== 0) {
+            Yii::error(['message' => 'Off-site backup copy failed.', 'file' => $file, 'exit' => $status, 'output' => implode("\n", $output)], __METHOD__);
+            $this->stderr("Off-site backup copy failed (exit {$status}): " . implode(' ', $output) . "\n", Console::FG_RED);
+            return ExitCode::UNSPECIFIED_ERROR;
+        }
+        $this->stdout("✓ Off-site copy done.\n", Console::FG_GREEN);
         return ExitCode::OK;
     }
 }

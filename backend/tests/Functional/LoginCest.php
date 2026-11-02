@@ -5,29 +5,58 @@ declare(strict_types=1);
 namespace backend\tests\Functional;
 
 use backend\tests\Support\FunctionalTester;
-use common\fixtures\UserFixture;
+use common\models\Admin;
+use Yii;
 
+/**
+ * Admin panel login: only an active Superadmin reaches the dashboard.
+ */
 final class LoginCest
 {
-    public function _fixtures(): array
+    private const PASSWORD = 'AdminTestPassword1';
+
+    private function haveAdmin(FunctionalTester $I, string $username, string $role, int $status): void
     {
-        return [
-            'user' => [
-                'class' => UserFixture::class,
-                'dataFile' => codecept_data_dir() . 'login_data.php',
-            ],
-        ];
+        $I->haveRecord(Admin::class, [
+            'username' => $username,
+            'email' => $username . '@example.test',
+            'auth_key' => Yii::$app->security->generateRandomString(),
+            'password_hash' => Yii::$app->security->generatePasswordHash(self::PASSWORD),
+            'role' => $role,
+            'status' => $status,
+            'created_at' => time(),
+            'updated_at' => time(),
+        ]);
     }
 
-    public function loginUser(FunctionalTester $I): void
+    private function login(FunctionalTester $I, string $username, string $password): void
     {
-        $I->amOnRoute('/site/login');
-        $I->fillField('Your Username', 'erau');
-        $I->fillField('Your Password', 'password_0');
-        $I->click('login-button');
+        $I->amOnRoute('auth/login');
+        $I->submitForm('#login-form', [
+            'LoginForm[username]' => $username,
+            'LoginForm[password]' => $password,
+        ]);
+    }
 
-        $I->seeLink('Logout (erau)');
-        $I->dontSeeLink('Login');
-        $I->dontSeeLink('Signup');
+    public function superadminReachesDashboard(FunctionalTester $I): void
+    {
+        $this->haveAdmin($I, 'test-super', Admin::getRoleSuperAdmin(), Admin::getStatusActive());
+        $this->login($I, 'test-super', self::PASSWORD);
+        $I->see('Miracle Corporate Control Center');
+    }
+
+    public function wrongPasswordIsRejected(FunctionalTester $I): void
+    {
+        $this->haveAdmin($I, 'test-super2', Admin::getRoleSuperAdmin(), Admin::getStatusActive());
+        $this->login($I, 'test-super2', 'wrong-password');
+        $I->see('Incorrect username or password.');
+        $I->dontSee('Miracle Corporate Control Center');
+    }
+
+    public function nonSuperadminCannotUsePanel(FunctionalTester $I): void
+    {
+        $this->haveAdmin($I, 'test-manager', Admin::getRoleManager(), Admin::getStatusActive());
+        $this->login($I, 'test-manager', self::PASSWORD);
+        $I->dontSee('Miracle Corporate Control Center');
     }
 }

@@ -10,5 +10,6 @@ return [
         'created_at' => '1402312317',
         'updated_at' => '1402312317',
         'email' => 'nicole.paucek@schultz.info',
+        'status' => '1',
     ],
 ];

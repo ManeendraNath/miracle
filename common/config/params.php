@@ -46,6 +46,9 @@ return [
     // File the cron jobs append their output to (see docs/BILLING_MODULE.md crontab).
     // Empty = <app root>/runtime/logs/billing-cron.log.
     'cronLogPath' => $_ENV['CRON_LOG_PATH'] ?? '',
+    // Shell command that copies each DB backup off the server; {file} = dump path.
+    // e.g. rclone copy {file} gdrive:miracle-backups   |   scp -q {file} backup@host:/backups/
+    'backupOffsiteCommand' => $_ENV['BACKUP_OFFSITE_COMMAND'] ?? '',
     // Online payments. Set RAZORPAY_ENABLED=true plus the keys in .env to go live.
     'razorpay' => [
         'enabled' => filter_var($_ENV['RAZORPAY_ENABLED'] ?? false, FILTER_VALIDATE_BOOLEAN),

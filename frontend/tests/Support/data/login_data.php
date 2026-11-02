@@ -10,6 +10,7 @@ return [
         'created_at' => '1392559490',
         'updated_at' => '1392559490',
         'email' => 'sfriesen@jenkins.info',
+        'status' => '1',
     ],
     [
         'username' => 'test.test',
@@ -17,7 +18,7 @@ return [
         // Test1234
         'password_hash' => 'O87GkY3_UfmMHYkyezZ7QLfmkKNsllzT',
         'email' => 'test@mail.com',
-        'status' => '9',
+        'status' => '0',
         'created_at' => '1548675330',
         'updated_at' => '1548675330',
         'verification_token' => '4ch0qbfhvWwkcuWqjN8SWRq72SOw1KYT_1548675330',

@@ -19,6 +19,8 @@ use Yii;
  */
 class InvoiceReminderLog extends \yii\db\ActiveRecord
 {
+
+
     /**
      * {@inheritdoc}
      */
@@ -67,4 +69,5 @@ class InvoiceReminderLog extends \yii\db\ActiveRecord
     {
         return $this->hasOne(Invoice::class, ['id' => 'invoice_id']);
     }
+
 }

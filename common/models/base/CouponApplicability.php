@@ -18,6 +18,8 @@ use Yii;
  */
 class CouponApplicability extends \yii\db\ActiveRecord
 {
+
+
     /**
      * {@inheritdoc}
      */
@@ -64,4 +66,5 @@ class CouponApplicability extends \yii\db\ActiveRecord
     {
         return $this->hasOne(Coupon::class, ['id' => 'coupon_id']);
     }
+
 }

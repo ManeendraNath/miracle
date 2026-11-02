@@ -30,6 +30,7 @@ use Yii;
  */
 class Coupon extends \yii\db\ActiveRecord
 {
+
     /**
      * ENUM field values
      */

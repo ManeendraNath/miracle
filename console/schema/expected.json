@@ -1,5 +1,5 @@
 {
-    "migrations": 42,
+    "migrations": 43,
     "columns": {
         "admin": {
             "auth_key": {
@@ -566,7 +566,7 @@
             },
             "created_at": {
                 "type": "int",
-                "null": true,
+                "null": false,
                 "default": null,
                 "extra": ""
             },
@@ -620,7 +620,7 @@
             },
             "updated_at": {
                 "type": "int",
-                "null": true,
+                "null": false,
                 "default": null,
                 "extra": ""
             },

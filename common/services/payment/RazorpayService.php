@@ -26,6 +26,9 @@ final class RazorpayService
 {
     private const API_URL = 'https://api.razorpay.com/v1/';
 
+    /** Marks an unpaid order replaced after a coupon changed the invoice total (InvoiceCouponService). */
+    public const SUPERSEDED_NOTE = 'SUPERSEDED: invoice total changed by a coupon before this order was paid.';
+
     private array $_config;
 
     public function __construct(?array $config = null)
@@ -153,7 +156,11 @@ final class RazorpayService
                 $dbTransaction->commit();
                 return $transaction;
             }
-            if ($transaction->status !== Transaction::STATUS_PENDING) {
+            // A superseded order can still be paid from a checkout that was already open.
+            // The customer was charged, so record it; the invoice is reconciled against its new total.
+            $superseded = $transaction->status === Transaction::STATUS_FAILED
+                && $transaction->user_payment_notes === self::SUPERSEDED_NOTE;
+            if ($transaction->status !== Transaction::STATUS_PENDING && !$superseded) {
                 throw new \DomainException('Payment transaction is not pending.');
             }
             if ($amountMinor !== null && $this->toMinor((float) $transaction->amount) !== $amountMinor) {
@@ -180,6 +187,12 @@ final class RazorpayService
                 (new PaymentProcessingService())->transactionChanged($transaction, false);
             }
             $dbTransaction->commit();
+            if (
+                $superseded && !$unapplied && $invoice !== null && $invoice->refresh()
+                && $this->toMinor((float) $invoice->total_payable) !== $this->toMinor((float) $transaction->amount)
+            ) {
+                AdminAlertService::supersededOrderPaid($invoice->invoice_number, (float) $transaction->amount, (float) $invoice->total_payable, $paymentId);
+            }
             if ($unapplied) {
                 Yii::warning(['message' => 'Razorpay payment captured on a non-payable invoice.', 'transactionId' => (int) $transaction->id, 'invoice' => $invoice->invoice_number, 'status' => $invoice->status], __METHOD__);
                 AdminAlertService::paymentUnapplied($invoice->invoice_number, (string) $invoice->status, (float) $transaction->amount, $paymentId);

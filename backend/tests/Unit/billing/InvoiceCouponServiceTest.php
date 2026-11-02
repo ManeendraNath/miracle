@@ -13,6 +13,7 @@ use common\models\Transaction;
 use common\models\User;
 use common\services\billing\AutoInvoiceService;
 use common\services\billing\InvoiceCouponService;
+use common\services\payment\RazorpayService;
 use Yii;
 use yii\db\Transaction as DbTransaction;
 
@@ -96,7 +97,6 @@ final class InvoiceCouponServiceTest extends Unit
         $cases = [
             'captured' => [Transaction::GATEWAY_MANUAL, Transaction::STATUS_CAPTURED],
             'proof pending' => [Transaction::GATEWAY_UPI_BANK, Transaction::STATUS_PENDING],
-            'online order started' => [Transaction::GATEWAY_RAZORPAY, Transaction::STATUS_PENDING],
         ];
         foreach ($cases as $label => [$gateway, $status]) {
             $invoice = $this->invoice([InvoiceItem::TYPE_HOSTING => 1000.00]);
@@ -117,6 +117,32 @@ final class InvoiceCouponServiceTest extends Unit
         $this->expectException(\DomainException::class);
         $this->expectExceptionMessage('already has a discount');
         $service->apply($discounted, 'ALL10');
+    }
+
+    public function testUnpaidOnlineOrderIsSupersededAndStillCapturedIfPaidLater(): void
+    {
+        $this->coupon('ALL10', []);
+        $invoice = $this->invoice([InvoiceItem::TYPE_HOSTING => 1000.00]);
+        $order = new Transaction();
+        $order->setAttributes(['invoice_id' => $invoice->id, 'gateway_id' => Transaction::GATEWAY_RAZORPAY, 'gateway_order_id' => 'order_test_' . bin2hex(random_bytes(4)), 'amount' => 1180.00, 'status' => Transaction::STATUS_PENDING, 'created_at' => time(), 'updated_at' => time()], false);
+        $this->assertTrue($order->save(false));
+        $service = new InvoiceCouponService();
+        $this->assertNull($service->blockReason($invoice));
+
+        $service->apply($invoice, 'ALL10');
+
+        $order->refresh();
+        $this->assertSame(Transaction::STATUS_FAILED, $order->status);
+        $this->assertSame(RazorpayService::SUPERSEDED_NOTE, $order->user_payment_notes);
+        $this->assertEquals(1062.00, (float) Invoice::findOne($invoice->id)->total_payable);
+
+        // The old checkout was still open and the customer paid it: the money is recorded.
+        (new RazorpayService([]))->capture($order->gateway_order_id, 'pay_test_late', 118000);
+
+        $this->assertSame(Transaction::STATUS_CAPTURED, Transaction::findOne($order->id)->status);
+        $this->assertSame(Invoice::STATUS_PAID, Invoice::findOne($invoice->id)->status);
+        // ...and once paid, the coupon can no longer change.
+        $this->assertNotNull($service->blockReason(Invoice::findOne($invoice->id)));
     }
 
     public function testRemoveRestoresOriginalTotal(): void

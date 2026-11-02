@@ -71,6 +71,13 @@ final class AdminAlertService extends AdminNotificationService
         self::send($title, $message, 'payment', '/transaction/index?' . http_build_query(['TransactionSearch' => ['gateway_payment_id' => $paymentId]]), true);
     }
 
+    public static function supersededOrderPaid(string $invoiceNumber, float $paid, float $invoiceTotal, string $paymentId): void
+    {
+        $title = 'Online Payment Needs Attention';
+        $message = "Invoice: {$invoiceNumber}\n" . "Paid: ₹{$paid} (invoice total now ₹{$invoiceTotal})\n" . "Razorpay payment: {$paymentId}\n" . 'The customer paid an older online order after changing the coupon. Refund any excess in Razorpay; a shortfall stays on the invoice.';
+        self::send($title, $message, 'payment', '/transaction/index?' . http_build_query(['TransactionSearch' => ['gateway_payment_id' => $paymentId]]), true);
+    }
+
     public static function invoiceGenerationFailed(int $userId, string $reason): void
     {
         $title = 'Automatic Invoice Failed';

@@ -7,6 +7,7 @@ namespace common\services\billing;
 use common\models\Invoice;
 use common\models\InvoiceItem;
 use common\models\Transaction;
+use common\services\payment\RazorpayService;
 use Yii;
 
 /**
@@ -28,13 +29,12 @@ final class InvoiceCouponService
         if ($invoice->status !== Invoice::STATUS_UNPAID) {
             return 'Coupons can only be used on unpaid invoices.';
         }
-        // Any payment, proof under review or started online payment (a Razorpay order is fixed
-        // at the old amount and could still be paid) freezes the total.
-        // ponytail: an abandoned Razorpay order blocks coupons on that invoice for good; add a
-        // checkout `timeout` + recency window if customers hit it.
+        // Any payment or proof under review freezes the total. An unpaid Razorpay order does not:
+        // change() supersedes it, and RazorpayService::capture() still records it if it gets paid.
         $paymentStarted = Transaction::find()
             ->where(['invoice_id' => (int) $invoice->id])
             ->andWhere(['<>', 'status', Transaction::STATUS_FAILED])
+            ->andWhere(['not', self::unpaidOrderCondition((int) $invoice->id)])
             ->exists();
         if ($paymentStarted) {
             return 'Coupons cannot be changed once a payment has been made or started for this invoice.';
@@ -79,6 +79,17 @@ final class InvoiceCouponService
         });
     }
 
+    /** Razorpay orders created for this invoice but not paid yet. */
+    private static function unpaidOrderCondition(int $invoiceId): array
+    {
+        return [
+            'invoice_id' => $invoiceId,
+            'gateway_id' => Transaction::GATEWAY_RAZORPAY,
+            'status' => Transaction::STATUS_PENDING,
+            'gateway_payment_id' => null,
+        ];
+    }
+
     private function change(Invoice $invoice, callable $edit): Invoice
     {
         $db = Yii::$app->db;
@@ -93,6 +104,11 @@ final class InvoiceCouponService
             if ($reason !== null) {
                 throw new \DomainException($reason);
             }
+            // The pending order is for the old total; the next "Pay online" creates a new one.
+            Transaction::updateAll(
+                ['status' => Transaction::STATUS_FAILED, 'user_payment_notes' => RazorpayService::SUPERSEDED_NOTE, 'updated_at' => time()],
+                self::unpaidOrderCondition((int) $locked->id)
+            );
             $edit($locked);
             $this->totals->calculateInvoiceTotals($locked);
             if ((float) $locked->total_payable <= 0) {

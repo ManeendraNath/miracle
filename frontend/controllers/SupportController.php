@@ -132,6 +132,9 @@ final class SupportController extends Controller
     private function validateServiceOwnership(SupportTicket $model): bool
     {
         if (empty($model->service_type) || empty($model->service_id)) {
+            // A half-filled pair can't be checked, so store neither.
+            $model->service_type = null;
+            $model->service_id = null;
             return true;
         }
         $userId = (int) Yii::$app->user->id;

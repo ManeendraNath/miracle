@@ -114,6 +114,10 @@ class TransactionController extends BaseController
         if ($model->status !== Transaction::STATUS_PENDING) {
             throw new BadRequestHttpException('Only pending transactions can be modified.');
         }
+        if ((int) $model->gateway_id === Transaction::GATEWAY_RAZORPAY) {
+            Yii::$app->session->setFlash('error', 'Razorpay payments are managed by the gateway and cannot be edited.');
+            return $this->redirect(['view', 'id' => $model->id]);
+        }
         if ($this->request->isPost && $model->load($this->request->post())) {
             try {
                 $this->saveAndProcessPayment($model);
@@ -157,6 +161,10 @@ class TransactionController extends BaseController
             if ($paymentTransaction->status !== Transaction::STATUS_PENDING) {
                 throw new \DomainException('Only pending payments can be approved.');
             }
+            // Online orders are confirmed by Razorpay itself; a pending one was never paid.
+            if ((int) $paymentTransaction->gateway_id === Transaction::GATEWAY_RAZORPAY) {
+                throw new \DomainException('Razorpay payments are confirmed automatically and cannot be approved manually.');
+            }
             $now = time();
             $paymentTransaction->status = Transaction::STATUS_CAPTURED;
             $paymentTransaction->paid_at = $now;
@@ -171,7 +179,7 @@ class TransactionController extends BaseController
                 $dbTransaction->rollBack();
             }
             Yii::error(['message' => 'Payment approval failed.', 'transactionId' => (int) $paymentTransaction->id, 'error' => $e->getMessage()], __METHOD__);
-            Yii::$app->session->setFlash('error', 'Payment could not be approved.');
+            Yii::$app->session->setFlash('error', $e instanceof \DomainException ? $e->getMessage() : 'Payment could not be approved.');
             return $this->redirect(['view', 'id' => $paymentTransaction->id]);
         }
 
@@ -184,6 +192,41 @@ class TransactionController extends BaseController
             Yii::$app->session->setFlash('warning', 'Payment approved successfully, but the confirmation email could not be sent.');
         }
         return $this->redirect(['view', 'id' => $paymentTransaction->id]);
+    }
+
+    /**
+     * Records a refund made outside the app (Razorpay dashboard or bank) and
+     * recalculates the invoice from the remaining captured payments.
+     */
+    public function actionRefund(int $id)
+    {
+        $dbTransaction = Yii::$app->db->beginTransaction();
+        try {
+            Yii::$app->db->createCommand('SELECT id FROM {{%transaction}} WHERE id = :id FOR UPDATE')->bindValue(':id', $id)->queryScalar();
+            $model = $this->findModel($id);
+            if ($model->status !== Transaction::STATUS_CAPTURED) {
+                throw new \DomainException('Only captured payments can be refunded.');
+            }
+            $model->status = Transaction::STATUS_REFUNDED;
+            $model->updated_at = time();
+            if (!$model->save(false, ['status', 'updated_at'])) {
+                throw new \RuntimeException('Refund could not be recorded.');
+            }
+            // An unapplied payment (invoice cancelled / carried forward) never touched the invoice.
+            $invoiceStatus = $model->invoice->status ?? null;
+            if (!in_array($invoiceStatus, [Invoice::STATUS_CANCELLED, Invoice::STATUS_CARRIED_FORWARD], true)) {
+                (new PaymentProcessingService())->transactionChanged($model, false);
+            }
+            $dbTransaction->commit();
+            Yii::$app->session->setFlash('success', 'Payment marked as refunded. Invoice balance recalculated.');
+        } catch (\Throwable $e) {
+            if ($dbTransaction->isActive) {
+                $dbTransaction->rollBack();
+            }
+            Yii::error(['message' => 'Refund recording failed.', 'transactionId' => $id, 'error' => $e->getMessage()], __METHOD__);
+            Yii::$app->session->setFlash('error', $e instanceof \DomainException ? $e->getMessage() : 'Refund could not be recorded.');
+        }
+        return $this->redirect(['view', 'id' => $id]);
     }
 
     /**

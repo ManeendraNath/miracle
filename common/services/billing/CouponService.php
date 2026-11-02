@@ -14,7 +14,11 @@ use common\models\InvoiceItem;
 
 final class CouponService
 {
-    public function calculate(?string $code, int $userId, float $subtotal, ?int $excludeInvoiceId = null): float
+    /**
+     * @param bool $alreadyApplied the coupon is already on the invoice being edited: it
+     *                             was valid when granted, so don't re-check active/date
+     */
+    public function calculate(?string $code, int $userId, float $subtotal, ?int $excludeInvoiceId = null, bool $alreadyApplied = false): float
     {
         $code = strtoupper(trim((string) $code));
         if ($code === '') {
@@ -32,21 +36,8 @@ final class CouponService
         if ($coupon === null) {
             throw new \DomainException('Coupon code is invalid.');
         }
-        if ($coupon->is_active !== Coupon::IS_ACTIVE_Y) {
-            throw new \DomainException('Coupon is not active.');
-        }
-        $now = time();
-        if (!empty($coupon->start_date)) {
-            $startsAt = strtotime($coupon->start_date);
-            if ($startsAt !== false && $now < $startsAt) {
-                throw new \DomainException('Coupon is not active yet.');
-            }
-        }
-        if (!empty($coupon->end_date)) {
-            $expiresAt = strtotime($coupon->end_date);
-            if ($expiresAt !== false && $now > $expiresAt) {
-                throw new \DomainException('Coupon has expired.');
-            }
+        if (!$alreadyApplied) {
+            $this->validateAvailability($coupon);
         }
         $minimumOrder = round((float) $coupon->minimum_order, 2);
         if ($subtotal < $minimumOrder) {
@@ -62,6 +53,31 @@ final class CouponService
         return min($subtotal, max(0.00, $discount));
     }
 
+    private function validateAvailability(Coupon $coupon): void
+    {
+        if ($coupon->is_active !== Coupon::IS_ACTIVE_Y) {
+            throw new \DomainException('Coupon is not active.');
+        }
+        $now = time();
+        if (!empty($coupon->start_date)) {
+            $startsAt = strtotime($coupon->start_date);
+            if ($startsAt !== false && $now < $startsAt) {
+                throw new \DomainException('Coupon is not active yet.');
+            }
+        }
+        if (!empty($coupon->end_date)) {
+            // A date-only end date (stored as midnight) is valid for that whole day.
+            $endDate = (string) $coupon->end_date;
+            if (strlen($endDate) === 10 || str_ends_with($endDate, ' 00:00:00')) {
+                $endDate = substr($endDate, 0, 10) . ' 23:59:59';
+            }
+            $expiresAt = strtotime($endDate);
+            if ($expiresAt !== false && $now > $expiresAt) {
+                throw new \DomainException('Coupon has expired.');
+            }
+        }
+    }
+
     public function record(Invoice $invoice): void
     {
         $code = strtoupper(trim((string) $invoice->coupon_code));
@@ -73,6 +89,10 @@ final class CouponService
             throw new \DomainException('Coupon no longer exists.');
         }
         $this->validateApplicability($coupon, $invoice);
+        // Keep the invoice's link to the coupon row (coupon_code alone is only a snapshot).
+        if ((int) $invoice->coupon_id !== (int) $coupon->id) {
+            $invoice->updateAttributes(['coupon_id' => (int) $coupon->id]);
+        }
         $existing = CouponRedemption::findOne(['invoice_id' => (int) $invoice->id]);
         if ($existing !== null) {
             $existing->coupon_id = (int) $coupon->id;

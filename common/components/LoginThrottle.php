@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace common\components;
 
 use Yii;
+use yii\mutex\FileMutex;
 use yii\web\Request;
 
 /**
@@ -27,7 +28,18 @@ final class LoginThrottle
     public static function fail(string $scope, string $username): void
     {
         $key = self::key($scope, $username);
-        Yii::$app->cache->set($key, (int) Yii::$app->cache->get($key) + 1, self::LOCK_SECONDS);
+        // Lock the read-increment-write so parallel failed logins can't overwrite
+        // each other's count and get extra attempts.
+        // ponytail: FileMutex is per-server; switch to MysqlMutex if the app runs on several hosts.
+        $mutex = new FileMutex();
+        $locked = $mutex->acquire($key, 2);
+        try {
+            Yii::$app->cache->set($key, (int) Yii::$app->cache->get($key) + 1, self::LOCK_SECONDS);
+        } finally {
+            if ($locked) {
+                $mutex->release($key);
+            }
+        }
     }
 
     public static function clear(string $scope, string $username): void

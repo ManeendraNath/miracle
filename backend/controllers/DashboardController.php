@@ -8,6 +8,7 @@ use common\models\Invoice;
 use common\models\SupportTicket;
 use common\models\Transaction;
 use common\models\User;
+use Yii;
 
 class DashboardController extends BaseController
 {
@@ -38,13 +39,29 @@ class DashboardController extends BaseController
         if (class_exists('\common\models\Coupon')) {
             $recentCoupon = Coupon::find()->orderBy(['id' => SORT_DESC])->limit(4)->all();
         }
+        // Amount still owed: payable invoices minus what has already been captured
+        // against them (part-paid invoices would otherwise count in full).
+        $outstanding = (float) Yii::$app->db->createCommand('
+            SELECT COALESCE(SUM(i.total_payable), 0) - COALESCE((
+                SELECT SUM(t.amount) FROM {{%transaction}} t
+                JOIN {{%invoice}} i2 ON i2.id = t.invoice_id
+                WHERE t.status = :captured AND i2.status IN (:unpaid, :partial)
+            ), 0)
+            FROM {{%invoice}} i
+            WHERE i.status IN (:unpaid, :partial)
+        ')->bindValues([
+            ':captured' => Transaction::STATUS_CAPTURED,
+            ':unpaid' => Invoice::STATUS_UNPAID,
+            ':partial' => Invoice::STATUS_PARTIALLY_PAID,
+        ])->queryScalar();
+
         // Execute aggregated calculations utilizing the custom precision query scopes we configured
         $metrics = [
             // 1. Invoicing Core Metrics Block
             'totalInvoicesCount' => (int) Invoice::find()->count(),
-            'outstandingReceivables' => Invoice::find()->andWhere(['status' => 'Unpaid'])->sum('total_payable') ?: 0.00,
+            'outstandingReceivables' => $outstanding,
             'overdueInvoicesCount' => Invoice::find()->andWhere(['status' => 'Unpaid'])->andWhere(['<', 'due_date', date('Y-m-d')])->count(),
-            'unpaidBalance' => (float) Invoice::find()->where(['status' => ['Unpaid', 'Partially_Paid']])->sum('total_payable') ?? 0.00,
+            'unpaidBalance' => $outstanding,
             // 2. Gateway Ledger Verification Streams
             'totalRevenueCollected' => Invoice::find()->andWhere(['status' => 'Paid'])->sum('total_payable') ?: 0.00,
             'pendingUpiVerifications' => Transaction::find()->andWhere(['gateway_id' => Transaction::GATEWAY_UPI_BANK, 'status' => 'Pending'])->count(),

@@ -36,15 +36,12 @@ $this->params['breadcrumbs'][] = $this->title;
                             $label = "Expires in {$days} day" . ($days !== 1 ? 's' : '');
                             $class = 'text-danger';
                         }
-                        if ($service['type'] == 1) {
-                            $serviceClass = 'badge bg-primary';
-                        } elseif ($service['type'] == 2) {
-                            $serviceClass = 'badge bg-success';
-                        } elseif ($service['type'] == 3) {
-                            $serviceClass = 'badge bg-warning text-dark';
-                        } else {
-                            $serviceClass = '';
-                        }
+                        $serviceClass = match ($service['type']) {
+                            'Domain' => 'badge bg-primary',
+                            'Hosting' => 'badge bg-success',
+                            'Maintenance' => 'badge bg-warning text-dark',
+                            default => '',
+                        };
                         ?>
                     
                         <div class="col-lg-4 col-md-6">
@@ -58,7 +55,7 @@ $this->params['breadcrumbs'][] = $this->title;
                                     </div>
                                     <div class="text-danger mb-3">
                                         <div class="<?= $class ?> mb-3"><?= $label ?></div>
-                                        Expires in <?= $days ?> day<?= $days !== 1 ? 's' : '' ?>
+                                        <?= Yii::$app->formatter->asDate($service['expiry'], 'php:d M Y') ?>
                                     </div>
                                     <?= Html::a('Renew Now', ['/checkout/renew', 'type' => strtolower($service['type']), 'id' => $service['id']], ['class' => 'btn btn-primary btn-sm']) ?>
                                     <?= Html::a('View', ['/service/view', 'type' => strtolower($service['type']), 'id' => $service['id']], ['class' => 'btn btn-outline-secondary btn-sm me-2']) ?>

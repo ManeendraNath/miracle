@@ -2,6 +2,7 @@
 
 namespace backend\controllers;
 
+use backend\controllers\traits\ToggleStatusTrait;
 use backend\models\searches\HostingSearch;
 use common\models\Hosting;
 use yii\web\NotFoundHttpException;
@@ -89,11 +90,12 @@ class HostingController extends BaseController
      * @return \yii\web\Response
      * @throws NotFoundHttpException if the model cannot be found
      */
-    public function actionDelete($id)
-    {
-        $this->findModel($id)->delete();
+    use ToggleStatusTrait;
 
-        return $this->redirect(['index']);
+    /** Services are disabled, never deleted: invoices, billing events and history reference them. */
+    protected function statusToggle(): array
+    {
+        return ['status', Hosting::STATUS_ACTIVE, Hosting::STATUS_INACTIVE];
     }
 
     /**

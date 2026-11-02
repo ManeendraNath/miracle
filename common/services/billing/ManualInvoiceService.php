@@ -307,7 +307,10 @@ final class ManualInvoiceService
                         $lockedInvoice->user_id,
                     $subtotal,
                     (int)
-                        $lockedInvoice->id
+                        $lockedInvoice->id,
+                    // Keeping the coupon it already has: an edit must not fail
+                    // because that coupon has since expired or been disabled.
+                    $couponCode === strtoupper(trim((string) $lockedInvoice->coupon_code))
                 );
             } else {
                 $discount = max(

@@ -182,7 +182,8 @@ $users = ArrayHelper::map(User::find()->orderBy(['username' => SORT_ASC])->all()
                             ],
                         ],
                         GridActionHelper::crudColumn(
-                            deleteMessage: 'Are you sure you want to delete this hosting service?'
+                            template: '{view} {update} {toggle-status}',
+                            isEnabled: static fn($model): bool => (int) $model->status === \common\models\Hosting::STATUS_ACTIVE
                         ),
                     ],
                 ])

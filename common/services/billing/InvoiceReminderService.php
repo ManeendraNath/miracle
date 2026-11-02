@@ -59,7 +59,8 @@ final class InvoiceReminderService
 
     private function sendReminder(Invoice $invoice, float $outstanding, int $daysUntilDue): bool
     {
-        $key = $this->getReminderKey($daysUntilDue);
+        // Due date is part of the key so a changed due date gets its own reminder schedule.
+        $key = $this->getReminderKey($daysUntilDue) . '|' . $invoice->due_date;
         $alreadySent = Yii::$app->db
                 ->createCommand('SELECT id FROM {{%invoice_reminder_log}} WHERE invoice_id = :invoiceId AND reminder_key = :reminderKey LIMIT 1')
                 ->bindValues([':invoiceId' => (int) $invoice->id, ':reminderKey' => $key])

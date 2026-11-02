@@ -28,6 +28,8 @@ ROLLBACK_AVAILABLE=0
 ROLLBACK_IN_PROGRESS=0
 KEEP_ROLLBACK=0
 DATABASE_MAY_HAVE_CHANGED=0
+readonly MAINTENANCE_FLAG="$APP/runtime/maintenance.flag"
+PRE_MIGRATION_BACKUP=""
 
 
 # =====================================================================
@@ -167,6 +169,9 @@ cleanup()
     local EXIT_CODE=$?
 
     trap - EXIT
+
+    # Always reopen the site, whether the deploy succeeded or rolled back.
+    rm -f -- "$MAINTENANCE_FLAG"
 
     if [ "${KEEP_ROLLBACK:-0}" -eq 1 ]; then
         log ""
@@ -855,6 +860,9 @@ rollback()
         log "Database migration processing had started."
         log "Database migrations were NOT automatically rolled back."
         log "Review migration state manually."
+        if [ -n "$PRE_MIGRATION_BACKUP" ]; then
+            log "Restore if needed: gunzip -c $PRE_MIGRATION_BACKUP | mysql <database>"
+        fi
     fi
 
 
@@ -878,6 +886,8 @@ rollback()
 
     log ""
     log "Checking restored application..."
+
+    rm -f -- "$MAINTENANCE_FLAG"
 
     if ! verify_application; then
         log "ERROR: Restored application failed health checks."
@@ -1343,6 +1353,13 @@ DEPLOY_STARTED=1
 
 log "[9/15] Deploying application source..."
 
+# Web entry points answer 503 and cron jobs skip while this exists.
+# ponytail: cron that is already mid-run is not waited for; it finishes on the
+# classes it has loaded. Add a mutex wait here if runs get long.
+mkdir -p "$APP/runtime"
+touch "$MAINTENANCE_FLAG"
+log "Maintenance mode ON."
+
 
 # ---------------------------------------------------------------------
 # COMMON
@@ -1607,6 +1624,15 @@ fi
 cat > "$PUBLIC/index.php" <<'PHP'
 <?php
 
+// Deploy in progress (deploy.sh creates this flag): answer 503 instead of
+// loading half-copied code.
+if (is_file(__DIR__ . '/../miracle' . '/runtime/maintenance.flag')) {
+    http_response_code(503);
+    header('Retry-After: 120');
+    echo '<!DOCTYPE html><title>Maintenance</title><div style="font-family:sans-serif;text-align:center;margin-top:15vh"><h1>We&rsquo;ll be right back</h1><p>The site is being updated. Please try again in a few minutes.</p></div>';
+    exit;
+}
+
 defined('YII_DEBUG') or define('YII_DEBUG', false);
 defined('YII_ENV') or define('YII_ENV', 'prod');
 
@@ -1656,9 +1682,24 @@ log "Running database migrations..."
 
 cd "$APP"
 
+# Migrations are not reversed on rollback (MySQL DDL is not transactional),
+# so take a restorable dump first. A failed backup aborts the deploy before
+# the schema is touched.
+if php yii migrate/new --interactive=0 | grep -q "No new migrations found"; then
+    log "No pending migrations."
+else
+    log "Pending migrations found. Backing up database first..."
+    php yii backup/run
+    PRE_MIGRATION_BACKUP="$(ls -1t "$APP"/backups/db_backup_*.sql.gz | head -n 1)"
+    log "Pre-migration backup: $PRE_MIGRATION_BACKUP"
+fi
+
 DATABASE_MAY_HAVE_CHANGED=1
 
 php yii migrate/up --interactive=0
+
+rm -f -- "$MAINTENANCE_FLAG"
+log "Maintenance mode OFF."
 
 
 # ---------------------------------------------------------------------

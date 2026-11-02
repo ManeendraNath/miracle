@@ -67,7 +67,6 @@ final class RenewalController extends Controller
 
     private function getUpcomingServices(): array
     {
-        $today = date('Y-m-d');
         $until = date('Y-m-d', strtotime('+60 days'));
 
         $services = [];
@@ -77,12 +76,8 @@ final class RenewalController extends Controller
                         ->where([
                             'user_id' => (int) Yii::$app->user->id,
                         ])
-                        ->andWhere([
-                            'between',
-                            'current_expiry_date',
-                            $today,
-                            $until,
-                        ])
+                        ->andWhere(['<=', 'current_expiry_date', $until])
+                        ->andWhere(['status' => 1]) // active only; overdue ones stay listed
                         ->all()
         as $domain
         ) {
@@ -100,12 +95,8 @@ final class RenewalController extends Controller
                         ->where([
                             'user_id' => (int) Yii::$app->user->id,
                         ])
-                        ->andWhere([
-                            'between',
-                            'current_expiry_date',
-                            $today,
-                            $until,
-                        ])
+                        ->andWhere(['<=', 'current_expiry_date', $until])
+                        ->andWhere(['status' => 1]) // active only; overdue ones stay listed
                         ->all()
         as $hosting
         ) {
@@ -123,12 +114,8 @@ final class RenewalController extends Controller
                         ->where([
                             'user_id' => (int) Yii::$app->user->id,
                         ])
-                        ->andWhere([
-                            'between',
-                            'current_expiry_date',
-                            $today,
-                            $until,
-                        ])
+                        ->andWhere(['<=', 'current_expiry_date', $until])
+                        ->andWhere(['status' => 1]) // active only; overdue ones stay listed
                         ->all()
         as $maintenance
         ) {

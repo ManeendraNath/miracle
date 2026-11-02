@@ -120,16 +120,21 @@ final class ProfileForm extends Model
 
     public function save(): bool
     {
+        // Default WhatsApp to mobile before validating, so its uniqueness is checked too.
+        if ($this->whatsapp === '' && $this->mobile !== '') {
+            $this->whatsapp = $this->mobile;
+        }
         if (!$this->validate()) {
             return false;
         }
         $this->user->username = $this->username;
         $this->user->mobile = $this->mobile;
         $this->user->whatsapp = $this->whatsapp;
-        if (empty($this->user->whatsapp) && !empty($this->user->mobile)) {
-            $this->user->whatsapp = $this->user->mobile;
+        if (!$this->user->save()) {
+            $this->addErrors($this->user->getErrors());
+            return false;
         }
-        return $this->user->save();
+        return true;
     }
 
     public function getUser(): User

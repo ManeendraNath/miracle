@@ -53,7 +53,7 @@ class DomainsSearch extends Domains
 
     public function search(array $params, ?string $formName = null): ActiveDataProvider
     {
-        $query = Domains::find();
+        $query = Domains::find()->with('user');
 
         $dataProvider = new ActiveDataProvider([
             'query' => $query,

@@ -51,7 +51,7 @@ final class DashboardController extends Controller
         $pendingPayments = (int) Transaction::find()
                         ->alias('t')
                         ->innerJoin(['i' => Invoice::tableName()], 'i.id = t.invoice_id')
-                        ->where(['i.user_id' => $userId, 't.status' => Transaction::STATUS_PENDING])->count();
+                        ->where(['i.user_id' => $userId, 't.status' => Transaction::STATUS_PENDING, 't.gateway_id' => Transaction::GATEWAY_UPI_BANK])->count();
         $domainCount = (int) Domains::find()->where(['user_id' => $userId])->count();
         $hostingCount = (int) Hosting::find()->where(['user_id' => $userId])->count();
         $maintenanceCount = (int) Maintenance::find()->where(['user_id' => $userId])->count();
@@ -99,11 +99,11 @@ final class DashboardController extends Controller
 
     private function getServiceModel($class)
     {
-        $today = date('Y-m-d');
         $upcomingUntil = date('Y-m-d', strtotime('+30 days'));
+        // Includes already-expired active services: those most need renewing.
         return $class::find()
-                        ->where(['user_id' => (int) Yii::$app->user->id])
-                        ->andWhere(['between', 'current_expiry_date', $today, $upcomingUntil])
+                        ->where(['user_id' => (int) Yii::$app->user->id, 'status' => $class::STATUS_ACTIVE])
+                        ->andWhere(['<=', 'current_expiry_date', $upcomingUntil])
                         ->orderBy(['current_expiry_date' => SORT_ASC])
                         ->all();
     }

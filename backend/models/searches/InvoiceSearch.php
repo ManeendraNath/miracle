@@ -46,7 +46,7 @@ class InvoiceSearch extends Invoice
      */
     public function search($params, $formName = null)
     {
-        $query = Invoice::find();
+        $query = Invoice::find()->with('user');
 
         $dataProvider = new ActiveDataProvider([
             'query' => $query,

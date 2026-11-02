@@ -15,7 +15,7 @@ $this->params['breadcrumbs'][] = $this->title;
 <div class="transaction-view container-fluid pt-3">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div class="action-buttons">
-            <?php if ($model->status === Transaction::STATUS_PENDING): ?>
+            <?php if ($model->status === Transaction::STATUS_PENDING && (int) $model->gateway_id !== Transaction::GATEWAY_RAZORPAY): ?>
                 <?=
                 Html::a('<i class="fas fa-check-circle me-1"></i> Approve Payment', ['approve', 'id' => $model->id], [
                     'class' => 'btn btn-sm btn-success px-3 me-2',
@@ -44,6 +44,17 @@ $this->params['breadcrumbs'][] = $this->title;
                         </div>
                     </div>
                 <?php endif; ?>
+            <?php endif; ?>
+            <?php if ($model->status === Transaction::STATUS_CAPTURED): ?>
+                <?=
+                Html::a('<i class="fas fa-undo me-1"></i> Mark Refunded', ['refund', 'id' => $model->id], [
+                    'class' => 'btn btn-sm btn-outline-danger px-3',
+                    'data' => [
+                        'confirm' => "Only do this after the money has been returned (Razorpay dashboard or bank).\n\nThe invoice balance becomes due again. Renewals already granted are NOT reversed: cancel the invoice or disable the service if needed.",
+                        'method' => 'post',
+                    ],
+                ])
+                ?>
             <?php endif; ?>
         </div>
         <div class="card card-outline card-primary mb-8">

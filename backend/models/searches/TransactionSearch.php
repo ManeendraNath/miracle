@@ -48,7 +48,7 @@ class TransactionSearch extends Transaction
      */
     public function search($params, $formName = null)
     {
-        $query = Transaction::find();
+        $query = Transaction::find()->with('invoice');
 
         // add conditions that should always apply here
 

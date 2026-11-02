@@ -2,6 +2,7 @@
 
 namespace backend\controllers;
 
+use backend\controllers\traits\ToggleStatusTrait;
 use Yii;
 use backend\models\searches\DomainsSearch;
 use common\models\Domains;
@@ -87,11 +88,12 @@ class DomainsController extends BaseController
      * @return \yii\web\Response
      * @throws NotFoundHttpException if the model cannot be found
      */
-    public function actionDelete($id)
+    use ToggleStatusTrait;
+
+    /** Services are disabled, never deleted: invoices, billing events and history reference them. */
+    protected function statusToggle(): array
     {
-        $this->findModel($id)->delete();
-        Yii::$app->session->setFlash('success', 'Domain deleted successfully.');
-        return $this->redirect(['index']);
+        return ['status', Domains::STATUS_ACTIVE, Domains::STATUS_INACTIVE];
     }
 
     /**

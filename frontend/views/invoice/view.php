@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 use common\models\Invoice;
 use yii\helpers\Html;
+use yii\helpers\Json;
+use yii\helpers\Url;
 
 $this->title = 'Invoice ' . $model->invoice_number;
 
@@ -13,6 +15,55 @@ $this->params['breadcrumbs'][] = [
 ];
 
 $this->params['breadcrumbs'][] = $model->invoice_number;
+
+$isPayable = in_array($model->status, [Invoice::STATUS_UNPAID, Invoice::STATUS_PARTIALLY_PAID], true) && $outstandingAmount > 0;
+$canPayOnline = $isPayable && $pendingPayment === null && !empty($razorpayEnabled);
+
+if ($canPayOnline) {
+    $this->registerJsFile('https://checkout.razorpay.com/v1/checkout.js');
+    $callbackUrl = Json::htmlEncode(Url::to(['razorpay-callback', 'number' => $model->invoice_number]));
+    $this->registerJs(<<<JS
+document.getElementById('pay-online').addEventListener('click', function () {
+    var button = this;
+    button.disabled = true;
+    fetch(button.dataset.orderUrl, {
+        method: 'POST',
+        headers: {'X-CSRF-Token': yii.getCsrfToken(), 'X-Requested-With': 'XMLHttpRequest'}
+    })
+        .then(function (r) { return r.json().then(function (data) { return {ok: r.ok, data: data}; }); })
+        .then(function (res) {
+            if (!res.ok) { throw new Error(res.data.error || 'Could not start online payment.'); }
+            var options = res.data;
+            options.handler = function (payment) {
+                var form = document.createElement('form');
+                form.method = 'post';
+                form.action = {$callbackUrl};
+                var fields = {
+                    razorpay_order_id: payment.razorpay_order_id,
+                    razorpay_payment_id: payment.razorpay_payment_id,
+                    razorpay_signature: payment.razorpay_signature
+                };
+                fields[yii.getCsrfParam()] = yii.getCsrfToken();
+                Object.keys(fields).forEach(function (name) {
+                    var input = document.createElement('input');
+                    input.type = 'hidden'; input.name = name; input.value = fields[name];
+                    form.appendChild(input);
+                });
+                document.body.appendChild(form);
+                form.submit();
+            };
+            options.modal = {ondismiss: function () { button.disabled = false; }};
+            var checkout = new Razorpay(options);
+            checkout.on('payment.failed', function (r) {
+                alert('Payment failed: ' + (r.error && r.error.description ? r.error.description : 'please try again.'));
+                button.disabled = false;
+            });
+            checkout.open();
+        })
+        .catch(function (e) { alert(e.message); button.disabled = false; });
+});
+JS);
+}
 ?>
 
 <div class="container py-4">
@@ -28,8 +79,14 @@ $this->params['breadcrumbs'][] = $model->invoice_number;
         <div>
             <?= Html::a('Back to Invoices', ['index'], ['class' => 'btn btn-outline-secondary']) ?>
             <?= Html::a('Download PDF', ['download', 'number' => $model->invoice_number], ['class' => 'btn btn-primary']) ?>
-            <?php if (in_array($model->status, [Invoice::STATUS_UNPAID, Invoice::STATUS_PARTIALLY_PAID], true) && $outstandingAmount > 0): ?>
-                <?= Html::a('Submit Payment Proof', ['submit-payment', 'number' => $model->invoice_number], ['class' => 'btn btn-success']) ?>
+            <?php if ($canPayOnline): ?>
+                <button type="button" id="pay-online" class="btn btn-success"
+                        data-order-url="<?= Url::to(['pay-online', 'number' => $model->invoice_number]) ?>">
+                    Pay Online <?= Yii::$app->formatter->asCurrency($outstandingAmount, 'INR') ?>
+                </button>
+            <?php endif; ?>
+            <?php if ($isPayable && $pendingPayment === null): ?>
+                <?= Html::a('Submit Payment Proof', ['submit-payment', 'number' => $model->invoice_number], ['class' => 'btn btn-outline-success']) ?>
             <?php endif; ?>
         </div>
     </div>
@@ -38,8 +95,6 @@ $this->params['breadcrumbs'][] = $model->invoice_number;
             <strong>Payment verification pending.</strong>
             <div>Reference: <?= Html::encode($pendingPayment->gateway_payment_id) ?></div>
         </div>
-    <?php elseif (in_array($model->status, [Invoice::STATUS_UNPAID, Invoice::STATUS_PARTIALLY_PAID], true) && $outstandingAmount > 0): ?>
-        <?= Html::a('Submit Payment Proof', ['submit-payment', 'number' => $model->invoice_number], ['class' => 'btn btn-success']) ?>
     <?php endif; ?>
     <div class="card shadow-sm mb-4">
         <div class="card-body">

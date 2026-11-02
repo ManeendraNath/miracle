@@ -11,11 +11,14 @@ use common\models\forms\PaymentProofForm;
 use common\services\admin\AdminAlertService;
 use common\services\billing\InvoicePaymentService;
 use common\services\billing\InvoicePdfService;
+use common\services\payment\RazorpayService;
 use common\services\notification\NotificationService;
 use common\services\notification\WhatsAppService;
 use yii\data\ActiveDataProvider;
 use yii\filters\AccessControl;
+use yii\filters\VerbFilter;
 use yii\web\Controller;
+use yii\web\Response;
 use yii\web\NotFoundHttpException;
 use yii\web\UploadedFile;
 
@@ -33,6 +36,13 @@ final class InvoiceController extends Controller
                         'allow' => true,
                         'roles' => ['@'],
                     ],
+                ],
+            ],
+            'verbs' => [
+                'class' => VerbFilter::class,
+                'actions' => [
+                    'pay-online' => ['POST'],
+                    'razorpay-callback' => ['POST'],
                 ],
             ],
         ];
@@ -78,8 +88,83 @@ final class InvoiceController extends Controller
                             'capturedAmount' => $paymentService->getCapturedAmount((int) $model->id),
                             'outstandingAmount' => $paymentService->getOutstanding($model),
                             'pendingPayment' => $pendingPayment,
+                            'razorpayEnabled' => (new RazorpayService())->isEnabled(),
                         ]
         );
+    }
+
+    /**
+     * Creates (or reuses) a Razorpay order for the outstanding amount and returns
+     * the Checkout options for the browser.
+     */
+    public function actionPayOnline(string $number): array
+    {
+        Yii::$app->response->format = Response::FORMAT_JSON;
+        $invoice = $this->findOwnedInvoice($number);
+        $razorpay = new RazorpayService();
+        $outstanding = (new InvoicePaymentService())->getOutstanding($invoice);
+        $payable = in_array($invoice->status, [Invoice::STATUS_UNPAID, Invoice::STATUS_PARTIALLY_PAID], true) && $outstanding > 0;
+        $proofPending = Transaction::find()->where(['invoice_id' => $invoice->id, 'gateway_id' => Transaction::GATEWAY_UPI_BANK, 'status' => Transaction::STATUS_PENDING])->exists();
+        if (!$razorpay->isEnabled() || !$payable || $proofPending) {
+            Yii::$app->response->statusCode = 422;
+            return ['error' => $proofPending ? 'A payment proof for this invoice is already awaiting verification.' : 'Online payment is not available for this invoice.'];
+        }
+        try {
+            $transaction = $razorpay->createOrder($invoice, $outstanding);
+        } catch (\Throwable $e) {
+            Yii::error(['message' => 'Could not start Razorpay checkout.', 'invoice' => $invoice->invoice_number, 'error' => $e->getMessage()], __METHOD__);
+            Yii::$app->response->statusCode = 502;
+            return ['error' => 'Could not start online payment. Please try again shortly.'];
+        }
+        $user = Yii::$app->user->identity;
+        return [
+            'key' => $razorpay->getKeyId(),
+            'order_id' => $transaction->gateway_order_id,
+            'amount' => (int) round((float) $transaction->amount * 100),
+            'currency' => 'INR',
+            'name' => Yii::$app->name,
+            'description' => 'Invoice ' . $invoice->invoice_number,
+            'prefill' => [
+                'name' => (string) $invoice->client_name,
+                'email' => (string) $user->email,
+                'contact' => (string) ($user->mobile ?? ''),
+            ],
+        ];
+    }
+
+    /**
+     * Browser return from Razorpay Checkout. The signature proves the payment
+     * belongs to our order; the webhook captures it too if this request is lost.
+     */
+    public function actionRazorpayCallback(string $number)
+    {
+        $invoice = $this->findOwnedInvoice($number);
+        $request = Yii::$app->request;
+        $orderId = (string) $request->post('razorpay_order_id', '');
+        $paymentId = (string) $request->post('razorpay_payment_id', '');
+        $signature = (string) $request->post('razorpay_signature', '');
+        $razorpay = new RazorpayService();
+
+        $ownsOrder = $orderId !== '' && Transaction::find()->where(['gateway_order_id' => $orderId, 'invoice_id' => $invoice->id])->exists();
+        if (!$ownsOrder || $paymentId === '' || !$razorpay->verifyCheckoutSignature($orderId, $paymentId, $signature)) {
+            Yii::warning(['message' => 'Rejected Razorpay checkout callback.', 'invoice' => $invoice->invoice_number, 'orderId' => $orderId], __METHOD__);
+            Yii::$app->session->setFlash('error', 'We could not verify this payment. If money was deducted, it will be confirmed automatically or contact support.');
+            return $this->redirect(['view', 'number' => $invoice->invoice_number]);
+        }
+        try {
+            $razorpay->capture($orderId, $paymentId);
+            $invoice->refresh();
+            if (in_array($invoice->status, [Invoice::STATUS_CANCELLED, Invoice::STATUS_CARRIED_FORWARD], true)) {
+                Yii::$app->session->setFlash('warning', 'Payment received, but this invoice is no longer payable. Our team will refund it or apply it to your account. Reference: ' . $paymentId);
+            } else {
+                Yii::$app->session->setFlash('success', 'Payment received. Thank you!');
+            }
+        } catch (\Throwable $e) {
+            Yii::error(['message' => 'Razorpay checkout capture failed.', 'invoice' => $invoice->invoice_number, 'orderId' => $orderId, 'paymentId' => $paymentId, 'error' => $e->getMessage()], __METHOD__);
+            Yii::$app->session->setFlash('warning', 'Your payment was received but could not be applied automatically. Our team has been notified and will confirm it shortly. Reference: ' . $paymentId);
+            AdminAlertService::paymentSubmitted($invoice->invoice_number, (string) $invoice->client_name, (float) $invoice->total_payable);
+        }
+        return $this->redirect(['view', 'number' => $invoice->invoice_number]);
     }
 
     private function findOwnedInvoice(string $number): Invoice

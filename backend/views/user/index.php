@@ -1,5 +1,6 @@
 <?php
 
+use common\helpers\GridActionHelper;
 use common\helpers\GridFilterHelper;
 use common\models\User;
 use yii\grid\GridView;
@@ -124,6 +125,10 @@ $this->params['breadcrumbs'][] = $this->title;
                     'style' => 'width: 220px;',
                 ],
             ],
+            GridActionHelper::crudColumn(
+                template: '{view} {update} {toggle-status}',
+                isEnabled: static fn(User $model): bool => (int) $model->status === User::getStatusActive()
+            ),
         ],
     ]);
     ?>

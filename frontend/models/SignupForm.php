@@ -61,7 +61,12 @@ class SignupForm extends Model
         // User hashes `password` itself in beforeValidate and requires it on new records.
         $user->password = $this->password;
         $user->generateEmailVerificationToken();
-        return $user->save() && $this->sendEmail($mailer, $user, $supportEmail, $appName);
+        if (!$user->save()) {
+            // Surface model errors (e.g. password rules) instead of a silent reload.
+            $this->addErrors($user->getErrors());
+            return null;
+        }
+        return $this->sendEmail($mailer, $user, $supportEmail, $appName);
     }
 
     /**

@@ -192,7 +192,8 @@ $users = ArrayHelper::map(User::find()->orderBy(['username' => SORT_ASC])->all()
                             ],
                         ],
                         GridActionHelper::crudColumn(
-                            deleteMessage: 'Are you sure you want to delete this maintenance service?'
+                            template: '{view} {update} {toggle-status}',
+                            isEnabled: static fn($model): bool => (int) $model->status === \common\models\Maintenance::STATUS_ACTIVE
                         ),
                     ],
                 ])

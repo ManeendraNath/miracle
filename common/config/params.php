@@ -43,4 +43,14 @@ return [
         'integratedNumber' => $_ENV['PROVIDER_INTEGRATED_NUMBER'] ?? '',
         'adminMobile' => $_ENV['ADMIN_WHATSAPP_MOBILE'] ?? '',
     ],
+    // File the cron jobs append their output to (see docs/BILLING_MODULE.md crontab).
+    // Empty = <app root>/runtime/logs/billing-cron.log.
+    'cronLogPath' => $_ENV['CRON_LOG_PATH'] ?? '',
+    // Online payments. Set RAZORPAY_ENABLED=true plus the keys in .env to go live.
+    'razorpay' => [
+        'enabled' => filter_var($_ENV['RAZORPAY_ENABLED'] ?? false, FILTER_VALIDATE_BOOLEAN),
+        'keyId' => $_ENV['RAZORPAY_KEY_ID'] ?? '',
+        'keySecret' => $_ENV['RAZORPAY_KEY_SECRET'] ?? '',
+        'webhookSecret' => $_ENV['RAZORPAY_WEBHOOK_SECRET'] ?? '',
+    ],
 ];

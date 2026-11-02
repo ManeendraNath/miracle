@@ -1,5 +1,14 @@
 <?php
 
+// Deploy in progress (deploy.sh creates this flag): answer 503 instead of
+// loading half-copied code.
+if (is_file(dirname(__DIR__, 2) . '/runtime/maintenance.flag')) {
+    http_response_code(503);
+    header('Retry-After: 120');
+    echo '<!DOCTYPE html><title>Maintenance</title><div style="font-family:sans-serif;text-align:center;margin-top:15vh"><h1>We&rsquo;ll be right back</h1><p>The site is being updated. Please try again in a few minutes.</p></div>';
+    exit;
+}
+
 // 1. Load the composer autoloader matrix components
 require __DIR__ . '/../../vendor/autoload.php';
 

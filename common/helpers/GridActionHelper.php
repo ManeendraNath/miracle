@@ -17,7 +17,10 @@ final class GridActionHelper
         
     }
 
-    public static function crudColumn(string $template = '{view} {update} {delete}', string $deleteMessage = 'Are you sure you want to delete this record?', ?callable $urlCreator = null): array {
+    /**
+     * @param callable|null $isEnabled fn($model): bool, used by the {toggle-status} button
+     */
+    public static function crudColumn(string $template = '{view} {update} {delete}', string $deleteMessage = 'Are you sure you want to delete this record?', ?callable $urlCreator = null, ?callable $isEnabled = null): array {
     $column = [
         'class' => ActionColumn::class,
         'header' => 'Actions',
@@ -51,6 +54,23 @@ final class GridActionHelper
                         'title' => 'Update',
                         'data-bs-toggle' => 'tooltip',
                         'data-bs-placement' => 'top',
+                    ]
+                );
+            },
+            'toggle-status' => static function (string|array $url, $model) use ($isEnabled): string {
+                $enabled = $isEnabled !== null ? (bool) $isEnabled($model) : true;
+                return Html::a(
+                    $enabled ? '<i class="fas fa-ban"></i>' : '<i class="fas fa-check"></i>',
+                    $url,
+                    [
+                        'class' => 'btn btn-xs ' . ($enabled ? 'btn-outline-warning' : 'btn-outline-success'),
+                        'title' => $enabled ? 'Disable' : 'Enable',
+                        'data-bs-toggle' => 'tooltip',
+                        'data-bs-placement' => 'top',
+                        'data' => [
+                            'confirm' => $enabled ? 'Disable this record?' : 'Enable this record?',
+                            'method' => 'post',
+                        ],
                     ]
                 );
             },

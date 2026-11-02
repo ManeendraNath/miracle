@@ -49,6 +49,7 @@ final class OutstandingBalanceService
               SELECT 1 FROM {{%transaction}} t
               WHERE t.invoice_id = {{%invoice}}.id
                 AND t.status = :pendingPayment
+                AND t.gateway_id = :upiGateway
           )
           AND (
               billing_run_id IS NULL
@@ -70,6 +71,8 @@ final class OutstandingBalanceService
                     ':today' => date('Y-m-d'),
                     // A submitted proof awaiting approval must not be billed again as arrears.
                     ':pendingPayment' => Transaction::STATUS_PENDING,
+                    // Abandoned Razorpay orders also sit at Pending; only proofs awaiting review count.
+                    ':upiGateway' => Transaction::GATEWAY_UPI_BANK,
                     ':billingRunId' =>
                     (int) $targetInvoice
                     ->billing_run_id,

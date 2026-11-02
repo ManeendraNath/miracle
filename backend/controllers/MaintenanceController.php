@@ -2,6 +2,7 @@
 
 namespace backend\controllers;
 
+use backend\controllers\traits\ToggleStatusTrait;
 use backend\models\searches\MaintenanceSearch;
 use common\models\Maintenance;
 use yii\web\NotFoundHttpException;
@@ -89,11 +90,12 @@ class MaintenanceController extends BaseController
      * @return \yii\web\Response
      * @throws NotFoundHttpException if the model cannot be found
      */
-    public function actionDelete($id)
-    {
-        $this->findModel($id)->delete();
+    use ToggleStatusTrait;
 
-        return $this->redirect(['index']);
+    /** Services are disabled, never deleted: invoices, billing events and history reference them. */
+    protected function statusToggle(): array
+    {
+        return ['status', Maintenance::STATUS_ACTIVE, Maintenance::STATUS_CANCELLED];
     }
 
     /**

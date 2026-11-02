@@ -144,12 +144,12 @@ class SiteController extends Controller
         if ($model->load(Yii::$app->request->post()) && $model->validate()) {
             $adminEmail = CustomYii::getSetting('email_1', 'info@miraclewebtechnologies.com');
 
-            Yii::$app->mailer->compose()
-                    ->setTo($adminEmail)
-                    ->setFrom([$model->email => $model->name])
-                    ->setSubject('📥 General Contact Form: ' . $model->subject)
-                    ->setTextBody($model->body)
-                    ->send();
+            // Sent from our own address (visitor addresses fail SPF/DMARC); Reply-To reaches the visitor.
+            try {
+                $model->sendEmail(Yii::$app->mailer, $adminEmail, Yii::$app->params['senderEmail'], Yii::$app->params['senderName']);
+            } catch (\Throwable $e) {
+                Yii::error(['message' => 'Contact form email failed.', 'error' => $e->getMessage()], __METHOD__);
+            }
 
             Yii::$app->session->setFlash('success', 'Thank you for contacting us. We will respond shortly.');
             return $this->refresh();
@@ -172,12 +172,18 @@ class SiteController extends Controller
             if ($model->save()) {
                 $adminEmail = CustomYii::getSetting('email_1', 'info@miraclewebtechnologies.com');
 
-                Yii::$app->mailer->compose()
-                        ->setTo($adminEmail)
-                        ->setFrom([$model->email => $model->name])
-                        ->setSubject('CRITICAL LOGS: New Inbound Systems Audit Request')
-                        ->setTextBody("New Lead Received!\n\nName: {$model->name}\nFramework: {$model->current_framework}\nEnvironment: {$model->hosting_environment}")
-                        ->send();
+                // The request is already saved; a mail failure must not turn into a 500.
+                try {
+                    Yii::$app->mailer->compose()
+                            ->setTo($adminEmail)
+                            ->setFrom([Yii::$app->params['senderEmail'] => Yii::$app->params['senderName']])
+                            ->setReplyTo([$model->email => $model->name])
+                            ->setSubject('New Audit Request: ' . $model->name)
+                            ->setTextBody("New audit request received.\n\nName: {$model->name}\nEmail: {$model->email}\nFramework: {$model->current_framework}\nEnvironment: {$model->hosting_environment}")
+                            ->send();
+                } catch (\Throwable $e) {
+                    Yii::error(['message' => 'Audit request email failed.', 'auditRequestId' => (int) $model->id, 'error' => $e->getMessage()], __METHOD__);
+                }
 
                 Yii::$app->session->setFlash('success', 'Your system matrix data has been securely logged. Our engineers are reviewing your case.');
                 return $this->refresh();

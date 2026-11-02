@@ -94,6 +94,10 @@ final class BillingEventService
                 $existing->billing_run_id =
                     $runId;
 
+                // Due date counts from the run that actually invoices it, so a
+                // delayed run doesn't produce an invoice that is already overdue.
+                $existing->due_date = $this->dueDate($settings);
+
                 $existing->updated_at =
                     time();
 
@@ -102,6 +106,7 @@ final class BillingEventService
                         false,
                         [
                         'billing_run_id',
+                        'due_date',
                         'updated_at',
                         ]
                     )
@@ -121,11 +126,6 @@ final class BillingEventService
             $renewal->itemId,
             $renewal->baseAmount,
             $increase
-        );
-
-        $paymentDueDays = max(
-            0,
-            (int) $settings->payment_due_days
         );
 
         $event = new BillingEvent();
@@ -151,12 +151,7 @@ final class BillingEventService
 
         $event->is_manual_amount = 0;
 
-        $event->due_date = date(
-            'Y-m-d',
-            strtotime(
-                '+' . $paymentDueDays . ' days'
-            )
-        );
+        $event->due_date = $this->dueDate($settings);
 
         $event->status = BillingEvent::STATUS_PENDING;
 
@@ -187,6 +182,11 @@ final class BillingEventService
 
             throw $exception;
         }
+    }
+
+    private function dueDate($settings): string
+    {
+        return date('Y-m-d', strtotime('+' . max(0, (int) $settings->payment_due_days) . ' days'));
     }
 
     private function findExisting(

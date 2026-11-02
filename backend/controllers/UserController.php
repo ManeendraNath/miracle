@@ -101,12 +101,6 @@ class UserController extends BaseController
      * @return \yii\web\Response
      * @throws NotFoundHttpException if the model cannot be found
      */
-    public function actionDelete($id)
-    {
-        $this->findModel($id)->delete();
-        Yii::$app->session->setFlash('success', 'Client profile deleted successfully.');
-        return $this->redirect(['index']);
-    }
 
     /**
      * Finds the User model based on its primary key value.

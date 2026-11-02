@@ -142,7 +142,7 @@ $users = ArrayHelper::map(User::find()->orderBy(['username' => SORT_ASC])->all()
                     /*
                      * CRUD actions
                      */
-                    GridActionHelper::crudColumn(deleteMessage: 'Are you sure you want to delete this domain?'),
+                    GridActionHelper::crudColumn(template: '{view} {update} {toggle-status}', isEnabled: static fn($model): bool => (int) $model->status === \common\models\Domains::STATUS_ACTIVE),
                 ],
             ])
             ?>

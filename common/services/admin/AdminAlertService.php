@@ -19,61 +19,68 @@ final class AdminAlertService extends AdminNotificationService
     {
         $title = 'New Support Ticket';
         $message = "Ticket: {$ticketNumber}\n" . "Customer: {$customer}\n" . "Subject: {$subject}";
-        self::send($title, $message);
+        self::send($title, $message, 'support', '/support-ticket/view?number=' . rawurlencode($ticketNumber));
     }
 
     public static function supportCustomerReply(string $ticketNumber, string $customer): void
     {
         $title = 'Customer Replied';
         $message = "Ticket: {$ticketNumber}\n" . "Customer: {$customer}";
-        self::send($title, $message);
+        self::send($title, $message, 'support', '/support-ticket/view?number=' . rawurlencode($ticketNumber));
     }
 
     public static function paymentSubmitted(string $invoiceNumber, string $customer, float $amount): void
     {
         $title = 'Payment Submitted';
         $message = "Invoice: {$invoiceNumber}\n" . "Customer: {$customer}\n" . "Amount: ₹{$amount}";
-        self::send($title, $message);
+        self::send($title, $message, 'payment', '/transaction/index?' . http_build_query(['TransactionSearch' => ['status' => 'Pending']]));
     }
 
     public static function leadCreated(string $name, string $email): void
     {
         $title = 'New Lead';
         $message = "Name: {$name}\n" . "Email: {$email}";
-        self::send($title, $message);
+        self::send($title, $message, 'lead', '/lead/index');
     }
 
     public static function auditRequestCreated(string $website): void
     {
         $title = 'New Audit Request';
         $message = "Website: {$website}";
-        self::send($title, $message);
+        self::send($title, $message, 'lead', '/audit-request/index');
     }
 
     public static function serviceExpiring(string $service, string $expiryDate): void
     {
         $title = 'Service Expiring';
         $message = "Service: {$service}\n" . "Expiry Date: {$expiryDate}";
-        self::send($title, $message);
+        self::send($title, $message, 'renewal', '/renewal-monitoring/index');
     }
 
     public static function invoiceGenerated(string $invoiceNumber, float $amount): void
     {
         $title = 'Invoice Generated';
         $message = "Invoice: {$invoiceNumber}\n" . "Amount: ₹{$amount}";
-        self::send($title, $message);
+        self::send($title, $message, 'invoice', '/invoice/view?number=' . rawurlencode($invoiceNumber));
+    }
+
+    public static function paymentUnapplied(string $invoiceNumber, string $invoiceStatus, float $amount, string $paymentId): void
+    {
+        $title = 'Online Payment Needs Attention';
+        $message = "Invoice: {$invoiceNumber} ({$invoiceStatus})\n" . "Amount: ₹{$amount}\n" . "Razorpay payment: {$paymentId}\n" . 'The customer was charged but the invoice could not accept it. Refund in Razorpay or apply it manually.';
+        self::send($title, $message, 'payment', '/transaction/index?' . http_build_query(['TransactionSearch' => ['gateway_payment_id' => $paymentId]]));
     }
 
     public static function invoiceGenerationFailed(int $userId, string $reason): void
     {
         $title = 'Automatic Invoice Failed';
         $message = "Client ID: {$userId}\n" . "Reason: {$reason}\n" . 'It will be retried on the next billing run.';
-        self::send($title, $message);
+        self::send($title, $message, 'billing', '/customer-billing-profile/index');
     }
 
-    private static function send(string $title, string $message, bool $whatsappNotification = false): void
+    private static function send(string $title, string $message, string $type = 'system', ?string $route = null, bool $whatsappNotification = false): void
     {
-        (new AdminNotificationService())->create('support', $title, $message);
+        (new AdminNotificationService())->create($type, $title, $message, $route);
         self::sendEmail($title, $message);
         if ($whatsappNotification) {
             self::sendWhatsApp($title, $message);

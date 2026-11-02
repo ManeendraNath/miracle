@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace backend\controllers;
 
+use backend\controllers\traits\ToggleStatusTrait;
 use backend\models\searches\CouponSearch;
 use common\models\Coupon;
 use Yii;
@@ -59,12 +60,12 @@ final class CouponController extends BaseController
         return $this->render('update', ['model' => $model]);
     }
 
-    public function actionDelete(int $id): Response
+    use ToggleStatusTrait;
+
+    /** Services are disabled, never deleted: invoices, billing events and history reference them. */
+    protected function statusToggle(): array
     {
-        $model = $this->findModel($id);
-        $model->delete();
-        Yii::$app->session->setFlash('success', 'Coupon deleted successfully.');
-        return $this->redirect(['index']);
+        return ['is_active', Coupon::IS_ACTIVE_Y, Coupon::IS_ACTIVE_N];
     }
 
     private function findModel(int $couponId): Coupon

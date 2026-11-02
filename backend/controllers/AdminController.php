@@ -96,14 +96,16 @@ class AdminController extends BaseController
      */
     public function actionCronLog()
     {
-        $logPath = '/home/rpocncwk/miracle/console/runtime/logs/cron.log';
+        $logPath = Yii::$app->params['cronLogPath'] ?: dirname(Yii::getAlias('@common')) . '/runtime/logs/billing-cron.log';
         $logLines = [];
         $metrics = ['success' => 0, 'warnings' => 0, 'errors' => 0];
 
-        if (file_exists($logPath)) {
-            // Read last 150 lines from your server's log file safely
-            $fileData = file($logPath);
-            $slicedData = array_slice($fileData, -150);
+        if (is_readable($logPath)) {
+            // Only the tail: the log grows forever and file() would load all of it.
+            $handle = fopen($logPath, 'rb');
+            fseek($handle, max(0, filesize($logPath) - 65536));
+            $slicedData = array_slice(explode("\n", (string) stream_get_contents($handle)), -150);
+            fclose($handle);
 
             foreach ($slicedData as $line) {
                 $lineText = trim($line);
@@ -111,19 +113,19 @@ class AdminController extends BaseController
                     continue;
                 }
 
-                // Dynamically compile metrics parameters using word signature sweeps
-                if (stripos($lineText, 'Successfully dispatched') !== false || stripos($lineText, 'complete') !== false) {
-                    $metrics['success']++;
+                // Errors first: "completed with 2 failure(s)" is not a success.
+                if (stripos($lineText, 'error') !== false || stripos($lineText, 'failed') !== false || stripos($lineText, 'failure') !== false) {
+                    $metrics['errors']++;
                 } elseif (stripos($lineText, 'Skipping') !== false || stripos($lineText, 'warning') !== false) {
                     $metrics['warnings']++;
-                } elseif (stripos($lineText, 'error') !== false || stripos($lineText, 'failed') !== false) {
-                    $metrics['errors']++;
+                } elseif (stripos($lineText, 'Successfully dispatched') !== false || stripos($lineText, 'complete') !== false) {
+                    $metrics['success']++;
                 }
 
                 $logLines[] = $lineText;
             }
         } else {
-            $logLines[] = 'System tracking ledger log file is not initialized yet. Run your cPanel cron tasks to populate data paths.';
+            $logLines[] = 'Cron log not found. Point the crontab output (>> ... 2>&1) at this file, or set CRON_LOG_PATH in .env.';
         }
 
         return $this->render('cron-log', [

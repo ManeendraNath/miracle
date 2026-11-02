@@ -13,6 +13,7 @@ use common\services\billing\InvoiceDeliveryService;
 use common\services\billing\InvoiceReminderService;
 use common\services\billing\ServiceRenewalReminderService;
 use common\models\WhatsappLog;
+use common\models\Invoice;
 
 class CronController extends Controller
 {
@@ -38,27 +39,28 @@ class CronController extends Controller
         try {
             Yii::info('Automatic billing cron started.', __METHOD__);
             $invoices = (new AutoBillingService())->run();
-            $deliveryService = new InvoiceDeliveryService();
+            $count = count($invoices);
+            $this->stdout("Billing completed. Generated {$count} invoice(s).\n", Console::FG_GREEN);
             foreach ($invoices as $invoice) {
+                $this->stdout(sprintf("%s | Client #%d | %.2f\n", $invoice->invoice_number, $invoice->user_id, $invoice->total_payable));
+            }
+
+            // Email this run's invoices plus any recent ones whose earlier send failed.
+            $failed = 0;
+            $deliveryService = new InvoiceDeliveryService();
+            foreach ($this->invoicesAwaitingEmail() as $invoice) {
                 try {
                     $deliveryService->send($invoice);
                 } catch (\Throwable $e) {
-                    Yii::error(
-                        [
-                                'message' => 'Automatic invoice email failed.',
-                                'invoiceId' => (int) $invoice->id,
-                                'invoiceNumber' => $invoice->invoice_number,
-                                'error' => $e->getMessage(),
-                            ],
-                        __METHOD__
-                    );
+                    $failed++;
+                    Yii::error(['message' => 'Automatic invoice email failed.', 'invoiceId' => (int) $invoice->id, 'invoiceNumber' => $invoice->invoice_number, 'error' => $e->getMessage()], __METHOD__);
+                    $this->stderr("Invoice email failed: {$invoice->invoice_number}: {$e->getMessage()}\n", Console::FG_RED);
                 }
             }
-            $count = count($invoices);
-            Yii::info(['message' => 'Automatic billing completed.', 'invoiceCount' => $count], __METHOD__);
-            $this->stdout("Billing completed successfully. Generated {$count} invoice(s).\n", Console::FG_GREEN);
-            foreach ($invoices as $invoice) {
-                $this->stdout(sprintf("%s | Client #%d | %.2f\n", $invoice->invoice_number, $invoice->user_id, $invoice->total_payable));
+            Yii::info(['message' => 'Automatic billing completed.', 'invoiceCount' => $count, 'emailFailures' => $failed], __METHOD__);
+            if ($failed > 0) {
+                $this->stderr("Billing finished with {$failed} invoice email failure(s); they will be retried on the next run.\n", Console::FG_RED);
+                return ExitCode::UNSPECIFIED_ERROR;
             }
             return ExitCode::OK;
         } catch (\Throwable $e) {
@@ -68,6 +70,21 @@ class CronController extends Controller
         } finally {
             $mutex->release($lockName);
         }
+    }
+
+    /**
+     * Unsent payable invoices from the last 7 days. The window keeps invoices
+     * created before emailed_at existed from being mass-mailed.
+     *
+     * @return Invoice[]
+     */
+    private function invoicesAwaitingEmail(): array
+    {
+        return Invoice::find()
+            ->where(['emailed_at' => null, 'status' => [Invoice::STATUS_UNPAID, Invoice::STATUS_PARTIALLY_PAID]])
+            ->andWhere(['>=', 'created_at', strtotime('-7 days')])
+            ->orderBy(['id' => SORT_ASC])
+            ->all();
     }
 
     public function actionPaymentReminders(): int
@@ -98,6 +115,19 @@ class CronController extends Controller
      * Runs a job under a mutex so overlapping cron runs can't send duplicates,
      * and turns failures into a non-zero exit code cron can see.
      */
+    /**
+     * Skip every job while deploy.sh has the site in maintenance mode; the next
+     * scheduled run picks the work up.
+     */
+    public function beforeAction($action): bool
+    {
+        if (is_file(dirname(Yii::getAlias('@common')) . '/runtime/maintenance.flag')) {
+            $this->stdout("Maintenance mode (deploy in progress): skipping {$action->id}.\n", Console::FG_YELLOW);
+            return false;
+        }
+        return parent::beforeAction($action);
+    }
+
     private function runLocked(string $lockName, string $label, callable $job): int
     {
         $mutex = Yii::$app->mutex;

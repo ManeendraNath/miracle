@@ -13,8 +13,8 @@ $config = [
             'csrfCookie' => [
                 'httpOnly' => true,
                 'secure' => $secureCookies,
-                'sameSite' => Cookie::SAME_SITE_LAX
-            ]
+                'sameSite' => Cookie::SAME_SITE_LAX,
+            ],
         ],
 
         'user' => [
@@ -41,14 +41,11 @@ $config = [
             'rules' => [
                 '/' => 'dashboard/index',
 
-                '<controller:[\w\-]+>/<id:\d+>' =>
-                    '<controller>/view',
+                '<controller:[\w\-]+>/<id:\d+>' => '<controller>/view',
 
-                '<controller:[\w\-]+>/<action:[\w\-]+>/<id:\d+>' =>
-                    '<controller>/<action>',
+                '<controller:[\w\-]+>/<action:[\w\-]+>/<id:\d+>' => '<controller>/<action>',
 
-                '<controller:[\w\-]+>/<action:[\w\-]+>' =>
-                    '<controller>/<action>',
+                '<controller:[\w\-]+>/<action:[\w\-]+>' => '<controller>/<action>',
             ],
         ],
 
@@ -74,13 +71,7 @@ if (YII_ENV_DEV) {
         'class' => \yii\gii\Module::class,
 
         'allowedIPs' => array_filter(
-            array_map(
-                'trim',
-                explode(
-                    ',',
-                    $_ENV['GII_ALLOWED_IPS'] ?? '127.0.0.1,::1,172.*'
-                )
-            )
+            array_map('trim', explode(',', $_ENV['GII_ALLOWED_IPS'] ?? '127.0.0.1,::1,172.*')),
         ),
     ];
 }

@@ -47,18 +47,14 @@ final class SupportController extends Controller
     public function actionIndex()
     {
         $query = SupportTicket::find()
-                ->where(['user_id' => (int) Yii::$app->user->id])
-                ->orderBy(['created_at' => SORT_DESC, 'id' => SORT_DESC]);
-        return $this->render(
-            'index',
-            [
-                            'dataProvider' =>
-                                new ActiveDataProvider([
-                                    'query' => $query,
-                                    'pagination' => ['pageSize' => 20],
-                                ]),
-                        ]
-        );
+            ->where(['user_id' => (int) Yii::$app->user->id])
+            ->orderBy(['created_at' => SORT_DESC, 'id' => SORT_DESC]);
+        return $this->render('index', [
+            'dataProvider' => new ActiveDataProvider([
+                'query' => $query,
+                'pagination' => ['pageSize' => 20],
+            ]),
+        ]);
     }
 
     public function actionCreate()
@@ -69,23 +65,23 @@ final class SupportController extends Controller
 
         $services = [
             'domain' => Domains::find()
-                    ->select(['domain_url', 'id'])
-                    ->where(['user_id' => $userId])
-                    ->orderBy(['domain_url' => SORT_ASC])
-                    ->indexBy('id')
-                    ->column(),
+                ->select(['domain_url', 'id'])
+                ->where(['user_id' => $userId])
+                ->orderBy(['domain_url' => SORT_ASC])
+                ->indexBy('id')
+                ->column(),
             'hosting' => Hosting::find()
-                    ->select(['primary_domain', 'id'])
-                    ->where(['user_id' => $userId])
-                    ->orderBy(['primary_domain' => SORT_ASC])
-                    ->indexBy('id')
-                    ->column(),
+                ->select(['primary_domain', 'id'])
+                ->where(['user_id' => $userId])
+                ->orderBy(['primary_domain' => SORT_ASC])
+                ->indexBy('id')
+                ->column(),
             'maintenance' => Maintenance::find()
-                    ->select(['website_url', 'id'])
-                    ->where(['user_id' => $userId])
-                    ->orderBy(['website_url' => SORT_ASC])
-                    ->indexBy('id')
-                    ->column(),
+                ->select(['website_url', 'id'])
+                ->where(['user_id' => $userId])
+                ->orderBy(['website_url' => SORT_ASC])
+                ->indexBy('id')
+                ->column(),
         ];
 
         if (Yii::$app->request->isPost && $model->load(Yii::$app->request->post())) {
@@ -101,16 +97,28 @@ final class SupportController extends Controller
                 do {
                     $ticketNumber = 'SUP-' . date('Ymd') . '-' . strtoupper(bin2hex(random_bytes(4)));
                 } while (
-                    SupportTicket::find()->where(['ticket_number' => $ticketNumber])->exists()
+                    SupportTicket::find()
+                        ->where(['ticket_number' => $ticketNumber])
+                        ->exists()
                 );
                 $model->ticket_number = $ticketNumber;
                 $model->status = SupportTicket::STATUS_OPEN;
                 $model->created_at = $now;
                 $model->updated_at = $now;
                 if ($model->save()) {
-                    (new NotificationService())->create($userId, 'support', 'Support Ticket Created', sprintf('Ticket %s has been created.', $model->ticket_number), '/support/view?number=' . $model->ticket_number);
+                    (new NotificationService())->create(
+                        $userId,
+                        'support',
+                        'Support Ticket Created',
+                        sprintf('Ticket %s has been created.', $model->ticket_number),
+                        '/support/view?number=' . $model->ticket_number,
+                    );
                     SupportTicketMailer::ticketCreated($model);
-                    AdminAlertService::supportTicketCreated($model->ticket_number, Yii::$app->user->identity->username, $model->subject);
+                    AdminAlertService::supportTicketCreated(
+                        $model->ticket_number,
+                        Yii::$app->user->identity->username,
+                        $model->subject,
+                    );
                     Yii::$app->session->setFlash('success', 'Support request submitted successfully.');
                     return $this->redirect(['view', 'number' => $model->ticket_number]);
                 }
@@ -139,9 +147,15 @@ final class SupportController extends Controller
         }
         $userId = (int) Yii::$app->user->id;
         return match ($model->service_type) {
-            'domain' => Domains::find()->where(['id' => $model->service_id, 'user_id' => $userId])->exists(),
-            'hosting' => Hosting::find()->where(['id' => $model->service_id, 'user_id' => $userId])->exists(),
-            'maintenance' => Maintenance::find()->where(['id' => $model->service_id, 'user_id' => $userId])->exists(),
+            'domain' => Domains::find()
+                ->where(['id' => $model->service_id, 'user_id' => $userId])
+                ->exists(),
+            'hosting' => Hosting::find()
+                ->where(['id' => $model->service_id, 'user_id' => $userId])
+                ->exists(),
+            'maintenance' => Maintenance::find()
+                ->where(['id' => $model->service_id, 'user_id' => $userId])
+                ->exists(),
             default => false,
         };
     }

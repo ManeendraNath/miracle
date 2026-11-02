@@ -24,22 +24,16 @@ $isNew = $model->isNewRecord;
         <div class="card-header">
 
             <h3 class="card-title mb-0">
-                <?= $isNew
-                    ? 'Audit Request Details'
-                    : 'Update Audit Request Details'
-                ?>
+                <?= $isNew ? 'Audit Request Details' : 'Update Audit Request Details' ?>
             </h3>
 
         </div>
 
         <div class="card-body">
 
-            <?= $form->errorSummary(
-                $model,
-                [
-                    'class' => 'alert alert-danger',
-                ]
-            ) ?>
+            <?= $form->errorSummary($model, [
+                'class' => 'alert alert-danger',
+            ]) ?>
 
 
             <!-- Client Information -->
@@ -53,19 +47,17 @@ $isNew = $model->isNewRecord;
             <div class="row">
 
                 <div class="col-md-6">
-                    <?= $form->field($model, 'name')
-                        ->textInput([
-                            'maxlength' => true,
-                            'placeholder' => 'Client name',
-                        ]) ?>
+                    <?= $form->field($model, 'name')->textInput([
+                        'maxlength' => true,
+                        'placeholder' => 'Client name',
+                    ]) ?>
                 </div>
 
                 <div class="col-md-6">
-                    <?= $form->field($model, 'email')
-                        ->input('email', [
-                            'maxlength' => true,
-                            'placeholder' => 'client@example.com',
-                        ]) ?>
+                    <?= $form->field($model, 'email')->input('email', [
+                        'maxlength' => true,
+                        'placeholder' => 'client@example.com',
+                    ]) ?>
                 </div>
 
             </div>
@@ -73,19 +65,17 @@ $isNew = $model->isNewRecord;
             <div class="row">
 
                 <div class="col-md-6">
-                    <?= $form->field($model, 'phone')
-                        ->input('tel', [
-                            'maxlength' => true,
-                            'placeholder' => 'Phone number',
-                        ]) ?>
+                    <?= $form->field($model, 'phone')->input('tel', [
+                        'maxlength' => true,
+                        'placeholder' => 'Phone number',
+                    ]) ?>
                 </div>
 
                 <div class="col-md-6">
-                    <?= $form->field($model, 'company_url')
-                        ->input('url', [
-                            'maxlength' => true,
-                            'placeholder' => 'https://example.com',
-                        ]) ?>
+                    <?= $form->field($model, 'company_url')->input('url', [
+                        'maxlength' => true,
+                        'placeholder' => 'https://example.com',
+                    ]) ?>
                 </div>
 
             </div>
@@ -102,21 +92,17 @@ $isNew = $model->isNewRecord;
             <div class="row">
 
                 <div class="col-md-6">
-                    <?= $form->field($model, 'current_framework')
-                        ->textInput([
-                            'maxlength' => true,
-                            'placeholder' =>
-                                'e.g. WordPress, Laravel, Yii2',
-                        ]) ?>
+                    <?= $form->field($model, 'current_framework')->textInput([
+                        'maxlength' => true,
+                        'placeholder' => 'e.g. WordPress, Laravel, Yii2',
+                    ]) ?>
                 </div>
 
                 <div class="col-md-6">
-                    <?= $form->field($model, 'hosting_environment')
-                        ->textInput([
-                            'maxlength' => true,
-                            'placeholder' =>
-                                'e.g. Shared Hosting, VPS, AWS',
-                        ]) ?>
+                    <?= $form->field($model, 'hosting_environment')->textInput([
+                        'maxlength' => true,
+                        'placeholder' => 'e.g. Shared Hosting, VPS, AWS',
+                    ]) ?>
                 </div>
 
             </div>
@@ -133,12 +119,10 @@ $isNew = $model->isNewRecord;
             <div class="row">
 
                 <div class="col-12">
-                    <?= $form->field($model, 'message')
-                        ->textarea([
-                            'rows' => 5,
-                            'placeholder' =>
-                                'Enter audit request details...',
-                        ]) ?>
+                    <?= $form->field($model, 'message')->textarea([
+                        'rows' => 5,
+                        'placeholder' => 'Enter audit request details...',
+                    ]) ?>
                 </div>
 
             </div>
@@ -147,11 +131,9 @@ $isNew = $model->isNewRecord;
 
                 <div class="col-md-6">
 
-                    <?= $form->field($model, 'status')
-                        ->dropDownList(
-                            AuditRequest::getStatuses(),
-                            ['prompt' => 'Select Status']
-                        ) ?>
+                    <?= $form
+                        ->field($model, 'status')
+                        ->dropDownList(AuditRequest::getStatuses(), ['prompt' => 'Select Status']) ?>
 
                 </div>
 
@@ -168,12 +150,10 @@ $isNew = $model->isNewRecord;
 
             <?= Html::a(
                 '<i class="fas fa-arrow-left me-1"></i> Cancel',
-                $isNew
-                    ? ['index']
-                    : ['view', 'id' => $model->id],
+                $isNew ? ['index'] : ['view', 'id' => $model->id],
                 [
                     'class' => 'btn btn-outline-secondary',
-                ]
+                ],
             ) ?>
 
             <?= Html::submitButton(
@@ -182,7 +162,7 @@ $isNew = $model->isNewRecord;
                     : '<i class="fas fa-save me-1"></i> Update Audit Request',
                 [
                     'class' => 'btn btn-primary px-4',
-                ]
+                ],
             ) ?>
 
         </div>

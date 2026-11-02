@@ -29,7 +29,10 @@ class DashboardController extends BaseController
         };
         $getAssetCountWithStatus = function ($className) {
             if (class_exists($className)) {
-                return (int) $className::find()->where(['status' => 1])->count();
+                return (int) $className
+                    ::find()
+                    ->where(['status' => 1])
+                    ->count();
             }
             return 0; // Fallback if table/model does not exist yet
         };
@@ -37,11 +40,16 @@ class DashboardController extends BaseController
         // 📊 SAFE RETRIEVAL LOGIC FOR RECENT ACTIVE DATA ROWS
         $recentCoupon = [];
         if (class_exists('\common\models\Coupon')) {
-            $recentCoupon = Coupon::find()->orderBy(['id' => SORT_DESC])->limit(4)->all();
+            $recentCoupon = Coupon::find()
+                ->orderBy(['id' => SORT_DESC])
+                ->limit(4)
+                ->all();
         }
         // Amount still owed: payable invoices minus what has already been captured
         // against them (part-paid invoices would otherwise count in full).
-        $outstanding = (float) Yii::$app->db->createCommand('
+        $outstanding = (float) Yii::$app->db
+            ->createCommand(
+                '
             SELECT COALESCE(SUM(i.total_payable), 0) - COALESCE((
                 SELECT SUM(t.amount) FROM {{%transaction}} t
                 JOIN {{%invoice}} i2 ON i2.id = t.invoice_id
@@ -49,28 +57,44 @@ class DashboardController extends BaseController
             ), 0)
             FROM {{%invoice}} i
             WHERE i.status IN (:unpaid, :partial)
-        ')->bindValues([
-            ':captured' => Transaction::STATUS_CAPTURED,
-            ':unpaid' => Invoice::STATUS_UNPAID,
-            ':partial' => Invoice::STATUS_PARTIALLY_PAID,
-        ])->queryScalar();
+        ',
+            )
+            ->bindValues([
+                ':captured' => Transaction::STATUS_CAPTURED,
+                ':unpaid' => Invoice::STATUS_UNPAID,
+                ':partial' => Invoice::STATUS_PARTIALLY_PAID,
+            ])
+            ->queryScalar();
 
         // Execute aggregated calculations utilizing the custom precision query scopes we configured
         $metrics = [
             // 1. Invoicing Core Metrics Block
             'totalInvoicesCount' => (int) Invoice::find()->count(),
             'outstandingReceivables' => $outstanding,
-            'overdueInvoicesCount' => Invoice::find()->andWhere(['status' => 'Unpaid'])->andWhere(['<', 'due_date', date('Y-m-d')])->count(),
+            'overdueInvoicesCount' => Invoice::find()
+                ->andWhere(['status' => 'Unpaid'])
+                ->andWhere(['<', 'due_date', date('Y-m-d')])
+                ->count(),
             'unpaidBalance' => $outstanding,
             // 2. Gateway Ledger Verification Streams
-            'totalRevenueCollected' => Invoice::find()->andWhere(['status' => 'Paid'])->sum('total_payable') ?: 0.00,
-            'pendingUpiVerifications' => Transaction::find()->andWhere(['gateway_id' => Transaction::GATEWAY_UPI_BANK, 'status' => 'Pending'])->count(),
-            'capturedRevenueToday' => Transaction::find()
+            'totalRevenueCollected' =>
+                Invoice::find()
+                    ->andWhere(['status' => 'Paid'])
+                    ->sum('total_payable') ?:
+                0.0,
+            'pendingUpiVerifications' => Transaction::find()
+                ->andWhere(['gateway_id' => Transaction::GATEWAY_UPI_BANK, 'status' => 'Pending'])
+                ->count(),
+            'capturedRevenueToday' =>
+                Transaction::find()
                     ->andWhere(['status' => 'Captured'])
                     ->andWhere(['between', 'paid_at', strtotime('today'), strtotime('tomorrow') - 1])
-                    ->sum('amount') ?: 0.00,
+                    ->sum('amount') ?:
+                0.0,
             // 3. Inbound Agency Pipeline Tracks
-            'newInboundLeadsCount' => AuditRequest::find()->andWhere(['status' => 'Pending'])->count(),
+            'newInboundLeadsCount' => AuditRequest::find()
+                ->andWhere(['status' => 'Pending'])
+                ->count(),
             // 4. Clients
             'totalClients' => (int) User::find()->count(),
             // 5. Infrastructure Inventory Corrections
@@ -80,7 +104,7 @@ class DashboardController extends BaseController
             // 6. NEW ADDITIONS: CRM & AUDIENCE SUBSCRIBERS PIPELINE LEDGER
             'subscribersCount' => $getAssetCount('\common\models\Subscribers'),
             'supportMessagesCount' => $getAssetCount('\common\models\Messages'),
-            'recentCoupon' => $recentCoupon
+            'recentCoupon' => $recentCoupon,
         ];
 
         // 🧮 6-MONTH MONTHLY CASHFLOW PROCESSING TREND LOGGER
@@ -99,20 +123,24 @@ class DashboardController extends BaseController
             $chartLabels[] = date('M Y', $targetTime);
 
             // 💰 Calculate Gross Settled Transactions for Current Year
-            $currentYearRevenue = (float) Invoice::find()
-                            ->where(['status' => 'Paid'])
-                            ->andWhere(['between', 'created_at', $startOfMonth, $endOfMonth])
-                            ->sum('total_payable') ?: 0.00;
+            $currentYearRevenue =
+                (float) Invoice::find()
+                    ->where(['status' => 'Paid'])
+                    ->andWhere(['between', 'created_at', $startOfMonth, $endOfMonth])
+                    ->sum('total_payable') ?:
+                0.0;
             $chartDataThisYear[] = $currentYearRevenue;
 
             // 💰 Calculate Corresponding Month Revenue for Last Year (Comparison Vector)
             $startOfMonthLastYear = strtotime(date('Y-m-01 00:00:00', strtotime("first day of -$i months -1 year")));
             $endOfMonthLastYear = strtotime(date('Y-m-t 23:59:59', strtotime("first day of -$i months -1 year")));
 
-            $lastYearRevenue = (float) Invoice::find()
-                            ->where(['status' => 'Paid'])
-                            ->andWhere(['between', 'created_at', $startOfMonthLastYear, $endOfMonthLastYear])
-                            ->sum('total_payable') ?: 0.00;
+            $lastYearRevenue =
+                (float) Invoice::find()
+                    ->where(['status' => 'Paid'])
+                    ->andWhere(['between', 'created_at', $startOfMonthLastYear, $endOfMonthLastYear])
+                    ->sum('total_payable') ?:
+                0.0;
             $chartDataLastYear[] = $lastYearRevenue;
         }
 
@@ -121,44 +149,33 @@ class DashboardController extends BaseController
         $metrics['chartDataThisYear'] = $chartDataThisYear;
         $metrics['chartDataLastYear'] = $chartDataLastYear;
 
-        $openSupportTickets = (int)
-                        SupportTicket::find()
-                        ->where([
-                            'status' => [
-                                SupportTicket::STATUS_OPEN,
-                                SupportTicket::STATUS_IN_PROGRESS,
-                            ],
-                        ])
-                        ->count();
+        $openSupportTickets = (int) SupportTicket::find()
+            ->where([
+                'status' => [SupportTicket::STATUS_OPEN, SupportTicket::STATUS_IN_PROGRESS],
+            ])
+            ->count();
 
-        $highPrioritySupportTickets = (int)
-                        SupportTicket::find()
-                        ->where([
-                            'priority' =>
-                            SupportTicket::PRIORITY_HIGH,
-                            'status' => [
-                                SupportTicket::STATUS_OPEN,
-                                SupportTicket::STATUS_IN_PROGRESS,
-                            ],
-                        ])
-                        ->count();
+        $highPrioritySupportTickets = (int) SupportTicket::find()
+            ->where([
+                'priority' => SupportTicket::PRIORITY_HIGH,
+                'status' => [SupportTicket::STATUS_OPEN, SupportTicket::STATUS_IN_PROGRESS],
+            ])
+            ->count();
 
         $recentSupportTickets = SupportTicket::find()
-                ->with('user')
-                ->orderBy([
-                    'updated_at' =>
-                    SORT_DESC,
-                    'id' =>
-                    SORT_DESC,
-                ])
-                ->limit(5)
-                ->all();
+            ->with('user')
+            ->orderBy([
+                'updated_at' => SORT_DESC,
+                'id' => SORT_DESC,
+            ])
+            ->limit(5)
+            ->all();
 
         return $this->render('index', [
-                    'metrics' => $metrics,
-                    'openSupportTickets' => $openSupportTickets,
-                    'highPrioritySupportTickets' => $highPrioritySupportTickets,
-                    'recentSupportTickets' => $recentSupportTickets,
+            'metrics' => $metrics,
+            'openSupportTickets' => $openSupportTickets,
+            'highPrioritySupportTickets' => $highPrioritySupportTickets,
+            'recentSupportTickets' => $recentSupportTickets,
         ]);
     }
 

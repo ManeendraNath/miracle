@@ -4,20 +4,11 @@ declare(strict_types=1);
 
 use yii\helpers\Html;
 
-$paidAmount = Yii::$app->formatter
-        ->asCurrency(
-            $transaction->amount,
-            'INR'
-        );
+$paidAmount = Yii::$app->formatter->asCurrency($transaction->amount, 'INR');
 
-$outstanding = Yii::$app->formatter
-        ->asCurrency(
-            $outstandingAmount,
-            'INR'
-        );
+$outstanding = Yii::$app->formatter->asCurrency($outstandingAmount, 'INR');
 
-$isPaid = $invoice->status ===
-        \common\models\Invoice::STATUS_PAID;
+$isPaid = $invoice->status === \common\models\Invoice::STATUS_PAID;
 ?>
 
 <div style="
@@ -100,12 +91,7 @@ $isPaid = $invoice->status ===
                         font-weight:700;
                         "
                         >
-<?=
-Html::encode(
-    $invoice
-        ->invoice_number
-)
-?>
+<?= Html::encode($invoice->invoice_number) ?>
                     </td>
                 </tr>
 
@@ -124,11 +110,7 @@ Html::encode(
                         font-weight:700;
                         "
                         >
-<?=
-Html::encode(
-    $paidAmount
-)
-?>
+<?= Html::encode($paidAmount) ?>
                     </td>
                 </tr>
 
@@ -146,12 +128,7 @@ Html::encode(
                         font-weight:600;
                         "
                         >
-                            <?=
-                            Html::encode(
-                                $transaction
-                                    ->gateway_payment_id ?: 'Recorded payment'
-                            )
-                            ?>
+                            <?= Html::encode($transaction->gateway_payment_id ?: 'Recorded payment') ?>
                     </td>
                 </tr>
 
@@ -169,11 +146,7 @@ Html::encode(
                         font-weight:700;
                         "
                         >
-                            <?=
-                            Html::encode(
-                                $outstanding
-                            )
-                            ?>
+                            <?= Html::encode($outstanding) ?>
                     </td>
                 </tr>
 
@@ -208,22 +181,16 @@ Html::encode(
 
 <?php endif; ?>
 
-            <?=
-            Html::a(
-                'View Invoice →',
-                $invoiceUrl,
-                [
-                        'style' =>
-                        'display:inline-block;'
-                        . 'background:#171717;'
-                        . 'color:#ffffff;'
-                        . 'text-decoration:none;'
-                        . 'font-weight:700;'
-                        . 'padding:16px 25px;'
-                        . 'border-radius:7px;',
-                    ]
-            )
-            ?>
+            <?= Html::a('View Invoice →', $invoiceUrl, [
+                'style' =>
+                    'display:inline-block;' .
+                    'background:#171717;' .
+                    'color:#ffffff;' .
+                    'text-decoration:none;' .
+                    'font-weight:700;' .
+                    'padding:16px 25px;' .
+                    'border-radius:7px;',
+            ]) ?>
 
         </div>
 

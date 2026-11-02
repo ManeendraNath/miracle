@@ -41,19 +41,11 @@ $this->params['breadcrumbs'][] = $user->username;
                     <div class="mb-4">
 
                         <div class="fw-semibold">
-<?=
-Html::encode(
-    $user->username
-)
-?>
+<?= Html::encode($user->username) ?>
                         </div>
 
                         <div class="text-muted small">
-                            <?=
-                            Html::encode(
-                                $user->email
-                            )
-                            ?>
+                            <?= Html::encode($user->email) ?>
                         </div>
 
                     </div>
@@ -62,17 +54,9 @@ Html::encode(
 
                     <div class="border rounded p-3 mb-3">
 
-                        <?=
-                                $form
-                                ->field(
-                                    $model,
-                                    'renewal_reminders'
-                                )
-                                ->checkbox([
-                                    'label' =>
-                                    'Renewal reminders',
-                                ])
-                                ?>
+                        <?= $form->field($model, 'renewal_reminders')->checkbox([
+                            'label' => 'Renewal reminders',
+                        ]) ?>
 
                         <div class="text-muted small">
                             Receive reminders relating
@@ -83,17 +67,9 @@ Html::encode(
 
                     <div class="border rounded p-3 mb-3">
 
-                        <?=
-                                $form
-                                ->field(
-                                    $model,
-                                    'payment_reminders'
-                                )
-                                ->checkbox([
-                                    'label' =>
-                                    'Payment reminders',
-                                ])
-                                ?>
+                        <?= $form->field($model, 'payment_reminders')->checkbox([
+                            'label' => 'Payment reminders',
+                        ]) ?>
 
                         <div class="text-muted small">
                             Receive invoice payment and
@@ -104,17 +80,9 @@ Html::encode(
 
                     <div class="border rounded p-3 mb-3">
 
-                        <?=
-                                $form
-                                ->field(
-                                    $model,
-                                    'service_expiry_notifications'
-                                )
-                                ->checkbox([
-                                    'label' =>
-                                    'Service expiry notifications',
-                                ])
-                                ?>
+                        <?= $form->field($model, 'service_expiry_notifications')->checkbox([
+                            'label' => 'Service expiry notifications',
+                        ]) ?>
 
                         <div class="text-muted small">
                             Receive notifications for
@@ -125,17 +93,9 @@ Html::encode(
 
                     <div class="border rounded p-3 mb-4">
 
-                        <?=
-                                $form
-                                ->field(
-                                    $model,
-                                    'support_notifications'
-                                )
-                                ->checkbox([
-                                    'label' =>
-                                    'Support notifications',
-                                ])
-                                ?>
+                        <?= $form->field($model, 'support_notifications')->checkbox([
+                            'label' => 'Support notifications',
+                        ]) ?>
 
                         <div class="text-muted small">
                             Receive notifications when
@@ -146,26 +106,17 @@ Html::encode(
 
                     <div class="d-flex gap-2">
 
-                        <?=
-                        Html::submitButton(
-                            'Save Preferences',
-                            [
-                                    'class' =>
-                                    'btn btn-primary',
-                                ]
-                        )
-                        ?>
+                        <?= Html::submitButton('Save Preferences', [
+                            'class' => 'btn btn-primary',
+                        ]) ?>
 
-                    <?=
-                    Html::a(
+                    <?= Html::a(
                         'Cancel',
                         ['index'],
                         [
-                                'class' =>
-                                'btn btn-outline-secondary',
-                            ]
-                    )
-                    ?>
+                            'class' => 'btn btn-outline-secondary',
+                        ],
+                    ) ?>
 
                     </div>
 

@@ -15,11 +15,18 @@ final class WhatsAppService
     private const STATUS_SUCCESS = 'success';
     private const STATUS_FAILED = 'failed';
 
-    public static function sendTemplate(?string $mobile, string $templateName, array $components = [], ?string $eventKey = null): bool
-    {
+    public static function sendTemplate(
+        ?string $mobile,
+        string $templateName,
+        array $components = [],
+        ?string $eventKey = null,
+    ): bool {
         // Clients without a mobile/WhatsApp number are skipped, not treated as errors.
         if ($mobile === null || trim($mobile) === '') {
-            Yii::info(['reason' => 'no mobile number', 'template' => $templateName, 'eventKey' => $eventKey], __METHOD__);
+            Yii::info(
+                ['reason' => 'no mobile number', 'template' => $templateName, 'eventKey' => $eventKey],
+                __METHOD__,
+            );
             return false;
         }
         if ($eventKey !== null && self::wasSentRecently($eventKey)) {
@@ -30,7 +37,7 @@ final class WhatsAppService
                 response: null,
                 status: self::STATUS_DUPLICATE,
                 error: 'Duplicate send prevented',
-                eventKey: $eventKey
+                eventKey: $eventKey,
             );
             Yii::warning(['duplicate' => true, 'eventKey' => $eventKey], __METHOD__);
             return true;
@@ -38,18 +45,17 @@ final class WhatsAppService
         if (!Yii::$app->params['whatsapp']['enabled']) {
             Yii::info(
                 [
-                        'provider' => Yii::$app->params['whatsapp']['provider'],
-                        'reason' => 'disabled',
-                        'mobile' => $mobile,
-                        'template' => $templateName,
-                    ],
-                __METHOD__
+                    'provider' => Yii::$app->params['whatsapp']['provider'],
+                    'reason' => 'disabled',
+                    'mobile' => $mobile,
+                    'template' => $templateName,
+                ],
+                __METHOD__,
             );
             return true;
         }
         $payload = [
-            'integrated_number' =>
-            Yii::$app->params['whatsapp']['integratedNumber'],
+            'integrated_number' => Yii::$app->params['whatsapp']['integratedNumber'],
             'content_type' => 'template',
             'payload' => [
                 'messaging_product' => 'whatsapp',
@@ -78,19 +84,19 @@ final class WhatsAppService
             for ($attempt = 1; $attempt <= $attempts; $attempt++) {
                 try {
                     $response = $client
-                            ->createRequest()
-                            ->setMethod('POST')
-                            ->setUrl('https://control.msg91.com/api/v5/whatsapp/whatsapp-outbound-message/bulk/')
-                            ->addHeaders([
-                                'authkey' => Yii::$app->params['whatsapp']['apiKey'],
-                                'Content-Type' => 'application/json',
-                            ])
-                            ->setOptions([
-                                CURLOPT_CONNECTTIMEOUT => 3,
-                                CURLOPT_TIMEOUT => 5,
-                            ])
-                            ->setContent(json_encode($payload, JSON_THROW_ON_ERROR))
-                            ->send();
+                        ->createRequest()
+                        ->setMethod('POST')
+                        ->setUrl('https://control.msg91.com/api/v5/whatsapp/whatsapp-outbound-message/bulk/')
+                        ->addHeaders([
+                            'authkey' => Yii::$app->params['whatsapp']['apiKey'],
+                            'Content-Type' => 'application/json',
+                        ])
+                        ->setOptions([
+                            CURLOPT_CONNECTTIMEOUT => 3,
+                            CURLOPT_TIMEOUT => 5,
+                        ])
+                        ->setContent(json_encode($payload, JSON_THROW_ON_ERROR))
+                        ->send();
 
                     $responseContent = substr((string) $response->content, 0, 5000);
                     if ($response->isOk) {
@@ -101,7 +107,7 @@ final class WhatsAppService
                             response: $responseContent,
                             status: self::STATUS_SUCCESS,
                             error: null,
-                            eventKey: $eventKey
+                            eventKey: $eventKey,
                         );
                         return true;
                     }
@@ -120,7 +126,7 @@ final class WhatsAppService
                         response: $responseContent,
                         status: self::STATUS_FAILED,
                         error: 'MSG91 returned non-success response',
-                        eventKey: $eventKey
+                        eventKey: $eventKey,
                     );
 
                     return false;
@@ -128,10 +134,10 @@ final class WhatsAppService
                     if ($attempt < $attempts) {
                         Yii::warning(
                             [
-                                    'attempt' => $attempt,
-                                    'error' => $exception->getMessage(),
-                                ],
-                            __METHOD__
+                                'attempt' => $attempt,
+                                'error' => $exception->getMessage(),
+                            ],
+                            __METHOD__,
                         );
 
                         sleep($attempt);
@@ -152,34 +158,41 @@ final class WhatsAppService
                 response: null,
                 status: self::STATUS_FAILED,
                 error: $exception->getMessage(),
-                eventKey: $eventKey
+                eventKey: $eventKey,
             );
 
             Yii::error(
                 [
-                        'provider' =>
-                        Yii::$app->params['whatsapp']['provider'],
-                        'mobile' => $mobile,
-                        'template' => $templateName,
-                        'error' =>
-                        $exception->getMessage(),
-                    ],
-                __METHOD__
+                    'provider' => Yii::$app->params['whatsapp']['provider'],
+                    'mobile' => $mobile,
+                    'template' => $templateName,
+                    'error' => $exception->getMessage(),
+                ],
+                __METHOD__,
             );
 
             return false;
         }
     }
 
-    private static function log(string $mobile, string $template, mixed $payload, mixed $response, string $status, ?string $error, ?string $eventKey): void
-    {
-
+    private static function log(
+        string $mobile,
+        string $template,
+        mixed $payload,
+        mixed $response,
+        string $status,
+        ?string $error,
+        ?string $eventKey,
+    ): void {
         try {
             $log = new WhatsappLog();
             $log->mobile = $mobile;
             $log->template_name = $template;
             $log->event_key = $eventKey;
-            $log->request_payload = json_encode(self::sanitizePayload(is_array($payload) ? $payload : []), JSON_UNESCAPED_UNICODE);
+            $log->request_payload = json_encode(
+                self::sanitizePayload(is_array($payload) ? $payload : []),
+                JSON_UNESCAPED_UNICODE,
+            );
             $log->response_payload = $response !== null ? substr((string) $response, 0, 5000) : null;
             $log->status = $status;
             $log->error_message = $error;
@@ -201,8 +214,8 @@ final class WhatsAppService
     private static function wasSentRecently(string $eventKey): bool
     {
         return WhatsappLog::find()
-                        ->where(['event_key' => $eventKey, 'status' => self::STATUS_SUCCESS])
-                        ->andWhere(['>', 'created_at', time() - 3600])
-                        ->exists();
+            ->where(['event_key' => $eventKey, 'status' => self::STATUS_SUCCESS])
+            ->andWhere(['>', 'created_at', time() - 3600])
+            ->exists();
     }
 }

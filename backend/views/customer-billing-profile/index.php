@@ -11,7 +11,11 @@ $this->params['breadcrumbs'][] = $this->title;
 ?>
 
 <div class="card card-outline card-primary shadow-sm">
-    <?= AdminIndexHelper::pageHeader('Legal billing information used when invoices are generated.', 'create', 'Add Billing Profile') ?>
+    <?= AdminIndexHelper::pageHeader(
+        'Legal billing information used when invoices are generated.',
+        'create',
+        'Add Billing Profile',
+    ) ?>
 
     <div class="card-body p-0">
 
@@ -34,71 +38,38 @@ $this->params['breadcrumbs'][] = $this->title;
 
                 <tbody>
 
-                    <?php
-                    foreach (
-                            $profiles as $profile
-                    ):
-                        ?>
-
+                    <?php foreach ($profiles as $profile): ?>
                         <tr>
 
                             <td>
-                                <?=
-                                Html::encode(
-                                    $profile->user
-                                        ?->username ?? '-'
-                                )
-                                ?>
+                                <?= Html::encode($profile->user?->username ?? '-') ?>
                             </td>
 
                             <td>
-                                <?=
-                                Html::encode(
-                                    $profile->legal_name
-                                )
-                                ?>
+                                <?= Html::encode($profile->legal_name) ?>
                             </td>
 
                             <td>
-                        <?=
-                        Html::encode(
-                            $profile->state
-                        )
-                        ?>
+                        <?= Html::encode($profile->state) ?>
                             </td>
 
                             <td>
-                                <?=
-                                Html::encode(
-                                    $profile->gstin ?: '-'
-                                )
-                                ?>
+                                <?= Html::encode($profile->gstin ?: '-') ?>
                             </td>
 
                             <td>
-                                <?=
-                                Html::encode(
-                                    $profile->pan ?: '-'
-                                )
-                                ?>
+                                <?= Html::encode($profile->pan ?: '-') ?>
                             </td>
 
                             <td class="text-end">
 
-                                <?=
-                                Html::a(
+                                <?= Html::a(
                                     'Edit',
+                                    ['update', 'id' => $profile->id],
                                     [
-                                            'update',
-                                            'id' =>
-                                            $profile->id,
-                                        ],
-                                    [
-                                            'class' =>
-                                            'btn btn-sm btn-outline-primary',
-                                        ]
-                                )
-                                ?>
+                                        'class' => 'btn btn-sm btn-outline-primary',
+                                    ],
+                                ) ?>
 
                             </td>
 

@@ -22,8 +22,7 @@ final class RenewalController extends Controller
     {
         return [
             'access' => [
-                'class' =>
-                AccessControl::class,
+                'class' => AccessControl::class,
                 'rules' => [
                     [
                         'allow' => true,
@@ -37,31 +36,25 @@ final class RenewalController extends Controller
     public function actionIndex()
     {
         $historyQuery = ServiceRenewalHistory::find()
-                ->alias('rh')
-                ->innerJoin(
-                    ['i' => Invoice::tableName()],
-                    'i.id = rh.invoice_id'
-                )
-                ->where([
-                    'i.user_id' => (int) Yii::$app->user->id,
-                ])
-                ->orderBy([
-                    'rh.logged_at' => SORT_DESC,
-                    'rh.id' => SORT_DESC,
-        ]);
+            ->alias('rh')
+            ->innerJoin(['i' => Invoice::tableName()], 'i.id = rh.invoice_id')
+            ->where([
+                'i.user_id' => (int) Yii::$app->user->id,
+            ])
+            ->orderBy([
+                'rh.logged_at' => SORT_DESC,
+                'rh.id' => SORT_DESC,
+            ]);
 
-        return $this->render(
-            'index',
-            [
-                            'dataProvider' => new ActiveDataProvider([
-                                'query' => $historyQuery,
-                                'pagination' => [
-                                    'pageSize' => 20,
-                                ],
-                                    ]),
-                            'upcomingServices' => $this->getUpcomingServices(),
-                        ]
-        );
+        return $this->render('index', [
+            'dataProvider' => new ActiveDataProvider([
+                'query' => $historyQuery,
+                'pagination' => [
+                    'pageSize' => 20,
+                ],
+            ]),
+            'upcomingServices' => $this->getUpcomingServices(),
+        ]);
     }
 
     private function getUpcomingServices(): array
@@ -76,7 +69,8 @@ final class RenewalController extends Controller
         $services = [];
         foreach ($sources as [$type, $class, $nameAttribute]) {
             // Active only; overdue ones stay listed because they most need renewing.
-            $models = $class::find()
+            $models = $class
+                ::find()
                 ->where(['user_id' => (int) Yii::$app->user->id, 'status' => $class::STATUS_ACTIVE])
                 ->andWhere(['<=', 'current_expiry_date', $until])
                 ->all();

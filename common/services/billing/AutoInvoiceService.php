@@ -18,29 +18,26 @@ final class AutoInvoiceService
     public function __construct(
         private readonly TaxCalculator $taxCalculator = new TaxCalculator(),
         private readonly InvoiceNumberService $numberService = new InvoiceNumberService(),
-        private readonly OutstandingBalanceService $outstandingService = new OutstandingBalanceService()
+        private readonly OutstandingBalanceService $outstandingService = new OutstandingBalanceService(),
     ) {
     }
 
-    public function generatePendingInvoices(
-        int $runId
-    ): array {
+    public function generatePendingInvoices(int $runId): array
+    {
         if ($runId <= 0) {
-            throw new \InvalidArgumentException(
-                'A valid billing run ID is required.'
-            );
+            throw new \InvalidArgumentException('A valid billing run ID is required.');
         }
 
         $userIds = BillingEvent::find()
-                ->select('user_id')
-                ->where([
-                    'billing_run_id' => $runId,
-                    'status' => BillingEvent::STATUS_PENDING,
-                    'invoice_id' => null,
-                ])
-                ->distinct()
-                ->orderBy(['user_id' => SORT_ASC])
-                ->column();
+            ->select('user_id')
+            ->where([
+                'billing_run_id' => $runId,
+                'status' => BillingEvent::STATUS_PENDING,
+                'invoice_id' => null,
+            ])
+            ->distinct()
+            ->orderBy(['user_id' => SORT_ASC])
+            ->column();
 
         $invoices = [];
 
@@ -51,7 +48,15 @@ final class AutoInvoiceService
             try {
                 $invoice = $this->generateForUser($runId, (int) $userId);
             } catch (\Throwable $exception) {
-                Yii::error(['message' => 'Automatic invoice failed for user.', 'userId' => (int) $userId, 'billingRunId' => $runId, 'error' => $exception->getMessage()], __METHOD__);
+                Yii::error(
+                    [
+                        'message' => 'Automatic invoice failed for user.',
+                        'userId' => (int) $userId,
+                        'billingRunId' => $runId,
+                        'error' => $exception->getMessage(),
+                    ],
+                    __METHOD__,
+                );
                 AdminAlertService::invoiceGenerationFailed((int) $userId, $exception->getMessage());
                 continue;
             }
@@ -73,8 +78,8 @@ final class AutoInvoiceService
         $dbTransaction = Yii::$app->db->beginTransaction();
         try {
             $eventIds = Yii::$app->db
-                    ->createCommand(
-                        '
+                ->createCommand(
+                    '
         SELECT id
         FROM {{%billing_event}}
         WHERE billing_run_id = :runId
@@ -83,15 +88,14 @@ final class AutoInvoiceService
           AND invoice_id IS NULL
         ORDER BY due_date ASC, id ASC
         FOR UPDATE
-        '
-                    )
-                    ->bindValues([
-                        ':runId' => $runId,
-                        ':userId' => $userId,
-                        ':status' =>
-                        BillingEvent::STATUS_PENDING,
-                    ])
-                    ->queryColumn();
+        ',
+                )
+                ->bindValues([
+                    ':runId' => $runId,
+                    ':userId' => $userId,
+                    ':status' => BillingEvent::STATUS_PENDING,
+                ])
+                ->queryColumn();
 
             if (!$eventIds) {
                 $dbTransaction->commit();
@@ -100,14 +104,14 @@ final class AutoInvoiceService
             }
 
             $events = BillingEvent::find()
-                    ->where([
-                        'id' => $eventIds,
-                    ])
-                    ->orderBy([
-                        'due_date' => SORT_ASC,
-                        'id' => SORT_ASC,
-                    ])
-                    ->all();
+                ->where([
+                    'id' => $eventIds,
+                ])
+                ->orderBy([
+                    'due_date' => SORT_ASC,
+                    'id' => SORT_ASC,
+                ])
+                ->all();
 
             if (!$events) {
                 $dbTransaction->commit();
@@ -121,36 +125,18 @@ final class AutoInvoiceService
             $profile = CustomerBillingProfile::findOne(['user_id' => $userId]);
 
             if ($profile === null) {
-                throw new \DomainException(
-                    'Customer billing profile is missing '
-                                . 'for user ID '
-                                . $userId
-                                . '.'
-                );
+                throw new \DomainException('Customer billing profile is missing ' . 'for user ID ' . $userId . '.');
             }
 
-            $invoice = $this->createInvoiceHeader(
-                $runId,
-                $user,
-                $profile,
-                $events
-            );
+            $invoice = $this->createInvoiceHeader($runId, $user, $profile, $events);
 
             foreach ($events as $event) {
-                $this->createInvoiceItem(
-                    $invoice,
-                    $event
-                );
+                $this->createInvoiceItem($invoice, $event);
             }
 
-            $this->outstandingService
-                    ->transferForUser(
-                        $invoice
-                    );
+            $this->outstandingService->transferForUser($invoice);
 
-            $this->calculateInvoiceTotals(
-                $invoice
-            );
+            $this->calculateInvoiceTotals($invoice);
 
             foreach ($events as $event) {
                 $event->invoice_id = $invoice->id;
@@ -161,23 +147,24 @@ final class AutoInvoiceService
 
                 if (!$event->save()) {
                     throw new \RuntimeException(
-                        'Unable to link billing event '
-                                    . $event->id
-                                    . ' to invoice: '
-                                    . json_encode(
-                                        $event->errors,
-                                        JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES
-                                    )
+                        'Unable to link billing event ' .
+                            $event->id .
+                            ' to invoice: ' .
+                            json_encode($event->errors, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
                     );
                 }
             }
 
-            $this->numberService->assign(
-                $invoice
-            );
+            $this->numberService->assign($invoice);
 
             // After assign(): before it the number is a TMP- placeholder.
-            (new NotificationService())->create((int) $invoice->user_id, 'invoice', 'New Invoice Generated', 'Invoice ' . $invoice->invoice_number . ' has been generated.', '/invoice/view?number=' . rawurlencode($invoice->invoice_number));
+            (new NotificationService())->create(
+                (int) $invoice->user_id,
+                'invoice',
+                'New Invoice Generated',
+                'Invoice ' . $invoice->invoice_number . ' has been generated.',
+                '/invoice/view?number=' . rawurlencode($invoice->invoice_number),
+            );
 
             $dbTransaction->commit();
 
@@ -197,12 +184,9 @@ final class AutoInvoiceService
         int $runId,
         User $user,
         CustomerBillingProfile $profile,
-        array $events
+        array $events,
     ): Invoice {
-        $rates = $this->taxCalculator
-                ->getRates(
-                    $profile
-                );
+        $rates = $this->taxCalculator->getRates($profile);
 
         $now = time();
         $invoice = new Invoice();
@@ -219,18 +203,21 @@ final class AutoInvoiceService
         $invoice->client_gstin = $profile->gstin;
         $invoice->client_pan = $profile->pan;
         $invoice->place_of_supply = $profile->state;
-        $invoice->subtotal_amount = 0.00;
-        $invoice->discount_amount = max(0.00, round((float) $profile->default_discount_amount, 2));
+        $invoice->subtotal_amount = 0.0;
+        $invoice->discount_amount = max(0.0, round((float) $profile->default_discount_amount, 2));
         $invoice->cgst_percent = $rates['cgst'];
         $invoice->sgst_percent = $rates['sgst'];
         $invoice->igst_percent = $rates['igst'];
-        $invoice->total_payable = 0.00;
+        $invoice->total_payable = 0.0;
         $invoice->status = Invoice::STATUS_UNPAID;
         $invoice->due_date = $this->getEarliestDueDate($events);
         $invoice->created_at = $now;
         $invoice->updated_at = $now;
         if (!$invoice->save()) {
-            throw new \RuntimeException('Unable to create automatic invoice: ' . json_encode($invoice->errors, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
+            throw new \RuntimeException(
+                'Unable to create automatic invoice: ' .
+                    json_encode($invoice->errors, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+            );
         }
         return $invoice;
     }
@@ -249,12 +236,20 @@ final class AutoInvoiceService
         $item->billing_event_id = (int) $event->id;
         $item->source_invoice_id = null;
         $item->category = $typeName . ' Renewal';
-        $item->description = sprintf('%s | Renewal period: %s to %s', $event->description, $event->period_start, $event->period_end);
+        $item->description = sprintf(
+            '%s | Renewal period: %s to %s',
+            $event->description,
+            $event->period_start,
+            $event->period_end,
+        );
         $item->quantity = 1;
         $item->unit_price = number_format((float) $event->amount, 2, '.', '');
         $item->total_price = number_format((float) $event->amount, 2, '.', '');
         if (!$item->save()) {
-            throw new \RuntimeException('Unable to create automatic invoice item: ' . json_encode($item->errors, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
+            throw new \RuntimeException(
+                'Unable to create automatic invoice item: ' .
+                    json_encode($item->errors, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+            );
         }
     }
 
@@ -264,12 +259,16 @@ final class AutoInvoiceService
      */
     public function calculateInvoiceTotals(Invoice $invoice): void
     {
-        $subtotal = (float) InvoiceItem::find()->where(['invoice_id' => $invoice->id])->sum('total_price');
+        $subtotal = (float) InvoiceItem::find()
+            ->where(['invoice_id' => $invoice->id])
+            ->sum('total_price');
         $subtotal = round($subtotal, 2);
         if ($subtotal <= 0) {
             throw new \DomainException('Automatic invoice subtotal ' . 'must be greater than zero.');
         }
-        $arrearsTotal = (float) InvoiceItem::find()->where(['invoice_id' => $invoice->id, 'item_type' => InvoiceItem::TYPE_ARREARS])->sum('total_price');
+        $arrearsTotal = (float) InvoiceItem::find()
+            ->where(['invoice_id' => $invoice->id, 'item_type' => InvoiceItem::TYPE_ARREARS])
+            ->sum('total_price');
         $arrearsTotal = round($arrearsTotal, 2);
         $currentCharges = round($subtotal - $arrearsTotal, 2);
         if ($currentCharges < 0) {
@@ -280,18 +279,20 @@ final class AutoInvoiceService
             throw new \DomainException('Invoice discount cannot exceed current taxable charges.');
         }
         $taxableAmount = round($currentCharges - $discount, 2);
-        $tax = $this->taxCalculator->calculate($taxableAmount, (float) $invoice->cgst_percent, (float) $invoice->sgst_percent, (float) $invoice->igst_percent);
+        $tax = $this->taxCalculator->calculate(
+            $taxableAmount,
+            (float) $invoice->cgst_percent,
+            (float) $invoice->sgst_percent,
+            (float) $invoice->igst_percent,
+        );
         $invoice->subtotal_amount = $subtotal;
         $invoice->total_payable = round($tax['total'] + $arrearsTotal, 2);
         $invoice->updated_at = time();
         if (!$invoice->save()) {
             throw new \RuntimeException(
-                'Unable to calculate automatic '
-                            . 'invoice totals: '
-                            . json_encode(
-                                $invoice->errors,
-                                JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES
-                            )
+                'Unable to calculate automatic ' .
+                    'invoice totals: ' .
+                    json_encode($invoice->errors, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
             );
         }
     }
@@ -299,21 +300,14 @@ final class AutoInvoiceService
     private function getEarliestDueDate(array $events): string
     {
         if (!$events) {
-            throw new \LogicException(
-                'At least one billing event '
-                            . 'is required.'
-            );
+            throw new \LogicException('At least one billing event ' . 'is required.');
         }
 
         $dates = [];
 
         foreach ($events as $event) {
             if (!$event->due_date) {
-                throw new \RuntimeException(
-                    'Billing event '
-                                . $event->id
-                                . ' does not have a due date.'
-                );
+                throw new \RuntimeException('Billing event ' . $event->id . ' does not have a due date.');
             }
 
             $dates[] = (string) $event->due_date;

@@ -4,32 +4,14 @@ declare(strict_types=1);
 
 use yii\helpers\Html;
 
-$frontendBaseUrl = rtrim(
-    (string)
-        (
-        Yii::$app
-        ->params['frontendBaseUrl'] ?? ''
-        ),
-    '/'
-);
+$frontendBaseUrl = rtrim((string) (Yii::$app->params['frontendBaseUrl'] ?? ''), '/');
 
-$invoiceUrl = $frontendBaseUrl !== '' ? $frontendBaseUrl
-        . '/invoice/view?number='
-        . rawurlencode(
-            $invoice->invoice_number
-        ) : '#';
+$invoiceUrl =
+    $frontendBaseUrl !== '' ? $frontendBaseUrl . '/invoice/view?number=' . rawurlencode($invoice->invoice_number) : '#';
 
-$total = Yii::$app->formatter
-        ->asCurrency(
-            $invoice->total_payable,
-            'INR'
-        );
+$total = Yii::$app->formatter->asCurrency($invoice->total_payable, 'INR');
 
-$due = Yii::$app->formatter
-        ->asDate(
-            $invoice->due_date,
-            'php:d M Y'
-        );
+$due = Yii::$app->formatter->asDate($invoice->due_date, 'php:d M Y');
 ?>
 
 <div style="
@@ -70,11 +52,7 @@ $due = Yii::$app->formatter
                     "
                     >
                     Invoice
-<?=
-Html::encode(
-    $invoice->invoice_number
-)
-?>
+<?= Html::encode($invoice->invoice_number) ?>
                 </td>
             </tr>
         </table>
@@ -138,11 +116,7 @@ Html::encode(
                         font-weight:700;
                         "
                         >
-<?=
-Html::encode(
-    $total
-)
-?>
+<?= Html::encode($total) ?>
                     </td>
                 </tr>
 
@@ -161,31 +135,21 @@ Html::encode(
                         font-weight:700;
                         "
                         >
-<?=
-Html::encode(
-    $due
-)
-?>
+<?= Html::encode($due) ?>
                     </td>
                 </tr>
             </table>
 
-            <?=
-            Html::a(
-                'View Invoice & Pay →',
-                $invoiceUrl,
-                [
-                        'style' =>
-                        'display:inline-block;'
-                        . 'background:#171717;'
-                        . 'color:#ffffff;'
-                        . 'text-decoration:none;'
-                        . 'font-weight:700;'
-                        . 'padding:16px 25px;'
-                        . 'border-radius:7px;',
-                    ]
-            )
-            ?>
+            <?= Html::a('View Invoice & Pay →', $invoiceUrl, [
+                'style' =>
+                    'display:inline-block;' .
+                    'background:#171717;' .
+                    'color:#ffffff;' .
+                    'text-decoration:none;' .
+                    'font-weight:700;' .
+                    'padding:16px 25px;' .
+                    'border-radius:7px;',
+            ]) ?>
 
         </div>
 

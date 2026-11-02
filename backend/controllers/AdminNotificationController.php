@@ -13,22 +13,16 @@ final class AdminNotificationController extends BaseController
 {
     public function actionIndex()
     {
-        return $this->render(
-            'index',
-            [
-                            'dataProvider' =>
-                            new ActiveDataProvider([
-                                'query' =>
-                                        AdminNotification::find()
-                                        ->orderBy([
-                                            'created_at' => SORT_DESC,
-                                        ]),
-                                'pagination' => [
-                                    'pageSize' => 30,
-                                ],
-                                    ]),
-                        ]
-        );
+        return $this->render('index', [
+            'dataProvider' => new ActiveDataProvider([
+                'query' => AdminNotification::find()->orderBy([
+                    'created_at' => SORT_DESC,
+                ]),
+                'pagination' => [
+                    'pageSize' => 30,
+                ],
+            ]),
+        ]);
     }
 
     public function actionRead(int $id)

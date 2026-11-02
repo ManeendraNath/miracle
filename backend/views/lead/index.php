@@ -35,8 +35,7 @@ GridViewHelper::register($this);
         <!-- Grid -->
         <div class="card-body p-0">
 
-            <?=
-            GridView::widget([
+            <?= GridView::widget([
                 'dataProvider' => $dataProvider,
                 'filterModel' => $searchModel,
                 /*
@@ -52,8 +51,7 @@ GridViewHelper::register($this);
                     'class' => 'text-muted small mb-0',
                 ],
                 'tableOptions' => [
-                    'class' =>
-                    'table table-hover table-striped align-middle mb-0',
+                    'class' => 'table table-hover table-striped align-middle mb-0',
                 ],
                 'filterRowOptions' => [
                     'class' => 'bg-light',
@@ -79,11 +77,9 @@ GridViewHelper::register($this);
                         'label' => 'Lead',
                         'format' => 'raw',
                         'value' => static function (Lead $model): string {
-                            return Html::tag(
-                                'span',
-                                Html::encode($model->lead_name),
-                                ['class' => 'fw-semibold text-dark']
-                            );
+                            return Html::tag('span', Html::encode($model->lead_name), [
+                                'class' => 'fw-semibold text-dark',
+                            ]);
                         },
                         'headerOptions' => ['style' => 'min-width: 170px;'],
                     ],
@@ -105,7 +101,12 @@ GridViewHelper::register($this);
                     [
                         'attribute' => 'source',
                         'label' => 'Source',
-                        'filter' => GridFilterHelper::select2($searchModel, 'source', Lead::getSources(), 'All Sources'),
+                        'filter' => GridFilterHelper::select2(
+                            $searchModel,
+                            'source',
+                            Lead::getSources(),
+                            'All Sources',
+                        ),
                         'value' => static function (Lead $model): string {
                             return $model->source ?: '-';
                         },
@@ -132,8 +133,7 @@ GridViewHelper::register($this);
                      */
                     GridActionHelper::crudColumn(deleteMessage: 'Are you sure you want to delete this lead?'),
                 ],
-            ])
-            ?>
+            ]) ?>
         </div>
     </div>
 </div>

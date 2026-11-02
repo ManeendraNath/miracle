@@ -38,16 +38,13 @@ $this->params['breadcrumbs'][] = $this->title;
 
                         </div>
 
-                        <?=
-                        Html::a(
+                        <?= Html::a(
                             'Back to History',
                             ['index'],
                             [
-                                    'class' =>
-                                    'btn btn-light border',
-                                ]
-                        )
-                        ?>
+                                'class' => 'btn btn-light border',
+                            ],
+                        ) ?>
 
                     </div>
 
@@ -55,53 +52,36 @@ $this->params['breadcrumbs'][] = $this->title;
 
                 <div class="card-body p-0">
 
-                    <?=
-                    DetailView::widget([
+                    <?= DetailView::widget([
                         'model' => $model,
                         'options' => [
-                            'class' =>
-                            'table table-bordered '
-                            . 'align-middle mb-0',
+                            'class' => 'table table-bordered ' . 'align-middle mb-0',
                         ],
                         'attributes' => [
                             [
-                                'label' =>
-                                'Customer',
-                                'value' =>
-                                $model->user ? $model->user->username : 'Unknown',
+                                'label' => 'Customer',
+                                'value' => $model->user ? $model->user->username : 'Unknown',
                             ],
                             [
-                                'label' =>
-                                'Email Address',
+                                'label' => 'Email Address',
                                 'format' => 'email',
-                                'value' =>
-                                $model->user ? $model->user->email : null,
+                                'value' => $model->user ? $model->user->email : null,
                             ],
                             [
-                                'attribute' =>
-                                'ip_address',
-                                'label' =>
-                                'IP Address',
+                                'attribute' => 'ip_address',
+                                'label' => 'IP Address',
                             ],
                             [
-                                'attribute' =>
-                                'user_agent',
-                                'label' =>
-                                'Browser / Device',
+                                'attribute' => 'user_agent',
+                                'label' => 'Browser / Device',
                             ],
                             [
-                                'attribute' =>
-                                'logged_in_at',
-                                'label' =>
-                                'Logged In At',
-                                'format' => [
-                                    'datetime',
-                                    'php:d M Y, h:i A',
-                                ],
+                                'attribute' => 'logged_in_at',
+                                'label' => 'Logged In At',
+                                'format' => ['datetime', 'php:d M Y, h:i A'],
                             ],
                         ],
-                    ])
-                    ?>
+                    ]) ?>
 
                 </div>
 

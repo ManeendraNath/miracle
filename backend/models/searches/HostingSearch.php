@@ -22,23 +22,8 @@ class HostingSearch extends Hosting
     public function rules(): array
     {
         return [
-            [
-                [
-                    'id',
-                    'user_id',
-                    'status',
-                ],
-                'integer',
-            ],
-            [
-                [
-                    'primary_domain',
-                    'cpanel_ip',
-                    'cpanel_username',
-                    'expiry_date_range',
-                ],
-                'safe',
-            ],
+            [['id', 'user_id', 'status'], 'integer'],
+            [['primary_domain', 'cpanel_ip', 'cpanel_username', 'expiry_date_range'], 'safe'],
         ];
     }
 
@@ -47,17 +32,14 @@ class HostingSearch extends Hosting
         return Model::scenarios();
     }
 
-    public function search(
-        array $params,
-        ?string $formName = null
-    ): ActiveDataProvider {
+    public function search(array $params, ?string $formName = null): ActiveDataProvider
+    {
         $query = Hosting::find()->with('user');
 
         $dataProvider = new ActiveDataProvider([
             'query' => $query,
             'pagination' => [
-                'pageSize' =>
-                GridPaginationHelper::getPageSize(),
+                'pageSize' => GridPaginationHelper::getPageSize(),
             ],
             'sort' => [
                 'defaultOrder' => [
@@ -66,10 +48,7 @@ class HostingSearch extends Hosting
             ],
         ]);
 
-        $this->load(
-            $params,
-            $formName
-        );
+        $this->load($params, $formName);
 
         if (!$this->validate()) {
             return $dataProvider;
@@ -81,29 +60,13 @@ class HostingSearch extends Hosting
             'hosting.status' => $this->status,
         ]);
 
-        $query->andFilterWhere([
-            'like',
-            'hosting.primary_domain',
-            $this->primary_domain,
-        ]);
+        $query->andFilterWhere(['like', 'hosting.primary_domain', $this->primary_domain]);
 
-        $query->andFilterWhere([
-            'like',
-            'hosting.cpanel_ip',
-            $this->cpanel_ip,
-        ]);
+        $query->andFilterWhere(['like', 'hosting.cpanel_ip', $this->cpanel_ip]);
 
-        $query->andFilterWhere([
-            'like',
-            'hosting.cpanel_username',
-            $this->cpanel_username,
-        ]);
+        $query->andFilterWhere(['like', 'hosting.cpanel_username', $this->cpanel_username]);
 
-        $this->applySqlDateRange(
-            $query,
-            'hosting.current_expiry_date',
-            $this->expiry_date_range
-        );
+        $this->applySqlDateRange($query, 'hosting.current_expiry_date', $this->expiry_date_range);
 
         return $dataProvider;
     }

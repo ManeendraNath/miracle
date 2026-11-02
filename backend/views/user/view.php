@@ -63,40 +63,33 @@ switch ((int) $model->status) {
 
                 <div class="d-flex gap-2">
 
-                    <?=
-                    Html::a(
+                    <?= Html::a(
                         'Back',
                         ['index'],
                         [
-                                'class' => 'btn btn-light border',
-                            ]
-                    )
-                    ?>
+                            'class' => 'btn btn-light border',
+                        ],
+                    ) ?>
 
-                    <?=
-                    Html::a(
+                    <?= Html::a(
                         'Update',
                         ['update', 'id' => $model->id],
                         [
-                                'class' => 'btn btn-primary',
-                            ]
-                    )
-                    ?>
-                    <?=
-                    Html::a(
+                            'class' => 'btn btn-primary',
+                        ],
+                    ) ?>
+                    <?= Html::a(
                         '<i class="fas fa-shield-alt mr-1"></i> Login History',
                         [
-                                '/user-login-history/index',
-                                'UserLoginHistorySearch' => [
-                                    'user_id' => $model->id,
-                                ],
+                            '/user-login-history/index',
+                            'UserLoginHistorySearch' => [
+                                'user_id' => $model->id,
                             ],
+                        ],
                         [
-                                'class' =>
-                                'btn btn-outline-secondary',
-                            ]
-                    )
-                    ?>
+                            'class' => 'btn btn-outline-secondary',
+                        ],
+                    ) ?>
                 </div>
 
             </div>
@@ -105,8 +98,7 @@ switch ((int) $model->status) {
 
         <div class="card-body p-4">
 
-            <?=
-            DetailView::widget([
+            <?= DetailView::widget([
                 'model' => $model,
                 'options' => [
                     'class' => 'table table-bordered align-middle mb-0',
@@ -129,33 +121,22 @@ switch ((int) $model->status) {
                         'attribute' => 'status',
                         'label' => 'Account Status',
                         'format' => 'raw',
-                        'value' => Html::tag(
-                            'span',
-                            Html::encode($statusLabel),
-                            [
-                                    'class' => 'badge ' . $statusClass,
-                                ]
-                        ),
+                        'value' => Html::tag('span', Html::encode($statusLabel), [
+                            'class' => 'badge ' . $statusClass,
+                        ]),
                     ],
                     [
                         'attribute' => 'created_at',
                         'label' => 'Created At',
-                        'format' => [
-                            'datetime',
-                            'php:d M Y, h:i A',
-                        ],
+                        'format' => ['datetime', 'php:d M Y, h:i A'],
                     ],
                     [
                         'attribute' => 'updated_at',
                         'label' => 'Last Updated',
-                        'format' => [
-                            'datetime',
-                            'php:d M Y, h:i A',
-                        ],
+                        'format' => ['datetime', 'php:d M Y, h:i A'],
                     ],
                 ],
-            ])
-            ?>
+            ]) ?>
 
         </div>
 

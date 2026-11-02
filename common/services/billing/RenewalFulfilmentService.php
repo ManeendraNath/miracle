@@ -16,22 +16,20 @@ use Yii;
 
 final class RenewalFulfilmentService
 {
-    public function fulfilInvoice(
-        Invoice $invoice,
-        bool $useTransaction = true
-    ): void {
+    public function fulfilInvoice(Invoice $invoice, bool $useTransaction = true): void
+    {
         if ($invoice->status !== Invoice::STATUS_PAID) {
             return;
         }
 
         $transactionId = Transaction::find()
-                ->select('id')
-                ->where([
-                    'invoice_id' => $invoice->id,
-                    'status' => Transaction::STATUS_CAPTURED,
-                ])
-                ->orderBy(['paid_at' => SORT_DESC, 'id' => SORT_DESC])
-                ->scalar();
+            ->select('id')
+            ->where([
+                'invoice_id' => $invoice->id,
+                'status' => Transaction::STATUS_CAPTURED,
+            ])
+            ->orderBy(['paid_at' => SORT_DESC, 'id' => SORT_DESC])
+            ->scalar();
 
         if ($useTransaction) {
             $dbTransaction = Yii::$app->db->beginTransaction();
@@ -41,36 +39,26 @@ final class RenewalFulfilmentService
 
         try {
             $events = BillingEvent::find()
-                    ->where([
-                        'invoice_id' => $this->coveredInvoiceIds((int) $invoice->id),
-                        'status' => BillingEvent::STATUS_INVOICED,
-                    ])
-                    ->orderBy(['id' => SORT_ASC])
-                    ->all();
+                ->where([
+                    'invoice_id' => $this->coveredInvoiceIds((int) $invoice->id),
+                    'status' => BillingEvent::STATUS_INVOICED,
+                ])
+                ->orderBy(['id' => SORT_ASC])
+                ->all();
 
             foreach ($events as $event) {
-                $this->fulfilEvent(
-                    $event,
-                    $transactionId ? (int) $transactionId : null
-                );
+                $this->fulfilEvent($event, $transactionId ? (int) $transactionId : null);
             }
 
-            if (
-                    $dbTransaction !== null && $dbTransaction->isActive
-            ) {
+            if ($dbTransaction !== null && $dbTransaction->isActive) {
                 $dbTransaction->commit();
             }
         } catch (\Throwable $e) {
-            if (
-                    $dbTransaction !== null && $dbTransaction->isActive
-            ) {
+            if ($dbTransaction !== null && $dbTransaction->isActive) {
                 $dbTransaction->rollBack();
             }
 
-            Yii::error(
-                $e,
-                __METHOD__
-            );
+            Yii::error($e, __METHOD__);
 
             throw $e;
         }
@@ -90,13 +78,13 @@ final class RenewalFulfilmentService
 
         while ($pending) {
             $sourceIds = InvoiceItem::find()
-                    ->select('source_invoice_id')
-                    ->where([
-                        'invoice_id' => $pending,
-                        'item_type' => InvoiceItem::TYPE_ARREARS,
-                    ])
-                    ->andWhere(['not', ['source_invoice_id' => null]])
-                    ->column();
+                ->select('source_invoice_id')
+                ->where([
+                    'invoice_id' => $pending,
+                    'item_type' => InvoiceItem::TYPE_ARREARS,
+                ])
+                ->andWhere(['not', ['source_invoice_id' => null]])
+                ->column();
 
             $pending = array_diff(array_map('intval', $sourceIds), $ids);
             $ids = array_merge($ids, $pending);
@@ -105,15 +93,13 @@ final class RenewalFulfilmentService
         return $ids;
     }
 
-    private function fulfilEvent(
-        BillingEvent $event,
-        ?int $transactionId
-    ): void {
+    private function fulfilEvent(BillingEvent $event, ?int $transactionId): void
+    {
         $exists = ServiceRenewalHistory::find()
-                ->where([
-                    'billing_event_id' => $event->id,
-                ])
-                ->exists();
+            ->where([
+                'billing_event_id' => $event->id,
+            ])
+            ->exists();
 
         if ($exists) {
             return;
@@ -122,22 +108,15 @@ final class RenewalFulfilmentService
         $asset = $this->findAsset($event);
 
         if ($asset === null) {
-            throw new \RuntimeException(
-                "Billing asset not found for event {$event->id}."
-            );
+            throw new \RuntimeException("Billing asset not found for event {$event->id}.");
         }
 
-        $months = $this->monthDifference(
-            $event->period_start,
-            $event->period_end
-        );
+        $months = $this->monthDifference($event->period_start, $event->period_end);
 
         $history = new ServiceRenewalHistory();
 
         $history->billing_event_id = $event->id;
-        $history->item_type = $this->historyType(
-            (int) $event->item_type
-        );
+        $history->item_type = $this->historyType((int) $event->item_type);
 
         $history->item_id = $event->item_id;
         $history->invoice_id = $event->invoice_id;
@@ -152,9 +131,7 @@ final class RenewalFulfilmentService
         $history->logged_at = time();
 
         if (!$history->save()) {
-            throw new \RuntimeException(
-                json_encode($history->errors)
-            );
+            throw new \RuntimeException(json_encode($history->errors));
         }
 
         $now = time();
@@ -166,70 +143,41 @@ final class RenewalFulfilmentService
 
         $asset->updated_at = $now;
 
-        if (
-            !$asset->save(
-                false,
-                [
-                            'current_expiry_date',
-                            'updated_at',
-                        ]
-            )
-        ) {
-            throw new \RuntimeException(
-                'Unable to update service expiry.'
-            );
+        if (!$asset->save(false, ['current_expiry_date', 'updated_at'])) {
+            throw new \RuntimeException('Unable to update service expiry.');
         }
 
         $event->status = BillingEvent::STATUS_FULFILLED;
 
         $event->updated_at = $now;
 
-        if (
-            !$event->save(
-                false,
-                [
-                            'status',
-                            'updated_at',
-                        ]
-            )
-        ) {
-            throw new \RuntimeException(
-                'Unable to fulfil billing event.'
-            );
+        if (!$event->save(false, ['status', 'updated_at'])) {
+            throw new \RuntimeException('Unable to fulfil billing event.');
         }
     }
 
-    private function findAsset(
-        BillingEvent $event
-    ): object|null {
+    private function findAsset(BillingEvent $event): object|null
+    {
         return match ((int) $event->item_type) {
-            InvoiceItem::TYPE_DOMAIN =>
-            Domains::findOne($event->item_id),
-            InvoiceItem::TYPE_HOSTING =>
-            Hosting::findOne($event->item_id),
-            InvoiceItem::TYPE_MAINTENANCE =>
-            Maintenance::findOne($event->item_id),
+            InvoiceItem::TYPE_DOMAIN => Domains::findOne($event->item_id),
+            InvoiceItem::TYPE_HOSTING => Hosting::findOne($event->item_id),
+            InvoiceItem::TYPE_MAINTENANCE => Maintenance::findOne($event->item_id),
             default => null,
         };
     }
 
-    private function historyType(
-        int $type
-    ): string {
+    private function historyType(int $type): string
+    {
         return match ($type) {
             InvoiceItem::TYPE_DOMAIN => 'domain',
             InvoiceItem::TYPE_HOSTING => 'hosting',
             InvoiceItem::TYPE_MAINTENANCE => 'maintenance',
-            default => throw new \RuntimeException(
-                'Unsupported renewable service.'
-            ),
+            default => throw new \RuntimeException('Unsupported renewable service.'),
         };
     }
 
-    private function monthDifference(
-        string $start,
-        string $end
-    ): int {
+    private function monthDifference(string $start, string $end): int
+    {
         $a = new \DateTimeImmutable($start);
         $b = new \DateTimeImmutable($end);
 
@@ -237,6 +185,6 @@ final class RenewalFulfilmentService
 
         $diff = $a->diff($b);
 
-        return ($diff->y * 12) + $diff->m;
+        return $diff->y * 12 + $diff->m;
     }
 }

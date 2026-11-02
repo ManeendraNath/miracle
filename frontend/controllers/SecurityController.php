@@ -18,8 +18,7 @@ final class SecurityController extends Controller
     {
         return [
             'access' => [
-                'class' =>
-                AccessControl::class,
+                'class' => AccessControl::class,
                 'rules' => [
                     [
                         'allow' => true,
@@ -33,30 +32,21 @@ final class SecurityController extends Controller
     public function actionIndex()
     {
         $query = UserLoginHistory::find()
-                ->where([
-                    'user_id' =>
-                    (int)
-                    Yii::$app->user->id,
-                ])
-                ->orderBy([
-                    'logged_in_at' =>
-                    SORT_DESC,
-                    'id' =>
-                    SORT_DESC,
-        ]);
+            ->where([
+                'user_id' => (int) Yii::$app->user->id,
+            ])
+            ->orderBy([
+                'logged_in_at' => SORT_DESC,
+                'id' => SORT_DESC,
+            ]);
 
-        return $this->render(
-            'index',
-            [
-                            'dataProvider' =>
-                            new ActiveDataProvider([
-                                'query' =>
-                                $query,
-                                'pagination' => [
-                                    'pageSize' => 20,
-                                ],
-                                    ]),
-                        ]
-        );
+        return $this->render('index', [
+            'dataProvider' => new ActiveDataProvider([
+                'query' => $query,
+                'pagination' => [
+                    'pageSize' => 20,
+                ],
+            ]),
+        ]);
     }
 }

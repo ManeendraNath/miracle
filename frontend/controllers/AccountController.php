@@ -23,8 +23,7 @@ final class AccountController extends Controller
     {
         return [
             'access' => [
-                'class' =>
-                AccessControl::class,
+                'class' => AccessControl::class,
                 'rules' => [
                     [
                         'allow' => true,

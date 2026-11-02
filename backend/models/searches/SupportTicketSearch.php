@@ -12,24 +12,12 @@ final class SupportTicketSearch extends SupportTicket
 {
     public function rules(): array
     {
-        return [
-            [
-                [
-                    'ticket_number',
-                    'subject',
-                    'priority',
-                    'status',
-                ],
-                'safe',
-            ],
-        ];
+        return [[['ticket_number', 'subject', 'priority', 'status'], 'safe']];
     }
 
-    public function search(
-        array $params
-    ): ActiveDataProvider {
-        $query = SupportTicket::find()
-                ->with('user');
+    public function search(array $params): ActiveDataProvider
+    {
+        $query = SupportTicket::find()->with('user');
 
         $dataProvider = new ActiveDataProvider([
             'query' => $query,
@@ -38,10 +26,8 @@ final class SupportTicketSearch extends SupportTicket
             ],
             'sort' => [
                 'defaultOrder' => [
-                    'updated_at' =>
-                    SORT_DESC,
-                    'id' =>
-                    SORT_DESC,
+                    'updated_at' => SORT_DESC,
+                    'id' => SORT_DESC,
                 ],
             ],
         ]);
@@ -55,23 +41,13 @@ final class SupportTicketSearch extends SupportTicket
         }
 
         $query->andFilterWhere([
-            'priority' =>
-            $this->priority,
-            'status' =>
-            $this->status,
+            'priority' => $this->priority,
+            'status' => $this->status,
         ]);
 
-        $query->andFilterWhere([
-            'like',
-            'ticket_number',
-            $this->ticket_number,
-        ]);
+        $query->andFilterWhere(['like', 'ticket_number', $this->ticket_number]);
 
-        $query->andFilterWhere([
-            'like',
-            'subject',
-            $this->subject,
-        ]);
+        $query->andFilterWhere(['like', 'subject', $this->subject]);
 
         return $dataProvider;
     }

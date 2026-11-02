@@ -16,31 +16,9 @@ final class CouponSearch extends Coupon
     public function rules(): array
     {
         return [
-            [
-                [
-                    'id',
-                    'uses_per_coupon',
-                    'uses_per_user',
-                ],
-                'integer',
-            ],
-            [
-                [
-                    'name',
-                    'code',
-                    'type',
-                    'is_active',
-                    'validity_range',
-                ],
-                'safe',
-            ],
-            [
-                [
-                    'amount',
-                    'minimum_order',
-                ],
-                'number',
-            ],
+            [['id', 'uses_per_coupon', 'uses_per_user'], 'integer'],
+            [['name', 'code', 'type', 'is_active', 'validity_range'], 'safe'],
+            [['amount', 'minimum_order'], 'number'],
         ];
     }
 
@@ -49,17 +27,14 @@ final class CouponSearch extends Coupon
         return Model::scenarios();
     }
 
-    public function search(
-        array $params,
-        ?string $formName = null
-    ): ActiveDataProvider {
+    public function search(array $params, ?string $formName = null): ActiveDataProvider
+    {
         $query = Coupon::find();
 
         $dataProvider = new ActiveDataProvider([
             'query' => $query,
             'pagination' => [
-                'pageSize' =>
-                GridPaginationHelper::getPageSize(),
+                'pageSize' => GridPaginationHelper::getPageSize(),
             ],
             'sort' => [
                 'defaultOrder' => [
@@ -68,10 +43,7 @@ final class CouponSearch extends Coupon
             ],
         ]);
 
-        $this->load(
-            $params,
-            $formName
-        );
+        $this->load($params, $formName);
 
         if (!$this->validate()) {
             $query->where('0=1');
@@ -87,17 +59,7 @@ final class CouponSearch extends Coupon
             'uses_per_user' => $this->uses_per_user,
         ]);
 
-        $query
-                ->andFilterWhere([
-                    'like',
-                    'name',
-                    $this->name,
-                ])
-                ->andFilterWhere([
-                    'like',
-                    'code',
-                    $this->code,
-        ]);
+        $query->andFilterWhere(['like', 'name', $this->name])->andFilterWhere(['like', 'code', $this->code]);
 
         if ($this->amount !== null) {
             $query->andWhere([
@@ -107,8 +69,7 @@ final class CouponSearch extends Coupon
 
         if ($this->minimum_order !== null) {
             $query->andWhere([
-                'minimum_order' =>
-                $this->minimum_order,
+                'minimum_order' => $this->minimum_order,
             ]);
         }
 
@@ -123,14 +84,9 @@ final class CouponSearch extends Coupon
             return;
         }
 
-        $parts = preg_split(
-            '/\s+-\s+/',
-            trim($this->validity_range)
-        );
+        $parts = preg_split('/\s+-\s+/', trim($this->validity_range));
 
-        if (
-                !is_array($parts) || count($parts) !== 2
-        ) {
+        if (!is_array($parts) || count($parts) !== 2) {
             return;
         }
 
@@ -143,16 +99,8 @@ final class CouponSearch extends Coupon
 
         $query->andWhere([
             'and',
-            [
-                '>=',
-                'start_date',
-                date('Y-m-d 00:00:00', $from),
-            ],
-            [
-                '<=',
-                'end_date',
-                date('Y-m-d 23:59:59', $to),
-            ],
+            ['>=', 'start_date', date('Y-m-d 00:00:00', $from)],
+            ['<=', 'end_date', date('Y-m-d 23:59:59', $to)],
         ]);
     }
 }

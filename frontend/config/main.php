@@ -5,10 +5,10 @@ declare(strict_types=1);
 use yii\web\Request;
 
 $params = array_merge(
-        require __DIR__ . '/../../common/config/params.php',
-        require __DIR__ . '/../../common/config/params-local.php',
-        require __DIR__ . '/params.php',
-        require __DIR__ . '/params-local.php'
+    require __DIR__ . '/../../common/config/params.php',
+    require __DIR__ . '/../../common/config/params-local.php',
+    require __DIR__ . '/params.php',
+    require __DIR__ . '/params-local.php',
 );
 
 $baseUrl = str_replace('/frontend/web', '', (new Request())->getBaseUrl());
@@ -82,12 +82,9 @@ return [
             'showScriptName' => false,
             'rules' => [
                 '<action>' => 'site/<action>',
-                '<controller:[\w\-]+>/<id:\d+>' =>
-                '<controller>/view',
-                '<controller:[\w\-]+>/<action:[\w\-]+>/<id:\d+>' =>
-                '<controller>/<action>',
-                '<controller:[\w\-]+>/<action:[\w\-]+>' =>
-                '<controller>/<action>',
+                '<controller:[\w\-]+>/<id:\d+>' => '<controller>/view',
+                '<controller:[\w\-]+>/<action:[\w\-]+>/<id:\d+>' => '<controller>/<action>',
+                '<controller:[\w\-]+>/<action:[\w\-]+>' => '<controller>/<action>',
             ],
         ],
     ],

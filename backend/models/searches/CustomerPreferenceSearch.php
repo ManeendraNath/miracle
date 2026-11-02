@@ -16,28 +16,18 @@ final class CustomerPreferenceSearch extends CustomerPreference
     {
         return [
             [
-                [
-                    'renewal_reminders',
-                    'payment_reminders',
-                    'service_expiry_notifications',
-                    'support_notifications',
-                ],
+                ['renewal_reminders', 'payment_reminders', 'service_expiry_notifications', 'support_notifications'],
                 'boolean',
             ],
-            [
-                ['customer'],
-                'safe',
-            ],
+            [['customer'], 'safe'],
         ];
     }
 
     public function search(array $params): ActiveDataProvider
     {
         $query = CustomerPreference::find()
-                ->alias('cp')
-                ->joinWith([
-                    'user u',
-        ]);
+            ->alias('cp')
+            ->joinWith(['user u']);
 
         $dataProvider = new ActiveDataProvider([
             'query' => $query,
@@ -61,22 +51,14 @@ final class CustomerPreferenceSearch extends CustomerPreference
         }
 
         $query->andFilterWhere([
-            'cp.renewal_reminders' =>
-            $this->renewal_reminders,
-            'cp.payment_reminders' =>
-            $this->payment_reminders,
-            'cp.service_expiry_notifications' =>
-            $this->service_expiry_notifications,
-            'cp.support_notifications' =>
-            $this->support_notifications,
+            'cp.renewal_reminders' => $this->renewal_reminders,
+            'cp.payment_reminders' => $this->payment_reminders,
+            'cp.service_expiry_notifications' => $this->service_expiry_notifications,
+            'cp.support_notifications' => $this->support_notifications,
         ]);
 
         if ($this->customer !== null && $this->customer !== '') {
-            $query->andWhere([
-                'or',
-                ['like', 'u.username', $this->customer],
-                ['like', 'u.email', $this->customer],
-            ]);
+            $query->andWhere(['or', ['like', 'u.username', $this->customer], ['like', 'u.email', $this->customer]]);
         }
 
         return $dataProvider;

@@ -15,11 +15,7 @@ $this->params['breadcrumbs'][] = [
 
 $this->params['breadcrumbs'][] = [
     'label' => $couponLabel,
-    'url' => [
-        'view',
-        'id' =>
-        $model->id,
-    ],
+    'url' => ['view', 'id' => $model->id],
 ];
 
 $this->params['breadcrumbs'][] = 'Update';
@@ -30,11 +26,7 @@ $this->params['breadcrumbs'][] = 'Update';
     <div class="mb-3">
 
         <h4 class="mb-1">
-<?=
-Html::encode(
-    $this->title
-)
-?>
+<?= Html::encode($this->title) ?>
         </h4>
 
         <div class="text-muted small">
@@ -43,13 +35,8 @@ Html::encode(
 
     </div>
 
-<?=
-$this->render(
-    '_form',
-    [
-            'model' => $model,
-        ]
-)
-?>
+<?= $this->render('_form', [
+    'model' => $model,
+]) ?>
 
 </div>

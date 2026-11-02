@@ -21,8 +21,7 @@ final class PaymentController extends Controller
     {
         return [
             'access' => [
-                'class' =>
-                AccessControl::class,
+                'class' => AccessControl::class,
                 'rules' => [
                     [
                         'allow' => true,
@@ -36,91 +35,66 @@ final class PaymentController extends Controller
     public function actionIndex()
     {
         $query = Transaction::find()
-                ->alias('t')
-                ->innerJoin(
-                    ['i' => Invoice::tableName()],
-                    'i.id = t.invoice_id'
-                )
-                ->where([
-                    'i.user_id' =>
-                    (int) Yii::$app->user->id,
-                ])
-                ->with('invoice')
-                ->orderBy([
-                    't.created_at' =>
-                    SORT_DESC,
-                    't.id' =>
-                    SORT_DESC,
-        ]);
+            ->alias('t')
+            ->innerJoin(['i' => Invoice::tableName()], 'i.id = t.invoice_id')
+            ->where([
+                'i.user_id' => (int) Yii::$app->user->id,
+            ])
+            ->with('invoice')
+            ->orderBy([
+                't.created_at' => SORT_DESC,
+                't.id' => SORT_DESC,
+            ]);
 
         $dataProvider = new ActiveDataProvider([
-            'query' =>
-            $query,
+            'query' => $query,
             'pagination' => [
                 'pageSize' => 20,
             ],
         ]);
 
-        return $this->render(
-            'index',
-            [
-                            'dataProvider' =>
-                            $dataProvider,
-                        ]
-        );
+        return $this->render('index', [
+            'dataProvider' => $dataProvider,
+        ]);
     }
 
     public function actionView(int $id)
     {
         $model = Transaction::find()
-                ->alias('t')
-                ->innerJoin(
-                    ['i' => Invoice::tableName()],
-                    'i.id = t.invoice_id'
-                )
-                ->where([
-                    't.id' => $id,
-                    'i.user_id' =>
-                    (int) Yii::$app->user->id,
-                ])
-                ->with('invoice')
-                ->one();
+            ->alias('t')
+            ->innerJoin(['i' => Invoice::tableName()], 'i.id = t.invoice_id')
+            ->where([
+                't.id' => $id,
+                'i.user_id' => (int) Yii::$app->user->id,
+            ])
+            ->with('invoice')
+            ->one();
 
         if ($model === null) {
-            throw new NotFoundHttpException(
-                'Payment does not exist.'
-            );
+            throw new NotFoundHttpException('Payment does not exist.');
         }
 
-        return $this->render(
-            'view',
-            [
-                            'model' => $model,
-                        ]
-        );
+        return $this->render('view', [
+            'model' => $model,
+        ]);
     }
 
     public function actionReceipt(int $id)
     {
         $transaction = Transaction::find()
-                ->alias('t')
-                ->innerJoin(
-                    [
-                            'i' =>
-                            Invoice::tableName(),
-                        ],
-                    'i.id = t.invoice_id'
-                )
-                ->where([
-                    't.id' =>
-                    $id,
-                    'i.user_id' =>
-                    (int)
-                    Yii::$app->user->id,
-                    't.status' =>
-                    Transaction::STATUS_CAPTURED,
-                ])
-                ->one();
+            ->alias('t')
+            ->innerJoin(
+                [
+                    'i' => Invoice::tableName(),
+                ],
+                'i.id = t.invoice_id',
+            )
+            ->where([
+                't.id' => $id,
+                'i.user_id' => (int) Yii::$app->user->id,
+                't.status' => Transaction::STATUS_CAPTURED,
+            ])
+            ->one();
 
         if ($transaction === null) {
             throw new NotFoundHttpException('Payment receipt does not exist.');
@@ -128,13 +102,9 @@ final class PaymentController extends Controller
 
         $pdf = (new PaymentReceiptPdfService())->render($transaction);
 
-        return Yii::$app->response->sendContentAsFile(
-            $pdf,
-            'Payment_Receipt_' . $transaction->id . '.pdf',
-            [
-                            'mimeType' => 'application/pdf',
-                            'inline' => false,
-                        ]
-        );
+        return Yii::$app->response->sendContentAsFile($pdf, 'Payment_Receipt_' . $transaction->id . '.pdf', [
+            'mimeType' => 'application/pdf',
+            'inline' => false,
+        ]);
     }
 }

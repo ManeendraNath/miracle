@@ -21,21 +21,16 @@ final class CouponController extends BaseController
         $dataProvider = $searchModel->search($this->request->queryParams);
 
         return $this->render('index', [
-                    'searchModel' => $searchModel,
-                    'dataProvider' => $dataProvider,
+            'searchModel' => $searchModel,
+            'dataProvider' => $dataProvider,
         ]);
     }
 
-    public function actionView(
-        int $id
-    ): string {
-        return $this->render(
-            'view',
-            [
-                            'model' =>
-                            $this->findModel($id),
-                        ]
-        );
+    public function actionView(int $id): string
+    {
+        return $this->render('view', [
+            'model' => $this->findModel($id),
+        ]);
     }
 
     public function actionCreate(): Response|string
@@ -64,7 +59,6 @@ final class CouponController extends BaseController
         }
         return $this->render('update', ['model' => $model]);
     }
-
 
     /** Services are disabled, never deleted: invoices, billing events and history reference them. */
     protected function statusToggle(): array

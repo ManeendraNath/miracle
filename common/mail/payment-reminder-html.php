@@ -34,11 +34,7 @@ $amount = Yii::$app->formatter->asCurrency($outstandingAmount, 'INR');
                     font-size:13px;
                     color:#6b7280;
                     ">
-                        <?=
-                        Html::encode(
-                            $invoice->invoice_number
-                        )
-                        ?>
+                        <?= Html::encode($invoice->invoice_number) ?>
                 </td>
             </tr>
         </table>
@@ -56,11 +52,7 @@ $amount = Yii::$app->formatter->asCurrency($outstandingAmount, 'INR');
                 line-height:1.25;
                 color:#171717;
                 ">
-                    <?=
-                    Html::encode(
-                        $headline
-                    )
-                    ?>
+                    <?= Html::encode($headline) ?>
             </h1>
 
             <p style="
@@ -69,11 +61,7 @@ $amount = Yii::$app->formatter->asCurrency($outstandingAmount, 'INR');
                line-height:1.7;
                color:#4b5563;
                ">
-                   <?=
-                    Html::encode(
-                        $subHeadline
-                    )
-                    ?>
+                   <?= Html::encode($subHeadline) ?>
             </p>
 
             <table
@@ -104,11 +92,7 @@ $amount = Yii::$app->formatter->asCurrency($outstandingAmount, 'INR');
                         font-weight:700;
                         "
                         >
-                            <?=
-                            Html::encode(
-                                $amount
-                            )
-                            ?>
+                            <?= Html::encode($amount) ?>
                     </td>
                 </tr>
 
@@ -133,23 +117,17 @@ $amount = Yii::$app->formatter->asCurrency($outstandingAmount, 'INR');
                 </tr>
             </table>
 
-            <?=
-            Html::a(
-                'View Invoice & Pay →',
-                $invoiceUrl,
-                [
-                        'style' =>
-                        'display:inline-block;'
-                        . 'background:#171717;'
-                        . 'color:#ffffff;'
-                        . 'text-decoration:none;'
-                        . 'font-size:16px;'
-                        . 'font-weight:700;'
-                        . 'padding:16px 25px;'
-                        . 'border-radius:7px;',
-                    ]
-            )
-            ?>
+            <?= Html::a('View Invoice & Pay →', $invoiceUrl, [
+                'style' =>
+                    'display:inline-block;' .
+                    'background:#171717;' .
+                    'color:#ffffff;' .
+                    'text-decoration:none;' .
+                    'font-size:16px;' .
+                    'font-weight:700;' .
+                    'padding:16px 25px;' .
+                    'border-radius:7px;',
+            ]) ?>
 
         </div>
 

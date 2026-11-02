@@ -26,19 +26,11 @@ $normaliseDatetime = static function (?string $value): string {
 
 <div class="coupon-form">
 
-    <?php
-    $form = ActiveForm::begin(['id' => 'coupon-form', 'options' => ['autocomplete' => 'off']]);
-    ?>
+    <?php $form = ActiveForm::begin(['id' => 'coupon-form', 'options' => ['autocomplete' => 'off']]); ?>
 
-    <?=
-    $form->errorSummary(
-        $model,
-        [
-                'class' =>
-                'alert alert-danger mb-3',
-            ]
-    )
-    ?>
+    <?= $form->errorSummary($model, [
+        'class' => 'alert alert-danger mb-3',
+    ]) ?>
 
     <div class="card card-outline card-primary shadow-sm mb-3">
 
@@ -54,48 +46,29 @@ $normaliseDatetime = static function (?string $value): string {
 
                 <div class="col-lg-6">
 
-                    <?=
-                    $form->field(
-                        $model,
-                        'name'
-                    )->textInput([
+                    <?= $form->field($model, 'name')->textInput([
                         'maxlength' => true,
-                        'placeholder' =>
-                        'e.g. Festive Season Sale',
-                    ])
-                    ?>
+                        'placeholder' => 'e.g. Festive Season Sale',
+                    ]) ?>
 
                 </div>
 
                 <div class="col-lg-6">
 
-                    <?=
-                    $form->field(
-                        $model,
-                        'code'
-                    )->textInput([
+                    <?= $form->field($model, 'code')->textInput([
                         'maxlength' => true,
-                        'placeholder' =>
-                        'e.g. FESTIVE20',
-                        'style' =>
-                        'text-transform: uppercase;',
-                    ])
-                    ?>
+                        'placeholder' => 'e.g. FESTIVE20',
+                        'style' => 'text-transform: uppercase;',
+                    ]) ?>
 
                 </div>
 
             </div>
 
-            <?=
-            $form->field(
-                $model,
-                'description'
-            )->textarea([
+            <?= $form->field($model, 'description')->textarea([
                 'rows' => 4,
-                'placeholder' =>
-                'Internal description of this promotion...',
-            ])
-            ?>
+                'placeholder' => 'Internal description of this promotion...',
+            ]) ?>
 
         </div>
 
@@ -115,58 +88,35 @@ $normaliseDatetime = static function (?string $value): string {
 
                 <div class="col-lg-4">
 
-                    <?=
-                    $form->field(
-                        $model,
-                        'type'
-                    )->dropDownList(
-                        Coupon::getTypes(),
-                        [
-                                'prompt' =>
-                                'Select Discount Type',
-                            ]
-                    )
-                    ?>
+                    <?= $form->field($model, 'type')->dropDownList(Coupon::getTypes(), [
+                        'prompt' => 'Select Discount Type',
+                    ]) ?>
 
                 </div>
 
                 <div class="col-lg-4">
 
-                    <?=
-                    $form->field(
-                        $model,
-                        'amount'
-                    )->input(
-                        'number',
-                        [
-                                'min' => '0.01',
-                                'step' => '0.01',
-                                'placeholder' => '0.00',
-                            ]
-                    )->hint(
-                        'For percentage coupon enter a value between 0 and 100.'
-                    )
-                    ?>
+                    <?= $form
+                        ->field($model, 'amount')
+                        ->input('number', [
+                            'min' => '0.01',
+                            'step' => '0.01',
+                            'placeholder' => '0.00',
+                        ])
+                        ->hint('For percentage coupon enter a value between 0 and 100.') ?>
 
                 </div>
 
                 <div class="col-lg-4">
 
-                    <?=
-                    $form->field(
-                        $model,
-                        'minimum_order'
-                    )->input(
-                        'number',
-                        [
-                                'min' => 0,
-                                'step' => '0.01',
-                                'placeholder' => '0.00',
-                            ]
-                    )->hint(
-                        'Use 0 when no minimum order value is required.'
-                    )
-                    ?>
+                    <?= $form
+                        ->field($model, 'minimum_order')
+                        ->input('number', [
+                            'min' => 0,
+                            'step' => '0.01',
+                            'placeholder' => '0.00',
+                        ])
+                        ->hint('Use 0 when no minimum order value is required.') ?>
 
                 </div>
 
@@ -190,37 +140,17 @@ $normaliseDatetime = static function (?string $value): string {
 
                 <div class="col-lg-6">
 
-                    <?=
-                    $form->field(
-                        $model,
-                        'start_date'
-                    )->input(
-                        'datetime-local',
-                        [
-                                'value' => $normaliseDatetime(
-                                    $model->start_date
-                                ),
-                            ]
-                    )
-                    ?>
+                    <?= $form->field($model, 'start_date')->input('datetime-local', [
+                        'value' => $normaliseDatetime($model->start_date),
+                    ]) ?>
 
                 </div>
 
                 <div class="col-lg-6">
 
-                    <?=
-                    $form->field(
-                        $model,
-                        'end_date'
-                    )->input(
-                        'datetime-local',
-                        [
-                                'value' => $normaliseDatetime(
-                                    $model->end_date
-                                ),
-                            ]
-                    )
-                    ?>
+                    <?= $form->field($model, 'end_date')->input('datetime-local', [
+                        'value' => $normaliseDatetime($model->end_date),
+                    ]) ?>
 
                 </div>
 
@@ -248,52 +178,31 @@ $normaliseDatetime = static function (?string $value): string {
 
                 <div class="col-lg-4">
 
-                    <?=
-                    $form->field(
-                        $model,
-                        'uses_per_coupon'
-                    )->input(
-                        'number',
-                        [
-                                'min' => 0,
-                                'step' => 1,
-                            ]
-                    )->hint(
-                        'Maximum allowed uses for this coupon. Use 0 for no limit.'
-                    )
-                    ?>
+                    <?= $form
+                        ->field($model, 'uses_per_coupon')
+                        ->input('number', [
+                            'min' => 0,
+                            'step' => 1,
+                        ])
+                        ->hint('Maximum allowed uses for this coupon. Use 0 for no limit.') ?>
 
                 </div>
 
                 <div class="col-lg-4">
 
-                    <?=
-                    $form->field(
-                        $model,
-                        'uses_per_user'
-                    )->input(
-                        'number',
-                        [
-                                'min' => 0,
-                                'step' => 1,
-                            ]
-                    )->hint(
-                        'Use 0 when there is no per-customer limit.'
-                    )
-                    ?>
+                    <?= $form
+                        ->field($model, 'uses_per_user')
+                        ->input('number', [
+                            'min' => 0,
+                            'step' => 1,
+                        ])
+                        ->hint('Use 0 when there is no per-customer limit.') ?>
 
                 </div>
 
                 <div class="col-lg-4">
 
-                    <?=
-                    $form->field(
-                        $model,
-                        'is_active'
-                    )->dropDownList(
-                        Coupon::getStatuses()
-                    )
-                    ?>
+                    <?= $form->field($model, 'is_active')->dropDownList(Coupon::getStatuses()) ?>
 
                 </div>
 
@@ -310,21 +219,33 @@ $normaliseDatetime = static function (?string $value): string {
         <div class="card-body">
             <div class="row">
                 <div class="col-lg-6">
-                    <?= $form->field($model, 'applies_to')->checkboxList(InvoiceItem::getServiceTypes(), [
-                        'unselect' => '',
-                        'itemOptions' => ['labelOptions' => ['class' => 'mr-3 font-weight-normal']],
-                    ])->hint('Leave all unticked to allow every invoice line. When ticked, only lines of these service types are discounted.') ?>
+                    <?= $form
+                        ->field($model, 'applies_to')
+                        ->checkboxList(InvoiceItem::getServiceTypes(), [
+                            'unselect' => '',
+                            'itemOptions' => ['labelOptions' => ['class' => 'mr-3 font-weight-normal']],
+                        ])
+                        ->hint(
+                            'Leave all unticked to allow every invoice line. When ticked, only lines of these service types are discounted.',
+                        ) ?>
                 </div>
                 <div class="col-lg-6">
-                    <?= $form->field($model, 'assigned_user_ids')->widget(Select2::class, [
-                        'data' => ArrayHelper::map(
-                            User::find()->select(['id', 'username', 'email'])->orderBy('username')->asArray()->all(),
-                            'id',
-                            static fn(array $u): string => $u['username'] . ' (' . $u['email'] . ')'
-                        ),
-                        'options' => ['multiple' => true, 'placeholder' => 'Any customer'],
-                        'pluginOptions' => ['allowClear' => true],
-                    ])->hint('Leave empty so any customer can use the coupon.') ?>
+                    <?= $form
+                        ->field($model, 'assigned_user_ids')
+                        ->widget(Select2::class, [
+                            'data' => ArrayHelper::map(
+                                User::find()
+                                    ->select(['id', 'username', 'email'])
+                                    ->orderBy('username')
+                                    ->asArray()
+                                    ->all(),
+                                'id',
+                                static fn(array $u): string => $u['username'] . ' (' . $u['email'] . ')',
+                            ),
+                            'options' => ['multiple' => true, 'placeholder' => 'Any customer'],
+                            'pluginOptions' => ['allowClear' => true],
+                        ])
+                        ->hint('Leave empty so any customer can use the coupon.') ?>
                 </div>
             </div>
         </div>
@@ -332,30 +253,13 @@ $normaliseDatetime = static function (?string $value): string {
 
     <div class="d-flex justify-content-end gap-2">
 
-        <?=
-        Html::a(
-            'Cancel',
-            $isNew ? ['index'] : [
-                    'view',
-                    'id' =>
-                    $model->id,
-                        ],
-            [
-                    'class' =>
-                    'btn btn-outline-secondary',
-                ]
-        )
-        ?>
+        <?= Html::a('Cancel', $isNew ? ['index'] : ['view', 'id' => $model->id], [
+            'class' => 'btn btn-outline-secondary',
+        ]) ?>
 
-        <?=
-        Html::submitButton(
-            $isNew ? 'Save Coupon' : 'Update Coupon',
-            [
-                    'class' =>
-                    'btn btn-primary px-4',
-                ]
-        )
-        ?>
+        <?= Html::submitButton($isNew ? 'Save Coupon' : 'Update Coupon', [
+            'class' => 'btn btn-primary px-4',
+        ]) ?>
 
     </div>
 

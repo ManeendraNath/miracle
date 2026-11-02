@@ -13,20 +13,16 @@ $isNew = $model->isNewRecord;
 
 <div class="invoice-form">
 
-    <?php
-    $form = ActiveForm::begin([
+    <?php $form = ActiveForm::begin([
         'id' => 'invoice-form',
-    ]);
-    ?>
+    ]); ?>
 
     <div class="card card-outline card-primary shadow-sm">
 
         <div class="card-header">
 
             <h3 class="card-title mb-0">
-                <?=
-                $isNew ? 'Create Manual Invoice' : 'Update Manual Invoice'
-                ?>
+                <?= $isNew ? 'Create Manual Invoice' : 'Update Manual Invoice' ?>
             </h3>
 
         </div>
@@ -34,15 +30,9 @@ $isNew = $model->isNewRecord;
 
         <div class="card-body">
 
-            <?=
-            $form->errorSummary(
-                    $model,
-                    [
-                        'class' =>
-                        'alert alert-danger',
-                    ]
-            )
-            ?>
+            <?= $form->errorSummary($model, [
+                'class' => 'alert alert-danger',
+            ]) ?>
 
 
             <h6 class="text-primary border-bottom pb-2 mb-3">
@@ -55,34 +45,18 @@ $isNew = $model->isNewRecord;
                 <div class="col-md-6">
 
                     <?php if ($isNew): ?>
-
-                        <?=
-                                $form
-                                ->field(
-                                        $model,
-                                        'user_id'
-                                )
-                                ->widget(
-                                        Select2::class,
-                                        [
-                                            'data' =>
-                                            $usersList,
-                                            'options' => [
-                                                'placeholder' =>
-                                                'Select Client',
-                                            ],
-                                            'pluginOptions' => [
-                                                'allowClear' =>
-                                                false,
-                                                'width' =>
-                                                '100%',
-                                            ],
-                                        ]
-                                )
-                        ?>
+                        <?= $form->field($model, 'user_id')->widget(Select2::class, [
+                            'data' => $usersList,
+                            'options' => [
+                                'placeholder' => 'Select Client',
+                            ],
+                            'pluginOptions' => [
+                                'allowClear' => false,
+                                'width' => '100%',
+                            ],
+                        ]) ?>
 
                     <?php else: ?>
-
                         <label class="form-label">
                             Client
                         </label>
@@ -90,11 +64,7 @@ $isNew = $model->isNewRecord;
                         <input
                             type="text"
                             class="form-control"
-                            value="<?=
-                            Html::encode(
-                                    $model->client_name
-                            )
-                            ?>"
+                            value="<?= Html::encode($model->client_name) ?>"
                             readonly
                             >
 
@@ -105,14 +75,7 @@ $isNew = $model->isNewRecord;
 
                 <div class="col-md-6">
 
-                    <?=
-                            $form
-                            ->field(
-                                    $model,
-                                    'due_date'
-                            )
-                            ->input('date')
-                    ?>
+                    <?= $form->field($model, 'due_date')->input('date') ?>
 
                 </div>
 
@@ -164,12 +127,7 @@ $isNew = $model->isNewRecord;
 
                     <tbody id="invoice-item-rows">
 
-                        <?php
-                        foreach (
-                                $items as $index => $item
-                        ):
-                            ?>
-
+                        <?php foreach ($items as $index => $item): ?>
                             <tr class="invoice-item-row">
 
                                 <td>
@@ -177,11 +135,7 @@ $isNew = $model->isNewRecord;
                                     <input
                                         type="text"
                                         name="ManualInvoiceItemForm[<?= $index ?>][category]"
-                                        value="<?=
-                                        Html::encode(
-                                                $item->category
-                                        )
-                                        ?>"
+                                        value="<?= Html::encode($item->category) ?>"
                                         class="form-control"
                                         maxlength="100"
                                         required
@@ -190,7 +144,10 @@ $isNew = $model->isNewRecord;
                                         "ManualInvoiceItemForm[{$index}][item_type]",
                                         $item->item_type,
                                         \common\models\InvoiceItem::getServiceTypes(),
-                                        ['class' => 'form-control form-control-sm mt-1', 'title' => 'Service type (used by coupon restrictions)']
+                                        [
+                                            'class' => 'form-control form-control-sm mt-1',
+                                            'title' => 'Service type (used by coupon restrictions)',
+                                        ],
                                     ) ?>
 
                                 </td>
@@ -201,11 +158,7 @@ $isNew = $model->isNewRecord;
                                     <input
                                         type="text"
                                         name="ManualInvoiceItemForm[<?= $index ?>][description]"
-                                        value="<?=
-                                        Html::encode(
-                                                $item->description
-                                        )
-                                        ?>"
+                                        value="<?= Html::encode($item->description) ?>"
                                         class="form-control"
                                         maxlength="500"
                                         required
@@ -219,11 +172,7 @@ $isNew = $model->isNewRecord;
                                     <input
                                         type="number"
                                         name="ManualInvoiceItemForm[<?= $index ?>][quantity]"
-                                        value="<?=
-                                        Html::encode(
-                                                $item->quantity
-                                        )
-                                        ?>"
+                                        value="<?= Html::encode($item->quantity) ?>"
                                         class="form-control invoice-item-qty"
                                         min="1"
                                         step="1"
@@ -238,11 +187,7 @@ $isNew = $model->isNewRecord;
                                     <input
                                         type="number"
                                         name="ManualInvoiceItemForm[<?= $index ?>][unit_price]"
-                                        value="<?=
-                                        Html::encode(
-                                                $item->unit_price
-                                        )
-                                        ?>"
+                                        value="<?= Html::encode($item->unit_price) ?>"
                                         class="form-control invoice-item-price"
                                         min="0"
                                         step="0.01"
@@ -257,14 +202,7 @@ $isNew = $model->isNewRecord;
                                     <input
                                         type="text"
                                         class="form-control invoice-item-total"
-                                        value="<?=
-                                        number_format(
-                                                $item->getTotal(),
-                                                2,
-                                                '.',
-                                                ''
-                                        )
-                                        ?>"
+                                        value="<?= number_format($item->getTotal(), 2, '.', '') ?>"
                                         readonly
                                         >
 
@@ -329,34 +267,28 @@ $isNew = $model->isNewRecord;
                     </div>
 
 
-                    <?=
-                    $form->field(
-                            $model,
-                            'discount_amount'
-                    )->textInput([
-                        'type' => 'number',
-                        'min' => 0,
-                        'step' => '0.01',
-                        'id' => 'invoice-discount',
-                    ])->hint(
-                            'Manual discount. If a coupon code is supplied, the validated coupon discount will override this value.'
-                    )
-                    ?>
+                    <?= $form
+                        ->field($model, 'discount_amount')
+                        ->textInput([
+                            'type' => 'number',
+                            'min' => 0,
+                            'step' => '0.01',
+                            'id' => 'invoice-discount',
+                        ])
+                        ->hint(
+                            'Manual discount. If a coupon code is supplied, the validated coupon discount will override this value.',
+                        ) ?>
 
 
-                    <?=
-                    $form->field(
-                            $model,
-                            'coupon_code'
-                    )->textInput([
-                        'maxlength' => true,
-                        'autocomplete' => 'off',
-                        'style' => 'text-transform: uppercase;',
-                        'placeholder' => 'Optional coupon code',
-                    ])->hint(
-                            'Coupon eligibility and final discount are validated when the invoice is saved.'
-                    )
-                    ?>
+                    <?= $form
+                        ->field($model, 'coupon_code')
+                        ->textInput([
+                            'maxlength' => true,
+                            'autocomplete' => 'off',
+                            'style' => 'text-transform: uppercase;',
+                            'placeholder' => 'Optional coupon code',
+                        ])
+                        ->hint('Coupon eligibility and final discount are validated when the invoice is saved.') ?>
 
 
 
@@ -364,52 +296,28 @@ $isNew = $model->isNewRecord;
 
                         <div class="col-4">
 
-                            <?=
-                                    $form
-                                    ->field(
-                                            $model,
-                                            'cgst_percent'
-                                    )
-                                    ->textInput([
-                                        'readonly' => true,
-                                        'id' =>
-                                        'invoice-cgst',
-                                    ])
-                            ?>
+                            <?= $form->field($model, 'cgst_percent')->textInput([
+                                'readonly' => true,
+                                'id' => 'invoice-cgst',
+                            ]) ?>
 
                         </div>
 
                         <div class="col-4">
 
-                            <?=
-                                    $form
-                                    ->field(
-                                            $model,
-                                            'sgst_percent'
-                                    )
-                                    ->textInput([
-                                        'readonly' => true,
-                                        'id' =>
-                                        'invoice-sgst',
-                                    ])
-                            ?>
+                            <?= $form->field($model, 'sgst_percent')->textInput([
+                                'readonly' => true,
+                                'id' => 'invoice-sgst',
+                            ]) ?>
 
                         </div>
 
                         <div class="col-4">
 
-                            <?=
-                                    $form
-                                    ->field(
-                                            $model,
-                                            'igst_percent'
-                                    )
-                                    ->textInput([
-                                        'readonly' => true,
-                                        'id' =>
-                                        'invoice-igst',
-                                    ])
-                            ?>
+                            <?= $form->field($model, 'igst_percent')->textInput([
+                                'readonly' => true,
+                                'id' => 'invoice-igst',
+                            ]) ?>
 
                         </div>
 
@@ -442,30 +350,13 @@ $isNew = $model->isNewRecord;
             class="card-footer d-flex justify-content-between"
             >
 
-            <?=
-            Html::a(
-                    'Cancel',
-                    $isNew ? ['index'] : [
-                        'view',
-                        'number' =>
-                        $model->invoice_number,
-                            ],
-                    [
-                        'class' =>
-                        'btn btn-outline-secondary',
-                    ]
-            )
-            ?>
+            <?= Html::a('Cancel', $isNew ? ['index'] : ['view', 'number' => $model->invoice_number], [
+                'class' => 'btn btn-outline-secondary',
+            ]) ?>
 
-            <?=
-            Html::submitButton(
-                    $isNew ? 'Create Invoice' : 'Update Invoice',
-                    [
-                        'class' =>
-                        'btn btn-primary px-4',
-                    ]
-            )
-            ?>
+            <?= Html::submitButton($isNew ? 'Create Invoice' : 'Update Invoice', [
+                'class' => 'btn btn-primary px-4',
+            ]) ?>
 
         </div>
 
@@ -478,7 +369,12 @@ $isNew = $model->isNewRecord;
 $nextIndex = count($items);
 
 // Same options as the server-rendered rows, for rows added in the browser.
-$serviceTypeSelect = Html::dropDownList('ManualInvoiceItemForm[__INDEX__][item_type]', \common\models\InvoiceItem::TYPE_CUSTOM, \common\models\InvoiceItem::getServiceTypes(), ['class' => 'form-control form-control-sm mt-1', 'title' => 'Service type (used by coupon restrictions)']);
+$serviceTypeSelect = Html::dropDownList(
+    'ManualInvoiceItemForm[__INDEX__][item_type]',
+    \common\models\InvoiceItem::TYPE_CUSTOM,
+    \common\models\InvoiceItem::getServiceTypes(),
+    ['class' => 'form-control form-control-sm mt-1', 'title' => 'Service type (used by coupon restrictions)'],
+);
 $serviceTypeSelect = str_replace('__INDEX__', '${index}', str_replace('`', '', $serviceTypeSelect));
 
 $js = <<<JS
@@ -690,4 +586,5 @@ recalculateManualInvoice();
 JS;
 
 $this->registerJs($js);
+
 ?>

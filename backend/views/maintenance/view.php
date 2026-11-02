@@ -46,28 +46,21 @@ $statusClass = match ($status) {
 
         <div class="d-flex gap-2">
 
-            <?=
-            Html::a(
+            <?= Html::a(
                 'Back',
                 ['index'],
                 [
-                        'class' => 'btn btn-light border',
-                    ]
-            )
-            ?>
+                    'class' => 'btn btn-light border',
+                ],
+            ) ?>
 
-            <?=
-            Html::a(
+            <?= Html::a(
                 '<i class="fas fa-edit mr-1"></i> Update',
+                ['update', 'id' => $model->id],
                 [
-                        'update',
-                        'id' => $model->id,
-                    ],
-                [
-                        'class' => 'btn btn-primary',
-                    ]
-            )
-            ?>
+                    'class' => 'btn btn-primary',
+                ],
+            ) ?>
 
         </div>
 
@@ -97,19 +90,11 @@ $statusClass = match ($status) {
 
                             <?php if ($model->user !== null): ?>
                                 <div class="fw-semibold">
-                                    <?=
-                                    Html::encode(
-                                        $model->user->username
-                                    )
-                                    ?>
+                                    <?= Html::encode($model->user->username) ?>
                                 </div>
 
                                 <div class="text-muted small">
-                                    <?=
-                                    Html::encode(
-                                        $model->user->email
-                                    )
-                                    ?>
+                                    <?= Html::encode($model->user->email) ?>
                                 </div>
 
                             <?php else: ?>
@@ -127,18 +112,10 @@ $statusClass = match ($status) {
 
                         <dd class="col-sm-8">
 
-                            <?=
-                            Html::a(
-                                Html::encode(
-                                    $model->website_url
-                                ),
-                                $model->website_url,
-                                [
-                                        'target' => '_blank',
-                                        'rel' => 'noopener noreferrer',
-                                    ]
-                            )
-                            ?>
+                            <?= Html::a(Html::encode($model->website_url), $model->website_url, [
+                                'target' => '_blank',
+                                'rel' => 'noopener noreferrer',
+                            ]) ?>
 
                         </dd>
 
@@ -148,16 +125,9 @@ $statusClass = match ($status) {
 
                         <dd class="col-sm-8">
 
-                            <?=
-                            Html::tag(
-                                'span',
-                                Html::encode($statusLabel),
-                                [
-                                        'class' =>
-                                        'badge ' . $statusClass,
-                                    ]
-                            )
-                            ?>
+                            <?= Html::tag('span', Html::encode($statusLabel), [
+                                'class' => 'badge ' . $statusClass,
+                            ]) ?>
 
                         </dd>
 
@@ -189,12 +159,9 @@ $statusClass = match ($status) {
 
                         <dd class="col-sm-7">
 
-                            <?=
-                            $model->start_date ? Yii::$app->formatter->asDate(
-                                $model->start_date,
-                                'php:d M Y'
-                            ) : '-'
-                            ?>
+                            <?= $model->start_date
+                                ? Yii::$app->formatter->asDate($model->start_date, 'php:d M Y')
+                                : '-' ?>
 
                         </dd>
 
@@ -204,12 +171,9 @@ $statusClass = match ($status) {
 
                         <dd class="col-sm-7">
 
-                            <?=
-                            $model->current_expiry_date ? Yii::$app->formatter->asDate(
-                                $model->current_expiry_date,
-                                'php:d M Y'
-                            ) : '-'
-                            ?>
+                            <?= $model->current_expiry_date
+                                ? Yii::$app->formatter->asDate($model->current_expiry_date, 'php:d M Y')
+                                : '-' ?>
 
                         </dd>
 
@@ -245,12 +209,9 @@ $statusClass = match ($status) {
 
                         <dd class="col-sm-7">
 
-                            <?=
-                            $model->renewal_base_amount !== null ? Yii::$app->formatter->asCurrency(
-                                $model->renewal_base_amount,
-                                'INR'
-                            ) : '-'
-                            ?>
+                            <?= $model->renewal_base_amount !== null
+                                ? Yii::$app->formatter->asCurrency($model->renewal_base_amount, 'INR')
+                                : '-' ?>
 
                         </dd>
 
@@ -261,12 +222,7 @@ $statusClass = match ($status) {
                         <dd class="col-sm-7">
 
                             <?php if ($model->renewal_cycle_months): ?>
-                                <?=
-                                Html::encode(
-                                    $model->renewal_cycle_months
-                                        . ' month(s)'
-                                )
-                                ?>
+                                <?= Html::encode($model->renewal_cycle_months . ' month(s)') ?>
 
                             <?php else: ?>
                                 <span class="text-muted">
@@ -283,20 +239,8 @@ $statusClass = match ($status) {
 
                         <dd class="col-sm-7">
 
-                            <?php
-                            if (
-                                    $model->renewal_increase_percent !== null
-                            ):
-                                ?>
-
-                                <?=
-                                Html::encode(
-                                    number_format(
-                                        (float) $model->renewal_increase_percent,
-                                        2
-                                    ) . '%'
-                                )
-                                ?>
+                            <?php if ($model->renewal_increase_percent !== null): ?>
+                                <?= Html::encode(number_format((float) $model->renewal_increase_percent, 2) . '%') ?>
 
                             <?php else: ?>
                                 <span class="text-muted">
@@ -343,12 +287,7 @@ $statusClass = match ($status) {
 
                         <dd class="col-sm-7">
 
-                            <?=
-                            Yii::$app->formatter->asDatetime(
-                                $model->created_at,
-                                'php:d M Y, h:i A'
-                            )
-                            ?>
+                            <?= Yii::$app->formatter->asDatetime($model->created_at, 'php:d M Y, h:i A') ?>
 
                         </dd>
 
@@ -358,12 +297,7 @@ $statusClass = match ($status) {
 
                         <dd class="col-sm-7">
 
-                            <?=
-                            Yii::$app->formatter->asDatetime(
-                                $model->updated_at,
-                                'php:d M Y, h:i A'
-                            )
-                            ?>
+                            <?= Yii::$app->formatter->asDatetime($model->updated_at, 'php:d M Y, h:i A') ?>
 
                         </dd>
 
@@ -378,19 +312,12 @@ $statusClass = match ($status) {
     </div>
 
     <div class="d-flex gap-2">
-        <?=
-        Html::a(
+        <?= Html::a(
             '<i class="fas fa-calendar-check mr-1"></i> Renewal Monitoring',
+            ['/renewal-monitoring/index', 'type' => 'maintenance', 'user_id' => $model->user_id, 'window' => 'all'],
             [
-                    '/renewal-monitoring/index',
-                    'type' => 'maintenance',
-                    'user_id' => $model->user_id,
-                    'window' => 'all',
-                ],
-            [
-                    'class' => 'btn btn-outline-info',
-                ]
-        )
-        ?>
+                'class' => 'btn btn-outline-info',
+            ],
+        ) ?>
     </div>
 </div>

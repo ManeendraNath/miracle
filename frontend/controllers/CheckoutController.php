@@ -30,38 +30,23 @@ final class CheckoutController extends Controller
                     ],
                 ],
             ],
-
         ];
     }
 
-    public function actionRenew(
-        string $type,
-        int $id
-    ) {
-        $userId =
-            (int) Yii::$app->user->id;
+    public function actionRenew(string $type, int $id)
+    {
+        $userId = (int) Yii::$app->user->id;
 
-        $itemType =
-            $this->resolveOwnedAssetType(
-                $type,
-                $id,
-                $userId
-            );
+        $itemType = $this->resolveOwnedAssetType($type, $id, $userId);
 
         $invoice = Invoice::find()
             ->alias('i')
-            ->innerJoin(
-                ['ii' => InvoiceItem::tableName()],
-                'ii.invoice_id = i.id'
-            )
+            ->innerJoin(['ii' => InvoiceItem::tableName()], 'ii.invoice_id = i.id')
             ->where([
                 'i.user_id' => $userId,
                 'ii.item_type' => $itemType,
                 'ii.item_id' => $id,
-                'i.status' => [
-                    Invoice::STATUS_UNPAID,
-                    Invoice::STATUS_PARTIALLY_PAID,
-                ],
+                'i.status' => [Invoice::STATUS_UNPAID, Invoice::STATUS_PARTIALLY_PAID],
             ])
             ->orderBy([
                 'i.created_at' => SORT_DESC,
@@ -72,70 +57,48 @@ final class CheckoutController extends Controller
         if ($invoice === null) {
             Yii::$app->session->setFlash(
                 'warning',
-                'No payable renewal invoice is currently available '
-                . 'for this service.'
+                'No payable renewal invoice is currently available ' . 'for this service.',
             );
 
-            return $this->redirect([
-                '/dashboard/index',
-            ]);
+            return $this->redirect(['/dashboard/index']);
         }
 
-        return $this->redirect([
-            '/invoice/view',
-            'number' =>
-                $invoice->invoice_number,
-        ]);
+        return $this->redirect(['/invoice/view', 'number' => $invoice->invoice_number]);
     }
 
-    private function resolveOwnedAssetType(
-        string $type,
-        int $id,
-        int $userId
-    ): int {
+    private function resolveOwnedAssetType(string $type, int $id, int $userId): int
+    {
         $asset = match ($type) {
-            'domain' =>
-                Domains::findOne([
-                    'id' => $id,
-                    'user_id' => $userId,
-                ]),
+            'domain' => Domains::findOne([
+                'id' => $id,
+                'user_id' => $userId,
+            ]),
 
-            'hosting' =>
-                Hosting::findOne([
-                    'id' => $id,
-                    'user_id' => $userId,
-                ]),
+            'hosting' => Hosting::findOne([
+                'id' => $id,
+                'user_id' => $userId,
+            ]),
 
-            'maintenance' =>
-                Maintenance::findOne([
-                    'id' => $id,
-                    'user_id' => $userId,
-                ]),
+            'maintenance' => Maintenance::findOne([
+                'id' => $id,
+                'user_id' => $userId,
+            ]),
 
-            default =>
-                null,
+            default => null,
         };
 
         if ($asset === null) {
-            throw new NotFoundHttpException(
-                'Requested service was not found.'
-            );
+            throw new NotFoundHttpException('Requested service was not found.');
         }
 
         return match ($type) {
-            'domain' =>
-                InvoiceItem::TYPE_DOMAIN,
+            'domain' => InvoiceItem::TYPE_DOMAIN,
 
-            'hosting' =>
-                InvoiceItem::TYPE_HOSTING,
+            'hosting' => InvoiceItem::TYPE_HOSTING,
 
-            'maintenance' =>
-                InvoiceItem::TYPE_MAINTENANCE,
+            'maintenance' => InvoiceItem::TYPE_MAINTENANCE,
 
-            default =>
-                throw new NotFoundHttpException(
-                    'Unsupported service type.'
-                ),
+            default => throw new NotFoundHttpException('Unsupported service type.'),
         };
     }
 }

@@ -12,22 +12,19 @@ use common\models\Transaction;
 
 final class CustomerActivityService
 {
-
     public static function getActivities(int $userId, int $limit = 50): array
     {
-
         $activities = [];
 
         $notifications = CustomerNotification::find()
-                ->where(['user_id' => $userId])
-                ->orderBy(['created_at' => SORT_DESC])
-                ->limit($limit)
-                ->all();
+            ->where(['user_id' => $userId])
+            ->orderBy(['created_at' => SORT_DESC])
+            ->limit($limit)
+            ->all();
         foreach ($notifications as $notification) {
-
             $activities[] = [
-    'icon' => 'fas fa-bell',
-    'badgeClass' => 'bg-primary',
+                'icon' => 'fas fa-bell',
+                'badgeClass' => 'bg-primary',
                 'title' => $notification->title,
                 'description' => $notification->message,
                 'time' => (int) $notification->created_at,
@@ -36,55 +33,50 @@ final class CustomerActivityService
         }
 
         foreach (
-                Invoice::find()
-                        ->where(['user_id' => $userId])
-                        ->orderBy(['created_at' => SORT_DESC])
-                        ->limit($limit)
-                        ->all()
-        as $invoice
+            Invoice::find()
+                ->where(['user_id' => $userId])
+                ->orderBy(['created_at' => SORT_DESC])
+                ->limit($limit)
+                ->all()
+            as $invoice
         ) {
-
             $activities[] = [
                 'icon' => 'fas fa-file-invoice',
                 'badgeClass' => 'bg-info',
                 'title' => 'Invoice Generated',
-                'description' =>
-                $invoice->invoice_number,
+                'description' => $invoice->invoice_number,
                 'time' => (int) $invoice->created_at,
                 'url' => '/invoice/index',
             ];
         }
 
         foreach (
-                Transaction::find()
-                        ->innerJoinWith('invoice', false)
-                        ->where(['invoice.user_id' => $userId])
-                        ->orderBy(['transaction.created_at' => SORT_DESC])
-                        ->limit($limit)
-                        ->all()
-        as $transaction
+            Transaction::find()
+                ->innerJoinWith('invoice', false)
+                ->where(['invoice.user_id' => $userId])
+                ->orderBy(['transaction.created_at' => SORT_DESC])
+                ->limit($limit)
+                ->all()
+            as $transaction
         ) {
-
             $activities[] = [
                 'icon' => 'fas fa-rupee-sign',
                 'badgeClass' => 'bg-success',
                 'title' => 'Payment Submitted',
-                'description' =>
-                $transaction->gateway_payment_id ?: 'Reference Uploaded',
+                'description' => $transaction->gateway_payment_id ?: 'Reference Uploaded',
                 'time' => (int) $transaction->created_at,
                 'url' => '/payment/index',
             ];
         }
 
         foreach (
-                SupportTicket::find()
-                        ->where(['user_id' => $userId])
-                        ->orderBy(['created_at' => SORT_DESC])
-                        ->limit($limit)
-                        ->all()
-        as $ticket
+            SupportTicket::find()
+                ->where(['user_id' => $userId])
+                ->orderBy(['created_at' => SORT_DESC])
+                ->limit($limit)
+                ->all()
+            as $ticket
         ) {
-
             $activities[] = [
                 'icon' => 'fas fa-life-ring',
                 'badgeClass' => 'bg-warning text-dark',
@@ -96,36 +88,26 @@ final class CustomerActivityService
         }
 
         foreach (
-                ServiceRenewalHistory::find()
-                        ->innerJoinWith('invoice', false)
-                        ->where(['invoice.user_id' => $userId])
-                        ->orderBy(['service_renewal_history.logged_at' => SORT_DESC])
-                        ->limit($limit)
-                        ->all()
-        as $renewal
+            ServiceRenewalHistory::find()
+                ->innerJoinWith('invoice', false)
+                ->where(['invoice.user_id' => $userId])
+                ->orderBy(['service_renewal_history.logged_at' => SORT_DESC])
+                ->limit($limit)
+                ->all()
+            as $renewal
         ) {
-
             $activities[] = [
                 'icon' => 'fas fa-sync-alt',
                 'badgeClass' => 'bg-success',
                 'title' => 'Service Renewed',
-                'description' =>
-                ucfirst($renewal->item_type) . ' renewed until ' . $renewal->end_date,
+                'description' => ucfirst($renewal->item_type) . ' renewed until ' . $renewal->end_date,
                 'time' => (int) $renewal->logged_at,
                 'url' => '/renewal/index',
             ];
         }
 
-        usort(
-                $activities,
-                static fn(array $a, array $b)
-                => $b['time'] <=> $a['time']
-        );
+        usort($activities, static fn(array $a, array $b) => $b['time'] <=> $a['time']);
 
-        return array_slice(
-                $activities,
-                0,
-                $limit
-        );
+        return array_slice($activities, 0, $limit);
     }
 }

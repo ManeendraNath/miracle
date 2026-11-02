@@ -8,6 +8,7 @@ use common\helpers\GridPaginationHelper;
 use common\helpers\GridViewHelper;
 use common\models\Coupon;
 use yii\grid\GridView;
+use common\helpers\AdminIndexHelper;
 use yii\helpers\Html;
 
 $this->title = 'Promotional Coupon';
@@ -20,29 +21,7 @@ GridViewHelper::register($this);
 
     <div class="card card-outline card-primary shadow-sm">
 
-        <div class="card-header">
-
-            <div class="d-flex justify-content-between align-items-center">
-
-                <div>
-
-                    <div class="text-muted">Manage discount codes, validity periods and usage limits.</div>
-
-                </div>
-
-                <?=
-                Html::a(
-                    '<i class="fas fa-plus mr-1"></i> Add Coupon',
-                    ['create'],
-                    [
-                            'class' => 'btn btn-sm btn-primary',
-                        ]
-                )
-                ?>
-
-            </div>
-
-        </div>
+        <?= AdminIndexHelper::pageHeader('Manage discount codes, validity periods and usage limits.', 'create', 'Add Coupon') ?>
 
         <div class="card-body p-0">
 

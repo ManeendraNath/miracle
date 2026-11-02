@@ -6,6 +6,7 @@ use common\helpers\GridPaginationHelper;
 use common\helpers\GridViewHelper;
 use common\models\Lead;
 use yii\grid\GridView;
+use common\helpers\AdminIndexHelper;
 use yii\helpers\Html;
 
 /** @var yii\web\View $this */
@@ -28,19 +29,7 @@ GridViewHelper::register($this);
     <div class="card card-outline card-primary shadow-sm">
 
         <!-- Header -->
-        <div class="card-header">
-
-            <div class="d-flex justify-content-between align-items-center">
-
-                <div>
-                    <div class="text-muted small">
-                        Manage incoming client enquiries and lead sources.
-                    </div>
-                </div>
-
-            </div>
-
-        </div>
+        <?= AdminIndexHelper::pageHeader('Manage incoming client enquiries and lead sources.') ?>
 
 
         <!-- Grid -->

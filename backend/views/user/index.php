@@ -1,5 +1,6 @@
 <?php
 
+use common\helpers\AdminIndexHelper;
 use common\helpers\GridActionHelper;
 use common\helpers\GridFilterHelper;
 use common\models\User;
@@ -12,15 +13,9 @@ use yii\helpers\Html;
 $this->title = 'Client Users Directory';
 $this->params['breadcrumbs'][] = $this->title;
 ?>
-<div class="user-index card card-outline card-primary p-4 shadow-sm">
-
-    <!-- Cleaned Header Wrapper Section (No Duplicate h1 elements) -->
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <div>
-            <small class="text-muted">Review, filter, or toggle status privileges for client customer accounts profiles</small>
-        </div>
-        <?= Html::a('<i class="fas fa-user-plus mr-1"></i> Add New Client', ['create'], ['class' => 'btn btn-success px-4 rounded-pill shadow-sm']) ?>
-    </div>
+<div class="user-index card card-outline card-primary shadow-sm">
+    <?= AdminIndexHelper::pageHeader('Review, filter and manage customer accounts.', 'create', 'Add New Client') ?>
+    <div class="card-body">
 
     <?=
     GridView::widget([
@@ -132,4 +127,5 @@ $this->params['breadcrumbs'][] = $this->title;
         ],
     ]);
     ?>
+</div>
 </div>

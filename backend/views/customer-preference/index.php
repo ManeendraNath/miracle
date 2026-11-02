@@ -5,6 +5,7 @@ use common\models\CustomerPreference;
 use yii\data\ActiveDataProvider;
 use common\helpers\GridFilterHelper;
 use yii\grid\GridView;
+use common\helpers\AdminIndexHelper;
 use yii\helpers\Html;
 
 /**
@@ -41,23 +42,7 @@ $badge = static function ($value): string {
 
     <div class="card card-outline card-primary shadow-sm">
 
-        <div class="card-header">
-
-            <div
-                class="d-flex
-                justify-content-between
-                align-items-center"
-                >
-
-                <div>
-
-                    <div class="text-muted">Review customer communication and reminder preferences.</div>
-
-                </div>
-
-            </div>
-
-        </div>
+        <?= AdminIndexHelper::pageHeader('Review customer communication and reminder preferences.') ?>
 
         <div class="card-body p-0">
 

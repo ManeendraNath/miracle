@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use common\helpers\AdminIndexHelper;
 use yii\helpers\Html;
 
 $this->title = 'Customer Billing Profiles';
@@ -9,32 +10,8 @@ $this->title = 'Customer Billing Profiles';
 $this->params['breadcrumbs'][] = $this->title;
 ?>
 
-<div class="d-flex justify-content-between align-items-center mb-3">
-
-    <div>
-        <h4 class="mb-1">
-            Customer Billing Profiles
-        </h4>
-
-        <div class="text-muted">
-            Legal billing information used when invoices are generated.
-        </div>
-    </div>
-
-<?=
-Html::a(
-    'Add Billing Profile',
-    ['create'],
-    [
-            'class' =>
-            'btn btn-primary',
-        ]
-)
-?>
-
-</div>
-
-<div class="card shadow-sm">
+<div class="card card-outline card-primary shadow-sm">
+    <?= AdminIndexHelper::pageHeader('Legal billing information used when invoices are generated.', 'create', 'Add Billing Profile') ?>
 
     <div class="card-body p-0">
 

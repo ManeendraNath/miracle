@@ -1,5 +1,6 @@
 <?php
 
+use common\helpers\AdminIndexHelper;
 use common\helpers\GridActionHelper;
 use common\helpers\GridFilterHelper;
 use common\helpers\GridPaginationHelper;
@@ -16,9 +17,10 @@ $this->params['breadcrumbs'][] = $this->title;
 
 GridViewHelper::register($this);
 ?>
-<div class="transaction-index container-fluid pt-3">
+<div class="transaction-index">
 
-    <div class="card shadow-sm border-0">
+    <div class="card card-outline card-primary shadow-sm">
+        <?= AdminIndexHelper::pageHeader('Review customer payments, payment proofs and refunds.') ?>
         <div class="card-body p-0">
             <?=
             GridView::widget([

@@ -6,6 +6,7 @@ use common\helpers\GridPaginationHelper;
 use common\helpers\GridViewHelper;
 use common\models\AuditRequest;
 use yii\grid\GridView;
+use common\helpers\AdminIndexHelper;
 use yii\helpers\Html;
 
 /** @var yii\web\View $this */
@@ -19,23 +20,7 @@ GridViewHelper::register($this);
 
 <div class="audit-request-index">
     <div class="card card-outline card-primary shadow-sm">
-        <div class="card-header">
-            <div class="d-flex justify-content-between align-items-center">
-                <div>
-                    <div class="text-muted small">
-                        Track and process website technical audit
-                        and optimisation requests.
-                    </div>
-                </div>
-                <?=
-                Html::a(
-                    '<i class="fas fa-plus me-1"></i> Add Audit Request',
-                    ['create'],
-                    ['class' => 'btn btn-primary']
-                )
-                ?>
-            </div>
-        </div>
+        <?= AdminIndexHelper::pageHeader('Track and process website technical audit and optimisation requests.', 'create', 'Add Audit Request') ?>
         <div class="card-body p-0">
             <?=
             GridView::widget([

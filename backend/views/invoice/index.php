@@ -6,6 +6,7 @@ use common\helpers\GridPaginationHelper;
 use common\helpers\GridViewHelper;
 use common\models\Invoice;
 use yii\grid\GridView;
+use common\helpers\AdminIndexHelper;
 use yii\helpers\Html;
 
 /** @var yii\web\View $this */
@@ -20,14 +21,7 @@ GridViewHelper::register($this);
 <div class="invoice-index">
     <div class="card card-outline card-primary shadow-sm">
         <!-- Header -->
-        <div class="card-header">
-            <div class="d-flex justify-content-between align-items-center">
-                <div>
-                    <div class="text-muted">Manage client invoices, payments and due dates.</div>
-                </div>
-                <?= Html::a('<i class="fas fa-plus me-1"></i> Create Invoice', ['create'], ['class' => 'btn btn-primary']) ?>
-            </div>
-        </div>
+        <?= AdminIndexHelper::pageHeader('Manage client invoices, payments and due dates.', 'create', 'Create Invoice') ?>
 
         <!-- Grid -->
         <div class="card-body p-0">

@@ -1,5 +1,6 @@
 <?php
 
+use common\helpers\AdminIndexHelper;
 use yii\helpers\Html;
 use yii\grid\GridView;
 use yii\helpers\Url;
@@ -11,15 +12,9 @@ use yii\helpers\Url;
 $this->title = 'Admins';
 $this->params['breadcrumbs'][] = $this->title;
 ?>
-<div class="admin-index card card-outline card-primary p-4 shadow-sm">
-    
-    <!-- Cleaned Header Wrapper Section (No Duplicate h1 blocks) -->
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <div>
-            <small class="text-muted">Review, filter, or update global administrative control accounts profiles</small>
-        </div>
-        <?= Html::a('<i class="fas fa-user-plus mr-1"></i> Create Admin', ['create'], ['class' => 'btn btn-success px-4 rounded-pill shadow-sm']) ?>
-    </div>
+<div class="admin-index card card-outline card-primary shadow-sm">
+    <?= AdminIndexHelper::pageHeader('Review and manage administrator accounts.', 'create', 'Create Admin') ?>
+    <div class="card-body">
 
     <!-- Polished GridView containing Column-Level Input Filters -->
     <?= GridView::widget([
@@ -85,4 +80,5 @@ $this->params['breadcrumbs'][] = $this->title;
             ],
         ],
     ]); ?>
+</div>
 </div>

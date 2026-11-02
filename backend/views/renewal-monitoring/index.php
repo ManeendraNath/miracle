@@ -42,8 +42,6 @@ JS);
 <div class="renewal-monitoring-index">
 
     <div class="mb-3">
-        <h4 class="mb-1">Renewal Monitoring</h4>
-
         <div class="text-muted small">
             Monitor expired and upcoming domain, hosting and maintenance service renewals.
         </div>

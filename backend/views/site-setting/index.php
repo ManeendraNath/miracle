@@ -8,13 +8,9 @@ use yii\bootstrap5\Html;
 
 $this->title = 'Global Systems Branding Settings';
 ?>
-<div class="setting-index container py-4" style="font-family: 'Inter', system-ui, sans-serif;">
+<div class="setting-index">
     
-    <!-- 🚀 CORE CONTEXT BANNER -->
-    <div class="p-5 text-white mb-4 shadow-sm" style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); border-radius: 0.75rem;">
-        <h1 class="fw-bold m-0"><?= Html::encode($this->title) ?></h1>
-        <p class="mt-2 mb-0 opacity-75" style="color: #cbd5e1;">Configure dynamic layout definitions, support contacts, multi-channel email relays, and social indicators from a single panel.</p>
-    </div>
+    <p class="text-muted small">Site name, support contacts, emails, address and social links shown across the site.</p>
 
     <!-- 📊 ARCHITECTURE ALIGNED INPUT MATRIX -->
     <div class="card border-0 shadow-sm p-4 bg-white" style="border-radius: 0.75rem;">
@@ -71,7 +67,7 @@ $this->title = 'Global Systems Branding Settings';
         </div>
 
         <!-- SECTION 4: SOCIAL MEDIA GRAPH PARAMETERS -->
-        <h4 class="fw-bold mt-3 mb-3 text-dark border-bottom pb-2" style="font-size: 1.1rem; color: #0f172a;">? Corporate Social Network Profiles</h4>
+        <h4 class="fw-bold mt-3 mb-3 text-dark border-bottom pb-2" style="font-size: 1.1rem; color: #0f172a;">🌐 Corporate Social Network Profiles</h4>
         <div class="row">
             <div class="col-md-4 mb-3">
                 <?= $form->field($model, 'facebook')->textInput(['class' => 'form-control py-2', 'placeholder' => 'https://facebook.com...']) ?>

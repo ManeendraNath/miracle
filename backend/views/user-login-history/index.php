@@ -9,6 +9,7 @@ use common\helpers\GridPaginationHelper;
 use common\models\UserLoginHistory;
 use yii\data\ActiveDataProvider;
 use yii\grid\GridView;
+use common\helpers\AdminIndexHelper;
 use yii\helpers\Html;
 
 /**
@@ -26,19 +27,7 @@ GridActionHelper::registerTooltips($this);
 
     <div class="card card-outline card-primary shadow-sm">
 
-        <div class="card-header">
-
-            <div class="d-flex justify-content-between align-items-center">
-
-                <div>
-
-                    <div class="text-muted">Review customer account login activity, IP addresses and browser/device information.</div>
-
-                </div>
-
-            </div>
-
-        </div>
+        <?= AdminIndexHelper::pageHeader('Review customer account login activity, IP addresses and browser/device information.') ?>
 
         <div class="card-body p-0">
 

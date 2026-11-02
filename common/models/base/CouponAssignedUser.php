@@ -35,7 +35,7 @@ class CouponAssignedUser extends \yii\db\ActiveRecord
         return [
             [['coupon_id', 'user_id', 'assigned_at', 'created_at', 'updated_at'], 'required'],
             [['coupon_id', 'user_id', 'assigned_at', 'created_at', 'updated_at'], 'integer'],
-            [['coupon_id'], 'unique'],
+            [['coupon_id', 'user_id'], 'unique', 'targetAttribute' => ['coupon_id', 'user_id']],
             [['coupon_id'], 'exist', 'skipOnError' => true, 'targetClass' => Coupon::class, 'targetAttribute' => ['coupon_id' => 'id']],
             [['user_id'], 'exist', 'skipOnError' => true, 'targetClass' => User::class, 'targetAttribute' => ['user_id' => 'id']],
         ];

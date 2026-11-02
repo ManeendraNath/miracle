@@ -35,7 +35,7 @@ class CouponApplicability extends \yii\db\ActiveRecord
             [['item_id'], 'default', 'value' => null],
             [['coupon_id', 'item_type', 'created_at', 'updated_at'], 'required'],
             [['coupon_id', 'item_type', 'item_id', 'created_at', 'updated_at'], 'integer'],
-            [['coupon_id'], 'unique'],
+            [['coupon_id', 'item_type'], 'unique', 'targetAttribute' => ['coupon_id', 'item_type']],
             [['coupon_id'], 'exist', 'skipOnError' => true, 'targetClass' => Coupon::class, 'targetAttribute' => ['coupon_id' => 'id']],
         ];
     }

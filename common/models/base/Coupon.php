@@ -22,8 +22,8 @@ use Yii;
  * @property int $created_at
  * @property int $updated_at
  *
- * @property CouponApplicability $couponApplicability
- * @property CouponAssignedUser $couponAssignedUser
+ * @property CouponApplicability[] $couponApplicabilities
+ * @property CouponAssignedUser[] $couponAssignedUsers
  * @property CouponRedemption[] $couponRedemptions
  * @property Invoice[] $invoices
  */
@@ -93,23 +93,23 @@ class Coupon extends \yii\db\ActiveRecord
     }
 
     /**
-     * Gets query for [[CouponApplicability]].
+     * Gets query for [[CouponApplicabilities]].
      *
      * @return \yii\db\ActiveQuery
      */
-    public function getCouponApplicability()
+    public function getCouponApplicabilities()
     {
-        return $this->hasOne(CouponApplicability::class, ['coupon_id' => 'id']);
+        return $this->hasMany(CouponApplicability::class, ['coupon_id' => 'id']);
     }
 
     /**
-     * Gets query for [[CouponAssignedUser]].
+     * Gets query for [[CouponAssignedUsers]].
      *
      * @return \yii\db\ActiveQuery
      */
-    public function getCouponAssignedUser()
+    public function getCouponAssignedUsers()
     {
-        return $this->hasOne(CouponAssignedUser::class, ['coupon_id' => 'id']);
+        return $this->hasMany(CouponAssignedUser::class, ['coupon_id' => 'id']);
     }
 
     /**

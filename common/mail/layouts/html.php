@@ -29,24 +29,15 @@ use yii\helpers\Html;
                 max-width:700px;
             }
 
-            .email-content {
-                padding:35px;
-            }
-
-            .button {
-                background:#1565c0;
-                color:#ffffff !important;
-                text-decoration:none;
-                padding:14px 28px;
-                border-radius:6px;
-                display:inline-block;
-                font-weight:bold;
-            }
 
             @media only screen and (max-width:600px) {
 
-                .email-content {
-                    padding:20px !important;
+                .email-body {
+                    padding:14px !important;
+                }
+
+                .email-card {
+                    padding:26px 20px !important;
                 }
 
                 .responsive-table td {
@@ -84,7 +75,7 @@ use yii\helpers\Html;
                         </tr>
                         <!-- Email Content -->
                         <tr>
-                            <td style="padding:35px; color:#444; line-height:1.8;">
+                            <td class="email-body" style="padding:28px; background:#f3f4f6;">
                                 <?= $content ?>
                             </td>
                         </tr>

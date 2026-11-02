@@ -1,28 +1,24 @@
 <?php
 
-use yii\helpers\Html;
+declare(strict_types=1);
 
-/** @var \common\models\SupportTicket $ticket */
-?>
-<div style="font-family:Arial,sans-serif;max-width:700px;margin:0 auto;">
-    <div style="background:#fd7e14;color:#fff;padding:20px;">
-        <h2 style="margin:0;">Customer Reply Received</h2>
-    </div>
-    <div style="padding:20px;border:1px solid #ddd;">
-        <p>A customer has replied to a support request.</p>
-        <table cellpadding="8">
-            <tr>
-                <td><strong>Ticket</strong></td>
-                <td><?= Html::encode($ticket->ticket_number) ?></td>
-            </tr>
-            <tr>
-                <td><strong>Subject</strong></td>
-                <td><?= Html::encode($ticket->subject) ?></td>
-            </tr>
-            <tr>
-                <td><strong>Customer</strong></td>
-                <td><?= Html::encode($ticket->user->username) ?></td>
-            </tr>
-        </table>
-    </div>
-</div>
+/** @var yii\web\View $this */
+/** @var common\models\SupportTicket $ticket */
+// Sent to the support team: link to the admin panel (the customer portal if BACKEND_BASE_URL isn't set).
+$link = !empty($_ENV['BACKEND_BASE_URL'])
+    ? rtrim($_ENV['BACKEND_BASE_URL'], '/') . '/support-ticket/view?number=' . rawurlencode($ticket->ticket_number)
+    : $_ENV['FRONTEND_BASE_URL'] . '/support/view?number=' . rawurlencode($ticket->ticket_number);
+
+echo $this->render('_card', [
+    'tone' => 'warning',
+    'eyebrow' => 'Support ticket',
+    'title' => 'Customer replied',
+    'intro' => 'A customer has replied to a support ticket.',
+    'rows' => [
+        ['Ticket', $ticket->ticket_number],
+        ['Subject', $ticket->subject],
+        ['Customer', $ticket->user->username ?? ''],
+        ['Priority', $ticket->priority],
+    ],
+    'button' => ['View Ticket', $link],
+]);

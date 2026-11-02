@@ -109,8 +109,12 @@ final class RazorpayService
     /** Signature returned to the browser by Checkout: HMAC(order_id|payment_id, key_secret). */
     public function verifyCheckoutSignature(string $orderId, string $paymentId, string $signature): bool
     {
-        $expected = hash_hmac('sha256', $orderId . '|' . $paymentId, (string) ($this->_config['keySecret'] ?? ''));
-        return $signature !== '' && hash_equals($expected, $signature);
+        $secret = (string) ($this->_config['keySecret'] ?? '');
+        // An empty secret would make every HMAC forgeable: fail closed.
+        if ($secret === '') {
+            return false;
+        }
+        return $signature !== '' && hash_equals(hash_hmac('sha256', $orderId . '|' . $paymentId, $secret), $signature);
     }
 
     public function verifyWebhookSignature(string $body, string $signature): bool

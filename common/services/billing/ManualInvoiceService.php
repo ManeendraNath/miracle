@@ -247,6 +247,15 @@ final class ManualInvoiceService
                 );
             }
 
+            // A pending online order or payment proof was created for the current total; changing
+            // the total now would let it be paid at the old amount.
+            $pendingPayment = \common\models\Transaction::find()
+                    ->where(['invoice_id' => $lockedInvoice->id, 'status' => \common\models\Transaction::STATUS_PENDING])
+                    ->exists();
+            if ($pendingPayment) {
+                throw new \DomainException('This invoice has a payment in progress (online order or proof awaiting review) and cannot be modified.');
+            }
+
             $hasAutomaticItems = InvoiceItem::find()
                     ->where([
                         'invoice_id' =>

@@ -58,4 +58,42 @@ final class LoginCest
         $I->dontSeeLink('Login');
         $I->dontSeeLink('Signup');
     }
+
+    public function newDeviceSendsOneEmailButFirstEverLoginDoesNot(FunctionalTester $I): void
+    {
+        // First sign-in ever: nothing to compare against, so no alert.
+        $I->submitForm('#login-form', $this->formParams('erau', 'password_0'));
+        $I->see('Sign Out (erau)');
+        $I->dontSeeEmailIsSent();
+
+        // A browser without the device cookie, for an account that has signed in before: alert.
+        $I->resetCookie('_known-accounts');
+        $this->signInAgain($I);
+        $I->seeEmailIsSent(1);
+        $email = $I->grabLastSentEmail();
+        $I->assertSame('New sign-in to your ' . \Yii::$app->params['senderName'] . ' account', $email->getSubject());
+        $I->assertArrayHasKey('sfriesen@jenkins.info', $email->getTo());
+
+        // Same browser again: known, no second alert.
+        $this->signInAgain($I);
+        $I->seeEmailIsSent(1);
+    }
+
+    private function signInAgain(FunctionalTester $I): void
+    {
+        $I->click('Sign Out (erau)');
+        $I->amOnRoute('site/login');
+        $I->submitForm('#login-form', $this->formParams('erau', 'password_0'));
+        $I->see('Sign Out (erau)');
+    }
+
+    public function describesCommonDevices(FunctionalTester $I): void
+    {
+        $describe = [\common\services\UserLoginHistoryService::class, 'describeDevice'];
+        $I->assertSame('Chrome on Windows', $describe('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36'));
+        $I->assertSame('Edge on Windows', $describe('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36 Edg/130.0.0.0'));
+        $I->assertSame('Safari on iPhone', $describe('Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1'));
+        $I->assertSame('Chrome on Android', $describe('Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Mobile Safari/537.36'));
+        $I->assertSame('Unknown device', $describe(''));
+    }
 }

@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use common\models\CustomerBillingProfile;
 use kartik\select2\Select2;
 use yii\helpers\Html;
 use yii\widgets\ActiveForm;
@@ -91,45 +92,14 @@ $form->errorSummary(
         </div>
 
         <div class="row">
-            <div class="col-md-4">
-                <?=
-                        $form
-                        ->field(
-                            $model,
-                            'city'
-                        )
-                        ->textInput([
-                            'maxlength' => true,
-                        ])
-                        ?>
+            <div class="col-md-6">
+                <?= $form->field($model, 'city')->textInput(['maxlength' => true]) ?>
             </div>
 
-            <div class="col-md-4">
-                <?=
-                        $form
-                        ->field(
-                            $model,
-                            'state'
-                        )
-                        ->textInput([
-                            'maxlength' => true,
-                        ])
-                        ?>
-            </div>
-
-            <div class="col-md-4">
-                <?=
-                        $form
-                        ->field(
-                            $model,
-                            'state_code'
-                        )
-                        ->textInput([
-                            'maxlength' => true,
-                            'placeholder' =>
-                            'e.g. 07',
-                        ])
-                        ?>
+            <div class="col-md-6">
+                <?= $form->field($model, 'state')
+                    ->dropDownList(CustomerBillingProfile::stateOptions(), ['prompt' => 'Select State'])
+                    ->hint('The GST state code is set from the state.') ?>
             </div>
         </div>
 

@@ -78,6 +78,13 @@ final class AdminAlertService extends AdminNotificationService
         self::send($title, $message, 'billing', '/customer-billing-profile/index', true);
     }
 
+    public static function billingDetailsChanged(int $profileId, string $customer, string $legalName, bool $created): void
+    {
+        $title = $created ? 'Customer Added Billing Details' : 'Customer Updated Billing Details';
+        $message = "Customer: {$customer}\n" . "Legal name: {$legalName}\n" . 'Review the profile and set GST applicability if needed.';
+        self::send($title, $message, 'billing', '/customer-billing-profile/update?id=' . $profileId);
+    }
+
     /**
      * @param bool $whatsappNotification also message ADMIN_WHATSAPP_MOBILE (urgent, low-volume alerts
      *                                   only; bulk ones like "invoice generated" stay email-only)

@@ -2,13 +2,12 @@
 
 declare(strict_types=1);
 
+use common\models\CustomerBillingProfile;
 use yii\bootstrap5\ActiveForm;
 use yii\helpers\Html;
 
 $this->title = 'My Profile';
 $this->params['breadcrumbs'][] = $this->title;
-
-$form = ActiveForm::begin(['id' => 'profile-form']);
 ?>
 
 <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-end gap-3 mb-4">
@@ -21,6 +20,7 @@ $form = ActiveForm::begin(['id' => 'profile-form']);
 
 <div class="row g-4">
     <div class="col-xl-7">
+        <?php $form = ActiveForm::begin(['id' => 'profile-form']); ?>
         <div class="card border-0 shadow-sm">
             <div class="card-header bg-transparent py-3">
                 <h2 class="h6 fw-bold mb-0">Account Details</h2>
@@ -40,60 +40,46 @@ $form = ActiveForm::begin(['id' => 'profile-form']);
                 <?= Html::submitButton('Save Profile', ['class' => 'btn btn-primary px-4']) ?>
             </div>
         </div>
+        <?php ActiveForm::end(); ?>
     </div>
     <div class="col-xl-5">
+        <?php $billingForm = ActiveForm::begin(['id' => 'billing-form']); ?>
         <div class="card border-0 shadow-sm">
-            <div class="card-header bg-transparent py-3">
+            <div class="card-header bg-transparent py-3 d-flex justify-content-between align-items-center">
                 <h2 class="h6 fw-bold mb-0">Billing Details</h2>
-            </div>
-            <div class="card-body">
-                <?php if ($billingProfile !== null): ?>
-                    <?php
-                    $address = implode(', ', array_filter([
-                        $billingProfile->address_line_1,
-                        $billingProfile->address_line_2,
-                        $billingProfile->city,
-                        $billingProfile->state,
-                        $billingProfile->postal_code,
-                    ]));
-                    ?>
-                    <div class="mb-3">
-                        <div class="small text-uppercase text-body-secondary fw-semibold mb-1">Legal Name</div>
-                        <div class="fw-semibold text-break"><?= Html::encode($billingProfile->legal_name) ?></div>
-                    </div>
-                    <div class="mb-3">
-                        <div class="small text-uppercase text-body-secondary fw-semibold mb-1">Billing Address</div>
-                        <div class="text-break"><?= Html::encode($address) ?></div>
-                    </div>
-                    <div class="mb-3">
-                        <div class="small text-uppercase text-body-secondary fw-semibold mb-1">GST</div>
-                        <?php if ((bool) $billingProfile->is_gst_applicable): ?>
-                            <span class="badge bg-success-subtle text-success-emphasis">Applicable</span>
-                        <?php else: ?>
-                            <span class="badge bg-secondary-subtle text-secondary-emphasis">Not Applicable</span>
-                        <?php endif; ?>
-                    </div>
-                    <?php if (!empty($billingProfile->gstin)): ?>
-                        <div class="mb-3">
-                            <div class="small text-uppercase text-body-secondary fw-semibold mb-1">GSTIN</div>
-                            <div class="font-monospace"><?= Html::encode($billingProfile->gstin) ?></div>
-                        </div>
+                <?php if (!$billingProfile->isNewRecord): ?>
+                    <?php if ((bool) $billingProfile->is_gst_applicable): ?>
+                        <span class="badge bg-success-subtle text-success-emphasis">GST Applicable</span>
+                    <?php else: ?>
+                        <span class="badge bg-secondary-subtle text-secondary-emphasis">GST Not Applicable</span>
                     <?php endif; ?>
-                    <?php if (!empty($billingProfile->pan)): ?>
-                        <div>
-                            <div class="small text-uppercase text-body-secondary fw-semibold mb-1">PAN</div>
-                            <div class="font-monospace"><?= Html::encode($billingProfile->pan) ?></div>
-                        </div>
-                    <?php endif; ?>
-                <?php else: ?>
-                    <div class="alert alert-warning mb-0">
-                        Billing profile information has not been configured yet.
-                        Please contact support before your next invoice is generated.
-                    </div>
                 <?php endif; ?>
             </div>
+            <div class="card-body">
+                <?php if ($billingProfile->isNewRecord): ?>
+                    <div class="alert alert-warning">Add your billing details so we can issue your invoices.</div>
+                <?php endif; ?>
+                <?= $billingForm->errorSummary($billingProfile, ['class' => 'alert alert-danger']) ?>
+                <?= $billingForm->field($billingProfile, 'legal_name')->textInput(['maxlength' => true, 'placeholder' => 'Legal / company name']) ?>
+                <?= $billingForm->field($billingProfile, 'address_line_1')->textInput(['maxlength' => true]) ?>
+                <?= $billingForm->field($billingProfile, 'address_line_2')->textInput(['maxlength' => true]) ?>
+                <div class="row gx-3">
+                    <div class="col-sm-6">
+                        <?= $billingForm->field($billingProfile, 'city')->textInput(['maxlength' => true]) ?>
+                    </div>
+                    <div class="col-sm-6">
+                        <?= $billingForm->field($billingProfile, 'postal_code')->textInput(['maxlength' => 6, 'inputmode' => 'numeric']) ?>
+                    </div>
+                </div>
+                <?= $billingForm->field($billingProfile, 'state')->dropDownList(CustomerBillingProfile::stateOptions(), ['prompt' => 'Select state']) ?>
+                <?= $billingForm->field($billingProfile, 'gstin')->textInput(['maxlength' => 15, 'class' => 'form-control font-monospace text-uppercase'])->label('GSTIN <span class="text-body-secondary fw-normal">(optional)</span>') ?>
+                <?= $billingForm->field($billingProfile, 'pan')->textInput(['maxlength' => 10, 'class' => 'form-control font-monospace text-uppercase'])->label('PAN <span class="text-body-secondary fw-normal">(optional)</span>') ?>
+                <div class="form-text">Changes apply to future invoices only; invoices already issued keep the details they were issued with.</div>
+            </div>
+            <div class="card-footer bg-transparent py-3">
+                <?= Html::submitButton('Save Billing Details', ['class' => 'btn btn-primary px-4']) ?>
+            </div>
         </div>
+        <?php ActiveForm::end(); ?>
     </div>
 </div>
-
-<?php ActiveForm::end(); ?>

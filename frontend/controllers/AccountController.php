@@ -5,10 +5,10 @@ declare(strict_types=1);
 namespace frontend\controllers;
 
 use Yii;
-use common\models\CustomerBillingProfile;
 use common\models\CustomerPreference;
 use common\models\User;
 use common\services\customer\CustomerActivityService;
+use common\services\customer\CustomerBillingDetailsService;
 use frontend\models\ChangePasswordForm;
 use frontend\models\ProfileForm;
 use yii\filters\AccessControl;
@@ -39,9 +39,15 @@ final class AccountController extends Controller
     {
         $user = $this->findCurrentUser();
         $model = new ProfileForm($user);
-        $billingProfile = CustomerBillingProfile::findOne(['user_id' => $user->id]);
-        if (Yii::$app->request->isPost && $model->load(Yii::$app->request->post()) && $model->save()) {
+        $billingProfile = CustomerBillingDetailsService::forUser($user);
+        $post = Yii::$app->request->post();
+        if (Yii::$app->request->isPost && $model->load($post) && $model->save()) {
             Yii::$app->session->setFlash('success', 'Your profile has been updated.');
+            return $this->redirect(['profile']);
+        }
+        // Each card is its own form; load() is false for the one that was not posted.
+        if (Yii::$app->request->isPost && CustomerBillingDetailsService::save($billingProfile, $post)) {
+            Yii::$app->session->setFlash('success', 'Your billing details have been saved.');
             return $this->redirect(['profile']);
         }
         return $this->render('profile', ['model' => $model, 'user' => $user, 'billingProfile' => $billingProfile]);

@@ -48,32 +48,43 @@ final class InvoiceController extends Controller
         ];
     }
 
-    public function actionIndex()
+    public function actionIndex(string $filter = 'all')
     {
-        $query = Invoice::find()
-                ->where([
-                    'user_id' =>
-                    Yii::$app->user->id,
-                ])
-                ->orderBy([
-                    'created_at' => SORT_DESC,
-                    'id' => SORT_DESC,
-        ]);
+        $filters = [
+            'all' => null,
+            'due' => [Invoice::STATUS_UNPAID, Invoice::STATUS_PARTIALLY_PAID],
+            'paid' => [Invoice::STATUS_PAID],
+        ];
+        $filter = array_key_exists($filter, $filters) ? $filter : 'all';
+        $userId = (int) Yii::$app->user->id;
+
+        $byStatus = Invoice::find()->select(['COUNT(*)', 'status'])->where(['user_id' => $userId])->groupBy('status')->indexBy('status')->column();
+        $counts = [];
+        foreach ($filters as $key => $statuses) {
+            $counts[$key] = $statuses === null ? array_sum($byStatus) : array_sum(array_intersect_key($byStatus, array_flip($statuses)));
+        }
+
+        $paymentService = new InvoicePaymentService();
+        $outstandingTotal = 0.0;
+        foreach (Invoice::find()->where(['user_id' => $userId, 'status' => $filters['due']])->all() as $due) {
+            $outstandingTotal += $paymentService->getOutstanding($due);
+        }
 
         $dataProvider = new ActiveDataProvider([
-            'query' => $query,
-            'pagination' => [
-                'pageSize' => 20,
-            ],
+            'query' => Invoice::find()
+                ->where(['user_id' => $userId])
+                ->andFilterWhere(['status' => $filters[$filter]])
+                ->orderBy(['created_at' => SORT_DESC, 'id' => SORT_DESC]),
+            'pagination' => ['pageSize' => 20],
         ]);
 
-        return $this->render(
-            'index',
-            [
-                            'dataProvider' =>
-                            $dataProvider,
-                        ]
-        );
+        return $this->render('index', [
+            'dataProvider' => $dataProvider,
+            'filter' => $filter,
+            'counts' => $counts,
+            'outstandingTotal' => round($outstandingTotal, 2),
+            'paymentService' => $paymentService,
+        ]);
     }
 
     public function actionView(string $number)

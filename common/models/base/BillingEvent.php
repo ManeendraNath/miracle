@@ -7,6 +7,9 @@ use Yii;
 /**
  * This is the model class for table "billing_event".
  *
+ * Regenerating with Gii: leave out `live_slot`. It is a STORED GENERATED column (MySQL
+ * computes it for the unique index); listing it in rules makes every insert fail.
+ *
  * @property int $id
  * @property int|null $billing_run_id
  * @property int $user_id

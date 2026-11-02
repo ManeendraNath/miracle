@@ -39,8 +39,8 @@ use Yii;
  * @property BillingRun $billingRun
  * @property Coupon $coupon
  * @property CouponRedemption $couponRedemption
+ * @property InvoiceItem $invoiceItem
  * @property InvoiceItem[] $invoiceItems
- * @property InvoiceItem[] $invoiceItems0
  * @property InvoiceReminderLog[] $invoiceReminderLogs
  * @property ServiceRenewalHistory[] $serviceRenewalHistories
  * @property Transaction[] $transactions
@@ -172,6 +172,16 @@ class Invoice extends \yii\db\ActiveRecord
     }
 
     /**
+     * Gets query for [[InvoiceItem]].
+     *
+     * @return \yii\db\ActiveQuery
+     */
+    public function getInvoiceItem()
+    {
+        return $this->hasOne(InvoiceItem::class, ['source_invoice_id' => 'id']);
+    }
+
+    /**
      * Gets query for [[InvoiceItems]].
      *
      * @return \yii\db\ActiveQuery
@@ -179,16 +189,6 @@ class Invoice extends \yii\db\ActiveRecord
     public function getInvoiceItems()
     {
         return $this->hasMany(InvoiceItem::class, ['invoice_id' => 'id']);
-    }
-
-    /**
-     * Gets query for [[InvoiceItems0]].
-     *
-     * @return \yii\db\ActiveQuery
-     */
-    public function getInvoiceItems0()
-    {
-        return $this->hasMany(InvoiceItem::class, ['source_invoice_id' => 'id']);
     }
 
     /**

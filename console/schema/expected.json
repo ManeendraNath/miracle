@@ -1,5 +1,5 @@
 {
-    "migrations": 44,
+    "migrations": 45,
     "columns": {
         "admin": {
             "auth_key": {
@@ -47,7 +47,7 @@
             "status": {
                 "type": "smallint",
                 "null": false,
-                "default": "10",
+                "default": "1",
                 "extra": ""
             },
             "updated_at": {

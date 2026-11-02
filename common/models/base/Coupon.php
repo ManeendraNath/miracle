@@ -26,6 +26,7 @@ use Yii;
  * @property CouponAssignedUser[] $couponAssignedUsers
  * @property CouponRedemption[] $couponRedemptions
  * @property Invoice[] $invoices
+ * @property User[] $users
  */
 class Coupon extends \yii\db\ActiveRecord
 {
@@ -130,6 +131,16 @@ class Coupon extends \yii\db\ActiveRecord
     public function getInvoices()
     {
         return $this->hasMany(Invoice::class, ['coupon_id' => 'id']);
+    }
+
+    /**
+     * Gets query for [[Users]].
+     *
+     * @return \yii\db\ActiveQuery
+     */
+    public function getUsers()
+    {
+        return $this->hasMany(User::class, ['id' => 'user_id'])->viaTable('coupon_assigned_user', ['coupon_id' => 'id']);
     }
 
 

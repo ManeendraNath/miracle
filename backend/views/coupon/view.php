@@ -117,7 +117,7 @@ $active = $model->is_active === Coupon::IS_ACTIVE_Y;
                         <dd class="col-sm-6"><?= Html::encode(implode(', ', $model->getAppliesToLabels()) ?: 'All services') ?></dd>
                         <dt class="col-sm-6">Customers</dt>
                         <dd class="col-sm-6 mb-0">
-                            <?php $assigned = $model->getAssignedUsers()->orderBy('username')->all(); ?>
+                            <?php $assigned = $model->getUsers()->orderBy('username')->all(); ?>
                             <?= $assigned ? implode('<br>', array_map(static fn($u): string => Html::a(Html::encode($u->username), ['/user/view', 'id' => $u->id]), $assigned)) : 'Any customer' ?>
                         </dd>
                     </dl>

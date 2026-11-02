@@ -88,11 +88,6 @@ class Coupon extends base\Coupon
         return array_map(static fn($t): string => $types[(int) $t] ?? (string) $t, CouponApplicability::find()->select('item_type')->where(['coupon_id' => $this->id])->column());
     }
 
-    public function getAssignedUsers(): \yii\db\ActiveQuery
-    {
-        return $this->hasMany(User::class, ['id' => 'user_id'])->viaTable(CouponAssignedUser::tableName(), ['coupon_id' => 'id']);
-    }
-
     public function afterSave($insert, $changedAttributes): void
     {
         parent::afterSave($insert, $changedAttributes);

@@ -48,6 +48,7 @@ class InvoiceItem extends \yii\db\ActiveRecord
             [['unit_price', 'total_price'], 'number'],
             [['category'], 'string', 'max' => 100],
             [['billing_event_id'], 'unique'],
+            [['source_invoice_id'], 'unique'],
             [['billing_event_id'], 'exist', 'skipOnError' => true, 'targetClass' => BillingEvent::class, 'targetAttribute' => ['billing_event_id' => 'id']],
             [['invoice_id'], 'exist', 'skipOnError' => true, 'targetClass' => Invoice::class, 'targetAttribute' => ['invoice_id' => 'id']],
             [['source_invoice_id'], 'exist', 'skipOnError' => true, 'targetClass' => Invoice::class, 'targetAttribute' => ['source_invoice_id' => 'id']],

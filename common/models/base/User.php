@@ -23,6 +23,7 @@ use Yii;
  * @property BillingEvent[] $billingEvents
  * @property CouponAssignedUser[] $couponAssignedUsers
  * @property CouponRedemption[] $couponRedemptions
+ * @property Coupon[] $coupons
  * @property CustomerBillingProfile $customerBillingProfile
  * @property CustomerNotification[] $customerNotifications
  * @property CustomerPreference $customerPreference
@@ -115,6 +116,16 @@ class User extends \yii\db\ActiveRecord
     public function getCouponRedemptions()
     {
         return $this->hasMany(CouponRedemption::class, ['user_id' => 'id']);
+    }
+
+    /**
+     * Gets query for [[Coupons]].
+     *
+     * @return \yii\db\ActiveQuery
+     */
+    public function getCoupons()
+    {
+        return $this->hasMany(Coupon::class, ['id' => 'coupon_id'])->viaTable('coupon_assigned_user', ['user_id' => 'id']);
     }
 
     /**

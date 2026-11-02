@@ -45,11 +45,16 @@ final class CustomerBillingDetailsTest extends Unit
         $valid = $this->validated([]);
         $this->assertSame([], $valid->errors);
         $this->assertSame('27', $valid->state_code, 'state_code is derived from the state');
-        $this->assertSame('27ABCDE1234F1Z5', $valid->gstin, 'GSTIN is trimmed and uppercased');
+        $this->assertSame('27ABCDE1234F1Z0', $valid->gstin, 'GSTIN is trimmed and uppercased');
         $this->assertSame('ABCDE1234F', $valid->pan);
 
         $this->assertArrayHasKey('gstin', $this->validated(['state' => 'Delhi'])->errors, 'GSTIN prefix must match the state');
         $this->assertArrayHasKey('gstin', $this->validated(['gstin' => '27ABCDE1234F1Z'])->errors, '15 chars');
+        $this->assertArrayHasKey('gstin', $this->validated(['gstin' => '27ABCDE1234F1Z5'])->errors, 'check digit');
+        // Real GSTINs from public records pass.
+        foreach (['27AAPFU0939F1ZV', '29AAGCB7383J1Z4', '33AAACH7409R1Z8'] as $real) {
+            $this->assertSame($real[14], CustomerBillingProfile::gstinCheckChar($real), $real);
+        }
         $this->assertArrayHasKey('pan', $this->validated(['pan' => 'ABCDE1234G'])->errors, 'PAN must equal GSTIN chars 3-12');
         $this->assertArrayHasKey('pan', $this->validated(['pan' => 'ABCD12345F', 'gstin' => ''])->errors, 'PAN format');
         $this->assertArrayHasKey('postal_code', $this->validated(['postal_code' => '4000'])->errors);
@@ -58,7 +63,7 @@ final class CustomerBillingDetailsTest extends Unit
         $this->assertSame([], $this->validated(['gstin' => ''])->errors, 'PAN alone is fine');
 
         // Admin (default scenario) gets the same format rules.
-        $admin = new CustomerBillingProfile(['user_id' => $this->_user->id, 'legal_name' => 'X', 'state' => 'Delhi', 'gstin' => '27ABCDE1234F1Z5']);
+        $admin = new CustomerBillingProfile(['user_id' => $this->_user->id, 'legal_name' => 'X', 'state' => 'Delhi', 'gstin' => '27ABCDE1234F1Z0']);
         $this->assertFalse($admin->validate());
         $this->assertArrayHasKey('gstin', $admin->errors);
         $this->assertSame('07', $admin->state_code);
@@ -107,7 +112,7 @@ final class CustomerBillingDetailsTest extends Unit
             'city' => 'Mumbai',
             'state' => 'Maharashtra',
             'postal_code' => '400001',
-            'gstin' => ' 27abcde1234f1z5 ',
+            'gstin' => ' 27abcde1234f1z0 ',
             'pan' => 'abcde1234f',
         ], $override);
     }

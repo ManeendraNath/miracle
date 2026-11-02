@@ -61,7 +61,7 @@ final class AccountingReportServiceTest extends Unit
     public function testInvoiceRowsFilterByIssueDateAndSplitTax(): void
     {
         $this->invoice('before', '2001-02-28 23:59:59');
-        $this->invoice('intra', '2001-03-01 00:00:00', ['subtotal_amount' => 1000, 'discount_amount' => 100, 'cgst_percent' => 9, 'sgst_percent' => 9, 'igst_percent' => 0, 'total_payable' => 1062, 'client_gstin' => '07ABCDE1234F1Z5', 'coupon_code' => 'SAVE10']);
+        $this->invoice('intra', '2001-03-01 00:00:00', ['subtotal_amount' => 1000, 'discount_amount' => 100, 'cgst_percent' => 9, 'sgst_percent' => 9, 'igst_percent' => 0, 'total_payable' => 1062, 'client_gstin' => '07ABCDE1234F1Z2', 'coupon_code' => 'SAVE10']);
         $this->invoice('inter', '2001-03-15 12:00:00', ['subtotal_amount' => 333.33, 'cgst_percent' => 0, 'sgst_percent' => 0, 'igst_percent' => 18, 'total_payable' => 393.33, 'client_name' => '=HYPERLINK("http://x")']);
         $this->invoice('cancel', '2001-03-31 23:59:59', ['status' => Invoice::STATUS_CANCELLED]);
         $this->invoice('after', '2001-04-01 00:00:00');
@@ -73,7 +73,7 @@ final class AccountingReportServiceTest extends Unit
         $this->assertSame('2001-03-01', $intra['Issue Date']);
         $this->assertSame('900.00', $intra['Taxable Value']);
         $this->assertSame(['9.00', '81.00', '9.00', '81.00', '0.00', '0.00'], [$intra['CGST %'], $intra['CGST Amount'], $intra['SGST %'], $intra['SGST Amount'], $intra['IGST %'], $intra['IGST Amount']]);
-        $this->assertSame(['07ABCDE1234F1Z5', 'SAVE10', '1062.00'], [$intra['Customer GSTIN'], $intra['Coupon Code'], $intra['Total Payable']]);
+        $this->assertSame(['07ABCDE1234F1Z2', 'SAVE10', '1062.00'], [$intra['Customer GSTIN'], $intra['Coupon Code'], $intra['Total Payable']]);
 
         $inter = $rows[$this->_prefix . 'inter'];
         $this->assertSame(['0.00', '0.00', '60.00'], [$inter['CGST Amount'], $inter['SGST Amount'], $inter['IGST Amount']]);

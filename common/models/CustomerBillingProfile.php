@@ -106,7 +106,7 @@ class CustomerBillingProfile extends base\CustomerBillingProfile
                 ['postal_code', 'match', 'pattern' => '/^\d{6}$/', 'message' => 'Enter a valid 6-digit PIN code.'],
                 [
                     'gstin', 'match', 'pattern' => '/^\d{2}[A-Z]{5}\d{4}[A-Z][1-9A-Z]Z[0-9A-Z]$/',
-                    'message' => 'Enter a valid 15-character GSTIN (e.g. 07ABCDE1234F1Z5).',
+                    'message' => 'Enter a valid 15-character GSTIN (e.g. 07ABCDE1234F1Z2).',
                 ],
                 ['pan', 'match', 'pattern' => '/^[A-Z]{5}\d{4}[A-Z]$/', 'message' => 'Enter a valid PAN (e.g. ABCDE1234F).'],
                 ['gstin', 'validateGstinMatches'],
@@ -117,7 +117,14 @@ class CustomerBillingProfile extends base\CustomerBillingProfile
     /** GSTIN = state code (2) + PAN (10) + 3 chars, so it must agree with the chosen state and the PAN. */
     public function validateGstinMatches(string $attribute): void
     {
-        if ($this->hasErrors('gstin') || $this->hasErrors('state')) {
+        if ($this->hasErrors('gstin')) {
+            return;
+        }
+        if ($this->gstin[14] !== self::gstinCheckChar($this->gstin)) {
+            $this->addError('gstin', 'This GSTIN is not valid (check digit mismatch). Please check it for typing mistakes.');
+            return;
+        }
+        if ($this->hasErrors('state')) {
             return;
         }
         if (strncmp($this->gstin, (string) $this->state_code, 2) !== 0) {
@@ -126,6 +133,18 @@ class CustomerBillingProfile extends base\CustomerBillingProfile
         if ($this->pan !== null && !$this->hasErrors('pan') && substr($this->gstin, 2, 10) !== $this->pan) {
             $this->addError('pan', 'PAN must match characters 3-12 of the GSTIN.');
         }
+    }
+
+    /** GSTN check character: weighted base-36 sum of the first 14 characters (weights 1, 2, 1, 2...). */
+    public static function gstinCheckChar(string $gstin): string
+    {
+        $chars = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+        $sum = 0;
+        for ($i = 0; $i < 14; $i++) {
+            $product = strpos($chars, $gstin[$i]) * ($i % 2 + 1);
+            $sum += intdiv($product, 36) + $product % 36;
+        }
+        return $chars[(36 - $sum % 36) % 36];
     }
 
     /** @return array<string, string> state name => label, for dropdowns */

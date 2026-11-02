@@ -39,6 +39,11 @@ Notes
 - `yii_test` seeds the test superadmin with a fixed password (`ADMIN_INITIAL_PASSWORD` is not needed).
 - Billing tests set GST to 9/9/18% themselves, independent of the live `params.php` rates.
 
+## On GitHub
+
+`.github/workflows/tests.yml` runs the migrations, the schema snapshot check and the
+whole suite on every push to `main` and on pull requests (MySQL 8, PHP 8.4, dummy `.env`).
+
 ## Schema drift check (dev / production)
 
 `console/schema/expected.json` is the structure the migrations produce (columns, indexes and

@@ -84,3 +84,33 @@ Domains, hosting, AMC, coupons and customers have no delete action. Use Enable/D
 (`toggle-status`): invoices, billing events and renewal history keep pointing at the record.
 Disabled services are skipped by billing, reminders and renewal monitoring; suspended
 customers cannot log in.
+
+## Coupons
+
+Coupons are applied by an admin on manual invoices (coupon code field).
+
+- **Applies To** (service types): empty = every line. When set, only invoice lines of
+  those types are discounted (10% of the hosting line, not of the whole invoice), and a
+  coupon with no matching line is rejected. Each manual invoice line has a service type.
+- **Only For These Customers**: empty = anyone; otherwise only the listed customers.
+- Usage limits: `0` means no limit.
+
+## Admin roles
+
+| Role | Access |
+|---|---|
+| Manager | Dashboard (without money figures), customers, domains, hosting, maintenance, renewals, support, leads, audit requests, notifications |
+| Admin | Manager + invoices, payments, coupons, billing profiles, login history, cron log |
+| Superadmin | Admin + administrator accounts, site settings |
+
+The table lives in `BaseController::MIN_ROLE`; `RoleAccessTest` pins it. Every role can
+change its own email and password under **My account** (user icon in the top bar).
+
+## Admin WhatsApp alerts
+
+With `WHATSAPP_ENABLED=true` and `ADMIN_WHATSAPP_MOBILE` set, urgent alerts (new ticket,
+customer reply, new lead, audit request, unapplied online payment, failed automatic
+invoice) are also sent as the `admin_alert` template: `{{1}}` = title, `{{2}}` = details
+on one line. Create and get that template approved with the WhatsApp provider first.
+Payment proofs keep their own `payment_submitted` template. Everything also goes to
+`ADMIN_EMAIL` and the admin notification bell as before.

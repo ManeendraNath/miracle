@@ -1,0 +1,97 @@
+name: Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: miracle_test
+        ports: ['3306:3306']
+        options: >-
+          --health-cmd="mysqladmin ping -proot" --health-interval=5s --health-timeout=5s --health-retries=20
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: intl, gd, pdo_mysql, mbstring, zip
+          coverage: none
+
+      - name: Cache Composer packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.composer/cache
+          key: composer-${{ hashFiles('composer.lock') }}
+
+      - run: composer install --no-interaction --no-progress --prefer-dist
+
+      # Dummy settings only: tests use their own DB, file mail transport and no live gateways.
+      - name: Create .env and local test configs
+        run: |
+          cat > .env <<'ENV'
+          YII_ENV=test
+          YII_DEBUG=true
+          DB_DSN=mysql:host=127.0.0.1;port=3306;dbname=miracle
+          TEST_DB_DSN=mysql:host=127.0.0.1;port=3306;dbname=miracle_test
+          DB_USERNAME=root
+          DB_PASSWORD=root
+          DB_CHARSET=utf8mb4
+          BACKEND_COOKIE_VALIDATION_KEY=ci-backend-key
+          FRONTEND_COOKIE_VALIDATION_KEY=ci-frontend-key
+          COOKIE_SECURE=false
+          SMTP_SCHEME=smtp
+          SMTP_HOST=localhost
+          SMTP_PORT=25
+          SMTP_USERNAME=
+          SMTP_PASSWORD=
+          MAIL_USE_FILE_TRANSPORT=true
+          ADMIN_EMAIL=admin@example.test
+          ADMIN_BILLING_EMAIL=billing@example.test
+          SUPPORT_EMAIL=support@example.test
+          SENDER_EMAIL=noreply@example.test
+          SENDER_NAME="Miracle CI"
+          WHATSAPP_PROVIDER=
+          WHATSAPP_API_KEY=
+          PROVIDER_INTEGRATED_NUMBER=
+          ADMIN_WHATSAPP_MOBILE=
+          RAZORPAY_ENABLED=false
+          RAZORPAY_KEY_ID=
+          RAZORPAY_KEY_SECRET=
+          RAZORPAY_WEBHOOK_SECRET=
+          BILLING_BANK_ACCOUNT_NAME=
+          BILLING_BANK_NAME=
+          BILLING_BANK_ACCOUNT_NUMBER=
+          BILLING_BANK_IFSC=
+          BILLING_UPI_ID=
+          BACKUP_OFFSITE_COMMAND=
+          CRON_LOG_PATH=
+          FRONTEND_BASE_URL=http://localhost
+          GII_ALLOWED_IPS=127.0.0.1
+          ENV
+          for f in backend/config/codeception-local.php backend/config/test-local.php backend/config/params-local.php \
+                   common/config/codeception-local.php common/config/test-local.php common/config/params-local.php \
+                   frontend/config/codeception-local.php frontend/config/test-local.php frontend/config/params-local.php \
+                   console/config/test-local.php console/config/params-local.php yii_test; do
+            [ -e "$f" ] || cp "environments/dev/$f" "$f"
+          done
+          # What `php init` would also do: a test cookie key and the writable asset/runtime dirs.
+          sed -i "s/'cookieValidationKey' => ''/'cookieValidationKey' => 'ci-test-key'/" common/config/codeception-local.php
+          mkdir -p backend/web/assets frontend/web/assets backend/runtime frontend/runtime console/runtime
+
+      - run: php yii_test migrate --interactive=0
+
+      - name: Schema snapshot is up to date
+        run: php yii_test schema/check
+
+      - run: php vendor/bin/codecept build
+      - run: php vendor/bin/codecept run

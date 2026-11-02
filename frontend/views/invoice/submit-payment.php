@@ -2,8 +2,8 @@
 
 declare(strict_types=1);
 
+use yii\bootstrap5\ActiveForm;
 use yii\helpers\Html;
-use yii\widgets\ActiveForm;
 
 $this->title = 'Submit Payment';
 
@@ -15,69 +15,58 @@ $this->params['breadcrumbs'][] = [
 $this->params['breadcrumbs'][] = $this->title;
 
 $payment = Yii::$app->params['billing']['payment'] ?? [];
+$bankDetails = array_filter([
+    'UPI ID' => $payment['upiId'] ?? '',
+    'Account Name' => $payment['accountName'] ?? '',
+    'Bank' => $payment['bankName'] ?? '',
+    'Account Number' => $payment['accountNumber'] ?? '',
+    'IFSC' => $payment['ifsc'] ?? '',
+]);
 ?>
-<div class="card bg-light border mb-4">
-    <div class="card-body">
-        <h6 class="fw-bold mb-3">Bank / UPI Payment Details</h6>
-        <?php if (!empty($payment['upiId'])): ?>
-            <div class="mb-2">
-                <strong>UPI ID:</strong>
-                <?= Html::encode($payment['upiId']) ?>
-            </div>
-        <?php endif; ?>
-        <?php if (!empty($payment['accountName'])): ?>
-            <div>
-                <strong>Account Name:</strong>
-                <?= Html::encode($payment['accountName']) ?>
-            </div>
-        <?php endif; ?>
-        <?php if (!empty($payment['bankName'])): ?>
-            <div>
-                <strong>Bank:</strong>
-                <?= Html::encode($payment['bankName']) ?>
-            </div>
-        <?php endif; ?>
-        <?php if (!empty($payment['accountNumber'])): ?>
-            <div>
-                <strong>Account Number:</strong>
-                <?= Html::encode($payment['accountNumber']) ?>
-            </div>
-        <?php endif; ?>
-        <?php if (!empty($payment['ifsc'])): ?>
-            <div>
-                <strong>IFSC:</strong>
-                <?= Html::encode($payment['ifsc']) ?>
-            </div>
-        <?php endif; ?>
-    </div>
+
+<div class="mb-4">
+    <h1 class="h3 fw-bold mb-1">Submit Payment</h1>
+    <div class="text-body-secondary">Paid by UPI or bank transfer? Send us the reference and receipt so we can verify it.</div>
 </div>
-<div class="container py-4">
-    <div class="card shadow-sm">
-        <div class="card-header">
-            <strong>Submit UPI / Bank Transfer Payment</strong>
+
+<div class="row g-4">
+    <div class="col-xl-8 order-2 order-xl-1">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-transparent py-3">
+                <h2 class="h6 fw-bold mb-0">Submit UPI / Bank Transfer Payment</h2>
+            </div>
+            <div class="card-body p-4">
+                <?php $form = ActiveForm::begin(['id' => 'payment-proof-form', 'options' => ['enctype' => 'multipart/form-data']]); ?>
+                <?= $form->errorSummary($model, ['class' => 'alert alert-danger']) ?>
+                <?= $form->field($model, 'gateway_payment_id')->textInput(['maxlength' => true, 'autocomplete' => 'off', 'placeholder' => 'UPI / UTR / bank transaction reference']) ?>
+                <?= $form->field($model, 'receiptFile')->fileInput(['accept' => '.jpg,.jpeg,.png,.pdf'])->hint('JPG, PNG or PDF. Maximum file size 5 MB.') ?>
+                <?= $form->field($model, 'user_payment_notes')->textarea(['rows' => 4, 'placeholder' => 'Optional payment remarks']) ?>
+                <div class="d-flex flex-wrap gap-2">
+                    <?= Html::submitButton('<i class="fas fa-paper-plane me-1"></i> Submit Payment Proof', ['class' => 'btn btn-primary']) ?>
+                    <?= Html::a('Cancel', ['view', 'number' => $invoice->invoice_number], ['class' => 'btn btn-outline-secondary']) ?>
+                </div>
+                <?php ActiveForm::end(); ?>
+            </div>
         </div>
-        <div class="card-body">
-            <div class="alert alert-light border">
-                <div>
-                    <strong>Invoice:</strong> <?= Html::encode($invoice->invoice_number) ?>
-                </div>
-                <div>
-                    <strong>Outstanding:</strong> <?= Yii::$app->formatter->asCurrency($outstandingAmount, 'INR') ?>
-                </div>
+    </div>
+
+    <div class="col-xl-4 order-1 order-xl-2">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body p-4">
+                <div class="small text-body-secondary">Outstanding on <?= Html::a(Html::encode($invoice->invoice_number), ['view', 'number' => $invoice->invoice_number], ['class' => 'fw-semibold text-decoration-none']) ?></div>
+                <div class="display-6 fw-bold"><?= Yii::$app->formatter->asCurrency($outstandingAmount, 'INR') ?></div>
+
+                <?php if ($bankDetails): ?>
+                    <hr>
+                    <div class="small text-uppercase text-body-secondary fw-semibold mb-2">Bank / UPI Payment Details</div>
+                    <dl class="small mb-0">
+                        <?php foreach ($bankDetails as $label => $value): ?>
+                            <dt class="fw-normal text-body-secondary"><?= $label ?></dt>
+                            <dd class="fw-semibold text-break mb-2"><?= Html::encode($value) ?></dd>
+                        <?php endforeach; ?>
+                    </dl>
+                <?php endif; ?>
             </div>
-            <?php
-            $form = ActiveForm::begin(['id' => 'payment-proof-form', 'options' => ['enctype' => 'multipart/form-data']]);
-            ?>
-            <?= $form->errorSummary($model, ['class' => 'alert alert-danger']) ?>
-            <?= $form->field($model, 'gateway_payment_id')->textInput(['maxlength' => true, 'autocomplete' => 'off', 'placeholder' => 'UPI / UTR / bank transaction reference']) ?>
-            <?= $form->field($model, 'receiptFile')->fileInput(['accept' => '.jpg,.jpeg,.png,.pdf'])->hint('JPG, PNG or PDF. Maximum file size 5 MB.')
-            ?>
-            <?= $form->field($model, 'user_payment_notes')->textarea(['rows' => 4, 'placeholder' => 'Optional payment remarks']) ?>
-            <div class="d-flex gap-2">
-                <?= Html::submitButton('Submit Payment Proof', ['class' => 'btn btn-primary']) ?>
-                <?= Html::a('Cancel', ['view', 'number' => $invoice->invoice_number], ['class' => 'btn btn-outline-secondary']) ?>
-            </div>
-            <?php ActiveForm::end(); ?>
         </div>
     </div>
 </div>

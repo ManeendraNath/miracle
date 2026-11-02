@@ -1,16 +1,18 @@
 <?php
 declare(strict_types=1);
 
+use common\services\billing\TaxCalculator;
 use yii\helpers\Html;
 
 $money = static function (float $amount): string {
     return 'INR ' . number_format($amount, 2);
 };
 $payment = Yii::$app->params['billing']['payment'] ?? [];
-$taxableAmount = max(0, round((float) $invoice->subtotal_amount - (float) $invoice->discount_amount, 2));
-$cgstAmount = round($taxableAmount * ((float) $invoice->cgst_percent / 100), 2);
-$sgstAmount = round($taxableAmount * ((float) $invoice->sgst_percent / 100), 2);
-$igstAmount = round($taxableAmount * ((float) $invoice->igst_percent / 100), 2);
+$tax = (new TaxCalculator())->forInvoice($invoice);
+$taxableAmount = $tax['taxable'];
+$cgstAmount = $tax['cgstAmount'];
+$sgstAmount = $tax['sgstAmount'];
+$igstAmount = $tax['igstAmount'];
 ?>
 
 <style>

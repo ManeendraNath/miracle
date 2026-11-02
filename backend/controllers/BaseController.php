@@ -27,6 +27,7 @@ class BaseController extends Controller
         'coupon' => 'Admin',
         'customer-billing-profile' => 'Admin',
         'user-login-history' => 'Admin',
+        'report' => 'Admin',
     ];
 
     private const ROLE_RANK = ['Manager' => 1, 'Admin' => 2, 'Superadmin' => 3];

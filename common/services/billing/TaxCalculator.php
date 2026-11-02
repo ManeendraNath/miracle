@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace common\services\billing;
 
 use common\models\CustomerBillingProfile;
+use common\models\Invoice;
+use common\models\InvoiceItem;
 use Yii;
 
 final class TaxCalculator
@@ -81,6 +83,27 @@ final class TaxCalculator
             'sgst' => 0.00,
             'igst' => $igst,
         ];
+    }
+
+    /**
+     * Tax split of a saved invoice. The invoice PDF, the admin and customer invoice pages and the
+     * GST report all read it from here so they can't disagree.
+     *
+     * @return array{taxable: float, cgstAmount: float, sgstAmount: float, igstAmount: float, totalTax: float, total: float}
+     */
+    public function forInvoice(Invoice $invoice): array
+    {
+        // Carried-forward balance lines were taxed on their own invoice; only current charges are taxed
+        // here (same as AutoInvoiceService::calculateInvoiceTotals, which sets total_payable).
+        $arrears = (float) InvoiceItem::find()->where(['invoice_id' => $invoice->id, 'item_type' => InvoiceItem::TYPE_ARREARS])->sum('total_price');
+        $taxable = (float) max(0, round((float) $invoice->subtotal_amount - $arrears - (float) $invoice->discount_amount, 2));
+
+        return ['taxable' => $taxable] + $this->calculate(
+            $taxable,
+            (float) $invoice->cgst_percent,
+            (float) $invoice->sgst_percent,
+            (float) $invoice->igst_percent
+        );
     }
 
     public function calculate(

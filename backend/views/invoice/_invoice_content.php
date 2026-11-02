@@ -3,15 +3,17 @@ declare(strict_types=1);
 
 use common\models\Invoice;
 use common\models\InvoiceItem;
+use common\services\billing\TaxCalculator;
 use yii\helpers\Html;
 
 $subtotal = round((float) $model->subtotal_amount, 2);
 $discount = round((float) $model->discount_amount, 2);
-$taxableAmount = max(0, round($subtotal - $discount, 2));
-$cgstAmount = round($taxableAmount * ((float) $model->cgst_percent / 100), 2);
-$sgstAmount = round($taxableAmount * ((float) $model->sgst_percent / 100), 2);
-$igstAmount = round($taxableAmount * ((float) $model->igst_percent / 100), 2);
-$totalTax = round($cgstAmount + $sgstAmount + $igstAmount, 2);
+$tax = (new TaxCalculator())->forInvoice($model);
+$taxableAmount = $tax['taxable'];
+$cgstAmount = $tax['cgstAmount'];
+$sgstAmount = $tax['sgstAmount'];
+$igstAmount = $tax['igstAmount'];
+$totalTax = $tax['totalTax'];
 $money = static function (int|float|string|null $amount): string {
     return Yii::$app->formatter->asCurrency((float) ($amount ?? 0), 'INR');
 };

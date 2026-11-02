@@ -137,6 +137,12 @@ use yii\helpers\Html;
                         'url' => ['/coupon/index'],
                         'active' => Yii::$app->controller->id === 'coupon'
                     ],
+                    [
+                        'label' => 'Reports',
+                        'icon' => 'file-csv',
+                        'url' => ['/report/index'],
+                        'active' => Yii::$app->controller->id === 'report',
+                    ],
                     // =====================================================================
                     // 🌐 3. INFRASTRUCTURE & ACTIVE CLIENT ASSETS
                     // =====================================================================

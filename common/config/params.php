@@ -8,6 +8,9 @@ return [
     'supportEmail' => $_ENV['SUPPORT_EMAIL'],
     'senderEmail' => $_ENV['SENDER_EMAIL'],
     'senderName' => $_ENV['SENDER_NAME'],
+    // Encrypts admin two-factor secrets in the database. Changing it disables everyone's
+    // two-factor until reset (php yii admin-2fa/reset <username>).
+    'twoFactorKey' => $_ENV['TWO_FACTOR_KEY'] ?? '',
     'user.passwordResetTokenExpire' => 3600,
     'user.passwordMinLength' => 8,
     'bsVersion' => '5.x',

@@ -127,8 +127,11 @@ change its own email and password under **My account** (user icon in the top bar
   Managers and Admins can't turn off anyone else's.
 
 Codes are standard TOTP (RFC 6238, SHA1, 30 s), checked offline (`common\components\Totp`).
-The secret is stored in `admin.totp_secret` in plain text (it must be readable to check
-codes), so treat database backups as sensitive.
+The secret is stored encrypted in `admin.totp_secret` with `TWO_FACTOR_KEY` from `.env`
+(generate one with `php -r 'echo bin2hex(random_bytes(32)), PHP_EOL;'`). Without the key,
+two-factor can't be set up. Secrets saved before encryption are encrypted at that admin's
+next code. If the key is lost or changed, every admin's two-factor stops working: restore
+the key, or run `php yii admin-2fa/reset <username>` for each.
 
 ## Admin WhatsApp alerts
 

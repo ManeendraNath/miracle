@@ -139,7 +139,9 @@ class AdminController extends BaseController
     private function handleTwoFactor(Admin $model, string $step, string $code): void
     {
         $session = Yii::$app->session;
-        if ($step === 'setup' && !$model->hasTwoFactor()) {
+        if ($step === 'setup' && !Admin::canStoreTwoFactor()) {
+            $session->setFlash('error', 'Two-factor sign-in is not configured on this server yet (TWO_FACTOR_KEY in .env).');
+        } elseif ($step === 'setup' && !$model->hasTwoFactor()) {
             $session->set(self::TOTP_SETUP_KEY, Totp::generateSecret());
         } elseif ($step === 'cancel') {
             $session->remove(self::TOTP_SETUP_KEY);

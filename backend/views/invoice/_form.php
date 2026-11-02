@@ -136,7 +136,7 @@ $isNew = $model->isNewRecord;
                         <tr>
 
                             <th style="width: 18%">
-                                Category
+                                Category / Service type
                             </th>
 
                             <th>
@@ -186,6 +186,12 @@ $isNew = $model->isNewRecord;
                                         maxlength="100"
                                         required
                                         >
+                                    <?= Html::dropDownList(
+                                        "ManualInvoiceItemForm[{$index}][item_type]",
+                                        $item->item_type,
+                                        \common\models\InvoiceItem::getServiceTypes(),
+                                        ['class' => 'form-control form-control-sm mt-1', 'title' => 'Service type (used by coupon restrictions)']
+                                    ) ?>
 
                                 </td>
 
@@ -471,6 +477,10 @@ $isNew = $model->isNewRecord;
 <?php
 $nextIndex = count($items);
 
+// Same options as the server-rendered rows, for rows added in the browser.
+$serviceTypeSelect = Html::dropDownList('ManualInvoiceItemForm[__INDEX__][item_type]', \common\models\InvoiceItem::TYPE_CUSTOM, \common\models\InvoiceItem::getServiceTypes(), ['class' => 'form-control form-control-sm mt-1', 'title' => 'Service type (used by coupon restrictions)']);
+$serviceTypeSelect = str_replace('__INDEX__', '${index}', str_replace('`', '', $serviceTypeSelect));
+
 $js = <<<JS
 
 let manualItemIndex = {$nextIndex};
@@ -576,6 +586,7 @@ $('#add-invoice-item').on(
             maxlength="100"
             required
         >
+        {$serviceTypeSelect}
     </td>
 
     <td>

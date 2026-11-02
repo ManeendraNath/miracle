@@ -92,6 +92,25 @@ class AdminController extends BaseController
     }
 
     /**
+     * The signed-in staff member edits their own email and password (any role).
+     * Role and status are not editable here.
+     */
+    public function actionAccount()
+    {
+        $model = $this->findModel(Yii::$app->user->id);
+        if ($this->request->isPost) {
+            $posted = $this->request->post($model->formName(), []);
+            $model->setAttributes(array_intersect_key($posted, array_flip(['email', 'password'])));
+            if ($model->save()) {
+                Yii::$app->session->setFlash('success', 'Your account has been updated.');
+                return $this->refresh();
+            }
+        }
+        $model->password = '';
+        return $this->render('account', ['model' => $model]);
+    }
+
+    /**
      * Reads background execution ledger logging streams and tracks automated metrics.
      */
     public function actionCronLog()

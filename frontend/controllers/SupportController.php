@@ -175,7 +175,6 @@ final class SupportController extends Controller
             $ticket->status = SupportTicket::STATUS_OPEN;
         }
         $ticket->save(false, ['status', 'updated_at']);
-        (new NotificationService())->create((int) $ticket->user_id, 'support', 'Reply Added', sprintf('A new reply has been added to ticket %s.', $ticket->ticket_number), '/support/view?number=' . $ticket->ticket_number);
         SupportTicketMailer::customerReply($ticket);
         AdminAlertService::supportCustomerReply($ticket->ticket_number, Yii::$app->user->identity->username);
         Yii::$app->session->setFlash('success', 'Your reply has been added.');

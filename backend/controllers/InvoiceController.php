@@ -155,7 +155,7 @@ class InvoiceController extends BaseController
         $itemModels = InvoiceItem::find()
                 ->where([
                     'invoice_id' => $model->id,
-                    'item_type' => InvoiceItem::TYPE_CUSTOM,
+                    'item_type' => array_keys(InvoiceItem::getServiceTypes()),
                 ])
                 ->orderBy(['id' => SORT_ASC])
                 ->all();
@@ -167,6 +167,7 @@ class InvoiceController extends BaseController
             $form->description = (string) $dbItem->description;
             $form->quantity = (int) $dbItem->quantity;
             $form->unit_price = (float) $dbItem->unit_price;
+            $form->item_type = (int) $dbItem->item_type;
             $items[] = $form;
         }
         if (!$items) {

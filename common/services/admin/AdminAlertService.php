@@ -19,14 +19,14 @@ final class AdminAlertService extends AdminNotificationService
     {
         $title = 'New Support Ticket';
         $message = "Ticket: {$ticketNumber}\n" . "Customer: {$customer}\n" . "Subject: {$subject}";
-        self::send($title, $message, 'support', '/support-ticket/view?number=' . rawurlencode($ticketNumber));
+        self::send($title, $message, 'support', '/support-ticket/view?number=' . rawurlencode($ticketNumber), true);
     }
 
     public static function supportCustomerReply(string $ticketNumber, string $customer): void
     {
         $title = 'Customer Replied';
         $message = "Ticket: {$ticketNumber}\n" . "Customer: {$customer}";
-        self::send($title, $message, 'support', '/support-ticket/view?number=' . rawurlencode($ticketNumber));
+        self::send($title, $message, 'support', '/support-ticket/view?number=' . rawurlencode($ticketNumber), true);
     }
 
     public static function paymentSubmitted(string $invoiceNumber, string $customer, float $amount): void
@@ -40,14 +40,14 @@ final class AdminAlertService extends AdminNotificationService
     {
         $title = 'New Lead';
         $message = "Name: {$name}\n" . "Email: {$email}";
-        self::send($title, $message, 'lead', '/lead/index');
+        self::send($title, $message, 'lead', '/lead/index', true);
     }
 
     public static function auditRequestCreated(string $website): void
     {
         $title = 'New Audit Request';
         $message = "Website: {$website}";
-        self::send($title, $message, 'lead', '/audit-request/index');
+        self::send($title, $message, 'lead', '/audit-request/index', true);
     }
 
     public static function serviceExpiring(string $service, string $expiryDate): void
@@ -68,16 +68,20 @@ final class AdminAlertService extends AdminNotificationService
     {
         $title = 'Online Payment Needs Attention';
         $message = "Invoice: {$invoiceNumber} ({$invoiceStatus})\n" . "Amount: ₹{$amount}\n" . "Razorpay payment: {$paymentId}\n" . 'The customer was charged but the invoice could not accept it. Refund in Razorpay or apply it manually.';
-        self::send($title, $message, 'payment', '/transaction/index?' . http_build_query(['TransactionSearch' => ['gateway_payment_id' => $paymentId]]));
+        self::send($title, $message, 'payment', '/transaction/index?' . http_build_query(['TransactionSearch' => ['gateway_payment_id' => $paymentId]]), true);
     }
 
     public static function invoiceGenerationFailed(int $userId, string $reason): void
     {
         $title = 'Automatic Invoice Failed';
         $message = "Client ID: {$userId}\n" . "Reason: {$reason}\n" . 'It will be retried on the next billing run.';
-        self::send($title, $message, 'billing', '/customer-billing-profile/index');
+        self::send($title, $message, 'billing', '/customer-billing-profile/index', true);
     }
 
+    /**
+     * @param bool $whatsappNotification also message ADMIN_WHATSAPP_MOBILE (urgent, low-volume alerts
+     *                                   only; bulk ones like "invoice generated" stay email-only)
+     */
     private static function send(string $title, string $message, string $type = 'system', ?string $route = null, bool $whatsappNotification = false): void
     {
         (new AdminNotificationService())->create($type, $title, $message, $route);
@@ -109,7 +113,8 @@ final class AdminAlertService extends AdminNotificationService
                 'admin_alert',
                 [
                         'body_1' => ['type' => 'text', 'value' => $title],
-                        'body_2' => ['type' => 'text', 'value' => $message],
+                        // Template parameters may not contain newlines, tabs or 4+ spaces.
+                        'body_2' => ['type' => 'text', 'value' => preg_replace('/\s*\n\s*|\t| {4,}/', ' | ', trim($message))],
                     ]
             );
         } catch (\Throwable $exception) {

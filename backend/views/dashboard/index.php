@@ -40,6 +40,11 @@ $kpis = [
     ['bg-warning', '₹' . number_format((float) $metrics['unpaidBalance'], 2), 'Outstanding Due Balance', 'fas fa-comments-dollar', 'Track Accounts Due', ['/invoice/index']],
     ['bg-secondary', (int) $metrics['totalInvoicesCount'], 'Invoices Generated', 'fas fa-file-invoice-dollar', 'View Billing History', ['/invoice/index']],
 ];
+// Managers don't see billing figures (they can't open those sections either).
+$canBilling = \backend\controllers\BaseController::canAccess(Yii::$app->user->identity, 'invoice');
+if (!$canBilling) {
+    $kpis = array_filter($kpis, static fn(array $kpi): bool => $kpi[5][0] !== '/invoice/index');
+}
 $assets = [
     ['fas fa-globe text-primary', 'Domains', $metrics['activeDomainsCount'], ['/domains/index']],
     ['fas fa-cloud text-success', 'Web Hosting', $metrics['activeHostingCount'], ['/hosting/index']],
@@ -115,6 +120,7 @@ $assets = [
 
     <div class="row">
         <div class="col-lg-6">
+            <?php if ($canBilling): ?>
             <div class="card">
                 <div class="card-header">
                     <h3 class="card-title"><i class="fas fa-wallet text-primary mr-2"></i>Accounts Receivable</h3>
@@ -149,6 +155,7 @@ $assets = [
                     </div>
                 </div>
             </div>
+            <?php endif; ?>
 
             <div class="card">
                 <div class="card-header">
@@ -180,6 +187,7 @@ $assets = [
         </div>
 
         <div class="col-lg-6">
+            <?php if ($canBilling): ?>
             <div class="card">
                 <div class="card-header">
                     <h3 class="card-title"><i class="fas fa-chart-line text-success mr-2"></i>Revenue</h3>
@@ -203,6 +211,7 @@ $assets = [
                     </div>
                 </div>
             </div>
+            <?php endif; ?>
 
             <div class="card">
                 <div class="card-header">
@@ -230,6 +239,7 @@ $assets = [
                 </div>
             </div>
 
+            <?php if ($canBilling): ?>
             <div class="card">
                 <div class="card-header">
                     <h3 class="card-title"><i class="fas fa-tags text-warning mr-2"></i>Recent Coupons</h3>
@@ -263,6 +273,7 @@ $assets = [
                     </table>
                 </div>
             </div>
+            <?php endif; ?>
         </div>
     </div>
 </div>

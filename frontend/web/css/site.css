@@ -488,3 +488,44 @@ a.desc:after {
 main > .container:has(> .account-layout) {
     padding-top: 24px;
 }
+
+.site-footer {
+    background-color: #0f172a;
+    border-top: 4px solid #00a3e0;
+}
+
+.site-footer a {
+    color: #cbd5e1;
+    text-decoration: none;
+}
+
+.site-footer a:hover {
+    color: #fff;
+}
+
+.site-footer .footer-muted {
+    color: #94a3b8;
+}
+
+.site-footer .footer-heading {
+    color: #00a3e0;
+    letter-spacing: .05em;
+}
+
+.site-footer .footer-rule {
+    border-color: rgba(255, 255, 255, .15);
+}
+
+.site-footer .footer-social {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: #1e293b;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.site-footer .footer-social:hover {
+    background: #00a3e0;
+}

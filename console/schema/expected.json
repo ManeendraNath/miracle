@@ -1,5 +1,5 @@
 {
-    "migrations": 43,
+    "migrations": 44,
     "columns": {
         "admin": {
             "auth_key": {
@@ -2293,11 +2293,11 @@
             "id": "primary"
         },
         "coupon_applicability": {
-            "coupon_id": "unique",
+            "coupon_id,item_type": "unique",
             "id": "primary"
         },
         "coupon_assigned_user": {
-            "coupon_id": "unique",
+            "coupon_id,user_id": "unique",
             "id": "primary",
             "user_id": "index"
         },

@@ -17,8 +17,10 @@ final class CouponService
     /**
      * @param bool $alreadyApplied the coupon is already on the invoice being edited: it
      *                             was valid when granted, so don't re-check active/date
+     * @param array<int, float>|null $totalsByType line totals per InvoiceItem item_type; when
+     *                             the coupon is limited to service types, only those lines are discounted
      */
-    public function calculate(?string $code, int $userId, float $subtotal, ?int $excludeInvoiceId = null, bool $alreadyApplied = false): float
+    public function calculate(?string $code, int $userId, float $subtotal, ?int $excludeInvoiceId = null, bool $alreadyApplied = false, ?array $totalsByType = null): float
     {
         $code = strtoupper(trim((string) $code));
         if ($code === '') {
@@ -45,12 +47,20 @@ final class CouponService
         }
         $this->validateAssignedUser($coupon, $userId);
         $this->validateUsageLimits($coupon, $userId, $excludeInvoiceId);
+        $base = $subtotal;
+        $allowedTypes = $this->allowedTypes($coupon);
+        if ($allowedTypes && $totalsByType !== null) {
+            $base = round(array_sum(array_intersect_key($totalsByType, array_flip($allowedTypes))), 2);
+            if ($base <= 0) {
+                throw new \DomainException('Coupon cannot be used for this service.');
+            }
+        }
         if ($coupon->type === Coupon::TYPE_P) {
-            $discount = round($subtotal * ((float) $coupon->amount / 100), 2);
+            $discount = round($base * ((float) $coupon->amount / 100), 2);
         } else {
             $discount = round((float) $coupon->amount, 2);
         }
-        return min($subtotal, max(0.00, $discount));
+        return min($base, max(0.00, $discount));
     }
 
     private function validateAvailability(Coupon $coupon): void
@@ -144,15 +154,21 @@ final class CouponService
 
     private function validateApplicability(Coupon $coupon, Invoice $invoice): void
     {
-        $allowedTypes = CouponApplicability::find()->select('item_type')->where(['coupon_id' => $coupon->id])->column();
+        $allowedTypes = $this->allowedTypes($coupon);
         if (!$allowedTypes) {
             return;
         }
-        $invoiceTypes = InvoiceItem::find()->select('item_type')->where(['invoice_id' => $invoice->id])->column();
+        $invoiceTypes = array_map('intval', InvoiceItem::find()->select('item_type')->where(['invoice_id' => $invoice->id])->column());
         $matched = array_intersect($allowedTypes, $invoiceTypes);
         if (!$matched) {
             throw new \DomainException('Coupon cannot be used for this service.');
         }
+    }
+
+    /** @return int[] item types the coupon is limited to; empty = any */
+    private function allowedTypes(Coupon $coupon): array
+    {
+        return array_map('intval', CouponApplicability::find()->select('item_type')->where(['coupon_id' => $coupon->id])->column());
     }
 
     private function validateAssignedUser(Coupon $coupon, int $userId): void

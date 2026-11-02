@@ -98,7 +98,10 @@ final class ManualInvoiceService
                 $discount = $this->couponService->calculate(
                     $couponCode,
                     (int) $invoice->user_id,
-                    $subtotal
+                    $subtotal,
+                    null,
+                    false,
+                    $this->totalsByType($items)
                 );
 
                 $invoice->coupon_code = $couponCode;
@@ -287,9 +290,9 @@ final class ManualInvoiceService
                         $lockedInvoice->id,
                     ])
                     ->andWhere([
-                        '<>',
+                        'not in',
                         'item_type',
-                        InvoiceItem::TYPE_CUSTOM,
+                        array_keys(InvoiceItem::getServiceTypes()),
                     ])
                     ->exists();
 
@@ -310,7 +313,8 @@ final class ManualInvoiceService
                         $lockedInvoice->id,
                     // Keeping the coupon it already has: an edit must not fail
                     // because that coupon has since expired or been disabled.
-                    $couponCode === strtoupper(trim((string) $lockedInvoice->coupon_code))
+                    $couponCode === strtoupper(trim((string) $lockedInvoice->coupon_code)),
+                    $this->totalsByType($items)
                 );
             } else {
                 $discount = max(
@@ -334,7 +338,7 @@ final class ManualInvoiceService
                         'invoice_id' =>
                         $lockedInvoice->id,
                         'item_type' =>
-                        InvoiceItem::TYPE_CUSTOM,
+                        array_keys(InvoiceItem::getServiceTypes()),
                     ])
                     ->orderBy([
                         'id' => SORT_ASC,
@@ -434,6 +438,19 @@ final class ManualInvoiceService
         }
     }
 
+    /**
+     * @param ManualInvoiceItemForm[] $items
+     * @return array<int, float> line totals summed per item_type, for coupon restrictions
+     */
+    private function totalsByType(array $items): array
+    {
+        $totals = [];
+        foreach ($items as $item) {
+            $totals[$item->item_type] = round(($totals[$item->item_type] ?? 0) + $item->getTotal(), 2);
+        }
+        return $totals;
+    }
+
     private function calculateSubtotal(
         array $items
     ): float {
@@ -473,7 +490,7 @@ final class ManualInvoiceService
 
         $item->invoice_id = (int) $invoice->id;
 
-        $item->item_type = InvoiceItem::TYPE_CUSTOM;
+        $item->item_type = $form->item_type;
 
         $item->item_id = null;
 

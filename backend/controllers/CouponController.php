@@ -59,6 +59,9 @@ final class CouponController extends BaseController
             Yii::$app->session->setFlash('success', 'Coupon updated successfully.');
             return $this->redirect(['view', 'id' => $model->id]);
         }
+        if (!Yii::$app->request->isPost) {
+            $model->loadRestrictions();
+        }
         return $this->render('update', ['model' => $model]);
     }
 

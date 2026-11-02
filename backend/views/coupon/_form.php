@@ -3,6 +3,10 @@
 declare(strict_types=1);
 
 use common\models\Coupon;
+use common\models\InvoiceItem;
+use common\models\User;
+use kartik\select2\Select2;
+use yii\helpers\ArrayHelper;
 use yii\helpers\Html;
 use yii\widgets\ActiveForm;
 
@@ -255,7 +259,7 @@ $normaliseDatetime = static function (?string $value): string {
                                 'step' => 1,
                             ]
                     )->hint(
-                        'Maximum allowed uses for this coupon.'
+                        'Maximum allowed uses for this coupon. Use 0 for no limit.'
                     )
                     ?>
 
@@ -297,6 +301,33 @@ $normaliseDatetime = static function (?string $value): string {
 
         </div>
 
+    </div>
+
+    <div class="card card-outline card-warning shadow-sm mb-3">
+        <div class="card-header">
+            <h3 class="card-title">Restrictions</h3>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-lg-6">
+                    <?= $form->field($model, 'applies_to')->checkboxList(InvoiceItem::getServiceTypes(), [
+                        'unselect' => '',
+                        'itemOptions' => ['labelOptions' => ['class' => 'mr-3 font-weight-normal']],
+                    ])->hint('Leave all unticked to allow every invoice line. When ticked, only lines of these service types are discounted.') ?>
+                </div>
+                <div class="col-lg-6">
+                    <?= $form->field($model, 'assigned_user_ids')->widget(Select2::class, [
+                        'data' => ArrayHelper::map(
+                            User::find()->select(['id', 'username', 'email'])->orderBy('username')->asArray()->all(),
+                            'id',
+                            static fn(array $u): string => $u['username'] . ' (' . $u['email'] . ')'
+                        ),
+                        'options' => ['multiple' => true, 'placeholder' => 'Any customer'],
+                        'pluginOptions' => ['allowClear' => true],
+                    ])->hint('Leave empty so any customer can use the coupon.') ?>
+                </div>
+            </div>
+        </div>
     </div>
 
     <div class="d-flex justify-content-end gap-2">

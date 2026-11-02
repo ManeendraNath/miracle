@@ -11,6 +11,11 @@ class Coupon extends base\Coupon
 {
     use AutoTimestampTrait;
 
+    /** @var int[]|string|null service types (InvoiceItem item_type) the coupon is limited to; null = not submitted */
+    public $applies_to;
+    /** @var int[]|string|null customers the coupon is limited to; null = not submitted */
+    public $assigned_user_ids;
+
     public static function getTypes(): array
     {
         return [
@@ -37,12 +42,19 @@ class Coupon extends base\Coupon
             [['uses_per_coupon', 'uses_per_user'], 'integer', 'min' => 0],
             ['amount', 'validateCouponAmount'],
             ['end_date', 'validateValidityPeriod'],
+            // An empty checkbox list / select posts '' (its hidden "unselect" input).
+            [['applies_to', 'assigned_user_ids'], 'filter', 'filter' => static fn($v): ?array => $v === null ? null : array_values(array_filter((array) $v, static fn($x): bool => (string) $x !== '')), 'skipOnEmpty' => false],
+            ['applies_to', 'each', 'rule' => ['in', 'range' => array_map('strval', array_keys(InvoiceItem::getServiceTypes()))]],
+            ['assigned_user_ids', 'each', 'rule' => ['exist', 'targetClass' => User::class, 'targetAttribute' => 'id']],
         ];
         return ArrayHelper::merge(parent::rules(), $rules);
     }
 
     public function beforeValidate(): bool
     {
+        // This override replaces AutoTimestampTrait::beforeValidate(), so fill timestamps here
+        // (without it every coupon save failed with "Created At cannot be blank").
+        $this->prepareTimestampAttributes();
         $this->code = strtoupper(trim((string) $this->code));
         foreach (['start_date', 'end_date'] as $attribute) {
             if (empty($this->$attribute)) {
@@ -55,6 +67,51 @@ class Coupon extends base\Coupon
             }
         }
         return parent::beforeValidate();
+    }
+
+    /** Save and its restriction rows commit together. */
+    public function transactions(): array
+    {
+        return [self::SCENARIO_DEFAULT => self::OP_INSERT | self::OP_UPDATE];
+    }
+
+    /** Fills the form fields from the restriction tables (call before showing the form). */
+    public function loadRestrictions(): void
+    {
+        $this->applies_to = array_map('strval', CouponApplicability::find()->select('item_type')->where(['coupon_id' => $this->id])->column());
+        $this->assigned_user_ids = array_map('strval', CouponAssignedUser::find()->select('user_id')->where(['coupon_id' => $this->id])->column());
+    }
+
+    public function getAppliesToLabels(): array
+    {
+        $types = InvoiceItem::getServiceTypes();
+        return array_map(static fn($t): string => $types[(int) $t] ?? (string) $t, CouponApplicability::find()->select('item_type')->where(['coupon_id' => $this->id])->column());
+    }
+
+    public function getAssignedUsers(): \yii\db\ActiveQuery
+    {
+        return $this->hasMany(User::class, ['id' => 'user_id'])->viaTable(CouponAssignedUser::tableName(), ['coupon_id' => 'id']);
+    }
+
+    public function afterSave($insert, $changedAttributes): void
+    {
+        parent::afterSave($insert, $changedAttributes);
+        $now = time();
+        // Only when the form submitted them: status toggles and other saves leave restrictions alone.
+        if ($this->applies_to !== null) {
+            CouponApplicability::deleteAll(['coupon_id' => $this->id]);
+            $rows = array_map(fn($type): array => [$this->id, (int) $type, $now, $now], array_unique((array) $this->applies_to));
+            if ($rows) {
+                self::getDb()->createCommand()->batchInsert(CouponApplicability::tableName(), ['coupon_id', 'item_type', 'created_at', 'updated_at'], $rows)->execute();
+            }
+        }
+        if ($this->assigned_user_ids !== null) {
+            CouponAssignedUser::deleteAll(['coupon_id' => $this->id]);
+            $rows = array_map(fn($userId): array => [$this->id, (int) $userId, $now, $now, $now], array_unique((array) $this->assigned_user_ids));
+            if ($rows) {
+                self::getDb()->createCommand()->batchInsert(CouponAssignedUser::tableName(), ['coupon_id', 'user_id', 'assigned_at', 'created_at', 'updated_at'], $rows)->execute();
+            }
+        }
     }
 
     public function validateCouponAmount(string $attribute): void
@@ -112,6 +169,8 @@ class Coupon extends base\Coupon
             'end_date' => 'Expires At',
             'uses_per_coupon' => 'Total Usage Limit',
             'uses_per_user' => 'Usage Limit Per Customer',
+            'applies_to' => 'Applies To',
+            'assigned_user_ids' => 'Only For These Customers',
         ];
         return ArrayHelper::merge(parent::attributeLabels(), $attributes);
     }

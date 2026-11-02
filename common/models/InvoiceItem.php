@@ -22,4 +22,13 @@ class InvoiceItem extends base\InvoiceItem
             self::TYPE_ARREARS => 'Previous Outstanding',
         ];
     }
+
+    /**
+     * Service types an admin can pick for a manual invoice line, and that a coupon
+     * can be restricted to. Arrears lines are system-generated only.
+     */
+    public static function getServiceTypes(): array
+    {
+        return array_diff_key(self::getTypes(), [self::TYPE_ARREARS => true]);
+    }
 }

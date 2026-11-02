@@ -13,6 +13,7 @@ final class ManualInvoiceItemForm extends Model
     public string $description = '';
     public int $quantity = 1;
     public float $unit_price = 0.00;
+    public int $item_type = \common\models\InvoiceItem::TYPE_CUSTOM;
 
     public function rules(): array
     {
@@ -54,6 +55,7 @@ final class ManualInvoiceItemForm extends Model
                 'id',
                 'integer',
             ],
+            ['item_type', 'in', 'range' => array_keys(\common\models\InvoiceItem::getServiceTypes())],
         ];
     }
 

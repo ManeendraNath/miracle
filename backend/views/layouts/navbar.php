@@ -72,6 +72,7 @@ $adminNotificationCount = AdminNotification::find()
             </div>
         </li>
         <li class="nav-item">
+<?= Html::a('<i class="fas fa-user-circle"></i>', ['/admin/account'], ['class' => 'nav-link', 'title' => 'My account']) ?>
 <?= Html::a('<i class="fas fa-sign-out-alt"></i>', ['/auth/logout'], ['data-method' => 'post', 'class' => 'nav-link', 'title' => 'Sign out']) ?>
         </li>
         <li class="nav-item">

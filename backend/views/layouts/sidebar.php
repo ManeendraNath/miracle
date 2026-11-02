@@ -39,9 +39,32 @@ use yii\helpers\Html;
         <!-- Sidebar Active Menu Navigation Widget -->
         <nav class="mt-2">
             <?php
+            // Hide links the signed-in role cannot open, then section headers left empty.
+            $filterMenu = static function (array $items): array {
+                $identity = Yii::$app->user->identity;
+                foreach ($items as &$item) {
+                    if (isset($item['url'][0]) && !isset($item['visible']) && preg_match('#^/([\w-]+)(?:/([\w-]+))?#', $item['url'][0], $m)) {
+                        $item['visible'] = \backend\controllers\BaseController::canAccess($identity, $m[1], $m[2] ?? 'index');
+                    }
+                }
+                unset($item);
+                $out = [];
+                foreach ($items as $i => $item) {
+                    if (!empty($item['header'])) {
+                        $next = array_slice($items, $i + 1);
+                        $end = array_search(true, array_map(static fn($x): bool => !empty($x['header']), $next), true);
+                        $section = array_slice($next, 0, $end === false ? null : $end);
+                        if (!array_filter($section, static fn($x): bool => $x['visible'] ?? true)) {
+                            continue;
+                        }
+                    }
+                    $out[] = $item;
+                }
+                return $out;
+            };
             echo \hail812\adminlte\widgets\Menu::widget([
                 'options' => ['class' => 'nav nav-pills nav-sidebar flex-column', 'data-widget' => 'treeview', 'role' => 'menu', 'data-accordion' => 'false'],
-                'items' => [
+                'items' => $filterMenu([
                     // =====================================================================
                     // 🚀 1. CORE WORKSPACE & CRM MONITORING
                     // =====================================================================
@@ -179,7 +202,7 @@ use yii\helpers\Html;
                     ['label' => 'DEVELOPER', 'header' => true, 'visible' => YII_ENV_DEV],
                     ['label' => 'Gii', 'icon' => 'file-code', 'url' => ['/gii'], 'target' => '_blank', 'visible' => YII_ENV_DEV],
                     ['label' => 'Debug Toolbar', 'icon' => 'bug', 'url' => ['/debug'], 'target' => '_blank', 'visible' => YII_ENV_DEV],
-                ],
+                ]),
             ]);
             ?>
         </nav>

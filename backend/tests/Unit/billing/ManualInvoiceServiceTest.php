@@ -534,4 +534,57 @@ final class ManualInvoiceServiceTest extends Unit
         (int) InvoiceItem::find()->count()
     );
 }
+
+    public function testCouponLimitedToServiceTypesDiscountsOnlyThoseLines(): void
+    {
+        $this->coupon('HOST10', ['applies_to' => [(string) InvoiceItem::TYPE_HOSTING, (string) InvoiceItem::TYPE_DOMAIN]]);
+        $invoice = $this->newInvoice();
+        $invoice->coupon_code = 'host10';
+        $hosting = $this->item('Hosting', 'Business hosting', 1, 1000.00);
+        $hosting->item_type = InvoiceItem::TYPE_HOSTING;
+        $created = (new ManualInvoiceService())->create($invoice, [$hosting, $this->item('Design', 'Logo design', 1, 500.00)]);
+
+        // 10% of the hosting line only, not of the 1500 subtotal.
+        $this->assertEquals(100.00, (float) $created->discount_amount);
+        $this->assertEquals(1500.00, (float) $created->subtotal_amount);
+        $this->assertEquals(
+            [InvoiceItem::TYPE_HOSTING, InvoiceItem::TYPE_CUSTOM],
+            array_map('intval', InvoiceItem::find()->select('item_type')->where(['invoice_id' => $created->id])->orderBy('id')->column())
+        );
+    }
+
+    public function testCouponLimitedToOtherServiceTypeIsRejected(): void
+    {
+        $this->coupon('DOMAINONLY', ['applies_to' => [(string) InvoiceItem::TYPE_DOMAIN]]);
+        $invoice = $this->newInvoice();
+        $invoice->coupon_code = 'DOMAINONLY';
+        $this->expectException(\DomainException::class);
+        $this->expectExceptionMessage('Coupon cannot be used for this service.');
+        (new ManualInvoiceService())->create($invoice, [$this->item('Design', 'Logo design', 1, 500.00)]);
+    }
+
+    public function testCouponAssignedToCustomerRejectsOthersAndSurvivesPlainSave(): void
+    {
+        $coupon = $this->coupon('VIP', ['assigned_user_ids' => [(string) $this->user->id]]);
+        $coupons = new \common\services\billing\CouponService();
+        $this->assertEquals(10.00, $coupons->calculate('VIP', (int) $this->user->id, 100.00));
+
+        // A save without the form fields (e.g. status toggle) keeps the restrictions.
+        $reloaded = \common\models\Coupon::findOne($coupon->id);
+        $this->assertTrue($reloaded->save());
+        $reloaded->loadRestrictions();
+        $this->assertSame([(string) $this->user->id], $reloaded->assigned_user_ids);
+
+        $this->expectException(\DomainException::class);
+        $this->expectExceptionMessage('not assigned to your account');
+        $coupons->calculate('VIP', (int) $this->user->id + 100000, 100.00);
+    }
+
+    private function coupon(string $code, array $restrictions): \common\models\Coupon
+    {
+        $coupon = new \common\models\Coupon();
+        $coupon->setAttributes(['name' => $code, 'code' => $code, 'type' => \common\models\Coupon::TYPE_P, 'amount' => 10, 'is_active' => \common\models\Coupon::IS_ACTIVE_Y, 'uses_per_coupon' => 0] + $restrictions);
+        $this->assertTrue($coupon->save(), json_encode($coupon->errors));
+        return $coupon;
+    }
 }

@@ -30,7 +30,7 @@ $roles = [
 
     <div class="row">
         <div class="col-md-4">
-            <?= $form->field($model, 'role')->dropDownList($roles)->hint('Only Superadmin can access the admin panel.') ?>
+            <?= $form->field($model, 'role')->dropDownList($roles)->hint('Manager: customers, services, support, leads. Admin: + billing, payments, coupons. Superadmin: + admin accounts and site settings.') ?>
         </div>
         <div class="col-md-4">
             <?= $form->field($model, 'status')->dropDownList(Admin::getStatuses()) ?>

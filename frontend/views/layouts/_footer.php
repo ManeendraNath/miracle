@@ -3,70 +3,80 @@
 use common\components\CustomYii;
 use yii\bootstrap5\Html;
 
+$siteName = CustomYii::getSetting('site_name') ?: 'Miracle Web Technologies';
+$address = array_filter(array_map('trim', [
+    (string) CustomYii::getSetting('address_line_1'),
+    (string) CustomYii::getSetting('address_line_2'),
+    (string) CustomYii::getSetting('address_line_3'),
+]), static fn(string $line): bool => trim($line, ' ,') !== '');
+$phones = array_filter([CustomYii::getSetting('mobile_1'), CustomYii::getSetting('mobile_2')]);
+$emails = array_filter([CustomYii::getSetting('email_1'), CustomYii::getSetting('email_2')]);
+$socials = array_filter([
+    'Facebook' => ['fab fa-facebook-f', CustomYii::getSetting('facebook')],
+    'X' => ['fab fa-twitter', CustomYii::getSetting('x')],
+    'LinkedIn' => ['fab fa-linkedin-in', CustomYii::getSetting('linkedin')],
+    'Instagram' => ['fab fa-instagram', CustomYii::getSetting('instagram')],
+    'YouTube' => ['fab fa-youtube', CustomYii::getSetting('youtube')],
+], static fn(array $s): bool => !empty($s[1]));
 ?>
-<!-- 🚀 DYNAMIC CORRESPONDING BRAND FOOTER -->
-<footer class="footer mt-auto py-5 text-white" style="background-color: #0f172a; border-top: 4px solid #00a3e0;">
+<footer class="site-footer footer mt-auto pt-5 pb-4 text-white">
     <div class="container">
         <div class="row g-4">
+            <div class="col-lg-5">
+                <div class="d-flex align-items-center mb-3">
+                    <img src="<?= Yii::$app->request->baseUrl ?>/favicon.ico" alt="" width="32" height="32" class="me-2" style="object-fit:contain;">
+                    <h2 class="h5 fw-bold m-0"><?= Html::encode($siteName) ?></h2>
+                </div>
+                <p class="small footer-muted mb-0">
+                    Website design and development, domain registration, web hosting and ongoing maintenance for growing businesses.
+                </p>
+            </div>
 
-            <!-- Column 1: Agency Brand Statement with Embedded Logo -->
-<div class="col-lg-4 mb-3">
-    <div class="d-flex align-items-center mb-3">
-        <img src="<?= Yii::$app->request->baseUrl ?>/favicon.ico" alt="Logo" style="width:32px; height:32px; margin-right:12px; object-fit:contain;">
-        <h5 class="fw-bold m-0 text-white"><?= Html::encode(CustomYii::getSetting('site_name', 'Miracle Web Technologies')) ?></h5>
-    </div>
-    <p class="small text-muted" style="color: #94a3b8 !important; line-height: 1.6;">
-        Enterprise level modernization frameworks, legacy code migrations, local network container routing orchestration, and isolated reseller cloud hosting instances.
-    </p>
-</div>
-
-
-            <!-- Column 2: Communications Matrix Realignment -->
-            <div class="col-lg-4 mb-3">
-                <h5 class="fw-bold mb-3" style="color: #00a3e0;">📞 Core Communication Nodes</h5>
-                <ul class="list-unstyled small text-muted p-0 m-0">
-                    <li class="mb-2" style="color: #cbd5e1 !important;">
-                        <strong>Support Hotline:</strong> +<?= Html::encode(CustomYii::getSetting('mobile_1', '919999999999')) ?>
-                    </li>
-<?php if (CustomYii::getSetting('mobile_2')): ?>
-                        <li class="mb-2" style="color: #cbd5e1 !important;">
-                            <strong>Alternative Line:</strong> +<?= Html::encode(CustomYii::getSetting('mobile_2')) ?>
+            <div class="col-sm-6 col-lg-4">
+                <h2 class="h6 fw-bold text-uppercase footer-heading mb-3">Contact</h2>
+                <ul class="list-unstyled small mb-0">
+                    <?php foreach ($phones as $phone): ?>
+                        <li class="mb-2">
+                            <i class="fas fa-phone-alt fa-fw me-2 footer-muted"></i>
+                            <a href="tel:+<?= Html::encode($phone) ?>">+<?= Html::encode($phone) ?></a>
                         </li>
-<?php endif; ?>
-                    <li class="mb-2" style="color: #cbd5e1 !important;">
-                        <strong>Primary Desk Mail:</strong> <a href="mailto:<?= Html::encode(CustomYii::getSetting('email_1')) ?>" style="color: #00a3e0; text-decoration: none;"><?= Html::encode(CustomYii::getSetting('email_1', 'info@miraclewebtechnologies.com')) ?></a>
-                    </li>
+                    <?php endforeach; ?>
+                    <?php foreach ($emails as $email): ?>
+                        <li class="mb-2">
+                            <i class="fas fa-envelope fa-fw me-2 footer-muted"></i>
+                            <a href="mailto:<?= Html::encode($email) ?>"><?= Html::encode($email) ?></a>
+                        </li>
+                    <?php endforeach; ?>
+                    <?php if ($address): ?>
+                        <li class="d-flex">
+                            <i class="fas fa-map-marker-alt fa-fw me-2 mt-1 footer-muted"></i>
+                            <span class="footer-muted"><?= implode('<br>', array_map(static fn(string $l): string => Html::encode(rtrim($l, ', ')), $address)) ?></span>
+                        </li>
+                    <?php endif; ?>
                 </ul>
             </div>
 
-            <!-- Column 3: Social Network Vault Vectors -->
-            <div class="col-lg-4 mb-3">
-                <h5 class="fw-bold mb-3" style="color: #dc2626;">🌐 Social Infrastructure Channels</h5>
-                <div class="d-flex gap-3 flex-wrap small">
-                    <?php if (CustomYii::getSetting('facebook')): ?>
-                        <a href="<?= Html::encode(CustomYii::getSetting('facebook')) ?>" target="_blank" rel="noopener" class="text-white bg-secondary px-3 py-1 rounded text-decoration-none" style="background-color: #1e293b !important;">Facebook</a>
-                    <?php endif; ?>
-                    <?php if (CustomYii::getSetting('x')): ?>
-                        <a href="<?= Html::encode(CustomYii::getSetting('x')) ?>" target="_blank" rel="noopener" class="text-white bg-secondary px-3 py-1 rounded text-decoration-none" style="background-color: #1e293b !important;">Twitter / X</a>
-                    <?php endif; ?>
-                    <?php if (CustomYii::getSetting('linkedin')): ?>
-                        <a href="<?= Html::encode(CustomYii::getSetting('linkedin')) ?>" target="_blank" rel="noopener" class="text-white bg-secondary px-3 py-1 rounded text-decoration-none" style="background-color: #1e293b !important;">LinkedIn</a>
-                    <?php endif; ?>
-                    <?php if (CustomYii::getSetting('instagram')): ?>
-                        <a href="<?= Html::encode(CustomYii::getSetting('instagram')) ?>" target="_blank" rel="noopener" class="text-white bg-secondary px-3 py-1 rounded text-decoration-none" style="background-color: #1e293b !important;">Instagram</a>
-                    <?php endif; ?>
-                </div>
-                <div class="mt-3 small text-muted" style="color: #64748b !important;">
-                    🏢 Head Office: <?= Html::encode(CustomYii::getSetting('address_line_1', 'Tech Suite Hub Area')) ?>
-                </div>
+            <div class="col-sm-6 col-lg-3">
+                <h2 class="h6 fw-bold text-uppercase footer-heading mb-3">Quick links</h2>
+                <ul class="list-unstyled small mb-3">
+                    <li class="mb-2"><?= Html::a('Hosting plans', ['/site/index', '#' => 'hosting-tiers']) ?></li>
+                    <li class="mb-2"><?= Html::a('Website audit', ['/site/audit']) ?></li>
+                    <li class="mb-2"><?= Html::a('Contact us', ['/site/contact']) ?></li>
+                    <li class="mb-2"><?= Yii::$app->user->isGuest ? Html::a('Customer login', ['/site/login']) : Html::a('My account', ['/dashboard/index']) ?></li>
+                </ul>
+                <?php if ($socials): ?>
+                    <div class="d-flex gap-2">
+                        <?php foreach ($socials as $label => [$icon, $url]): ?>
+                            <a href="<?= Html::encode($url) ?>" target="_blank" rel="noopener" class="footer-social" title="<?= $label ?>" aria-label="<?= $label ?>">
+                                <i class="<?= $icon ?>"></i>
+                            </a>
+                        <?php endforeach; ?>
+                    </div>
+                <?php endif; ?>
             </div>
-
         </div>
 
-        <hr class="mt-4 mb-3" style="border-color: rgba(255,255,255,0.1);">
-        <div class="d-flex justify-content-between flex-wrap text-muted small" style="color: #64748b !important;">
-            <div>&copy; <?= date('Y') ?> <?= Html::encode(CustomYii::getSetting('site_name')) ?>. All Privileges Reserved.</div>
-            <div>Infrastructure Node: <span class="text-success">● Balanced Operational Sync</span></div>
-        </div>
+        <hr class="my-4 footer-rule">
+        <div class="small footer-muted">&copy; <?= date('Y') ?> <?= Html::encode($siteName) ?>. All rights reserved.</div>
     </div>
 </footer>

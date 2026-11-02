@@ -53,10 +53,17 @@ final class LoginCest
         $I->dontSee('Miracle Corporate Control Center');
     }
 
-    public function nonSuperadminCannotUsePanel(FunctionalTester $I): void
+    public function managerUsesPanelWithoutBillingOrAdminPages(FunctionalTester $I): void
     {
         $this->haveAdmin($I, 'test-manager', Admin::getRoleManager(), Admin::getStatusActive());
         $this->login($I, 'test-manager', self::PASSWORD);
-        $I->dontSee('Miracle Corporate Control Center');
+        $I->see('Miracle Corporate Control Center');
+        $I->dontSee('Total Revenue Settled');
+        $I->amOnRoute('invoice/index');
+        $I->seeResponseCodeIs(403);
+        $I->amOnRoute('admin/index');
+        $I->seeResponseCodeIs(403);
+        $I->amOnRoute('admin/account');
+        $I->seeResponseCodeIs(200);
     }
 }

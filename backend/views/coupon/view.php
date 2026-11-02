@@ -105,14 +105,21 @@ $active = $model->is_active === Coupon::IS_ACTIVE_Y;
         <div class="col-lg-6 mb-3">
             <div class="card card-outline card-secondary shadow-sm h-100">
                 <div class="card-header">
-                    <h3 class="card-title">Usage Limits</h3>
+                    <h3 class="card-title">Usage Limits &amp; Restrictions</h3>
                 </div>
                 <div class="card-body">
                     <dl class="row mb-0">
                         <dt class="col-sm-6">Total Usage Limit</dt>
-                        <dd class="col-sm-6"><?= (int) $model->uses_per_coupon ?></dd>
+                        <dd class="col-sm-6"><?= (int) $model->uses_per_coupon > 0 ? (int) $model->uses_per_coupon : 'No limit' ?></dd>
                         <dt class="col-sm-6">Per Customer</dt>
                         <dd class="col-sm-6"><?= (int) $model->uses_per_user > 0 ? (int) $model->uses_per_user : 'No limit' ?></dd>
+                        <dt class="col-sm-6">Applies To</dt>
+                        <dd class="col-sm-6"><?= Html::encode(implode(', ', $model->getAppliesToLabels()) ?: 'All services') ?></dd>
+                        <dt class="col-sm-6">Customers</dt>
+                        <dd class="col-sm-6 mb-0">
+                            <?php $assigned = $model->getAssignedUsers()->orderBy('username')->all(); ?>
+                            <?= $assigned ? implode('<br>', array_map(static fn($u): string => Html::a(Html::encode($u->username), ['/user/view', 'id' => $u->id]), $assigned)) : 'Any customer' ?>
+                        </dd>
                     </dl>
                 </div>
             </div>

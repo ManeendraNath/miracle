@@ -8,7 +8,7 @@ use yii\helpers\Html;
 <aside class="main-sidebar sidebar-dark-primary elevation-4">
     <!-- Brand Logo Displays Link -->
     <a href="<?= Url::to(['/dashboard/index']) ?>" class="brand-link">
-        <img src="<?= $assetDir ?>/img/AdminLTELogo.png" alt="AdminLTE Logo" class="brand-image img-circle elevation-3" style="opacity: .8">
+        <img src="<?= $assetDir ?>/img/AdminLTELogo.png" alt="Miracle" class="brand-image img-circle elevation-3" style="opacity: .8">
         <span class="brand-text font-weight-light">Miracle Console</span>
     </a>
 
@@ -45,7 +45,7 @@ use yii\helpers\Html;
                     // =====================================================================
                     // 🚀 1. CORE WORKSPACE & CRM MONITORING
                     // =====================================================================
-                    ['label' => 'CORE WORKSPACE', 'header' => true],
+                    ['label' => 'WORKSPACE', 'header' => true],
                     [
                         'label' => 'Dashboard',
                         'icon' => 'tachometer-alt',
@@ -59,7 +59,7 @@ use yii\helpers\Html;
                         'active' => Yii::$app->controller->id === 'audit-request'
                     ],
                     [
-                        'label' => 'Inbound Leads CRM',
+                        'label' => 'Leads CRM',
                         'icon' => 'envelope-open-text',
                         'url' => ['/lead/index'],
                         'active' => Yii::$app->controller->id === 'lead'
@@ -81,8 +81,8 @@ use yii\helpers\Html;
                         'active' => Yii::$app->controller->id === 'admin-notification',
                     ],
                     [
-                        'label' => 'Notification Preferences',
-                        'icon' => 'bell',
+                        'label' => 'Customer Preferences',
+                        'icon' => 'user-cog',
                         'url' => ['/customer-preference/index'],
                         'active' => Yii::$app->controller->id === 'customer-preference',
                     ],
@@ -97,19 +97,19 @@ use yii\helpers\Html;
                         'active' => Yii::$app->controller->id === 'invoice'
                     ],
                     [
-                        'label' => 'Customer Billing Profiles',
+                        'label' => 'Billing Profiles',
                         'icon' => 'address-card',
                         'url' => ['/customer-billing-profile/index'],
                         'active' => Yii::$app->controller->id === 'customer-billing-profile',
                     ],
                     [
-                        'label' => 'Transaction Ledger',
+                        'label' => 'Transactions',
                         'icon' => 'chart-line',
                         'url' => ['/transaction/index'],
                         'active' => Yii::$app->controller->id === 'transaction'
                     ],
                     [
-                        'label' => 'Promo Coupon',
+                        'label' => 'Coupons',
                         'icon' => 'tags',
                         'url' => ['/coupon/index'],
                         'active' => Yii::$app->controller->id === 'coupon'
@@ -117,15 +117,15 @@ use yii\helpers\Html;
                     // =====================================================================
                     // 🌐 3. INFRASTRUCTURE & ACTIVE CLIENT ASSETS
                     // =====================================================================
-                    ['label' => 'INFRASTRUCTURE ASSETS', 'header' => true],
+                    ['label' => 'SERVICES', 'header' => true],
                     [
-                        'label' => 'Domains Registry',
+                        'label' => 'Domains',
                         'icon' => 'globe',
                         'url' => ['/domains/index'],
                         'active' => Yii::$app->controller->id === 'domains'
                     ],
                     [
-                        'label' => 'Web Hosting Arrays',
+                        'label' => 'Web Hosting',
                         'icon' => 'cloud',
                         'url' => ['/hosting/index'],
                         'active' => Yii::$app->controller->id === 'hosting'
@@ -137,7 +137,7 @@ use yii\helpers\Html;
                         'active' => Yii::$app->controller->id === 'maintenance'
                     ],
                     [
-                        'label' => 'Renewal Monitoring',
+                        'label' => 'Renewals',
                         'icon' => 'calendar-check',
                         'url' => ['/renewal-monitoring/index'],
                         'active' => Yii::$app->controller->id === 'renewal-monitoring',
@@ -145,90 +145,40 @@ use yii\helpers\Html;
                     // =====================================================================
                     // 👥 4. USER ACCESS MANAGEMENT CONTROL
                     // =====================================================================
-                    ['label' => 'USER ACCESS CONTROL', 'header' => true],
+                    ['label' => 'ADMINISTRATION', 'header' => true],
                     [
-                        'label' => 'Client Users Directory',
+                        'label' => 'Clients',
                         'icon' => 'users',
                         'url' => ['/user/index'],
                         'active' => Yii::$app->controller->id === 'user'
                     ],
                     [
-                        'label' => 'Login & Security History',
+                        'label' => 'Login History',
                         'icon' => 'shield-alt',
                         'url' => ['/user-login-history/index'],
                         'active' => Yii::$app->controller->id === 'user-login-history',
                     ],
                     [
-                        'label' => 'Admin Accounts Panel',
+                        'label' => 'Admin Accounts',
                         'icon' => 'users-cog',
                         'url' => ['/admin/index'],
-                        'active' => Yii::$app->controller->id === 'admin'
+                        'active' => Yii::$app->controller->id === 'admin' && Yii::$app->controller->action->id !== 'cron-log'
                     ],
                     [
-                        'label' => 'Cron Run Logs',
+                        'label' => 'Cron Logs',
                         'icon' => 'terminal',
                         'url' => ['/admin/cron-log'],
                         'active' => Yii::$app->controller->id === 'admin' && Yii::$app->controller->action->id === 'cron-log'
                     ],
                     [
-                        'label' => 'Site Global Settings',
+                        'label' => 'Site Settings',
                         'icon' => 'sliders-h',
                         'url' => ['/site-setting/index'],
                         'active' => Yii::$app->controller->id === 'site-setting'
                     ],
-                    // =====================================================================
-                    // 🗂️ TEMPLATE COMPONENTS SEPARATOR (Preserved for Future Use)
-                    // =====================================================================
-                    ['label' => 'ORIGINAL TEMPLATES', 'header' => true],
-                    [
-                        'label' => 'Starter Pages Pages',
-                        'icon' => 'folder-open',
-                        'badge' => '<span class="right badge badge-info">2</span>',
-                        'items' => [
-                            ['label' => 'Dashboard Ref', 'url' => ['/dashboard/index'], 'iconStyle' => 'far'],
-                            ['label' => 'Demo Layout', 'url' => ['/site/index'], 'iconStyle' => 'far'],
-                        ]
-                    ],
-                    ['label' => 'Simple Link Page', 'icon' => 'th', 'badge' => '<span class="right badge badge-danger">New</span>'],
-                    ['label' => 'Yii2 SYSTEM RUNTIME', 'header' => true],
-                    ['label' => 'Login Prompt', 'url' => ['/auth/login'], 'icon' => 'sign-in-alt', 'visible' => Yii::$app->user->isGuest],
-                    [
-                        'label' => 'Gii Core Module',
-                        'icon' => 'file-code',
-                        'url' => ['/gii'],
-                        'target' => '_blank',
-                        'visible' => YII_ENV_DEV,
-                    ],
-                    [
-                        'label' => 'Debug Engine Toolbar',
-                        'icon' => 'bug',
-                        'url' => ['/debug'],
-                        'target' => '_blank',
-                        'visible' => YII_ENV_DEV,
-                    ],
-                    ['label' => 'MULTI LEVEL STRUCTURE REF', 'header' => true],
-                    ['label' => 'Level1 Standard'],
-                    [
-                        'label' => 'Level1 Dropdown Container',
-                        'items' => [
-                            ['label' => 'Level2 Item A', 'iconStyle' => 'far'],
-                            [
-                                'label' => 'Level2 Item B (Nested)',
-                                'iconStyle' => 'far',
-                                'items' => [
-                                    ['label' => 'Level3 Item Alpha', 'iconStyle' => 'far', 'icon' => 'dot-circle'],
-                                    ['label' => 'Level3 Item Beta', 'iconStyle' => 'far', 'icon' => 'dot-circle'],
-                                    ['label' => 'Level3 Item Gamma', 'iconStyle' => 'far', 'icon' => 'dot-circle']
-                                ]
-                            ],
-                            ['label' => 'Level2 Item C', 'iconStyle' => 'far']
-                        ]
-                    ],
-                    ['label' => 'Level1 End Marker'],
-                    ['label' => 'UI COMPONENT LABELS', 'header' => true],
-                    ['label' => 'Important Notification', 'iconStyle' => 'far', 'iconClassAdded' => 'text-danger'],
-                    ['label' => 'Warning Alert State', 'iconClass' => 'nav-icon far fa-circle text-warning'],
-                    ['label' => 'Informational Reference', 'iconStyle' => 'far', 'iconClassAdded' => 'text-info'],
+                    ['label' => 'DEVELOPER', 'header' => true, 'visible' => YII_ENV_DEV],
+                    ['label' => 'Gii', 'icon' => 'file-code', 'url' => ['/gii'], 'target' => '_blank', 'visible' => YII_ENV_DEV],
+                    ['label' => 'Debug Toolbar', 'icon' => 'bug', 'url' => ['/debug'], 'target' => '_blank', 'visible' => YII_ENV_DEV],
                 ],
             ]);
             ?>

@@ -5,12 +5,17 @@ namespace backend\models\searches;
 use yii\base\Model;
 use yii\data\ActiveDataProvider;
 use common\models\Maintenance;
+use common\models\traits\DateRangeSearchTrait;
 
 /**
  * MaintenanceSearch represents the model behind the search form of `common\models\Maintenance`.
  */
 class MaintenanceSearch extends Maintenance
 {
+    use DateRangeSearchTrait;
+
+    public ?string $expiry_date_range = null;
+
     /**
      * {@inheritdoc}
      */
@@ -18,7 +23,7 @@ class MaintenanceSearch extends Maintenance
     {
         return [
             [['id', 'user_id', 'status', 'created_at', 'updated_at'], 'integer'],
-            [['website_url', 'start_date', 'current_expiry_date'], 'safe'],
+            [['website_url', 'start_date', 'current_expiry_date', 'expiry_date_range'], 'safe'],
         ];
     }
 
@@ -41,7 +46,7 @@ class MaintenanceSearch extends Maintenance
      */
     public function search($params, $formName = null)
     {
-        $query = Maintenance::find();
+        $query = Maintenance::find()->with('user');
 
         // add conditions that should always apply here
 
@@ -69,6 +74,7 @@ class MaintenanceSearch extends Maintenance
         ]);
 
         $query->andFilterWhere(['like', 'website_url', $this->website_url]);
+        $this->applySqlDateRange($query, 'current_expiry_date', $this->expiry_date_range);
 
         return $dataProvider;
     }

@@ -36,7 +36,7 @@ class DashboardController extends BaseController
         // 📊 SAFE RETRIEVAL LOGIC FOR RECENT ACTIVE DATA ROWS
         $recentCoupon = [];
         if (class_exists('\common\models\Coupon')) {
-            $recentCoupon = Coupon::find()->orderBy(['id' => SORT_DESC])->limit(4)->asArray()->all();
+            $recentCoupon = Coupon::find()->orderBy(['id' => SORT_DESC])->limit(4)->all();
         }
         // Execute aggregated calculations utilizing the custom precision query scopes we configured
         $metrics = [
@@ -73,9 +73,10 @@ class DashboardController extends BaseController
 
         for ($i = 5; $i >= 0; $i--) {
             // Calculate raw dates relative to loop index
-            $targetTime = strtotime("-$i months");
-            $startOfMonth = date('Y-m-01 00:00:00', $targetTime);
-            $endOfMonth = date('Y-m-t 23:59:59', $targetTime);
+            $targetTime = strtotime("first day of -$i months"); // "first day of" avoids skipping short months on the 29th-31st
+            // created_at is a unix timestamp, so the bounds must be too
+            $startOfMonth = strtotime(date('Y-m-01 00:00:00', $targetTime));
+            $endOfMonth = strtotime(date('Y-m-t 23:59:59', $targetTime));
 
             // Formats readable month strings labels (e.g., "Oct 2026")
             $chartLabels[] = date('M Y', $targetTime);
@@ -88,8 +89,8 @@ class DashboardController extends BaseController
             $chartDataThisYear[] = $currentYearRevenue;
 
             // 💰 Calculate Corresponding Month Revenue for Last Year (Comparison Vector)
-            $startOfMonthLastYear = date('Y-m-01 00:00:00', strtotime("-$i months -1 year"));
-            $endOfMonthLastYear = date('Y-m-t 23:59:59', strtotime("-$i months -1 year"));
+            $startOfMonthLastYear = strtotime(date('Y-m-01 00:00:00', strtotime("first day of -$i months -1 year")));
+            $endOfMonthLastYear = strtotime(date('Y-m-t 23:59:59', strtotime("first day of -$i months -1 year")));
 
             $lastYearRevenue = (float) Invoice::find()
                             ->where(['status' => 'Paid'])

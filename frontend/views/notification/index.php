@@ -49,16 +49,11 @@ Html::beginForm(
                     'id' => $notification->id,
                 ])
                         ?>"
-                class="
-                list-group-item
-                list-group-item-action
-    <?=
-    !$notification->is_read ? 'border-start border-primary border-4' : ''
-    ?>
-                "
+                class="list-group-item list-group-item-action<?= $notification->is_read ? '' : ' bg-light' ?>"
+                <?= $notification->is_read ? '' : 'style="box-shadow: inset 4px 0 0 var(--bs-primary)"' ?>
                 >
 
-                <div class="fw-semibold">
+                <div class="<?= $notification->is_read ? 'fw-normal' : 'fw-bold' ?>">
 
     <?=
     Html::encode(

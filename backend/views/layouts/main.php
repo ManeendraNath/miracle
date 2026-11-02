@@ -13,6 +13,9 @@ $assetDir = Yii::$app->assetManager->getPublishedUrl('@vendor/almasaeed2010/admi
 
 $publishedRes = Yii::$app->assetManager->publish('@vendor/hail812/yii2-adminlte3/src/web/js');
 $this->registerJsFile($publishedRes[1] . '/control_sidebar.js', ['depends' => '\hail812\adminlte3\assets\AdminLteAsset']);
+$this->registerCssFile('@web/css/admin.css', ['depends' => \hail812\adminlte3\assets\AdminLteAsset::class]);
+// BS4 only reads data-toggle; views also use the BS5 data-bs-toggle spelling.
+$this->registerJs("$('[data-toggle=\"tooltip\"],[data-bs-toggle=\"tooltip\"]').tooltip();");
 ?>
 <?php $this->beginPage() ?>
 <!DOCTYPE html>

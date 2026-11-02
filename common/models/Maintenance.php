@@ -26,6 +26,15 @@ class Maintenance extends base\Maintenance
     public const STATUS_ACTIVE = 1;
     public const STATUS_OVERDUE = 2;
 
+    public static function getStatuses(): array
+    {
+        return [
+            self::STATUS_CANCELLED => 'Cancelled',
+            self::STATUS_ACTIVE => 'Active',
+            self::STATUS_OVERDUE => 'Overdue',
+        ];
+    }
+
     #[\Override]
     public function rules()
     {

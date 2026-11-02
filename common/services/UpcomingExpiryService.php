@@ -120,8 +120,7 @@ final class UpcomingExpiryService
 
         $query = $class::find()
                 ->with('user')
-                ->andWhere(['not', ['current_expiry_date' => null]])
-                ->andWhere(['<>', 'current_expiry_date', '']);
+                ->andWhere(['not', ['current_expiry_date' => null]]);
         if ($userId !== null) {
             $query->andWhere(['user_id' => $userId]);
         }

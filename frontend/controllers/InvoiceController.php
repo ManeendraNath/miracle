@@ -9,6 +9,7 @@ use common\models\Invoice;
 use common\models\Transaction;
 use common\models\forms\PaymentProofForm;
 use common\services\admin\AdminAlertService;
+use common\services\billing\InvoiceCouponService;
 use common\services\billing\InvoicePaymentService;
 use common\services\billing\InvoicePdfService;
 use common\services\payment\RazorpayService;
@@ -43,6 +44,8 @@ final class InvoiceController extends Controller
                 'actions' => [
                     'pay-online' => ['POST'],
                     'razorpay-callback' => ['POST'],
+                    'apply-coupon' => ['POST'],
+                    'remove-coupon' => ['POST'],
                 ],
             ],
         ];
@@ -100,6 +103,7 @@ final class InvoiceController extends Controller
                             'outstandingAmount' => $paymentService->getOutstanding($model),
                             'pendingPayment' => $pendingPayment,
                             'razorpayEnabled' => (new RazorpayService())->isEnabled(),
+                            'canChangeCoupon' => (new InvoiceCouponService())->blockReason($model) === null,
                         ]
         );
     }
@@ -113,16 +117,27 @@ final class InvoiceController extends Controller
         Yii::$app->response->format = Response::FORMAT_JSON;
         $invoice = $this->findOwnedInvoice($number);
         $razorpay = new RazorpayService();
-        $outstanding = (new InvoicePaymentService())->getOutstanding($invoice);
-        $payable = in_array($invoice->status, [Invoice::STATUS_UNPAID, Invoice::STATUS_PARTIALLY_PAID], true) && $outstanding > 0;
-        $proofPending = Transaction::find()->where(['invoice_id' => $invoice->id, 'gateway_id' => Transaction::GATEWAY_UPI_BANK, 'status' => Transaction::STATUS_PENDING])->exists();
-        if (!$razorpay->isEnabled() || !$payable || $proofPending) {
-            Yii::$app->response->statusCode = 422;
-            return ['error' => $proofPending ? 'A payment proof for this invoice is already awaiting verification.' : 'Online payment is not available for this invoice.'];
-        }
+        // Lock the invoice so a coupon applied in another tab (InvoiceCouponService locks the same row)
+        // can't change the total between reading the amount and creating the order.
+        // ponytail: the row stays locked during the Razorpay API call (a few seconds at most).
+        $dbTransaction = Yii::$app->db->beginTransaction();
         try {
+            Yii::$app->db->createCommand('SELECT id FROM {{%invoice}} WHERE id = :id FOR UPDATE')->bindValue(':id', $invoice->id)->execute();
+            $invoice->refresh();
+            $outstanding = (new InvoicePaymentService())->getOutstanding($invoice);
+            $payable = in_array($invoice->status, [Invoice::STATUS_UNPAID, Invoice::STATUS_PARTIALLY_PAID], true) && $outstanding > 0;
+            $proofPending = Transaction::find()->where(['invoice_id' => $invoice->id, 'gateway_id' => Transaction::GATEWAY_UPI_BANK, 'status' => Transaction::STATUS_PENDING])->exists();
+            if (!$razorpay->isEnabled() || !$payable || $proofPending) {
+                $dbTransaction->rollBack();
+                Yii::$app->response->statusCode = 422;
+                return ['error' => $proofPending ? 'A payment proof for this invoice is already awaiting verification.' : 'Online payment is not available for this invoice.'];
+            }
             $transaction = $razorpay->createOrder($invoice, $outstanding);
+            $dbTransaction->commit();
         } catch (\Throwable $e) {
+            if ($dbTransaction->isActive) {
+                $dbTransaction->rollBack();
+            }
             Yii::error(['message' => 'Could not start Razorpay checkout.', 'invoice' => $invoice->invoice_number, 'error' => $e->getMessage()], __METHOD__);
             Yii::$app->response->statusCode = 502;
             return ['error' => 'Could not start online payment. Please try again shortly.'];
@@ -174,6 +189,31 @@ final class InvoiceController extends Controller
             Yii::error(['message' => 'Razorpay checkout capture failed.', 'invoice' => $invoice->invoice_number, 'orderId' => $orderId, 'paymentId' => $paymentId, 'error' => $e->getMessage()], __METHOD__);
             Yii::$app->session->setFlash('warning', 'Your payment was received but could not be applied automatically. Our team has been notified and will confirm it shortly. Reference: ' . $paymentId);
             AdminAlertService::paymentSubmitted($invoice->invoice_number, (string) $invoice->client_name, (float) $invoice->total_payable);
+        }
+        return $this->redirect(['view', 'number' => $invoice->invoice_number]);
+    }
+
+    public function actionApplyCoupon(string $number)
+    {
+        $invoice = $this->findOwnedInvoice($number);
+        $code = Yii::$app->request->post('coupon_code');
+        try {
+            (new InvoiceCouponService())->apply($invoice, is_string($code) ? $code : '');
+            Yii::$app->session->setFlash('success', 'Coupon applied.');
+        } catch (\DomainException $e) {
+            Yii::$app->session->setFlash('error', $e->getMessage());
+        }
+        return $this->redirect(['view', 'number' => $invoice->invoice_number]);
+    }
+
+    public function actionRemoveCoupon(string $number)
+    {
+        $invoice = $this->findOwnedInvoice($number);
+        try {
+            (new InvoiceCouponService())->remove($invoice);
+            Yii::$app->session->setFlash('success', 'Coupon removed.');
+        } catch (\DomainException $e) {
+            Yii::$app->session->setFlash('error', $e->getMessage());
         }
         return $this->redirect(['view', 'number' => $invoice->invoice_number]);
     }

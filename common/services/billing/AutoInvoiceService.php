@@ -258,7 +258,11 @@ final class AutoInvoiceService
         }
     }
 
-    private function calculateInvoiceTotals(Invoice $invoice): void
+    /**
+     * Recomputes subtotal and total_payable from the saved lines and discount_amount, and saves.
+     * Arrears lines are neither discounted nor taxed again. Also used when a customer applies a coupon.
+     */
+    public function calculateInvoiceTotals(Invoice $invoice): void
     {
         $subtotal = (float) InvoiceItem::find()->where(['invoice_id' => $invoice->id])->sum('total_price');
         $subtotal = round($subtotal, 2);

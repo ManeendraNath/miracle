@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use common\models\Invoice;
+use common\services\billing\TaxCalculator;
 use yii\helpers\Html;
 use yii\helpers\Json;
 use yii\helpers\Url;
@@ -20,13 +21,13 @@ $isPayable = in_array($model->status, [Invoice::STATUS_UNPAID, Invoice::STATUS_P
 $canPayOnline = $isPayable && $pendingPayment === null && !empty($razorpayEnabled);
 $formatter = Yii::$app->formatter;
 $inr = static fn($amount): string => $formatter->asCurrency($amount, 'INR');
-// Same tax breakdown as the PDF (common/mail/invoice-pdf.php).
-$taxable = max(0, round((float) $model->subtotal_amount - (float) $model->discount_amount, 2));
+// Same tax breakdown as the PDF and the GST report.
+$tax = (new TaxCalculator())->forInvoice($model);
 $taxes = array_filter([
-    'CGST' => (float) $model->cgst_percent,
-    'SGST' => (float) $model->sgst_percent,
-    'IGST' => (float) $model->igst_percent,
-]);
+    'CGST' => [(float) $model->cgst_percent, $tax['cgstAmount']],
+    'SGST' => [(float) $model->sgst_percent, $tax['sgstAmount']],
+    'IGST' => [(float) $model->igst_percent, $tax['igstAmount']],
+], static fn(array $t): bool => $t[0] > 0);
 $isOverdue = $isPayable && $model->due_date && strtotime((string) $model->due_date) < strtotime('today');
 $statusClass = match ($model->status) {
     Invoice::STATUS_PAID => 'bg-success-subtle text-success-emphasis',
@@ -165,10 +166,10 @@ JS);
                                     <td class="text-end text-success">-<?= $inr($model->discount_amount) ?></td>
                                 </tr>
                             <?php endif; ?>
-                            <?php foreach ($taxes as $name => $percent): ?>
+                            <?php foreach ($taxes as $name => [$percent, $amount]): ?>
                                 <tr>
                                     <td class="text-body-secondary"><?= $name ?> (<?= rtrim(rtrim(number_format($percent, 2), '0'), '.') ?>%)</td>
-                                    <td class="text-end"><?= $inr(round($taxable * $percent / 100, 2)) ?></td>
+                                    <td class="text-end"><?= $inr($amount) ?></td>
                                 </tr>
                             <?php endforeach; ?>
                             <tr class="border-top">
@@ -193,6 +194,29 @@ JS);
                     <dt class="col-6 fw-normal text-body-secondary">Received</dt>
                     <dd class="col-6 text-end mb-0"><?= $inr($capturedAmount) ?></dd>
                 </dl>
+
+                <?php if (!empty($canChangeCoupon)): ?>
+                    <div class="border-top pt-3 mt-3">
+                        <?php if ($model->coupon_code): ?>
+                            <?= Html::beginForm(['remove-coupon', 'number' => $model->invoice_number], 'post', ['class' => 'd-flex justify-content-between align-items-center gap-2 small']) ?>
+                                <span>
+                                    <i class="fas fa-tag text-success me-1"></i>
+                                    <span class="fw-semibold"><?= Html::encode($model->coupon_code) ?></span>
+                                    <span class="text-success">-<?= $inr($model->discount_amount) ?></span>
+                                </span>
+                                <?= Html::submitButton('Remove', ['class' => 'btn btn-link btn-sm p-0 text-danger']) ?>
+                            <?= Html::endForm() ?>
+                        <?php else: ?>
+                            <?= Html::beginForm(['apply-coupon', 'number' => $model->invoice_number], 'post') ?>
+                                <label for="coupon-code" class="form-label small text-body-secondary mb-1">Have a coupon?</label>
+                                <div class="input-group input-group-sm">
+                                    <?= Html::textInput('coupon_code', '', ['id' => 'coupon-code', 'class' => 'form-control text-uppercase', 'maxlength' => 32, 'required' => true, 'autocomplete' => 'off', 'placeholder' => 'Coupon code']) ?>
+                                    <?= Html::submitButton('Apply', ['class' => 'btn btn-outline-primary']) ?>
+                                </div>
+                            <?= Html::endForm() ?>
+                        <?php endif; ?>
+                    </div>
+                <?php endif; ?>
 
                 <?php if ($pendingPayment !== null): ?>
                     <div class="alert alert-warning small mt-3 mb-0">

@@ -21,4 +21,8 @@ php init                 # generates /yii and local config
 php yii migrate          # a fresh install needs ADMIN_INITIAL_PASSWORD in .env
 ```
 
-Deploy with `deploy.sh`.
+Deploy on the server (needs `rsync`):
+
+```bash
+cd /home/rpocncwk/repositories/miracle && git fetch origin && git reset --hard origin/main && bash deploy.sh
+```

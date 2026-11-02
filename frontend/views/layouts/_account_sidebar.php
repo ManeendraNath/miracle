@@ -17,19 +17,31 @@ $items = [
     ['label' => 'My Profile', 'icon' => 'fas fa-user', 'url' => ['/account/profile'], 'controller' => 'account', 'action' => ['profile', 'change-password', 'preferences']],
     ['label' => 'Activity Timeline', 'icon' => 'fas fa-history', 'url' => ['/account/activity'], 'controller' => 'account', 'action' => ['activity']],
 ];
+$actionId = Yii::$app->controller->action->id;
+$currentLabel = 'Menu';
+foreach ($items as &$item) {
+    $item['active'] = $currentController === $item['controller'] && (!isset($item['action']) || in_array($actionId, $item['action'], true));
+    if ($item['active']) {
+        $currentLabel = $item['label'];
+    }
+}
+unset($item);
 ?>
 
 <div class="account-sidebar card shadow-sm border-0">
-    <div class="card-header border-0" style="background:linear-gradient(135deg, #0b1f4d, #1565c0); color:#fff;">
-        <div class="fw-bold">My Account</div>
-        <small style="opacity:.85;">Manage your services</small>
+    <div class="card-header border-0 d-flex align-items-center" style="background:linear-gradient(135deg, #0b1f4d, #1565c0); color:#fff;">
+        <div class="flex-grow-1">
+            <div class="fw-bold">My Account</div>
+            <small style="opacity:.85;">Manage your services</small>
+        </div>
+        <?php /* Below lg the menu starts collapsed; this button shows the current page and opens it. */ ?>
+        <button class="btn btn-sm btn-outline-light d-lg-none" type="button" data-bs-toggle="collapse" data-bs-target="#account-menu" aria-expanded="false" aria-controls="account-menu">
+            <?= Html::encode($currentLabel) ?> <i class="fas fa-chevron-down ms-1"></i>
+        </button>
     </div>
-    <div class="card-body">
+    <div id="account-menu" class="card-body collapse d-lg-block">
         <?php foreach ($items as $item): ?>
-            <?php
-            $active = $currentController === $item['controller'] && (!isset($item['action']) || in_array(Yii::$app->controller->action->id, $item['action'], true));
-            ?>
-            <a href="<?= Url::to($item['url']) ?>" class="list-group-item list-group-item-action d-flex align-items-center <?= $active ? 'active' : '' ?>">
+            <a href="<?= Url::to($item['url']) ?>" class="list-group-item list-group-item-action d-flex align-items-center <?= $item['active'] ? 'active' : '' ?>">
                 <i class="<?= $item['icon'] ?> fa-fw me-2"></i>
                 <span><?= Html::encode($item['label']) ?></span>
                 <?php if ($item['controller'] === 'notification' && !empty($unreadNotifications)): ?>

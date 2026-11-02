@@ -483,12 +483,6 @@ a.desc:after {
     min-width: 0;
 }
 
-@media (max-width: 991px) {
-    .account-sidebar {
-        margin-bottom: 20px;
-    }
-
-}
 
 /* Account pages: the 70px top padding above is for a fixed navbar, which this header isn't. */
 main > .container:has(> .account-layout) {

@@ -157,7 +157,9 @@ class SchemaController extends Controller
                 [':s' => $schema]
             )->queryAll() as $r
         ) {
-            $foreignKeys[$r['t']][$r['cols']] = "{$r['rt']}({$r['rcols']}) ON DELETE {$r['dr']} ON UPDATE {$r['ur']}";
+            // InnoDB treats NO ACTION exactly like RESTRICT; only the spelling differs between migrations.
+            $rule = static fn(string $r): string => $r === 'NO ACTION' ? 'RESTRICT' : $r;
+            $foreignKeys[$r['t']][$r['cols']] = "{$r['rt']}({$r['rcols']}) ON DELETE {$rule($r['dr'])} ON UPDATE {$rule($r['ur'])}";
         }
 
         foreach ([&$columns, &$indexes, &$foreignKeys] as &$part) {

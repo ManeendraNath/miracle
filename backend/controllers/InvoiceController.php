@@ -15,7 +15,6 @@ use common\services\billing\InvoicePaymentService;
 use common\services\billing\ManualInvoiceService;
 use common\models\forms\ManualInvoiceItemForm;
 use yii\helpers\ArrayHelper;
-use yii\helpers\Html;
 use yii\web\NotFoundHttpException;
 
 class InvoiceController extends BaseController
@@ -309,61 +308,5 @@ class InvoiceController extends BaseController
             'igstAmount' => $igstAmount,
             'grandTotal' => (float) $model->total_payable,
         ];
-    }
-
-    /**
-     * Send invoice email.
-     *
-     * Note:
-     * Current implementation attaches HTML.
-     * If PDF invoices are introduced later, replace only this
-     * delivery method. Billing/domain logic remains untouched.
-     */
-    private function sendEmail(User $client, Invoice $model): void
-    {
-        $totals = $this->calculateDisplayTotals($model);
-        $paymentService = new InvoicePaymentService();
-        $htmlContent = $this->renderPartial(
-            '_invoice_content',
-            array_merge(
-                [
-                            'model' => $model,
-                            'capturedAmount' => $paymentService->getCapturedAmount((int) $model->id),
-                            'outstandingAmount' => $paymentService->getOutstanding($model),
-                        ],
-                $totals
-            )
-        );
-
-        $message = Yii::$app->mailer
-                ->compose()
-                ->setFrom([
-                    Yii::$app->params['adminEmail'] ?? 'admin@miraclewebtechnologies.com'
-                    => 'Miracle Billing',
-                ])
-                ->setTo($client->email)
-                ->setSubject('Invoice ' . $model->invoice_number)
-                ->setHtmlBody(
-                    '<h3>Hello '
-                        . Html::encode($model->client_name)
-                        . ',</h3>'
-                        . '<p>Your invoice <strong>'
-                        . Html::encode($model->invoice_number)
-                        . '</strong> has been generated.</p>'
-                        . '<p>Thank you for choosing '
-                        . '<strong>Miracle Web Technologies</strong>.</p>'
-                );
-
-        $message->attachContent(
-            $htmlContent,
-            [
-                    'fileName' => 'Invoice_' . $model->invoice_number . '.html',
-                    'contentType' => 'text/html',
-                ]
-        );
-
-        if (!$message->send()) {
-            throw new \RuntimeException('Invoice email could not be sent.');
-        }
     }
 }

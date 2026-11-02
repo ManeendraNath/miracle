@@ -2,7 +2,7 @@
 $this->beginContent('@frontend/views/layouts/main.php');
 ?>
 
-<div class="container py-4">
+<div class="account-layout container pb-4">
     <div class="row">
         <div class="col-lg-3 mb-4">
             <?=

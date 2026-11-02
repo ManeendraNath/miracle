@@ -73,7 +73,7 @@ final class DashboardController extends Controller
                             'openSupportTickets' => $openSupportTickets,
                             'upcomingServices' => $upcomingServices,
                             'renewalCount' => count($upcomingServices),
-                            'activities' => CustomerActivityService::getActivities($userId, 15),
+                            'activities' => CustomerActivityService::getActivities($userId, 8),
                         ]
         );
     }

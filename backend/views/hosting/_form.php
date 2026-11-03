@@ -33,7 +33,9 @@ $users = ArrayHelper::map(
 
 <div class="hosting-form">
 
-    <?php $form = ActiveForm::begin([
+    <?php // Renewal pricing is Admin-only; Managers see it read-only (BaseController::loadService ignores it).
+$canEditPricing = \backend\controllers\BaseController::canEditRenewalPricing();
+$form = ActiveForm::begin([
         'options' => [
             'autocomplete' => 'off',
         ],
@@ -148,7 +150,7 @@ $users = ArrayHelper::map(
 
                 <div class="col-md-4">
 
-<?= $form->field($model, 'renewal_base_amount')->textInput([
+<?= $form->field($model, 'renewal_base_amount')->textInput(['disabled' => !$canEditPricing, 
     'type' => 'number',
     'min' => 0,
     'step' => '0.01',
@@ -176,7 +178,7 @@ $users = ArrayHelper::map(
 
                 <div class="col-md-6">
 
-                    <?= $form->field($model, 'renewal_cycle_months')->textInput([
+                    <?= $form->field($model, 'renewal_cycle_months')->textInput(['disabled' => !$canEditPricing, 
                         'type' => 'number',
                         'min' => 1,
                         'placeholder' => 'Use global setting',
@@ -186,7 +188,7 @@ $users = ArrayHelper::map(
 
                 <div class="col-md-6">
 
-<?= $form->field($model, 'renewal_increase_percent')->textInput([
+<?= $form->field($model, 'renewal_increase_percent')->textInput(['disabled' => !$canEditPricing, 
     'type' => 'number',
     'min' => 0,
     'max' => 100,

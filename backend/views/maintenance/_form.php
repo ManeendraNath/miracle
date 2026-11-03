@@ -25,6 +25,8 @@ $users = ArrayHelper::map(
     },
 );
 
+// Renewal pricing is Admin-only; Managers see it read-only (BaseController::loadService ignores it).
+$canEditPricing = \backend\controllers\BaseController::canEditRenewalPricing();
 $form = ActiveForm::begin([
     'id' => 'maintenance-form',
 ]);
@@ -88,7 +90,7 @@ $form = ActiveForm::begin([
             Leave cycle and increase empty to use global billing settings.
         </div>
 
-        <?= $form->field($model, 'renewal_base_amount')->input('number', [
+        <?= $form->field($model, 'renewal_base_amount')->input('number', ['disabled' => !$canEditPricing, 
             'min' => 0,
             'step' => '0.01',
             'placeholder' => 'Initial renewal amount',
@@ -98,7 +100,7 @@ $form = ActiveForm::begin([
 
             <div class="col-md-6">
 
-                <?= $form->field($model, 'renewal_cycle_months')->input('number', [
+                <?= $form->field($model, 'renewal_cycle_months')->input('number', ['disabled' => !$canEditPricing, 
                     'min' => 1,
                     'placeholder' => 'Use global setting',
                 ]) ?>
@@ -107,7 +109,7 @@ $form = ActiveForm::begin([
 
             <div class="col-md-6">
 
-                <?= $form->field($model, 'renewal_increase_percent')->input('number', [
+                <?= $form->field($model, 'renewal_increase_percent')->input('number', ['disabled' => !$canEditPricing, 
                     'min' => 0,
                     'max' => 100,
                     'step' => '0.01',

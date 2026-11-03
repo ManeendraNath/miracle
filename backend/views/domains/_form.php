@@ -35,7 +35,9 @@ $users = ArrayHelper::map(
 <div class="domains-form">
 
     <?php
-    $form = ActiveForm::begin([
+    // Renewal pricing is Admin-only; Managers see it read-only (BaseController::loadService ignores it).
+$canEditPricing = \backend\controllers\BaseController::canEditRenewalPricing();
+$form = ActiveForm::begin([
         'options' => [
             'autocomplete' => 'off',
         ],
@@ -117,7 +119,7 @@ $users = ArrayHelper::map(
                     <?= $form->field($model, 'current_expiry_date')->input('date') ?>
                 </div>
                 <div class="col-md-4">
-                    <?= $form->field($model, 'renewal_base_amount')->textInput(['type' => 'number', 'min' => '0.01', 'step' => '0.01', 'placeholder' => 'Initial renewal amount']) ?>
+                    <?= $form->field($model, 'renewal_base_amount')->textInput(['disabled' => !$canEditPricing, 'type' => 'number', 'min' => '0.01', 'step' => '0.01', 'placeholder' => 'Initial renewal amount']) ?>
                 </div>
             </div>
 
@@ -134,11 +136,11 @@ $users = ArrayHelper::map(
             <div class="row mt-3">
 
                 <div class="col-md-6">
-                    <?= $form->field($model, 'renewal_cycle_months')->textInput(['type' => 'number', 'min' => 1, 'placeholder' => 'Use global setting']) ?>
+                    <?= $form->field($model, 'renewal_cycle_months')->textInput(['disabled' => !$canEditPricing, 'type' => 'number', 'min' => 1, 'placeholder' => 'Use global setting']) ?>
                 </div>
 
                 <div class="col-md-6">
-                    <?= $form->field($model, 'renewal_increase_percent')->textInput(['type' => 'number', 'min' => 0, 'max' => 100, 'step' => '0.01', 'placeholder' => 'Use global setting']) ?>
+                    <?= $form->field($model, 'renewal_increase_percent')->textInput(['disabled' => !$canEditPricing, 'type' => 'number', 'min' => 0, 'max' => 100, 'step' => '0.01', 'placeholder' => 'Use global setting']) ?>
                 </div>
 
             </div>

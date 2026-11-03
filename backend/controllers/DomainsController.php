@@ -52,7 +52,7 @@ class DomainsController extends BaseController
     {
         $model = new Domains();
         if ($this->request->isPost) {
-            if ($model->load($this->request->post()) && $model->save()) {
+            if ($this->loadService($model) && $model->save()) {
                 Yii::$app->session->setFlash('success', 'Domain created successfully.');
                 return $this->redirect(['view', 'id' => $model->id]);
             }
@@ -74,7 +74,7 @@ class DomainsController extends BaseController
     public function actionUpdate($id)
     {
         $model = $this->findModel($id);
-        if ($this->request->isPost && $model->load($this->request->post()) && $model->save()) {
+        if ($this->request->isPost && $this->loadService($model) && $model->save()) {
             Yii::$app->session->setFlash('success', 'Domain updated successfully.');
             return $this->redirect(['view', 'id' => $model->id]);
         }

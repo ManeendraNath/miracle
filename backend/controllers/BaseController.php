@@ -36,6 +36,34 @@ class BaseController extends Controller
 
     private const ROLE_RANK = ['Manager' => 1, 'Admin' => 2, 'Superadmin' => 3];
 
+    /** Service fields that set what renewal invoices charge: Admin and up only. */
+    public const RENEWAL_PRICING_ATTRIBUTES = ['renewal_base_amount', 'renewal_increase_percent', 'renewal_cycle_months'];
+
+    /** Whether the signed-in staff member may set renewal pricing on services. */
+    public static function canEditRenewalPricing(): bool
+    {
+        return self::canAccess(Yii::$app->user->identity, 'invoice');
+    }
+
+    /**
+     * $model->load() for the domain/hosting/maintenance forms, ignoring posted renewal
+     * pricing from roles below Admin (the form shows it read-only to them).
+     */
+    protected function loadService(\yii\db\ActiveRecord $model): bool
+    {
+        $kept = [];
+        foreach (self::RENEWAL_PRICING_ATTRIBUTES as $attribute) {
+            $kept[$attribute] = $model->$attribute;
+        }
+        if (!$model->load($this->request->post())) {
+            return false;
+        }
+        if (!self::canEditRenewalPricing()) {
+            $model->setAttributes($kept, false);
+        }
+        return true;
+    }
+
     /** Whether $user (an Admin identity) may open the route; also used to hide menu links. */
     public static function canAccess(?object $user, string $controllerId, string $actionId = 'index'): bool
     {

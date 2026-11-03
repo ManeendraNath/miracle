@@ -174,12 +174,25 @@ class SiteController extends Controller
 
                 // The request is already saved; a mail failure must not turn into a 500.
                 try {
-                    Yii::$app->mailer->compose()
+                    Yii::$app->mailer->compose(['html' => 'enquiry-html', 'text' => 'enquiry-text'], [
+                                'eyebrow' => 'Audit request',
+                                'title' => 'New audit request from ' . $model->name,
+                                'rows' => [
+                                    ['Name', $model->name],
+                                    ['Email', $model->email],
+                                    ['Phone', $model->phone],
+                                    ['Website', $model->company_url],
+                                    ['Framework', $model->current_framework],
+                                    ['Hosting', $model->hosting_environment],
+                                ],
+                                'message' => (string) $model->message,
+                                'replyEmail' => $model->email,
+                                'replySubject' => 'Your audit request',
+                            ])
                             ->setTo($adminEmail)
                             ->setFrom([Yii::$app->params['senderEmail'] => Yii::$app->params['senderName']])
                             ->setReplyTo([$model->email => $model->name])
                             ->setSubject('New Audit Request: ' . $model->name)
-                            ->setTextBody("New audit request received.\n\nName: {$model->name}\nEmail: {$model->email}\nFramework: {$model->current_framework}\nEnvironment: {$model->hosting_environment}")
                             ->send();
                 } catch (\Throwable $e) {
                     Yii::error(['message' => 'Audit request email failed.', 'auditRequestId' => (int) $model->id, 'error' => $e->getMessage()], __METHOD__);

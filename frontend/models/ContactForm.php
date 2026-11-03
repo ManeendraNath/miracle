@@ -58,12 +58,18 @@ class ContactForm extends Model
      */
     public function sendEmail(MailerInterface $mailer, string $email, string $senderEmail, string $senderName): bool
     {
-        return $mailer->compose()
+        return $mailer->compose(['html' => 'enquiry-html', 'text' => 'enquiry-text'], [
+                'eyebrow' => 'Contact form',
+                'title' => $this->subject,
+                'rows' => [['Name', $this->name], ['Email', $this->email]],
+                'message' => $this->body,
+                'replyEmail' => $this->email,
+                'replySubject' => $this->subject,
+            ])
             ->setTo($email)
             ->setFrom([$senderEmail => $senderName])
             ->setReplyTo([$this->email => $this->name])
             ->setSubject($this->subject)
-            ->setTextBody($this->body)
             ->send();
     }
 }

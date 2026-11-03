@@ -98,6 +98,18 @@ final class BillingEventService
                 // delayed run doesn't produce an invoice that is already overdue.
                 $existing->due_date = $this->dueDate($settings);
 
+                // Re-price from the service's current settings: an admin may have fixed the
+                // price or cycle after the failed run. A manually set amount is kept.
+                $existing->description = $renewal->description;
+                $existing->period_end = $period['end'];
+                if (!(int) $existing->is_manual_amount) {
+                    $price = $this->prices->calculate($renewal->itemType, $renewal->itemId, $renewal->baseAmount, $increase);
+                    $existing->previous_amount = $price->previousAmount;
+                    $existing->increase_percent = $price->increasePercent;
+                    $existing->calculated_amount = $price->amount;
+                    $existing->amount = $price->amount;
+                }
+
                 $existing->updated_at =
                     time();
 
@@ -107,6 +119,12 @@ final class BillingEventService
                         [
                         'billing_run_id',
                         'due_date',
+                        'description',
+                        'period_end',
+                        'previous_amount',
+                        'increase_percent',
+                        'calculated_amount',
+                        'amount',
                         'updated_at',
                         ]
                     )

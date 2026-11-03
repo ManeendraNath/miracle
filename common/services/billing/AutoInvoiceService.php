@@ -59,7 +59,12 @@ final class AutoInvoiceService
                     ],
                     __METHOD__,
                 );
-                AdminAlertService::invoiceGenerationFailed((int) $userId, $exception->getMessage());
+                try {
+                    AdminAlertService::invoiceGenerationFailed((int) $userId, $exception->getMessage());
+                } catch (\Throwable $alertError) {
+                    // A failing alert must not stop invoicing for the remaining customers.
+                    Yii::error(['message' => 'Could not alert admins about a failed automatic invoice.', 'userId' => (int) $userId, 'error' => $alertError->getMessage()], __METHOD__);
+                }
                 continue;
             }
             if ($invoice !== null) {
@@ -147,6 +152,10 @@ final class AutoInvoiceService
             $invoice->discount_amount = min((float) $invoice->discount_amount, round($currentCharges, 2));
 
             $this->calculateInvoiceTotals($invoice);
+            // Invoices can't be for ₹0 (they could never be paid or renew the service).
+            if ((float) $invoice->total_payable <= 0) {
+                throw new \DomainException('The default discount on the billing profile covers this whole renewal. Lower the discount or bill this renewal manually.');
+            }
             $this->applyAssignedCoupon($invoice);
 
             foreach ($events as $event) {

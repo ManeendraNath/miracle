@@ -15,7 +15,9 @@ use common\models\InvoiceItem;
 use common\models\Transaction;
 use common\models\User;
 use common\services\billing\AutoInvoiceService;
+use common\models\CouponAssignedUser;
 use common\services\billing\InvoiceCouponService;
+use common\services\billing\InvoicePaymentService;
 use common\services\payment\RazorpayService;
 use Yii;
 use yii\db\Transaction as DbTransaction;
@@ -190,11 +192,54 @@ final class InvoiceCouponServiceTest extends Unit
         $this->assertEquals(1000.00, (float) $invoice->total_payable);
     }
 
+    public function testDefaultDiscountCoveringTheWholeRenewalFailsWithAClearReason(): void
+    {
+        $this->expectExceptionMessage('The default discount on the billing profile covers this whole renewal.');
+        $this->renewalInvoice(400.00, 500.00);
+    }
+
+    public function testDefaultDiscountIsCappedWhenArrearsAreStillOwed(): void
+    {
+        $old = $this->invoice([InvoiceItem::TYPE_HOSTING => 100.00]);
+        $old->updateAttributes(['due_date' => '2000-01-01']); // overdue: carried into the renewal
+
+        $invoice = $this->renewalInvoice(400.00, 500.00);
+
+        // Discount capped at the ₹400 renewal; the ₹118 carried balance is still owed.
+        $this->assertEquals(400.00, (float) $invoice->discount_amount);
+        $this->assertEquals(118.00, (float) $invoice->total_payable);
+    }
+
+    public function testEditingACouponKeepsExistingAssignmentDates(): void
+    {
+        $coupon = $this->coupon('KEEPDATE', ['assigned_user_ids' => [(string) $this->_user->id]]);
+        CouponAssignedUser::updateAll(['assigned_at' => 1000], ['coupon_id' => $coupon->id]);
+
+        $coupon = Coupon::findOne($coupon->id);
+        $coupon->setAttributes(['name' => 'Renamed', 'assigned_user_ids' => [(string) $this->_user->id]]);
+        $this->assertTrue($coupon->save(), json_encode($coupon->errors));
+
+        $this->assertSame([1000], array_map('intval', CouponAssignedUser::find()->select('assigned_at')->where(['coupon_id' => $coupon->id])->column()));
+    }
+
+    public function testClosingAsRefundedReleasesTheCouponUse(): void
+    {
+        $this->coupon('ONCEONLY', ['uses_per_coupon' => 1]);
+        $invoice = (new InvoiceCouponService())->apply($this->invoice([InvoiceItem::TYPE_HOSTING => 1000.00]), 'ONCEONLY');
+
+        (new InvoicePaymentService())->closeAsRefunded(Invoice::findOne($invoice->id));
+
+        $this->assertFalse(CouponRedemption::find()->where(['invoice_id' => $invoice->id])->exists());
+        // The re-billed invoice can use it again.
+        $rebilled = (new InvoiceCouponService())->apply($this->invoice([InvoiceItem::TYPE_HOSTING => 1000.00]), 'ONCEONLY');
+        $this->assertSame('ONCEONLY', $rebilled->coupon_code);
+    }
+
     /** Runs automatic billing for one pending hosting renewal (no GST, to keep the numbers plain). */
-    private function renewalInvoice(float $amount): Invoice
+    private function renewalInvoice(float $amount, float $defaultDiscount = 0.00): Invoice
     {
         $profile = new CustomerBillingProfile();
-        $profile->setAttributes(['user_id' => $this->_user->id, 'legal_name' => 'Renewal Test', 'state' => 'Delhi', 'state_code' => '07', 'is_gst_applicable' => 0, 'default_discount_amount' => 0, 'created_at' => time(), 'updated_at' => time()], false);
+        $profile->setAttributes(['user_id' => $this->_user->id, 'legal_name' => 'Renewal Test', 'state' => 'Delhi', 'state_code' => '07', 'is_gst_applicable' => 0, 'default_discount_amount' => $defaultDiscount, 'created_at' => time(), 'updated_at' => time()], false);
         $this->assertTrue($profile->save(false));
         $run = new BillingRun();
         $run->setAttributes(['run_number' => 'TEST-RUN-' . bin2hex(random_bytes(4)), 'status' => BillingRun::STATUS_RUNNING, 'started_at' => time(), 'created_at' => time(), 'updated_at' => time()], false);

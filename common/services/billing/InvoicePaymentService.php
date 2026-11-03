@@ -148,6 +148,10 @@ final class InvoicePaymentService
         if (!$invoice->save(false, ['status', 'updated_at'])) {
             throw new \RuntimeException('Unable to close the invoice as refunded.');
         }
+        // As cancelling does: the coupon use shouldn't count against its limits for the re-billed invoice.
+        if (!empty($invoice->coupon_code)) {
+            (new CouponService())->removeForInvoice((int) $invoice->id);
+        }
         // Release the billed periods (this invoice's and those carried into it) so the next
         // billing run invoices them again, as cancelling does. Fulfilled renewals stay as they are.
         $invoiceIds = [(int) $invoice->id];

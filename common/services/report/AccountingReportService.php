@@ -57,6 +57,9 @@ final class AccountingReportService
             'Invoice Number', 'Issue Date', 'Due Date', 'Customer Name', 'Customer GSTIN', 'Customer State', 'Customer Country',
             'State Code', 'Place of Supply', 'Subtotal', 'Discount', 'Taxable Value', 'CGST %', 'CGST Amount',
             'SGST %', 'SGST Amount', 'IGST %', 'IGST Amount', 'Total Payable', 'Status', 'Coupon Code',
+            // Total Payable includes balances carried in from older invoices, which are also exported
+            // (as Carried Forward): sum Invoice Value, not Total Payable, to avoid counting them twice.
+            'Arrears Carried In', 'Invoice Value (excl. arrears)',
         ];
         $query = Invoice::find()
             ->where(['>=', 'created_at', $start])
@@ -87,6 +90,8 @@ final class AccountingReportService
                 self::money($invoice->total_payable),
                 Invoice::getStatuses()[$invoice->status] ?? $invoice->status,
                 (string) $invoice->coupon_code,
+                self::money(round((float) $invoice->total_payable - $tax['total'], 2)),
+                self::money($tax['total']),
             ];
         }
     }

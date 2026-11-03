@@ -302,6 +302,14 @@ final class InvoiceController extends Controller
                 Yii::$app->session->setFlash('warning', 'A payment proof for this invoice is already awaiting verification.');
                 return $this->redirect(['view', 'number' => $invoice->invoice_number]);
             }
+            // Re-read under the lock: an online payment may have settled it since the form was checked.
+            $invoice->refresh();
+            $outstanding = (new InvoicePaymentService())->getOutstanding($invoice);
+            if (!in_array($invoice->status, [Invoice::STATUS_UNPAID, Invoice::STATUS_PARTIALLY_PAID], true) || $outstanding <= 0) {
+                $dbTransaction->rollBack();
+                Yii::$app->session->setFlash('warning', 'This invoice has no outstanding balance any more.');
+                return $this->redirect(['view', 'number' => $invoice->invoice_number]);
+            }
             if (!$form->receiptFile->saveAs($absolutePath)) {
                 throw new \RuntimeException('Payment receipt could not be stored.');
             }

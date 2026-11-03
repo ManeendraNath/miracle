@@ -177,6 +177,9 @@ final class RazorpayService
             // The customer has been charged, so the capture is always recorded. If the invoice
             // can no longer take payments (cancelled, carried forward, or already paid some other
             // way, e.g. an approved UPI proof) it is left unapplied for an admin to refund.
+            // Locked (transaction row first, then invoice, as approve does) so a concurrent
+            // carry-forward or cancel can't change the status between this check and settling.
+            $db->createCommand('SELECT id FROM {{%invoice}} WHERE id = :id FOR UPDATE')->bindValue(':id', (int) $transaction->invoice_id)->queryScalar();
             $invoice = Invoice::findOne((int) $transaction->invoice_id);
             $unapplied = $invoice !== null && in_array($invoice->status, [Invoice::STATUS_CANCELLED, Invoice::STATUS_CARRIED_FORWARD, Invoice::STATUS_PAID, Invoice::STATUS_REFUNDED], true);
             if ($unapplied) {

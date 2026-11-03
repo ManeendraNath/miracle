@@ -74,6 +74,7 @@ final class AccountingReportServiceTest extends Unit
         $this->assertSame('900.00', $intra['Taxable Value']);
         $this->assertSame(['9.00', '81.00', '9.00', '81.00', '0.00', '0.00'], [$intra['CGST %'], $intra['CGST Amount'], $intra['SGST %'], $intra['SGST Amount'], $intra['IGST %'], $intra['IGST Amount']]);
         $this->assertSame(['07ABCDE1234F1Z2', 'SAVE10', '1062.00'], [$intra['Customer GSTIN'], $intra['Coupon Code'], $intra['Total Payable']]);
+        $this->assertSame(['0.00', '1062.00'], [$intra['Arrears Carried In'], $intra['Invoice Value (excl. arrears)']]);
 
         $inter = $rows[$this->_prefix . 'inter'];
         $this->assertSame(['0.00', '0.00', '60.00'], [$inter['CGST Amount'], $inter['SGST Amount'], $inter['IGST Amount']]);

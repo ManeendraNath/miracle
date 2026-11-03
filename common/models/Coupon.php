@@ -101,8 +101,12 @@ class Coupon extends base\Coupon
             }
         }
         if ($this->assigned_user_ids !== null) {
-            CouponAssignedUser::deleteAll(['coupon_id' => $this->id]);
-            $rows = array_map(fn($userId): array => [$this->id, (int) $userId, $now, $now, $now], array_unique((array) $this->assigned_user_ids));
+            // Keep existing assignments (and their assigned_at, which orders auto-applied coupons):
+            // only remove users taken off and add new ones, so editing a coupon doesn't make it "newest".
+            $wanted = array_values(array_unique(array_map('intval', (array) $this->assigned_user_ids)));
+            CouponAssignedUser::deleteAll(['and', ['coupon_id' => $this->id], ['not in', 'user_id', $wanted ?: [0]]]);
+            $existing = array_map('intval', CouponAssignedUser::find()->select('user_id')->where(['coupon_id' => $this->id])->column());
+            $rows = array_map(fn(int $userId): array => [$this->id, $userId, $now, $now, $now], array_diff($wanted, $existing));
             if ($rows) {
                 self::getDb()->createCommand()->batchInsert(CouponAssignedUser::tableName(), ['coupon_id', 'user_id', 'assigned_at', 'created_at', 'updated_at'], $rows)->execute();
             }

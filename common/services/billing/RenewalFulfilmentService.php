@@ -47,7 +47,7 @@ final class RenewalFulfilmentService
                 ->all();
 
             foreach ($events as $event) {
-                $this->fulfilEvent($event, $transactionId ? (int) $transactionId : null);
+                $this->fulfilEvent($event, (int) $invoice->id, $transactionId ? (int) $transactionId : null);
             }
 
             if ($dbTransaction !== null && $dbTransaction->isActive) {
@@ -93,7 +93,7 @@ final class RenewalFulfilmentService
         return $ids;
     }
 
-    private function fulfilEvent(BillingEvent $event, ?int $transactionId): void
+    private function fulfilEvent(BillingEvent $event, int $paidInvoiceId, ?int $transactionId): void
     {
         $exists = ServiceRenewalHistory::find()
             ->where([
@@ -119,7 +119,9 @@ final class RenewalFulfilmentService
         $history->item_type = $this->historyType((int) $event->item_type);
 
         $history->item_id = $event->item_id;
-        $history->invoice_id = $event->invoice_id;
+        // The invoice that was paid (for a carried-forward event, the newer one), so it
+        // pairs with transaction_id; the original invoice stays on the billing event.
+        $history->invoice_id = $paidInvoiceId;
         $history->transaction_id = $transactionId;
 
         $history->billed_amount = $event->amount;

@@ -41,6 +41,33 @@ class Invoice extends base\Invoice
         return implode(', ', array_filter($parts, static fn ($part): bool => trim((string) $part) !== ''));
     }
 
+    /**
+     * Tax lines under the client address on a tax invoice: client GSTIN (or PAN) and place of supply.
+     *
+     * @return string[]
+     */
+    public function getClientTaxLines(): array
+    {
+        $lines = [];
+        if (trim((string) $this->client_gstin) !== '') {
+            $lines[] = 'GSTIN: ' . $this->client_gstin;
+        } elseif (trim((string) $this->client_pan) !== '') {
+            $lines[] = 'PAN: ' . $this->client_pan;
+        }
+        if (trim((string) $this->place_of_supply) !== '') {
+            $code = trim((string) $this->client_state_code);
+            $lines[] = 'Place of supply: ' . $this->place_of_supply . ($code !== '' ? " ({$code})" : '');
+        }
+
+        return $lines;
+    }
+
+    /** Our GSTIN for the invoice header; empty until BILLING_GSTIN is set in .env. */
+    public static function supplierGstin(): string
+    {
+        return trim((string) (\Yii::$app->params['billing']['supplierGstin'] ?? ''));
+    }
+
     /** Line every export invoice must carry; null for clients in India. */
     public function getExportNote(): ?string
     {

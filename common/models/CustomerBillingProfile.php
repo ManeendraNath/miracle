@@ -111,7 +111,8 @@ class CustomerBillingProfile extends base\CustomerBillingProfile
         $scenarios = parent::scenarios();
         // "!" = validated but never mass-assigned.
         $scenarios[self::SCENARIO_CUSTOMER] = [
-            'legal_name', 'address_line_1', 'address_line_2', 'city', 'state', 'postal_code', 'country', 'gstin', 'pan',
+            // Not country: outside India means no GST, so only an admin may set it.
+            'legal_name', 'address_line_1', 'address_line_2', 'city', 'state', 'postal_code', 'gstin', 'pan',
             '!state_code', '!user_id',
         ];
 

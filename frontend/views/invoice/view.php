@@ -109,9 +109,9 @@ JS);
                                 <div class="text-body-secondary"><?= Html::encode($line) ?></div>
                             <?php endif; ?>
                         <?php endforeach; ?>
-                        <?php if ($model->client_gstin): ?>
-                            <div class="small text-body-secondary">GSTIN: <?= Html::encode($model->client_gstin) ?></div>
-                        <?php endif; ?>
+                        <?php foreach ($model->getClientTaxLines() as $line): ?>
+                            <div class="small text-body-secondary"><?= Html::encode($line) ?></div>
+                        <?php endforeach; ?>
                     </div>
                     <div class="col-sm-6">
                         <div class="d-flex justify-content-sm-end gap-4">

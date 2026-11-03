@@ -1,6 +1,7 @@
 <?php
 declare(strict_types=1);
 
+use common\models\Invoice;
 use common\services\billing\TaxCalculator;
 use yii\helpers\Html;
 
@@ -111,6 +112,9 @@ $igstAmount = $tax['igstAmount'];
                 <div>
                     Delhi, India
                 </div>
+                <?php if (Invoice::supplierGstin() !== ''): ?>
+                    <div>GSTIN: <?= Html::encode(Invoice::supplierGstin()) ?></div>
+                <?php endif; ?>
             </td>
 
             <td class="invoice-title">
@@ -155,6 +159,9 @@ $igstAmount = $tax['igstAmount'];
             <?php endif; ?>
 
             <?= Html::encode($invoice->getClientCityLine()) ?>
+            <?php foreach ($invoice->getClientTaxLines() as $line): ?>
+                <br><?= Html::encode($line) ?>
+            <?php endforeach; ?>
         </td>
 
         <td>

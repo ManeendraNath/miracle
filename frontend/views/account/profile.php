@@ -63,7 +63,12 @@ $this->params['breadcrumbs'][] = $this->title;
                 <?= $billingForm->field($billingProfile, 'legal_name')->textInput(['maxlength' => true, 'placeholder' => 'Legal / company name']) ?>
                 <?= $billingForm->field($billingProfile, 'address_line_1')->textInput(['maxlength' => true]) ?>
                 <?= $billingForm->field($billingProfile, 'address_line_2')->textInput(['maxlength' => true]) ?>
-                <?= $billingForm->field($billingProfile, 'country')->dropDownList(CustomerBillingProfile::countryOptions())->hint('Outside India? No GST is charged on your invoices.') ?>
+                <div class="mb-3">
+                    <label class="form-label">Country</label>
+                    <?php /* id read by the PIN-code rule's browser check (CustomerBillingProfile::WHEN_INDIA_JS); no name, so never posted */ ?>
+                    <input type="text" id="customerbillingprofile-country" class="form-control" value="<?= Html::encode($billingProfile->country ?: CustomerBillingProfile::COUNTRY_INDIA) ?>" readonly>
+                    <div class="form-text">Billing from outside India? Contact support and we'll update it.</div>
+                </div>
                 <div class="row gx-3">
                     <div class="col-sm-6">
                         <?= $billingForm->field($billingProfile, 'city')->textInput(['maxlength' => true]) ?>
@@ -72,10 +77,11 @@ $this->params['breadcrumbs'][] = $this->title;
                         <?= $billingForm->field($billingProfile, 'postal_code')->textInput(['maxlength' => 20]) ?>
                     </div>
                 </div>
+                <?php if (!$billingProfile->isForeign()): ?>
                 <?= $billingForm->field($billingProfile, 'state')->dropDownList(CustomerBillingProfile::stateOptions(), ['prompt' => 'Select state']) ?>
                 <?= $billingForm->field($billingProfile, 'gstin')->textInput(['maxlength' => 15, 'class' => 'form-control font-monospace text-uppercase'])->label('GSTIN <span class="text-body-secondary fw-normal">(optional)</span>') ?>
                 <?= $billingForm->field($billingProfile, 'pan')->textInput(['maxlength' => 10, 'class' => 'form-control font-monospace text-uppercase'])->label('PAN <span class="text-body-secondary fw-normal">(optional)</span>') ?>
-                <?= $this->render('@common/views/_billing_country_js') ?>
+                <?php endif; ?>
                 <div class="form-text">Changes apply to future invoices only; invoices already issued keep the details they were issued with.</div>
             </div>
             <div class="card-footer bg-transparent py-3">

@@ -107,11 +107,22 @@ final class CustomerBillingDetailsTest extends Unit
 
     public function testForeignClientHasNoGstStateOrIds(): void
     {
+        // A customer can't declare themselves foreign: that would switch GST off.
         $profile = CustomerBillingDetailsService::forUser($this->_user);
-        $post = ['CustomerBillingProfile' => $this->input(['country' => 'United States', 'city' => 'San Francisco', 'postal_code' => '94105-1234'])];
+        $post = ['CustomerBillingProfile' => $this->input(['country' => 'United States'])];
         $this->assertTrue(CustomerBillingDetailsService::save($profile, $post), json_encode($profile->errors));
-
         $saved = CustomerBillingProfile::findOne(['user_id' => $this->_user->id]);
+        $this->assertSame(CustomerBillingProfile::COUNTRY_INDIA, $saved->country, 'country is admin-only');
+
+        // An admin (default scenario) sets the country.
+        $saved->setAttributes($this->input(['country' => 'United States', 'city' => 'San Francisco', 'postal_code' => '94105-1234']));
+        $this->assertTrue($saved->save(), json_encode($saved->errors));
+        $saved = CustomerBillingProfile::findOne(['user_id' => $this->_user->id]);
+
+        // The customer can still edit their address afterwards; the profile stays foreign.
+        $profile = CustomerBillingDetailsService::forUser($this->_user);
+        $this->assertTrue(CustomerBillingDetailsService::save($profile, ['CustomerBillingProfile' => ['city' => 'Oakland', 'postal_code' => '94601']]), json_encode($profile->errors));
+        $this->assertSame('United States', CustomerBillingProfile::findOne($saved->id)->country);
         $this->assertSame(CustomerBillingProfile::FOREIGN_STATE, $saved->state, 'Indian state dropped');
         $this->assertSame('96', $saved->state_code);
         $this->assertNull($saved->gstin);
@@ -124,9 +135,13 @@ final class CustomerBillingDetailsTest extends Unit
         $this->assertTrue($saved->save());
         $this->assertSame(0, (int) CustomerBillingProfile::findOne($saved->id)->is_gst_applicable);
 
-        $this->assertArrayHasKey('country', $this->validated(['country' => 'Narnia'])->errors);
-        $this->assertSame([], $this->validated(['country' => 'India'])->errors, 'India keeps the GST rules');
-        $this->assertArrayHasKey('postal_code', $this->validated(['country' => 'India', 'postal_code' => '94105'])->errors);
+        $admin = new CustomerBillingProfile(['user_id' => $this->_user->id, 'legal_name' => 'X', 'country' => 'Narnia']);
+        $this->assertFalse($admin->validate());
+        $this->assertArrayHasKey('country', $admin->errors);
+        $indian = new CustomerBillingProfile(['scenario' => CustomerBillingProfile::SCENARIO_CUSTOMER, 'user_id' => $this->_user->id]);
+        $indian->setAttributes($this->input(['postal_code' => '94105']));
+        $this->assertFalse($indian->validate());
+        $this->assertArrayHasKey('postal_code', $indian->errors, 'India keeps the PIN rule');
     }
 
     public function testExportInvoiceAddressAndNote(): void

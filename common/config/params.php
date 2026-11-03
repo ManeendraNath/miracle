@@ -20,6 +20,8 @@ return [
         // ARN of this financial year's LUT (GST RFD-11). Set = invoices to clients outside India say
         // "Supply meant for export under LUT without payment of IGST".
         'lutArn' => $_ENV['BILLING_LUT_ARN'] ?? '',
+        // Our GSTIN, printed on invoices once GST-registered.
+        'supplierGstin' => $_ENV['BILLING_GSTIN'] ?? '',
         'gst' => [
             'cgst' => 0.00,
             'sgst' => 0.00,
@@ -40,6 +42,8 @@ return [
         ],
     ],
     'frontendBaseUrl' => rtrim($_ENV['FRONTEND_BASE_URL'] ?? '', '/'),
+    // Admin panel, for links in emails to staff.
+    'backendBaseUrl' => rtrim($_ENV['BACKEND_BASE_URL'] ?? 'https://admin.miraclewebtechnologies.com', '/'),
     'whatsapp' => [
         'provider' => $_ENV['WHATSAPP_PROVIDER'] ?? '',
         'enabled' => filter_var($_ENV['WHATSAPP_ENABLED'] ?? false, FILTER_VALIDATE_BOOLEAN),

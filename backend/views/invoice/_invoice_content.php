@@ -48,6 +48,9 @@ $money = static function (int|float|string|null $amount): string {
             <p class="text-muted text-sm mt-1 mb-0">
                 Premium Enterprise Engineering & Systems Architectures<br>
                 Support Line: admin@miraclewebtechnologies.com
+                <?php if (Invoice::supplierGstin() !== ''): ?>
+                    <br>GSTIN: <?= Html::encode(Invoice::supplierGstin()) ?>
+                <?php endif; ?>
             </p>
         </div>
         <div class="col-md-6 text-end pt-4">
@@ -64,7 +67,7 @@ $money = static function (int|float|string|null $amount): string {
             <p class="text-uppercase fw-bold text-muted text-xs mb-1">Invoiced To:</p>
             <h5 class="fw-bold text-dark mb-1"><?= Html::encode($model->client_name) ?></h5>
             <p class="text-secondary text-sm mb-0">
-                <?php foreach ([$model->client_address_line_1, $model->client_address_line_2, $model->getClientCityLine()] as $line): ?>
+                <?php foreach ([$model->client_address_line_1, $model->client_address_line_2, $model->getClientCityLine(), ...$model->getClientTaxLines()] as $line): ?>
                     <?php if ($line): ?><?= Html::encode($line) ?><br><?php endif; ?>
                 <?php endforeach; ?>
             </p>

@@ -226,14 +226,6 @@ trait BaseIdentityTrait
     }
 
     /**
-     * Generates a sign-up validation mail checker token.
-     */
-    public function generateEmailVerificationToken(): void
-    {
-        $this->verification_token = Yii::$app->security->generateRandomString() . '_' . time();
-    }
-
-    /**
      * Removes the active password reset validation string parameters.
      */
     public function removePasswordResetToken(): void

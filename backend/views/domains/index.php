@@ -66,9 +66,6 @@ $users = ArrayHelper::map(User::find()->orderBy(['username' => SORT_ASC])->all()
                         'label' => 'Client',
                         'format' => 'raw',
                         'value' => static function (Domains $model): string {
-                            if (!$model->user) {
-                                return '<span class="text-muted">-</span>';
-                            }
                             $username = $model->user->username ?: 'Unknown';
                             $email = $model->user->email ?: 'Email not available';
                             return Html::tag(

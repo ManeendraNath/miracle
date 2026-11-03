@@ -61,17 +61,11 @@ final class CouponSearch extends Coupon
 
         $query->andFilterWhere(['like', 'name', $this->name])->andFilterWhere(['like', 'code', $this->code]);
 
-        if ($this->amount !== null) {
-            $query->andWhere([
-                'amount' => $this->amount,
-            ]);
-        }
-
-        if ($this->minimum_order !== null) {
-            $query->andWhere([
-                'minimum_order' => $this->minimum_order,
-            ]);
-        }
+        // The grid posts every filter box, so an empty one arrives as '' (not null): skip it.
+        $query->andFilterWhere([
+            'amount' => $this->amount,
+            'minimum_order' => $this->minimum_order,
+        ]);
 
         $this->applyValidityRange($query);
 

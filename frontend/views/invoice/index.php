@@ -93,7 +93,7 @@ $tabs = ['all' => 'All', 'due' => 'Due', 'paid' => 'Paid'];
                 'format' => 'raw',
                 'headerOptions' => ['class' => 'text-end'],
                 'contentOptions' => ['class' => 'text-end text-nowrap'],
-                'value' => static function (Invoice $model) use ($formatter, $payable, $paymentService): string {
+                'value' => static function (Invoice $model) use ($formatter, $paymentService): string {
                     $html = $formatter->asCurrency($model->total_payable, 'INR');
                     if ($model->status === Invoice::STATUS_PARTIALLY_PAID) {
                         $html .= '<div class="small text-body-secondary">' . $formatter->asCurrency($paymentService->getOutstanding($model), 'INR') . ' left</div>';

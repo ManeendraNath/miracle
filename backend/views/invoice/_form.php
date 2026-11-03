@@ -142,7 +142,7 @@ $isNew = $model->isNewRecord;
                                         >
                                     <?= Html::dropDownList(
                                         "ManualInvoiceItemForm[{$index}][item_type]",
-                                        $item->item_type,
+                                        (string) $item->item_type,
                                         \common\models\InvoiceItem::getServiceTypes(),
                                         [
                                             'class' => 'form-control form-control-sm mt-1',
@@ -172,7 +172,7 @@ $isNew = $model->isNewRecord;
                                     <input
                                         type="number"
                                         name="ManualInvoiceItemForm[<?= $index ?>][quantity]"
-                                        value="<?= Html::encode($item->quantity) ?>"
+                                        value="<?= Html::encode((string) $item->quantity) ?>"
                                         class="form-control invoice-item-qty"
                                         min="1"
                                         step="1"
@@ -187,7 +187,7 @@ $isNew = $model->isNewRecord;
                                     <input
                                         type="number"
                                         name="ManualInvoiceItemForm[<?= $index ?>][unit_price]"
-                                        value="<?= Html::encode($item->unit_price) ?>"
+                                        value="<?= Html::encode((string) $item->unit_price) ?>"
                                         class="form-control invoice-item-price"
                                         min="0"
                                         step="0.01"
@@ -371,7 +371,7 @@ $nextIndex = count($items);
 // Same options as the server-rendered rows, for rows added in the browser.
 $serviceTypeSelect = Html::dropDownList(
     'ManualInvoiceItemForm[__INDEX__][item_type]',
-    \common\models\InvoiceItem::TYPE_CUSTOM,
+    (string) \common\models\InvoiceItem::TYPE_CUSTOM,
     \common\models\InvoiceItem::getServiceTypes(),
     ['class' => 'form-control form-control-sm mt-1', 'title' => 'Service type (used by coupon restrictions)'],
 );

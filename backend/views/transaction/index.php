@@ -10,7 +10,7 @@ use yii\bootstrap5\Html;
 use yii\grid\GridView;
 
 /** @var yii\web\View $this */
-/** @var common\models\TransactionSearch $searchModel */
+/** @var backend\models\searches\TransactionSearch $searchModel */
 /** @var yii\data\ActiveDataProvider $dataProvider */
 $this->title = 'Transactions';
 $this->params['breadcrumbs'][] = $this->title;
@@ -46,9 +46,6 @@ GridViewHelper::register($this);
                         'label' => 'Invoice',
                         'format' => 'raw',
                         'value' => static function (Transaction $model): string {
-                            if ($model->invoice === null) {
-                                return '-';
-                            }
                             return Html::a(Html::encode($model->invoice->invoice_number), ['invoice/view', 'number' => $model->invoice->invoice_number]);
                         },
                     ],

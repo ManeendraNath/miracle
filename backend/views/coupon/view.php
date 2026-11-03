@@ -24,6 +24,7 @@ $this->params['actions'] = [
 $formatter = Yii::$app->formatter;
 $used = (int) CouponRedemption::find()->where(['coupon_id' => $model->id])->count();
 $limit = (int) $model->uses_per_coupon;
+/** @var \common\models\base\User[] $assigned */
 $assigned = $model->getUsers()->orderBy('username')->all();
 ?>
 

@@ -64,10 +64,6 @@ $users = ArrayHelper::map(User::find()->orderBy(['username' => SORT_ASC])->all()
                             'value' => static function (
                                 Maintenance $model
                             ): string {
-                                if ($model->user === null) {
-                                    return '-';
-                                }
-
                                 $username = $model->user->username ?: 'Unknown';
 
                                 $email = $model->user->email ?: 'Email not available';

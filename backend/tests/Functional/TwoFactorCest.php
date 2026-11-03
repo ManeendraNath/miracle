@@ -75,7 +75,9 @@ final class TwoFactorCest
         $I->submitForm('#two-factor-form', ['TwoFactorForm[code]' => $code]);
         $I->see('Miracle Corporate Control Center');
         // A secret saved before encryption existed is encrypted at the first valid code.
-        $I->assertStringStartsWith('enc:', (string) $I->grabRecord(Admin::class, ['username' => 'tf-super2'])->totp_secret);
+        /** @var Admin $admin */
+        $admin = $I->grabRecord(Admin::class, ['username' => 'tf-super2']);
+        $I->assertStringStartsWith('enc:', (string) $admin->totp_secret);
 
         $this->post($I, ['/auth/logout']);
         $this->login($I, 'tf-super2');
@@ -142,7 +144,9 @@ final class TwoFactorCest
         $I->click('Confirm and turn on');
         $I->see('Two-factor sign-in is on.');
         $I->dontSeeInSource($secret);
-        $stored = (string) $I->grabRecord(Admin::class, ['id' => $id])->totp_secret;
+        /** @var Admin $admin */
+        $admin = $I->grabRecord(Admin::class, ['id' => $id]);
+        $stored = (string) $admin->totp_secret;
         $I->assertStringStartsWith('enc:', $stored, 'secret is stored encrypted');
         $I->assertStringNotContainsString($secret, $stored);
 

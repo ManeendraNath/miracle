@@ -10,7 +10,7 @@ use yii\grid\GridView;
 use yii\helpers\Html;
 
 /** @var yii\web\View $this */
-/** @var common\models\UserSearch $searchModel */
+/** @var backend\models\searches\UserSearch $searchModel */
 /** @var yii\data\ActiveDataProvider $dataProvider */
 $this->title = 'Users';
 $this->params['breadcrumbs'][] = $this->title;

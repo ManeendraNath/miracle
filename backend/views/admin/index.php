@@ -11,7 +11,7 @@ use yii\grid\GridView;
 use yii\helpers\Url;
 
 /** @var yii\web\View $this */
-/** @var backend\models\AdminSearch $searchModel */
+/** @var backend\models\searches\AdminSearch $searchModel */
 /** @var yii\data\ActiveDataProvider $dataProvider */
 
 $this->title = 'Admins';

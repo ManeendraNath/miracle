@@ -70,8 +70,8 @@ final class ManualInvoiceServiceTest extends Unit
                 $items
         );
 
-        $this->assertNotNull(
-                $created->id
+        $this->assertFalse(
+                $created->isNewRecord
         );
 
         $this->assertMatchesRegularExpression(

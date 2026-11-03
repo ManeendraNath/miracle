@@ -25,6 +25,7 @@ use yii\helpers\ArrayHelper;
  * @property int $updated_at
  *
  * @property User $user
+ * @property-read SupportTicketMessage[] $messages
  */
 class SupportTicket extends base\SupportTicket
 {

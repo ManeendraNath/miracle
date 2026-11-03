@@ -40,12 +40,12 @@ $this->params['actions'] = [Html::a('<i class="fas fa-arrow-left me-1"></i> Back
                         'attributes' => [
                             [
                                 'label' => 'Customer',
-                                'value' => $model->user ? $model->user->username : 'Unknown',
+                                'value' => $model->user->username,
                             ],
                             [
                                 'label' => 'Email Address',
                                 'format' => 'email',
-                                'value' => $model->user ? $model->user->email : null,
+                                'value' => $model->user->email,
                             ],
                             [
                                 'attribute' => 'ip_address',

@@ -163,7 +163,7 @@ $this->params['actions'] = [
                             <?php $identity = Yii::$app->user->identity; ?>
                             <?php if (!$model->cpanel_password): ?>
                                 <span class="text-muted">-</span>
-                            <?php elseif ($identity !== null && $identity->isAdmin()): ?>
+                            <?php elseif ($identity instanceof \common\models\Admin && $identity->isAdmin()): ?>
                                 <code id="cpanel-password">••••••••</code>
                                 <button type="button" class="btn btn-xs btn-outline-primary ms-2" id="cpanel-password-show"
                                         data-url="<?= Html::encode(\yii\helpers\Url::to(['cpanel-password', 'id' => $model->id])) ?>">Show</button>

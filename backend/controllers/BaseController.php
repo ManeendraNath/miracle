@@ -52,7 +52,7 @@ class BaseController extends Controller
      * $model->load() for the domain/hosting/maintenance forms, ignoring posted renewal
      * pricing from roles below Admin (the form shows it read-only to them).
      */
-    protected function loadService(\yii\db\ActiveRecord $model): bool
+    protected function loadService(\common\models\Domains|\common\models\Hosting|\common\models\Maintenance $model): bool
     {
         $kept = [];
         foreach (self::RENEWAL_PRICING_ATTRIBUTES as $attribute) {

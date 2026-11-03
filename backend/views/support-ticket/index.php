@@ -72,9 +72,6 @@ GridViewHelper::register($this);
                         'label' => 'Customer',
                         'format' => 'raw',
                         'value' => static function (SupportTicket $model): string {
-                            if ($model->user === null) {
-                                return '-';
-                            }
                             return Html::tag(
                                 'span',
                                 Html::encode($model->user->username),

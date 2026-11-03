@@ -83,7 +83,7 @@ GridViewHelper::register($this);
                         'format' => 'raw',
                         'value' => static function (Invoice $model): string {
                             $options = ['class' => 'fw-semibold text-dark'];
-                            if (isset($model->user) && $model->user && !empty($model->user->email)) {
+                            if (!empty($model->user->email)) {
                                 $options['title'] = $model->user->email;
                                 $options['data-bs-toggle'] = 'tooltip';
                                 $options['data-bs-placement'] = 'top';

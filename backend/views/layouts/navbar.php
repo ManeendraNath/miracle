@@ -4,6 +4,7 @@ use yii\helpers\Html;
 use yii\helpers\Url;
 use common\models\AdminNotification;
 
+/** @var AdminNotification[] $adminNotifications */
 $adminNotifications = AdminNotification::visibleTo(Yii::$app->user->identity)
         ->orderBy([
             'is_read' => SORT_ASC,

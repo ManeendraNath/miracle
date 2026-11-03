@@ -11,9 +11,9 @@ class Coupon extends base\Coupon
 {
     use AutoTimestampTrait;
 
-    /** @var int[]|string|null service types (InvoiceItem item_type) the coupon is limited to; null = not submitted */
+    /** @var array<int|string>|string|null service types (InvoiceItem item_type) the coupon is limited to; null = not submitted */
     public $applies_to;
-    /** @var int[]|string|null customers the coupon is limited to; null = not submitted */
+    /** @var array<int|string>|string|null customers the coupon is limited to; null = not submitted */
     public $assigned_user_ids;
 
     public static function getTypes(): array

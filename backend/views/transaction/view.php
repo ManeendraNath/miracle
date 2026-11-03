@@ -102,9 +102,6 @@ if ($model->status === Transaction::STATUS_CAPTURED) {
                                 'label' => 'Invoice',
                                 'format' => 'raw',
                                 'value' => static function (Transaction $model): string {
-                                    if ($model->invoice === null) {
-                                        return '-';
-                                    }
                                     return Html::a(Html::encode($model->invoice->invoice_number), ['invoice/view', 'number' => $model->invoice->invoice_number], ['class' => 'fw-semibold']);
                                 },
                             ],

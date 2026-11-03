@@ -27,9 +27,6 @@ class UserController extends BaseController
     public function actionToggleStatus($id)
     {
         $model = $this->findModel($id);
-        if ($model === null) {
-            throw new NotFoundHttpException('The requested client profile account does not exist.');
-        }
 
         // Suspended (not Inactive): Inactive is the unverified-email state, which
         // the customer could flip back to Active via the verification link.

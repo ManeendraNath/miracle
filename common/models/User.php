@@ -90,4 +90,12 @@ class User extends base\User implements IdentityInterface
         }
         return preg_replace('/[^0-9]/', '', $this->mobile);
     }
+
+    /**
+     * Generates a sign-up validation mail checker token (customers only: admin has no such column).
+     */
+    public function generateEmailVerificationToken(): void
+    {
+        $this->verification_token = \Yii::$app->security->generateRandomString() . '_' . time();
+    }
 }

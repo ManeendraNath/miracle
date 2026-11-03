@@ -22,6 +22,7 @@ namespace common\models;
  *
  * @property Invoice $invoice
  * @property ServiceRenewalHistory[] $serviceRenewalHistories
+ * @property-read string $gatewayLabel
  */
 class Transaction extends base\Transaction
 {

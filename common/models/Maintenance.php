@@ -17,6 +17,7 @@ use common\models\traits\AutoTimestampTrait;
  * @property int $updated_at
  *
  * @property User $user
+ * @property-read string|null $websiteHref
  */
 class Maintenance extends base\Maintenance
 {

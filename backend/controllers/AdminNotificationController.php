@@ -27,6 +27,7 @@ final class AdminNotificationController extends BaseController
 
     public function actionRead(int $id)
     {
+        /** @var AdminNotification|null $model */
         $model = AdminNotification::visibleTo(Yii::$app->user->identity)->andWhere(['id' => $id])->one();
         if ($model === null) {
             throw new NotFoundHttpException('Notification not found.');

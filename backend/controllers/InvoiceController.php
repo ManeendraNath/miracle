@@ -39,9 +39,6 @@ class InvoiceController extends BaseController
     public function actionView(string $number)
     {
         $model = $this->findModelByNumber($number);
-        if ($model === null) {
-            throw new NotFoundHttpException('The specified invoice could not be located.');
-        }
         $paymentService = new InvoicePaymentService();
         $totals = $this->calculateDisplayTotals($model);
 

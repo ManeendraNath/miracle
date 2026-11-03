@@ -67,12 +67,6 @@ GridViewHelper::register($this);
             'label' => 'Customer',
             'format' => 'raw',
             'value' => static function (UserLoginHistory $model): string {
-                if ($model->user === null) {
-                    return Html::tag('span', 'Unknown', [
-                        'class' => 'text-muted',
-                    ]);
-                }
-
                 $username = (string) $model->user->username;
 
                 $email = (string) $model->user->email;

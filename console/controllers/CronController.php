@@ -30,7 +30,8 @@ class CronController extends Controller
      */
     public function actionRunBilling(): int
     {
-        $mutex = Yii::$app->mutex;
+        /** @var \yii\mutex\Mutex $mutex */
+        $mutex = Yii::$app->get('mutex');
         $lockName = 'miracle:auto-billing';
         if (!$mutex->acquire($lockName, 0)) {
             $this->stdout("Billing cron already running.\n", Console::FG_YELLOW);
@@ -130,7 +131,8 @@ class CronController extends Controller
 
     private function runLocked(string $lockName, string $label, callable $job): int
     {
-        $mutex = Yii::$app->mutex;
+        /** @var \yii\mutex\Mutex $mutex */
+        $mutex = Yii::$app->get('mutex');
         if (!$mutex->acquire($lockName, 0)) {
             $this->stdout("{$label} already running.\n", Console::FG_YELLOW);
             return ExitCode::OK;

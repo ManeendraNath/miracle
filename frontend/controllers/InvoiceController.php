@@ -142,6 +142,7 @@ final class InvoiceController extends Controller
             Yii::$app->response->statusCode = 502;
             return ['error' => 'Could not start online payment. Please try again shortly.'];
         }
+        /** @var \common\models\User $user */
         $user = Yii::$app->user->identity;
         return [
             'key' => $razorpay->getKeyId(),

@@ -14,8 +14,8 @@ $username = Yii::$app->user->identity?->username;
 // This forces Yii to automatically publish and load all AdminLTE 3 CSS, JS, and Plugins
 AdminLteAsset::register($this);
 
-// Automatically hooks up FontAwesome Icons, jQuery overlays, and Bootstrap styles
-PluginAsset::register($this, ['fontawesome']);
+// AdminLTE plugin base (FontAwesome itself comes from AppAsset; register() takes no plugin list)
+PluginAsset::register($this);
 ?>
 
 <div class="row">

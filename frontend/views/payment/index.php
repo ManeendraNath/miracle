@@ -34,9 +34,7 @@ $formatter = Yii::$app->formatter;
                 'format' => 'raw',
                 'headerOptions' => ['class' => 'ps-3'],
                 'contentOptions' => ['class' => 'ps-3 text-nowrap'],
-                'value' => static fn(Transaction $model): string => $model->invoice === null
-                    ? '-'
-                    : Html::a(Html::encode($model->invoice->invoice_number), ['/invoice/view', 'number' => $model->invoice->invoice_number], ['class' => 'fw-semibold text-decoration-none']),
+                'value' => static fn(Transaction $model): string => Html::a(Html::encode($model->invoice->invoice_number), ['/invoice/view', 'number' => $model->invoice->invoice_number], ['class' => 'fw-semibold text-decoration-none']),
             ],
             [
                 'label' => 'Reference',

@@ -39,5 +39,9 @@ parameters:
 
     ignoreErrors:
         - '#Access to an undefined property yii\\web\\IdentityInterface::\$username.#'
+        # Plain-text mail template: the final blank line after the closing tag is part of the mail body.
+        -
+            message: '#^File ends with a trailing whitespace#'
+            path: common/mail/enquiry-text.php
 
     tmpDir: %currentWorkingDirectory%/runtime

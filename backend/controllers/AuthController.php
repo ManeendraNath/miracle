@@ -51,7 +51,7 @@ class AuthController extends Controller
                         'roles' => ['@'],
                         'matchCallback' => function ($rule, $action) {
                             $user = Yii::$app->user->identity;
-                            return $user !== null && $user->isSuperAdmin();
+                            return $user instanceof \common\models\Admin && $user->isSuperAdmin();
                         },
                     ],
                 ],
@@ -95,7 +95,7 @@ class AuthController extends Controller
         if ($model->load(Yii::$app->request->post())) {
             if ($model->login()) {
                 // Still a guest when the account has two-factor on: the code comes next.
-                return $this->redirect(Yii::$app->user->isGuest ? ['auth/two-factor'] : ['dashboard/index']);
+                return $this->redirect(Yii::$app->user->getIsGuest() ? ['auth/two-factor'] : ['dashboard/index']);
             } else {
                 // Debug fallback block for verification issues
                 Yii::error('Admin panel login attempt failed for user: ' . $model->username, 'admin-auth');

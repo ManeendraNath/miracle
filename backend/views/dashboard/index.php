@@ -15,8 +15,8 @@ $assetDir = Yii::$app->assetManager->getPublishedUrl('@vendor/hail812/yii2-admin
 // This forces Yii to automatically publish and load all AdminLTE 3 CSS, JS, and Plugins
 AdminLteAsset::register($this);
 
-// Automatically hooks up FontAwesome Icons, jQuery overlays, and Bootstrap styles
-PluginAsset::register($this, ['fontawesome']);
+// AdminLTE plugin base (FontAwesome itself comes from AppAsset; register() takes no plugin list)
+PluginAsset::register($this);
 
 // Chart.js is shipped with AdminLTE but is not loaded automatically.
 $chartJsUrl = Yii::$app->assetManager->publish('@vendor/almasaeed2010/adminlte/plugins/chart.js/Chart.min.js')[1];

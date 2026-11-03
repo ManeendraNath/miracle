@@ -14,7 +14,7 @@ use yii\helpers\Html;
  * @var string|null $eyebrow small uppercase label above the title
  * @var string $title
  * @var string|null $intro paragraph under the title (plain text)
- * @var array $rows [label, value, 'accent'?] rows of the details box (plain text); 'accent' colours the value
+ * @var array|null $rows [label, value, 'accent'?] rows of the details box (plain text); 'accent' colours the value
  * @var string|null $preformatted plain text shown as-is (line breaks kept), e.g. admin alerts
  * @var array|null $note [text, tone] highlighted message; tone defaults to the card's
  * @var array|null $button [label, url]

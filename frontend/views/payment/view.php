@@ -23,9 +23,7 @@ $statusClass = match ($model->status) {
     default => 'bg-secondary-subtle text-secondary-emphasis',
 };
 $details = [
-    'Invoice' => $model->invoice
-        ? Html::a(Html::encode($model->invoice->invoice_number), ['/invoice/view', 'number' => $model->invoice->invoice_number], ['class' => 'fw-semibold text-decoration-none'])
-        : '-',
+    'Invoice' => Html::a(Html::encode($model->invoice->invoice_number), ['/invoice/view', 'number' => $model->invoice->invoice_number], ['class' => 'fw-semibold text-decoration-none']),
     'Method' => Html::encode($methods[(int) $model->gateway_id] ?? '-'),
     'Reference' => '<span class="text-break">' . Html::encode($model->gateway_payment_id ?: '-') . '</span>',
     'Submitted' => $formatter->asDatetime($model->created_at, 'php:d M Y, h:i A'),

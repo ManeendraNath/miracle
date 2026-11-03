@@ -13,7 +13,7 @@ class SiteSettingController extends BaseController
     /**
      * Lists all SiteSetting models.
      *
-     * @return string
+     * @return string|\yii\web\Response
      */
     public function actionIndex()
     {

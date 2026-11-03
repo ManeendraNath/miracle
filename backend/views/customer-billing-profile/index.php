@@ -55,7 +55,7 @@ $users = ArrayHelper::map(User::find()->orderBy(['username' => SORT_ASC])->all()
                     [
                         'attribute' => 'user_id',
                         'label' => 'Client',
-                        'value' => static fn (CustomerBillingProfile $model): string => $model->user?->username ?? '-',
+                        'value' => static fn (CustomerBillingProfile $model): string => $model->user->username,
                         'filter' => GridFilterHelper::select2($searchModel, 'user_id', $users, 'All Clients'),
                     ],
                     'legal_name',

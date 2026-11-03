@@ -86,17 +86,6 @@ GridView::widget([
             static function (
                 CustomerPreference $model
             ): string {
-                if ($model->user === null) {
-                    return Html::tag(
-                        'span',
-                        'Unknown customer',
-                        [
-                                        'class' =>
-                                        'text-muted',
-                                    ]
-                    );
-                }
-
                 $username = (string)
                         $model->user->username;
 

@@ -18,14 +18,13 @@ $items = [
     ['label' => 'Activity Timeline', 'icon' => 'fas fa-history', 'url' => ['/account/activity'], 'controller' => 'account', 'action' => ['activity']],
 ];
 $actionId = Yii::$app->controller->action->id;
+$isActive = static fn (array $item): bool => $currentController === $item['controller'] && (!isset($item['action']) || in_array($actionId, $item['action'], true));
 $currentLabel = 'Menu';
-foreach ($items as &$item) {
-    $item['active'] = $currentController === $item['controller'] && (!isset($item['action']) || in_array($actionId, $item['action'], true));
-    if ($item['active']) {
+foreach ($items as $item) {
+    if ($isActive($item)) {
         $currentLabel = $item['label'];
     }
 }
-unset($item);
 ?>
 
 <div class="account-sidebar card shadow-sm border-0">
@@ -41,7 +40,7 @@ unset($item);
     </div>
     <div id="account-menu" class="card-body collapse d-lg-block">
         <?php foreach ($items as $item): ?>
-            <a href="<?= Url::to($item['url']) ?>" class="list-group-item list-group-item-action d-flex align-items-center <?= $item['active'] ? 'active' : '' ?>">
+            <a href="<?= Url::to($item['url']) ?>" class="list-group-item list-group-item-action d-flex align-items-center <?= $isActive($item) ? 'active' : '' ?>">
                 <i class="<?= $item['icon'] ?> fa-fw me-2"></i>
                 <span><?= Html::encode($item['label']) ?></span>
                 <?php if ($item['controller'] === 'notification' && !empty($unreadNotifications)): ?>

@@ -23,7 +23,7 @@ $this->title = 'Miracle Web Technologies | Enterprise Infrastructure & Premium C
             </p>
             <div class="d-flex justify-content-center gap-3 flex-wrap pt-2">
                 <!-- 💡 FIXED BUTTON CONTRAST: Forced crisp white text over your brand cyan background -->
-                <?= Html::a('Request Systems Audit ⚡', ['site/contact'], [
+                <?= Html::a('Request Systems Audit ⚡', ['site/audit'], [
                     'class' => 'btn btn-lg px-4 py-3 fw-bold shadow-sm text-white',
                     'style' => 'background-color: #00a3e0 !important; border: none !important; min-width: 240px; border-radius: 0.5rem; color: #ffffff !important;'
                 ]) ?>

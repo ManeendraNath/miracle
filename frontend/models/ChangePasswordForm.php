@@ -24,7 +24,7 @@ final class ChangePasswordForm extends Model
             [['currentPassword', 'newPassword', 'confirmPassword'], 'required'],
             ['currentPassword', 'validateCurrentPassword'],
             ['newPassword', 'string', 'min' => 8, 'max' => 255],
-            ['newPassword', 'match', 'pattern' => '/^(?=.*[A-Za-z])(?=.*\d).{8,}$/', 'message' => 'Password must contain at least 8 characters including a letter and a number.'],
+            ['newPassword', 'match', 'pattern' => \common\models\User::PASSWORD_PATTERN, 'message' => \common\models\User::PASSWORD_MESSAGE],
             ['confirmPassword', 'compare', 'compareAttribute' => 'newPassword', 'message' => 'The password confirmation does not match.'],
         ];
     }

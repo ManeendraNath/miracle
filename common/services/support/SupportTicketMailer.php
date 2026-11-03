@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace common\services\support;
 
 use common\models\SupportTicket;
+use common\models\CustomerPreference;
 use Yii;
 
 final class SupportTicketMailer
@@ -21,17 +22,26 @@ final class SupportTicketMailer
 
     public static function adminReply(SupportTicket $ticket): void
     {
-        self::send($ticket, 'support-ticket-admin-reply', $ticket->user->email, '[Ticket #%s Support Team Replied]');
+        self::sendToCustomer($ticket, 'support-ticket-admin-reply', '[Ticket #%s Support Team Replied]');
     }
 
     public static function ticketResolved(SupportTicket $ticket): void
     {
-        self::send($ticket, 'support-ticket-resolved', $ticket->user->email, '[Ticket #%s Support Request Resolved]');
+        self::sendToCustomer($ticket, 'support-ticket-resolved', '[Ticket #%s Support Request Resolved]');
     }
 
     public static function ticketClosed(SupportTicket $ticket): void
     {
-        self::send($ticket, 'support-ticket-closed', $ticket->user->email, '[Ticket #%s Support Request Closed]');
+        self::sendToCustomer($ticket, 'support-ticket-closed', '[Ticket #%s Support Request Closed]');
+    }
+
+    /** Customer-bound updates honour the "Support request updates" preference. */
+    private static function sendToCustomer(SupportTicket $ticket, string $view, string $subject): void
+    {
+        if (!(bool) CustomerPreference::forUser((int) $ticket->user_id)->support_notifications) {
+            return;
+        }
+        self::send($ticket, $view, (string) $ticket->user->email, $subject);
     }
 
     /**

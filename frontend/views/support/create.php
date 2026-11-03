@@ -52,6 +52,8 @@ $this->params['breadcrumbs'][] = $this->title;
 <?php
 $this->registerJs('
     const services = ' . Json::htmlEncode($services) . ';
+    // Re-select the posted service after a validation error (the list is rebuilt below).
+    let selectedService = ' . Json::htmlEncode((string) $model->service_id) . ';
     $("#service-type").on("change", function () {
         const type = $(this).val();
         const serviceSelect = $("#service-id");
@@ -66,6 +68,8 @@ $this->registerJs('
                 serviceSelect.append($("<option>").val(id).text(label));
             }
         );
+        serviceSelect.val(selectedService);
+        selectedService = "";
     });
     $("#service-type").trigger("change");
 ');

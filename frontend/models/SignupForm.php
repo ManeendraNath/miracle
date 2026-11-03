@@ -17,6 +17,8 @@ class SignupForm extends Model
     public string $username = '';
     public string $email = '';
     public string $password = '';
+    /** Set by signup(): false when the account was created but the verification email failed. */
+    public bool $verificationEmailSent = false;
     /**
      * {@inheritdoc}
      */
@@ -36,6 +38,7 @@ class SignupForm extends Model
 
             ['password', 'required'],
             ['password', 'string', 'min' => Yii::$app->params['user.passwordMinLength']],
+            ['password', 'match', 'pattern' => \common\models\User::PASSWORD_PATTERN, 'message' => \common\models\User::PASSWORD_MESSAGE],
         ];
     }
 
@@ -66,7 +69,13 @@ class SignupForm extends Model
             $this->addErrors($user->getErrors());
             return null;
         }
-        return $this->sendEmail($mailer, $user, $supportEmail, $appName);
+        // The account exists now: a mail failure must not 500 (resubmitting would say "already taken").
+        try {
+            $this->verificationEmailSent = $this->sendEmail($mailer, $user, $supportEmail, $appName);
+        } catch (\Throwable $e) {
+            \Yii::error(['message' => 'Signup verification email failed.', 'userId' => (int) $user->id, 'error' => $e->getMessage()], __METHOD__);
+        }
+        return true;
     }
 
     /**

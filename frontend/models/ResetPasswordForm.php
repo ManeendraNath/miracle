@@ -43,6 +43,7 @@ class ResetPasswordForm extends Model
         return [
             ['password', 'required'],
             ['password', 'string', 'min' => Yii::$app->params['user.passwordMinLength']],
+            ['password', 'match', 'pattern' => \common\models\User::PASSWORD_PATTERN, 'message' => \common\models\User::PASSWORD_MESSAGE],
         ];
     }
 

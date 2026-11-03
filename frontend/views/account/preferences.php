@@ -24,7 +24,7 @@ $form = ActiveForm::begin();
             <div class="card-body p-4">
                 <?= $form->field($model, 'renewal_reminders')->checkbox(['label' => 'Renewal reminders', 'switch' => true]) ?>
                 <?= $form->field($model, 'payment_reminders')->checkbox(['label' => 'Payment reminders', 'switch' => true]) ?>
-                <?= $form->field($model, 'service_expiry_notifications')->checkbox(['label' => 'Service expiry notifications', 'switch' => true]) ?>
+                <?php // service_expiry_notifications isn't offered: no message uses it yet (renewal reminders cover expiry). ?>
                 <?= $form->field($model, 'support_notifications')->checkbox(['label' => 'Support request updates', 'switch' => true]) ?>
 
                 <div class="alert alert-light border d-flex gap-2 mb-0">

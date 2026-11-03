@@ -33,6 +33,10 @@ class User extends base\User implements IdentityInterface
     /**
      * {@inheritdoc}
      */
+    /** Customer password rule for signup, reset and change-password (one rule everywhere). */
+    public const PASSWORD_PATTERN = '/^(?=.*[A-Za-z])(?=.*\d).{8,}$/';
+    public const PASSWORD_MESSAGE = 'Password must contain at least 8 characters including a letter and a number.';
+
     #[\Override]
     public function rules(): array
     {

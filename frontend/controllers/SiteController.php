@@ -236,6 +236,10 @@ class SiteController extends Controller
             Yii::$app->name,
         );
 
+        if ($signed && !$model->verificationEmailSent) {
+            Yii::$app->session->setFlash('warning', 'Your account was created, but we could not send the verification email. Please use "Resend verification email" in a few minutes.');
+            return $this->redirect(['resend-verification-email']);
+        }
         if ($signed) {
             Yii::$app->session->setFlash('success', 'Thank you for registration. Please check your inbox for verification email.');
             return $this->goHome();
@@ -256,11 +260,17 @@ class SiteController extends Controller
         $model = new PasswordResetRequestForm();
 
         if ($model->load(Yii::$app->request->post()) && $model->validate()) {
-            $sent = $model->sendEmail(
-                $this->mailer,
-                Yii::$app->params['supportEmail'],
-                Yii::$app->name,
-            );
+            try {
+                $sent = $model->sendEmail(
+                    $this->mailer,
+                    Yii::$app->params['supportEmail'],
+                    Yii::$app->name,
+                );
+            } catch (\Throwable $e) {
+                // Mail outage: answered like any other unsent email below.
+                Yii::error(['message' => 'Account email failed.', 'error' => $e->getMessage()], __METHOD__);
+                $sent = false;
+            }
 
             if ($sent) {
                 Yii::$app->session->setFlash('success', 'Check your email for further instructions.');
@@ -339,11 +349,17 @@ class SiteController extends Controller
         $model = new ResendVerificationEmailForm();
 
         if ($model->load(Yii::$app->request->post()) && $model->validate()) {
-            $sent = $model->sendEmail(
-                $this->mailer,
-                Yii::$app->params['supportEmail'],
-                Yii::$app->name,
-            );
+            try {
+                $sent = $model->sendEmail(
+                    $this->mailer,
+                    Yii::$app->params['supportEmail'],
+                    Yii::$app->name,
+                );
+            } catch (\Throwable $e) {
+                // Mail outage: answered like any other unsent email below.
+                Yii::error(['message' => 'Account email failed.', 'error' => $e->getMessage()], __METHOD__);
+                $sent = false;
+            }
 
             if ($sent) {
                 Yii::$app->session->setFlash('success', 'Check your email for further instructions.');

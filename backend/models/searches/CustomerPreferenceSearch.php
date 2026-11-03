@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace backend\models\searches;
 
+use common\helpers\GridPaginationHelper;
 use common\models\CustomerPreference;
 use yii\data\ActiveDataProvider;
 
@@ -32,7 +33,7 @@ final class CustomerPreferenceSearch extends CustomerPreference
         $dataProvider = new ActiveDataProvider([
             'query' => $query,
             'pagination' => [
-                'pageSize' => 20,
+                'pageSize' => GridPaginationHelper::getPageSize(),
             ],
             'sort' => [
                 'defaultOrder' => [

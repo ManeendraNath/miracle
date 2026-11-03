@@ -3,6 +3,8 @@
 use common\helpers\AdminIndexHelper;
 use common\helpers\GridActionHelper;
 use common\helpers\GridFilterHelper;
+use common\helpers\GridPaginationHelper;
+use common\helpers\GridViewHelper;
 use common\models\User;
 use yii\grid\GridView;
 use yii\helpers\Html;
@@ -10,19 +12,23 @@ use yii\helpers\Html;
 /** @var yii\web\View $this */
 /** @var common\models\UserSearch $searchModel */
 /** @var yii\data\ActiveDataProvider $dataProvider */
-$this->title = 'Client Users Directory';
+$this->title = 'Users';
 $this->params['breadcrumbs'][] = $this->title;
+
+GridViewHelper::register($this);
 ?>
 <div class="user-index card card-outline card-primary shadow-sm">
     <?= AdminIndexHelper::pageHeader('Review, filter and manage customer accounts.', 'create', 'Add New Client') ?>
-    <div class="card-body">
+    <div class="card-body p-0">
 
     <?=
     GridView::widget([
         'dataProvider' => $dataProvider,
         'filterModel' => $searchModel, // Enables column data filters row
-        'tableOptions' => ['class' => 'table table-striped table-hover align-middle border'],
-        'summaryOptions' => ['class' => 'text-muted small mb-3'],
+        'layout' => GridPaginationHelper::gridLayout(),
+        'tableOptions' => ['class' => 'table table-striped table-hover align-middle mb-0'],
+        'summaryOptions' => ['class' => 'text-muted small mb-0'],
+        'filterRowOptions' => ['class' => 'bg-light'],
         'columns' => [
             [
                 'class' => 'yii\grid\SerialColumn',

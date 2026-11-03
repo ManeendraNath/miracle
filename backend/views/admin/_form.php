@@ -8,11 +8,7 @@ use yii\widgets\ActiveForm;
 /** @var common\models\Admin $model */
 /** @var yii\widgets\ActiveForm $form */
 
-$roles = [
-    Admin::getRoleSuperAdmin() => Admin::getRoleSuperAdmin(),
-    Admin::getRoleAdmin() => Admin::getRoleAdmin(),
-    Admin::getRoleManager() => Admin::getRoleManager(),
-];
+$roles = Admin::getRoles();
 ?>
 
 <div class="admin-form">

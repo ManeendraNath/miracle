@@ -27,6 +27,9 @@ GridViewHelper::register($this);
                 'dataProvider' => $dataProvider,
                 'filterModel' => $searchModel,
                 'layout' => GridPaginationHelper::gridLayout(),
+                'summaryOptions' => [
+                    'class' => 'text-muted small mb-0',
+                ],
                 'tableOptions' => [
                     'class' => 'table table-hover table-striped align-middle mb-0',
                 ],

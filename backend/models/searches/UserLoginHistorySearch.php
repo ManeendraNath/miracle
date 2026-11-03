@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace backend\models\searches;
 
+use common\helpers\GridPaginationHelper;
 use common\models\UserLoginHistory;
 use common\models\traits\DateRangeSearchTrait;
 use yii\data\ActiveDataProvider;
@@ -46,7 +47,7 @@ final class UserLoginHistorySearch extends UserLoginHistory
         $dataProvider = new ActiveDataProvider([
             'query' => $query,
             'pagination' => [
-                'pageSize' => 20,
+                'pageSize' => GridPaginationHelper::getPageSize(),
             ],
             'sort' => [
                 'defaultOrder' => [

@@ -29,8 +29,6 @@ GridViewHelper::register($this);
 
         <div class="card-body p-0">
 
-            <div class="table-responsive">
-
                 <?= GridView::widget([
                     'dataProvider' => $dataProvider,
                     'filterModel' => $searchModel,
@@ -42,7 +40,7 @@ GridViewHelper::register($this);
                         'class' => 'table table-hover table-striped align-middle mb-0',
                     ],
                     'filterRowOptions' => [
-                        'class' => 'bg-dark',
+                        'class' => 'bg-light',
                     ],
                     'columns' => [
                         [
@@ -157,8 +155,6 @@ GridViewHelper::register($this);
                         ),
                     ],
                 ]) ?>
-
-            </div>
 
         </div>
 

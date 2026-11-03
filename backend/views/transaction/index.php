@@ -12,7 +12,7 @@ use yii\grid\GridView;
 /** @var yii\web\View $this */
 /** @var common\models\TransactionSearch $searchModel */
 /** @var yii\data\ActiveDataProvider $dataProvider */
-$this->title = 'Financial Transactions Ledger';
+$this->title = 'Transactions';
 $this->params['breadcrumbs'][] = $this->title;
 
 GridViewHelper::register($this);
@@ -27,8 +27,16 @@ GridViewHelper::register($this);
                 'dataProvider' => $dataProvider,
                 'filterModel' => $searchModel,
                 'layout' => GridPaginationHelper::gridLayout(),
+                'summaryOptions' => ['class' => 'text-muted small mb-0'],
                 'tableOptions' => ['class' => 'table table-striped table-hover align-middle mb-0 text-center'],
+                'filterRowOptions' => ['class' => 'bg-light'],
                 'columns' => [
+                    [
+                        'class' => 'yii\grid\SerialColumn',
+                        'header' => '#',
+                        'headerOptions' => ['style' => 'width: 60px;', 'class' => 'text-center'],
+                        'contentOptions' => ['class' => 'text-center text-muted'],
+                    ],
                     [
                         'attribute' => 'id',
                         'headerOptions' => ['style' => 'width: 80px;'],
@@ -47,13 +55,15 @@ GridViewHelper::register($this);
                     [
                         'attribute' => 'gateway_id',
                         'label' => 'Method',
-                        'filter' => GridFilterHelper::select2($searchModel, 'gateway_id', [1 => 'Razorpay', 2 => 'Manual UPI / Bank'], 'All Methods'),
+                        'filter' => GridFilterHelper::select2($searchModel, 'gateway_id', Transaction::getGateways(), 'All Methods'),
                         'format' => 'raw',
-                        'value' => function ($model) {
-                            if ((int) $model->gateway_id === Transaction::GATEWAY_UPI_BANK) {
-                                return Html::tag('span', '<i class="fas fa-university me-1"></i> Manual UPI', ['class' => 'badge bg-info text-white px-2 py-1']);
-                            }
-                            return Html::tag('span', '<i class="fas fa-credit-card me-1"></i> Razorpay', ['class' => 'badge bg-dark text-white px-2 py-1']);
+                        'value' => static function (Transaction $model): string {
+                            [$icon, $class] = match ((int) $model->gateway_id) {
+                                Transaction::GATEWAY_RAZORPAY => ['fa-credit-card', 'bg-dark'],
+                                Transaction::GATEWAY_UPI_BANK => ['fa-university', 'bg-info'],
+                                default => ['fa-hand-holding-usd', 'bg-secondary'],
+                            };
+                            return Html::tag('span', '<i class="fas ' . $icon . ' me-1"></i> ' . Html::encode($model->gatewayLabel), ['class' => 'badge ' . $class . ' text-white px-2 py-1']);
                         },
                     ],
                     [
@@ -68,8 +78,8 @@ GridViewHelper::register($this);
                     [
                         'attribute' => 'amount',
                         'format' => 'raw',
-                        'value' => function ($model) {
-                            return Html::tag('span', '₹' . number_format($model->amount, 2), ['class' => 'fw-bold text-success']);
+                        'value' => static function (Transaction $model): string {
+                            return Html::tag('span', Yii::$app->formatter->asCurrency($model->amount, 'INR'), ['class' => 'fw-bold text-success']);
                         },
                     ],
                     [
@@ -77,26 +87,22 @@ GridViewHelper::register($this);
                         'format' => 'raw',
                         'headerOptions' => ['style' => 'width: 160px;', 'class' => 'text-primary'],
                         'value' => static function (Transaction $model): string {
-                            $status = strtolower((string) $model->status);
-                            $badge = match ($status) {
-                                'captured',
-                                'success' => 'bg-success',
-                                'pending' => 'bg-warning text-dark',
-                                'failed' => 'bg-danger',
+                            $badge = match ($model->status) {
+                                Transaction::STATUS_CAPTURED => 'bg-success',
+                                Transaction::STATUS_PENDING => 'bg-warning text-dark',
+                                Transaction::STATUS_AUTHORIZED => 'bg-info text-dark',
+                                Transaction::STATUS_FAILED => 'bg-danger',
+                                Transaction::STATUS_REFUNDED => 'bg-dark',
                                 default => 'bg-secondary',
                             };
-                            return Html::tag('span', Html::encode($model->status), ['class' => 'badge ' . $badge . ' px-2 py-1']);
+                            return Html::tag('span', Html::encode(Transaction::optsStatus()[$model->status] ?? $model->status), ['class' => 'badge ' . $badge . ' px-2 py-1']);
                         },
-                        'filter' => GridFilterHelper::select2($searchModel, 'status', [
-                            'Pending' => 'Pending',
-                            'Captured' => 'Captured',
-                            'Failed' => 'Failed',
-                                ], 'All Statuses'),
+                        'filter' => GridFilterHelper::select2($searchModel, 'status', Transaction::optsStatus(), 'All Statuses'),
                     ],
                     [
                         'attribute' => 'created_at',
                         'label' => 'Date Added',
-                        'format' => ['date', 'php:Y-m-d H:i'],
+                        'format' => ['datetime', 'php:d M Y, h:i A'],
                     ],
                     [
                         'attribute' => 'date_range',

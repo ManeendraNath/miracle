@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace backend\models\searches;
 
+use common\helpers\GridPaginationHelper;
 use common\models\SupportTicket;
 use yii\base\Model;
 use yii\data\ActiveDataProvider;
@@ -22,7 +23,7 @@ final class SupportTicketSearch extends SupportTicket
         $dataProvider = new ActiveDataProvider([
             'query' => $query,
             'pagination' => [
-                'pageSize' => 20,
+                'pageSize' => GridPaginationHelper::getPageSize(),
             ],
             'sort' => [
                 'defaultOrder' => [

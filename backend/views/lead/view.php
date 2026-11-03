@@ -33,8 +33,14 @@ if (BaseController::canAccess(Yii::$app->user->identity, 'lead', 'update')) {
                         'format' => 'raw',
                         'value' => Html::tag('span', Html::encode($model->status), ['class' => 'badge bg-secondary']),
                     ],
-                    'created_at:datetime',
-                    'updated_at:datetime',
+                    [
+                        'attribute' => 'created_at',
+                        'format' => ['datetime', 'php:d M Y, h:i A'],
+                    ],
+                    [
+                        'attribute' => 'updated_at',
+                        'format' => ['datetime', 'php:d M Y, h:i A'],
+                    ],
                 ],
             ]) ?>
         </div>

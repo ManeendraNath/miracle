@@ -2,6 +2,7 @@
 
 namespace backend\models\searches;
 
+use common\helpers\GridPaginationHelper;
 use yii\base\Model;
 use yii\data\ActiveDataProvider;
 use common\models\Transaction;
@@ -54,6 +55,9 @@ class TransactionSearch extends Transaction
 
         $dataProvider = new ActiveDataProvider([
             'query' => $query,
+            'pagination' => [
+                'pageSize' => GridPaginationHelper::getPageSize(),
+            ],
         ]);
 
         $this->load($params, $formName);
@@ -65,10 +69,16 @@ class TransactionSearch extends Transaction
         }
 
         // grid filtering conditions
+        $gatewayId = $this->gateway_id;
+        if ((string) $gatewayId === (string) Transaction::GATEWAY_MANUAL) {
+            // Manual entries are stored as 0 or NULL.
+            $query->andWhere(['or', ['gateway_id' => Transaction::GATEWAY_MANUAL], ['gateway_id' => null]]);
+            $gatewayId = null;
+        }
         $query->andFilterWhere([
             'id' => $this->id,
             'invoice_id' => $this->invoice_id,
-            'gateway_id' => $this->gateway_id,
+            'gateway_id' => $gatewayId,
             'amount' => $this->amount,
             'gateway_fee' => $this->gateway_fee,
             'paid_at' => $this->paid_at,

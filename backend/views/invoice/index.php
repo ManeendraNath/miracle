@@ -194,7 +194,11 @@ GridViewHelper::register($this);
                                 return ['view', 'number' => $model->invoice_number];
                             }
                                 return [$action, 'id' => $model->id];
-                        }
+                        },
+                        // Same rule as the Update button on the view page.
+                        visibleButtons: [
+                            'update' => static fn (Invoice $model): bool => $model->status === Invoice::STATUS_UNPAID,
+                        ],
                     ),
                 ],
             ])

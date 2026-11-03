@@ -13,59 +13,31 @@ use yii\helpers\Html;
 /** @var float $capturedAmount */
 /** @var float $outstandingAmount */
 $this->title = 'Invoice #' . $model->invoice_number;
+$this->params['breadcrumbs'][] = ['label' => 'Invoices', 'url' => ['index']];
+$this->params['breadcrumbs'][] = $this->title;
+$this->params['subtitle'] = 'Review client billing metrics or compile print configurations';
+$this->params['actions'] = [Html::a('<i class="fas fa-arrow-left me-1"></i> Back', ['index'], ['class' => 'btn btn-light border'])];
+if ($model->status === Invoice::STATUS_UNPAID) {
+    $this->params['actions'][] = Html::a('<i class="fas fa-edit me-1"></i> Update', ['update', 'id' => $model->id], ['class' => 'btn btn-primary']);
+    $this->params['actions'][] = Html::a('<i class="fas fa-ban me-1"></i> Cancel Invoice', ['cancel', 'id' => $model->id], [
+        'class' => 'btn btn-outline-danger',
+        'data' => [
+            'confirm' => 'Are you sure you want to cancel this invoice?',
+            'method' => 'post',
+        ],
+    ]);
+    $this->params['actions'][] = Html::a('Resend Invoice', ['resend-invoice', 'id' => $model->id], [
+        'class' => 'btn btn-outline-primary',
+        'data' => [
+            'method' => 'post',
+            'confirm' => 'Send this invoice to the customer again?',
+        ],
+    ]);
+}
+$this->params['actions'][] = Html::button('<i class="fas fa-print me-1"></i> Print / Save PDF', ['class' => 'btn btn-outline-secondary', 'onclick' => 'window.print();']);
 ?>
 
 <div class="container-fluid py-4">
-    <!-- Invoice Control Panel Header Card -->
-    <div class="card card-outline card-success shadow no-print mb-4">
-        <div class="card-body d-flex justify-content-between align-items-center">
-            <div>
-                <h4 class="m-0 fw-bold text-dark"><i class="fas fa-file-invoice text-success me-2"></i> Invoice Ledger Record</h4>
-                <small class="text-muted">Review client billing metrics or compile print configurations</small>
-            </div>
-            <div class="d-flex flex-wrap gap-2">
-
-                <?=
-                Html::a(
-                    '<i class="fas fa-arrow-left me-1"></i> Back to Grid',
-                    ['index'],
-                    ['class' => 'btn btn-sm btn-secondary']
-                )
-                ?>
-                <?php if ($model->status === Invoice::STATUS_UNPAID): ?>
-                    <?= Html::a('<i class="fas fa-edit me-1"></i> Update', ['update', 'id' => $model->id], ['class' => 'btn btn-sm btn-outline-primary']) ?>
-
-                    <?=
-                    Html::a(
-                        '<i class="fas fa-ban me-1"></i> Cancel Invoice',
-                        ['cancel', 'id' => $model->id],
-                        [
-                                'class' => 'btn btn-sm btn-outline-danger',
-                                'data' => [
-                                    'confirm' => 'Are you sure you want to cancel this invoice?',
-                                    'method' => 'post',
-                                ],
-                            ]
-                    )
-                    ?>
-                    <?=
-                    Html::a(
-                        'Resend Invoice',
-                        ['resend-invoice', 'id' => $model->id],
-                        [
-                                'class' => 'btn btn-sm btn-outline-primary',
-                                'data' => [
-                                    'method' => 'post',
-                                    'confirm' => 'Send this invoice to the customer again?',
-                                ],
-                            ]
-                    )
-                    ?>
-                <?php endif; ?>
-                <button type="button" onclick="window.print();" class="btn btn-sm btn-primary"><i class="fas fa-print me-1"></i> Print / Save PDF</button>
-            </div>
-        </div>
-    </div>
     <?= $this->render('_invoice_content', ['model' => $model, 'capturedAmount' => $capturedAmount, 'outstandingAmount' => $outstandingAmount]) ?>
 
     <?php
@@ -109,7 +81,7 @@ $this->title = 'Invoice #' . $model->invoice_number;
 <!-- NATIVE CSS MEDIA PRINT OVERRIDES OVERLAY STYLE RULES -->
 <style>
     @media print {
-        .no-print, .main-footer, .brand-link, .main-header, .sidebar, .nav {
+        .no-print, .content-header, .main-footer, .brand-link, .main-header, .sidebar, .nav {
             display: none !important;
         }
         .content-wrapper {

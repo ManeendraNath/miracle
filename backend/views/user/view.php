@@ -1,5 +1,6 @@
 <?php
 
+use backend\controllers\BaseController;
 use common\models\User;
 use yii\helpers\Html;
 use yii\widgets\DetailView;
@@ -45,8 +46,10 @@ $this->params['subtitle'] = 'User account details';
 $this->params['actions'] = [
     Html::a('<i class="fas fa-arrow-left me-1"></i> Back', ['index'], ['class' => 'btn btn-light border']),
     Html::a('<i class="fas fa-edit me-1"></i> Update', ['update', 'id' => $model->id], ['class' => 'btn btn-primary']),
-    Html::a('<i class="fas fa-shield-alt me-1"></i> Login History', ['/user-login-history/index', 'UserLoginHistorySearch' => ['user_id' => $model->id]], ['class' => 'btn btn-outline-secondary']),
 ];
+if (BaseController::canAccess(Yii::$app->user->identity, 'user-login-history')) {
+    $this->params['actions'][] = Html::a('<i class="fas fa-shield-alt me-1"></i> Login History', ['/user-login-history/index', 'UserLoginHistorySearch' => ['user_id' => $model->id]], ['class' => 'btn btn-outline-secondary']);
+}
 ?>
 
 <div class="user-view">

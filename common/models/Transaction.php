@@ -34,6 +34,25 @@ class Transaction extends base\Transaction
     /** Marks a Razorpay capture that could not be applied (invoice no longer payable). */
     public const UNAPPLIED_NOTE_PREFIX = 'UNAPPLIED:';
 
+    /**
+     * gateway_id => label. A null gateway_id is Manual too.
+     *
+     * @return array<int, string>
+     */
+    public static function getGateways(): array
+    {
+        return [
+            self::GATEWAY_MANUAL => 'Manual / Admin Credit',
+            self::GATEWAY_RAZORPAY => 'Razorpay (Automated)',
+            self::GATEWAY_UPI_BANK => 'Manual UPI / Bank Transfer',
+        ];
+    }
+
+    public function getGatewayLabel(): string
+    {
+        return self::getGateways()[(int) $this->gateway_id] ?? self::getGateways()[self::GATEWAY_MANUAL];
+    }
+
     /** Captured but kept off the invoice: an admin must refund or apply it. */
     public function isUnapplied(): bool
     {

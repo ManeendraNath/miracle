@@ -7,6 +7,7 @@ use yii\bootstrap5\Html;
 /** @var common\models\SiteSetting $model */
 
 $this->title = 'Global Systems Branding Settings';
+$this->params['breadcrumbs'][] = $this->title;
 ?>
 <div class="setting-index">
     
@@ -34,10 +35,10 @@ $this->title = 'Global Systems Branding Settings';
         <h4 class="fw-bold mt-3 mb-3 text-dark border-bottom pb-2" style="font-size: 1.1rem; color: #0f172a;">📞 Support & Communication Links</h4>
         <div class="row">
             <div class="col-md-6 mb-3">
-                <?= $form->field($model, 'mobile_1')->textInput(['class' => 'form-control py-2', 'type' => 'number', 'placeholder' => 'Primary Number']) ?>
+                <?= $form->field($model, 'mobile_1')->textInput(['class' => 'form-control py-2', 'type' => 'tel', 'placeholder' => 'Primary Number']) ?>
             </div>
             <div class="col-md-6 mb-3">
-                <?= $form->field($model, 'mobile_2')->textInput(['class' => 'form-control py-2', 'type' => 'number', 'placeholder' => 'Alternative Number (Optional)']) ?>
+                <?= $form->field($model, 'mobile_2')->textInput(['class' => 'form-control py-2', 'type' => 'tel', 'placeholder' => 'Alternative Number (Optional)']) ?>
             </div>
         </div>
         <div class="row">

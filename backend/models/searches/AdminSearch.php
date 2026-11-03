@@ -2,6 +2,7 @@
 
 namespace backend\models\searches;
 
+use common\helpers\GridPaginationHelper;
 use yii\base\Model;
 use yii\data\ActiveDataProvider;
 use common\models\Admin;
@@ -47,6 +48,9 @@ class AdminSearch extends Admin
 
         $dataProvider = new ActiveDataProvider([
             'query' => $query,
+            'pagination' => [
+                'pageSize' => GridPaginationHelper::getPageSize(),
+            ],
         ]);
 
         $this->load($params, $formName);
@@ -66,7 +70,7 @@ class AdminSearch extends Admin
 
         $query->andFilterWhere(['like', 'username', $this->username])
             ->andFilterWhere(['like', 'email', $this->email])
-            ->andFilterWhere(['like', 'role', $this->role]);
+            ->andFilterWhere(['role' => $this->role]); // exact: 'like' would match Superadmin for Admin
 
         return $dataProvider;
     }

@@ -6,6 +6,7 @@ use backend\models\searches\UserLoginHistorySearch;
 use common\helpers\GridActionHelper;
 use common\helpers\GridFilterHelper;
 use common\helpers\GridPaginationHelper;
+use common\helpers\GridViewHelper;
 use common\models\UserLoginHistory;
 use yii\data\ActiveDataProvider;
 use yii\grid\GridView;
@@ -19,6 +20,8 @@ use yii\helpers\Html;
  */
 $this->title = 'Login & Security History';
 $this->params['breadcrumbs'][] = $this->title;
+
+GridViewHelper::register($this);
 ?>
 
 <div class="user-login-history-index">
@@ -30,8 +33,6 @@ $this->params['breadcrumbs'][] = $this->title;
         ) ?>
 
         <div class="card-body p-0">
-
-            <div class="table-responsive">
 
 <?= GridView::widget([
     'dataProvider' => $dataProvider,
@@ -155,8 +156,6 @@ $this->params['breadcrumbs'][] = $this->title;
         GridActionHelper::crudColumn(template: '{view}'),
     ],
 ]) ?>
-
-            </div>
 
         </div>
 

@@ -78,9 +78,9 @@ $this->params['breadcrumbs'][] = $this->title;
                     </div>
                 </div>
                 <?php if (!$billingProfile->isForeign()): ?>
-                <?= $billingForm->field($billingProfile, 'state')->dropDownList(CustomerBillingProfile::stateOptions(), ['prompt' => 'Select state']) ?>
-                <?= $billingForm->field($billingProfile, 'gstin')->textInput(['maxlength' => 15, 'class' => 'form-control font-monospace text-uppercase'])->label('GSTIN <span class="text-body-secondary fw-normal">(optional)</span>') ?>
-                <?= $billingForm->field($billingProfile, 'pan')->textInput(['maxlength' => 10, 'class' => 'form-control font-monospace text-uppercase'])->label('PAN <span class="text-body-secondary fw-normal">(optional)</span>') ?>
+                    <?= $billingForm->field($billingProfile, 'state')->dropDownList(CustomerBillingProfile::stateOptions(), ['prompt' => 'Select state']) ?>
+                    <?= $billingForm->field($billingProfile, 'gstin')->textInput(['maxlength' => 15, 'class' => 'form-control font-monospace text-uppercase'])->label('GSTIN <span class="text-body-secondary fw-normal">(optional)</span>') ?>
+                    <?= $billingForm->field($billingProfile, 'pan')->textInput(['maxlength' => 10, 'class' => 'form-control font-monospace text-uppercase'])->label('PAN <span class="text-body-secondary fw-normal">(optional)</span>') ?>
                 <?php endif; ?>
                 <div class="form-text">Changes apply to future invoices only; invoices already issued keep the details they were issued with.</div>
             </div>

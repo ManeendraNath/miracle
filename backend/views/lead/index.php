@@ -114,6 +114,26 @@ GridViewHelper::register($this);
                         'headerOptions' => ['style' => 'min-width: 180px;'],
                     ],
                     /*
+                     * Status
+                     */
+                    [
+                        'attribute' => 'status',
+                        'label' => 'Status',
+                        'filter' => GridFilterHelper::select2(
+                            $searchModel,
+                            'status',
+                            Lead::getStatuses(),
+                            'All Statuses',
+                        ),
+                        'format' => 'raw',
+                        'value' => static function (Lead $model): string {
+                            return Html::tag('span', Html::encode(Lead::getStatuses()[$model->status] ?? $model->status ?: '-'), [
+                                'class' => 'badge bg-secondary',
+                            ]);
+                        },
+                        'headerOptions' => ['style' => 'min-width: 160px;'],
+                    ],
+                    /*
                      * Created Date
                      *
                      * created_at is a UNIX timestamp and the

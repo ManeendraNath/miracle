@@ -7,6 +7,8 @@ use common\helpers\GridFilterHelper;
 use yii\grid\GridView;
 use common\helpers\AdminIndexHelper;
 use common\helpers\GridActionHelper;
+use common\helpers\GridPaginationHelper;
+use common\helpers\GridViewHelper;
 use yii\helpers\Html;
 
 /**
@@ -16,6 +18,8 @@ use yii\helpers\Html;
  */
 $this->title = 'Notification Preferences';
 $this->params['breadcrumbs'][] = $this->title;
+
+GridViewHelper::register($this);
 
 $booleanFilter = [
     '1' => 'Enabled',
@@ -47,12 +51,14 @@ $badge = static function ($value): string {
 
         <div class="card-body p-0">
 
-            <div class="table-responsive">
-
 <?=
 GridView::widget([
     'dataProvider' => $dataProvider,
     'filterModel' => $searchModel,
+    'layout' => GridPaginationHelper::gridLayout(),
+    'filterRowOptions' => [
+        'class' => 'bg-light',
+    ],
     'tableOptions' => [
         'class' =>
         'table table-hover '
@@ -61,12 +67,13 @@ GridView::widget([
     ],
     'summaryOptions' => [
         'class' =>
-        'text-muted small px-3 pt-3',
+        'text-muted small mb-0',
     ],
     'columns' => [
         [
             'class' =>
             'yii\grid\SerialColumn',
+            'header' => '#',
             'headerOptions' => [
                 'style' => 'width: 60px;',
             ],
@@ -211,8 +218,6 @@ GridView::widget([
     ],
 ])
 ?>
-
-            </div>
 
         </div>
 

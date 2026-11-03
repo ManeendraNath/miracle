@@ -11,64 +11,55 @@ $this->title = 'Transaction Audit: #' . $model->id;
 $this->params['breadcrumbs'][] = ['label' => 'Transactions', 'url' => ['index']];
 $this->params['breadcrumbs'][] = $this->title;
 \yii\web\YiiAsset::register($this);
+$this->params['actions'] = [Html::a('<i class="fas fa-arrow-left me-1"></i> Back', ['index'], ['class' => 'btn btn-light border'])];
+if ($model->status === Transaction::STATUS_PENDING && (int) $model->gateway_id !== Transaction::GATEWAY_RAZORPAY) {
+    $this->params['actions'][] = Html::a('<i class="fas fa-check-circle me-1"></i> Approve Payment', ['approve', 'id' => $model->id], [
+        'class' => 'btn btn-success',
+        'data' => [
+            'confirm' => 'Confirm this payment after verifying the bank / UPI transaction?',
+            'method' => 'post',
+        ],
+    ]);
+    $this->params['actions'][] = Html::a('<i class="fas fa-times-circle me-1"></i> Reject / Fail', ['reject', 'id' => $model->id], [
+        'class' => 'btn btn-danger',
+        'data' => [
+            'confirm' => 'Reject this submitted payment proof?',
+            'method' => 'post',
+        ],
+    ]);
+}
+if ($model->status === Transaction::STATUS_CAPTURED) {
+    $this->params['actions'][] = Html::a('<i class="fas fa-undo me-1"></i> Refund &amp; Close Invoice', ['refund', 'id' => $model->id], [
+        'class' => 'btn btn-outline-danger',
+        'title' => 'The service is cancelled: nothing more is owed on this invoice.',
+        'data' => [
+            'confirm' => "Only do this after the money has been returned (Razorpay dashboard or bank).\n\nThe invoice is closed as Refunded: no reminders, not billed again. Renewals already granted are NOT reversed: disable the service if needed.",
+            'method' => 'post',
+            'params' => ['close_invoice' => 1],
+        ],
+    ]);
+    $this->params['actions'][] = Html::a('<i class="fas fa-undo me-1"></i> Refund (Still Owed)', ['refund', 'id' => $model->id], [
+        'class' => 'btn btn-outline-secondary',
+        'title' => 'E.g. a wrong payment was returned: the customer still has to pay this invoice.',
+        'data' => [
+            'confirm' => "Only do this after the money has been returned (Razorpay dashboard or bank).\n\nThe invoice balance becomes due again and the customer can pay it.",
+            'method' => 'post',
+        ],
+    ]);
+}
 ?>
 <div class="transaction-view container-fluid pt-3">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <div class="action-buttons">
-            <?php if ($model->status === Transaction::STATUS_PENDING && (int) $model->gateway_id !== Transaction::GATEWAY_RAZORPAY): ?>
-                <?=
-                Html::a('<i class="fas fa-check-circle me-1"></i> Approve Payment', ['approve', 'id' => $model->id], [
-                    'class' => 'btn btn-sm btn-success px-3 me-2',
-                    'data' => [
-                        'confirm' => 'Confirm this payment after verifying the bank / UPI transaction?',
-                        'method' => 'post',
-                    ],
-                ])
-                ?>
-                <?=
-                Html::a('<i class="fas fa-times-circle me-1"></i> Reject / Fail', ['reject', 'id' => $model->id], [
-                    'class' => 'btn btn-sm btn-danger px-3',
-                    'data' => [
-                        'confirm' => 'Reject this submitted payment proof?',
-                        'method' => 'post',
-                    ],
-                ])
-                ?>
-                <?php if (!empty($model->payment_receipt_file)): ?>
-                    <div class="card shadow-sm mt-4">
-                        <div class="card-header">
-                            <strong>Payment Proof</strong>
-                        </div>
-                        <div class="card-body">
-                            <?= Html::a('View Receipt', ['receipt', 'id' => $model->id], ['class' => 'btn btn-sm btn-outline-primary', 'target' => '_blank']) ?>
-                        </div>
-                    </div>
-                <?php endif; ?>
-            <?php endif; ?>
-            <?php if ($model->status === Transaction::STATUS_CAPTURED): ?>
-                <?=
-                Html::a('<i class="fas fa-undo me-1"></i> Refund &amp; Close Invoice', ['refund', 'id' => $model->id], [
-                    'class' => 'btn btn-sm btn-outline-danger px-3 me-2',
-                    'title' => 'The service is cancelled: nothing more is owed on this invoice.',
-                    'data' => [
-                        'confirm' => "Only do this after the money has been returned (Razorpay dashboard or bank).\n\nThe invoice is closed as Refunded: no reminders, not billed again. Renewals already granted are NOT reversed: disable the service if needed.",
-                        'method' => 'post',
-                        'params' => ['close_invoice' => 1],
-                    ],
-                ])
-                ?>
-                <?=
-                Html::a('<i class="fas fa-undo me-1"></i> Refund (Still Owed)', ['refund', 'id' => $model->id], [
-                    'class' => 'btn btn-sm btn-outline-secondary px-3',
-                    'title' => 'E.g. a wrong payment was returned: the customer still has to pay this invoice.',
-                    'data' => [
-                        'confirm' => "Only do this after the money has been returned (Razorpay dashboard or bank).\n\nThe invoice balance becomes due again and the customer can pay it.",
-                        'method' => 'post',
-                    ],
-                ])
-                ?>
-            <?php endif; ?>
-        </div>
+    <div class="mb-4">
+        <?php if ($model->status === Transaction::STATUS_PENDING && (int) $model->gateway_id !== Transaction::GATEWAY_RAZORPAY && !empty($model->payment_receipt_file)): ?>
+            <div class="card shadow-sm mb-4">
+                <div class="card-header">
+                    <strong>Payment Proof</strong>
+                </div>
+                <div class="card-body">
+                    <?= Html::a('View Receipt', ['receipt', 'id' => $model->id], ['class' => 'btn btn-sm btn-outline-primary', 'target' => '_blank']) ?>
+                </div>
+            </div>
+        <?php endif; ?>
         <div class="card card-outline card-primary mb-8">
             <div class="card-header">
                 <h3 class="card-title">Invoice Information</h3>
@@ -120,10 +111,7 @@ $this->params['breadcrumbs'][] = $this->title;
                             [
                                 'attribute' => 'gateway_id',
                                 'label' => 'Payment Method',
-                                'value' => function ($model) {
-                                    $map = [1 => 'Razorpay (Automated)', 2 => 'Manual UPI / Bank Transfer'];
-                                    return $map[$model->gateway_id] ?? 'Manual / Admin Credit';
-                                }
+                                'value' => $model->gatewayLabel,
                             ],
                             [
                                 'attribute' => 'gateway_payment_id',
@@ -132,27 +120,32 @@ $this->params['breadcrumbs'][] = $this->title;
                             ],
                             [
                                 'attribute' => 'amount',
-                                'value' => function ($model) {
-                                    return '₹' . number_format($model->amount, 2);
-                                }
+                                'value' => Yii::$app->formatter->asCurrency($model->amount, 'INR'),
                             ],
                             [
                                 'attribute' => 'status',
                                 'format' => 'raw',
                                 'value' => function ($model) {
-                                    $classMap = ['Pending' => 'bg-warning', 'Captured' => 'bg-success', 'Failed' => 'bg-danger'];
-                                    $class = $classMap[$model->status] ?? 'bg-secondary';
-                                    return Html::tag('span', $model->status, ['class' => "badge $class px-3 py-2 rounded-pill"]);
+                                    $class = match ($model->status) {
+                                        Transaction::STATUS_CAPTURED => 'bg-success',
+                                        Transaction::STATUS_PENDING => 'bg-warning text-dark',
+                                        Transaction::STATUS_AUTHORIZED => 'bg-info text-dark',
+                                        Transaction::STATUS_FAILED => 'bg-danger',
+                                        Transaction::STATUS_REFUNDED => 'bg-dark',
+                                        default => 'bg-secondary',
+                                    };
+                                    return Html::tag('span', Html::encode(Transaction::optsStatus()[$model->status] ?? $model->status), ['class' => "badge $class px-3 py-2 rounded-pill"]);
                                 }
                             ],
                             'user_payment_notes:ntext',
                             [
                                 'attribute' => 'paid_at',
-                                'value' => function ($model) {
-                                    return $model->paid_at ? date('Y-m-d H:i:s', $model->paid_at) : 'Not Captured';
-                                }
+                                'value' => $model->paid_at ? Yii::$app->formatter->asDatetime($model->paid_at, 'php:d M Y, h:i A') : 'Not Captured',
                             ],
-                            'created_at:datetime',
+                            [
+                                'attribute' => 'created_at',
+                                'format' => ['datetime', 'php:d M Y, h:i A'],
+                            ],
                         ],
                     ])
                     ?>

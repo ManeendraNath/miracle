@@ -147,7 +147,7 @@ GridViewHelper::register($this);
                         'label' => 'Created',
                         'filter' => GridFilterHelper::dateRange($searchModel, 'created_at_range', 'Created date'),
                         'value' => static function (AuditRequest $model): string {
-                            return Yii::$app->formatter->asDate($model->created_at, 'php:d M Y');
+                            return Yii::$app->formatter->asDatetime($model->created_at, 'php:d M Y, h:i A');
                         },
                         'headerOptions' => ['style' => 'min-width: 190px;'],
                         'contentOptions' => ['class' => 'text-nowrap'],

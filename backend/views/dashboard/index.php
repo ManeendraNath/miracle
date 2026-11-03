@@ -37,8 +37,8 @@ $kpis = [
     ['bg-info', (int) $openSupportTickets, 'Open Support Requests', 'fas fa-headset', 'Review Support', ['/support-ticket/index']],
     ['bg-danger', (int) $highPrioritySupportTickets, 'High Priority Support', 'fas fa-exclamation-triangle', 'Review Priority Tickets', ['/support-ticket/index', 'SupportTicketSearch' => ['priority' => SupportTicket::PRIORITY_HIGH]]],
     ['bg-primary', (int) $metrics['totalClients'], 'Customer Accounts', 'fas fa-users', 'Manage Clients', ['/user/index']],
-    ['bg-success', '₹' . number_format((float) $metrics['totalRevenueCollected'], 2), 'Total Revenue Settled', 'fas fa-cash-register', 'Review Paid Invoices', ['/invoice/index']],
-    ['bg-warning', '₹' . number_format((float) $metrics['unpaidBalance'], 2), 'Outstanding Due Balance', 'fas fa-comments-dollar', 'Track Accounts Due', ['/invoice/index']],
+    ['bg-success', Yii::$app->formatter->asCurrency((float) $metrics['totalRevenueCollected'], 'INR'), 'Total Revenue Settled', 'fas fa-cash-register', 'Review Paid Invoices', ['/invoice/index']],
+    ['bg-warning', Yii::$app->formatter->asCurrency((float) $metrics['unpaidBalance'], 'INR'), 'Outstanding Due Balance', 'fas fa-comments-dollar', 'Track Accounts Due', ['/invoice/index']],
     ['bg-secondary', (int) $metrics['totalInvoicesCount'], 'Invoices Generated', 'fas fa-file-invoice-dollar', 'View Billing History', ['/invoice/index']],
 ];
 // Managers don't see billing figures (they can't open those sections either).
@@ -102,7 +102,7 @@ $assets = [
                                 <td><?= Html::encode($ticket->subject) ?></td>
                                 <td><?= Html::encode(ucfirst((string) $ticket->priority)) ?></td>
                                 <td><?= Html::encode(ucwords(str_replace('_', ' ', (string) $ticket->status))) ?></td>
-                                <td class="text-nowrap"><?= Yii::$app->formatter->asDatetime($ticket->updated_at, 'php:d M Y H:i') ?></td>
+                                <td class="text-nowrap"><?= Yii::$app->formatter->asDatetime($ticket->updated_at, 'php:d M Y, h:i A') ?></td>
                                 <td class="text-right">
                                     <?= Html::a('<i class="fas fa-comments"></i>', ['/support-ticket/view', 'number' => $ticket->ticket_number], [
                                         'class' => 'btn btn-sm btn-outline-primary',
@@ -131,7 +131,7 @@ $assets = [
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center border-bottom pb-3 mb-3">
                         <div>
-                            <div class="h4 mb-0">₹<?= number_format((float) $metrics['outstandingReceivables'], 2) ?></div>
+                            <div class="h4 mb-0"><?= Yii::$app->formatter->asCurrency((float) $metrics['outstandingReceivables'], 'INR') ?></div>
                             <small class="text-muted">Total outstanding unpaid balance</small>
                         </div>
                         <div class="text-right">
@@ -198,11 +198,11 @@ $assets = [
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center border-bottom pb-3 mb-3">
                         <div>
-                            <div class="h4 mb-0">₹<?= number_format((float) $metrics['totalRevenueCollected'], 2) ?></div>
+                            <div class="h4 mb-0"><?= Yii::$app->formatter->asCurrency((float) $metrics['totalRevenueCollected'], 'INR') ?></div>
                             <small class="text-muted">Lifetime revenue from paid invoices</small>
                         </div>
                         <div class="text-right">
-                            <div class="h5 mb-0 text-success">+₹<?= number_format((float) $metrics['capturedRevenueToday'], 2) ?></div>
+                            <div class="h5 mb-0 text-success">+<?= Yii::$app->formatter->asCurrency((float) $metrics['capturedRevenueToday'], 'INR') ?></div>
                             <small class="text-muted">Settled today</small>
                         </div>
                     </div>
@@ -260,7 +260,7 @@ $assets = [
                             <?php foreach ($metrics['recentCoupon'] as $coupon): ?>
                                 <tr>
                                     <td class="font-weight-bold"><?= Html::encode($coupon->code) ?></td>
-                                    <td><?= $coupon->isTypeP() ? number_format((float) $coupon->amount, 2) . '%' : '₹' . number_format((float) $coupon->amount, 2) ?> off</td>
+                                    <td><?= $coupon->isTypeP() ? number_format((float) $coupon->amount, 2) . '%' : Yii::$app->formatter->asCurrency((float) $coupon->amount, 'INR') ?> off</td>
                                     <td class="text-center">
                                         <span class="badge <?= $coupon->isIsActiveY() ? 'badge-success' : 'badge-secondary' ?>"><?= $coupon->isIsActiveY() ? 'Active' : 'Paused' ?></span>
                                     </td>

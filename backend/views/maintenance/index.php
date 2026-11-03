@@ -13,7 +13,7 @@ use yii\grid\GridView;
 use yii\helpers\ArrayHelper;
 use yii\helpers\Html;
 
-$this->title = 'Maintenance Contracts (AMC)';
+$this->title = 'Maintenance Contracts';
 $this->params['breadcrumbs'][] = $this->title;
 
 GridViewHelper::register($this);
@@ -31,7 +31,6 @@ $users = ArrayHelper::map(User::find()->orderBy(['username' => SORT_ASC])->all()
         )
         ?>
         <div class="card-body p-0">
-            <div class="table-responsive">
                 <?=
                 GridView::widget([
                     'dataProvider' => $dataProvider,
@@ -44,7 +43,7 @@ $users = ArrayHelper::map(User::find()->orderBy(['username' => SORT_ASC])->all()
                         'class' => 'table table-hover table-striped align-middle mb-0',
                     ],
                     'filterRowOptions' => [
-                        'class' => 'bg-dark',
+                        'class' => 'bg-light',
                     ],
                     'columns' => [
                         [
@@ -198,8 +197,6 @@ $users = ArrayHelper::map(User::find()->orderBy(['username' => SORT_ASC])->all()
                     ],
                 ])
                 ?>
-
-            </div>
 
         </div>
 

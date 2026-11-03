@@ -2,6 +2,7 @@
 
 namespace backend\models\searches;
 
+use common\helpers\GridPaginationHelper;
 use yii\base\Model;
 use yii\data\ActiveDataProvider;
 use common\models\Maintenance;
@@ -52,6 +53,9 @@ class MaintenanceSearch extends Maintenance
 
         $dataProvider = new ActiveDataProvider([
             'query' => $query,
+            'pagination' => [
+                'pageSize' => GridPaginationHelper::getPageSize(),
+            ],
         ]);
 
         $this->load($params, $formName);

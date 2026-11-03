@@ -106,6 +106,20 @@ class Admin extends base\Admin implements IdentityInterface
     // ======================================================================
 
     /**
+     * Role value => label, highest first.
+     *
+     * @return array<string, string>
+     */
+    public static function getRoles(): array
+    {
+        return [
+            self::getRoleSuperAdmin() => self::getRoleSuperAdmin(),
+            self::getRoleAdmin() => self::getRoleAdmin(),
+            self::getRoleManager() => self::getRoleManager(),
+        ];
+    }
+
+    /**
      * Whether this administrator has the Superadmin role.
      */
     public function isSuperAdmin(): bool

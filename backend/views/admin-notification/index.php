@@ -2,11 +2,17 @@
 
 use common\helpers\GridActionHelper;
 use common\helpers\AdminIndexHelper;
+use common\helpers\GridPaginationHelper;
+use common\helpers\GridViewHelper;
 use yii\grid\GridView;
 use yii\helpers\Html;
 
 $this->title = 'Admin Notifications';
 $this->params['breadcrumbs'][] = $this->title;
+
+GridViewHelper::register($this);
+// No search model here: the page-size dropdown sets the size the controller's provider uses.
+$dataProvider->pagination->pageSize = GridPaginationHelper::getPageSize();
 ?>
 
 <div class="admin-notification-index">
@@ -16,7 +22,16 @@ $this->params['breadcrumbs'][] = $this->title;
             <?=
             GridView::widget([
                 'dataProvider' => $dataProvider,
+                'layout' => GridPaginationHelper::gridLayout(),
+                'summaryOptions' => ['class' => 'text-muted small mb-0'],
+                'tableOptions' => ['class' => 'table table-hover table-striped align-middle mb-0'],
                 'columns' => [
+                    [
+                        'class' => 'yii\grid\SerialColumn',
+                        'header' => '#',
+                        'headerOptions' => ['style' => 'width: 60px;', 'class' => 'text-center'],
+                        'contentOptions' => ['class' => 'text-center text-muted'],
+                    ],
                     [
                         'attribute' => 'title',
                         'format' => 'raw',
@@ -36,7 +51,7 @@ $this->params['breadcrumbs'][] = $this->title;
                     ],
                     [
                         'attribute' => 'created_at',
-                        'format' => ['datetime', 'php:d M Y h:i A'],
+                        'format' => ['datetime', 'php:d M Y, h:i A'],
                     ],
                     [
                         'attribute' => 'is_read',

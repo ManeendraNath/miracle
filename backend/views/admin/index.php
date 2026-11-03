@@ -2,6 +2,10 @@
 
 use common\helpers\GridActionHelper;
 use common\helpers\AdminIndexHelper;
+use common\helpers\GridFilterHelper;
+use common\helpers\GridPaginationHelper;
+use common\helpers\GridViewHelper;
+use common\models\Admin;
 use yii\helpers\Html;
 use yii\grid\GridView;
 use yii\helpers\Url;
@@ -12,17 +16,21 @@ use yii\helpers\Url;
 
 $this->title = 'Admins';
 $this->params['breadcrumbs'][] = $this->title;
+
+GridViewHelper::register($this);
 ?>
 <div class="admin-index card card-outline card-primary shadow-sm">
     <?= AdminIndexHelper::pageHeader('Review and manage administrator accounts.', 'create', 'Create Admin') ?>
-    <div class="card-body">
+    <div class="card-body p-0">
 
     <!-- Polished GridView containing Column-Level Input Filters -->
     <?= GridView::widget([
         'dataProvider' => $dataProvider,
         'filterModel' => $searchModel, // 🚀 THE CURE: This enables the empty filtering row input boxes shown in your image!
-        'tableOptions' => ['class' => 'table table-striped table-hover align-middle border'],
-        'summaryOptions' => ['class' => 'text-muted small mb-3'],
+        'layout' => GridPaginationHelper::gridLayout(),
+        'tableOptions' => ['class' => 'table table-striped table-hover align-middle mb-0'],
+        'summaryOptions' => ['class' => 'text-muted small mb-0'],
+        'filterRowOptions' => ['class' => 'bg-light'],
         'columns' => [
             [
                 'class' => 'yii\grid\SerialColumn',
@@ -52,6 +60,28 @@ $this->params['breadcrumbs'][] = $this->title;
                 'label' => 'Email',
                 'headerOptions' => ['class' => 'text-primary font-weight-bold'],
                 'format' => 'email',
+            ],
+            [
+                'attribute' => 'role',
+                'filter' => GridFilterHelper::select2($searchModel, 'role', Admin::getRoles(), 'All Roles'),
+                'headerOptions' => ['class' => 'text-primary font-weight-bold'],
+            ],
+            [
+                'attribute' => 'status',
+                'label' => 'Status',
+                'filter' => GridFilterHelper::select2($searchModel, 'status', Admin::getStatuses(), 'All Statuses'),
+                'headerOptions' => ['class' => 'text-primary font-weight-bold'],
+                'format' => 'raw',
+                'value' => static function (Admin $model): string {
+                    $class = match ((int) $model->status) {
+                        Admin::getStatusActive() => 'bg-success',
+                        Admin::getStatusSuspended() => 'bg-warning text-dark',
+                        Admin::getStatusDeleted() => 'bg-danger',
+                        default => 'bg-secondary',
+                    };
+
+                    return Html::tag('span', Html::encode(Admin::getStatuses()[(int) $model->status] ?? 'Unknown'), ['class' => 'badge ' . $class]);
+                },
             ],
 
             GridActionHelper::crudColumn(deleteMessage: 'Delete this administrator account?'),

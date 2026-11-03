@@ -28,8 +28,6 @@ use Yii;
  */
 class CustomerBillingProfile extends \yii\db\ActiveRecord
 {
-
-
     /**
      * {@inheritdoc}
      */
@@ -95,5 +93,4 @@ class CustomerBillingProfile extends \yii\db\ActiveRecord
     {
         return $this->hasOne(User::class, ['id' => 'user_id']);
     }
-
 }

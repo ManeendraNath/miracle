@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace backend\models\searches;
 
+use common\helpers\GridPaginationHelper;
 use common\models\traits\DateRangeSearchTrait;
 use common\models\User;
 use yii\base\Model;
@@ -70,7 +71,7 @@ class UserSearch extends User
             ],
 
             'pagination' => [
-                'pageSize' => 20,
+                'pageSize' => GridPaginationHelper::getPageSize(),
             ],
         ]);
 

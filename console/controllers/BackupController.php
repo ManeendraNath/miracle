@@ -46,6 +46,12 @@ class BackupController extends Controller
                 unlink($old);
             }
         }
+        // Leftovers of dumps killed by a fatal error (e.g. out of memory) can't delete themselves.
+        foreach (glob($backupDir . '/db_backup_*.sql.gz.part') ?: [] as $stale) {
+            if (filemtime($stale) < time() - 86400) {
+                unlink($stale);
+            }
+        }
 
         return $offsiteStatus;
     }
@@ -60,36 +66,74 @@ class BackupController extends Controller
     private function dump(string $file): void
     {
         $db = Yii::$app->db;
-        $gz = gzopen($file, 'wb6');
+        // Written under a temporary name and renamed at the end, so a dump cut short (error, fatal
+        // out-of-memory, full disk) never sits in the backup folder looking like a good one.
+        $part = $file . '.part';
+        $gz = gzopen($part, 'wb6');
         if ($gz === false) {
-            throw new \RuntimeException("cannot write {$file}");
+            throw new \RuntimeException("cannot write {$part}");
         }
+        // gzwrite() reports a full disk only through its return value; gzclose() always returns true.
+        $written = 0;
+        $write = static function (string $data) use ($gz, $part, &$written): void {
+            if ($data !== '' && gzwrite($gz, $data) !== strlen($data)) {
+                throw new \RuntimeException("cannot write {$part} (disk full?)");
+            }
+            $written += strlen($data);
+        };
         try {
-            gzwrite($gz, "SET NAMES utf8mb4;\nSET FOREIGN_KEY_CHECKS=0;\n\n");
+            $write("SET NAMES utf8mb4;\nSET FOREIGN_KEY_CHECKS=0;\n\n");
             // One snapshot for all tables, so rows written meanwhile can't half-appear.
+            // The connection defaults to READ COMMITTED (common/config/main.php); a consistent
+            // snapshot needs REPEATABLE READ for this one transaction.
+            $db->createCommand('SET TRANSACTION ISOLATION LEVEL REPEATABLE READ')->execute();
             $db->createCommand('START TRANSACTION WITH CONSISTENT SNAPSHOT')->execute();
             foreach ($db->createCommand("SHOW FULL TABLES WHERE Table_type = 'BASE TABLE'")->queryColumn() as $table) {
                 $name = $db->quoteTableName($table);
-                gzwrite($gz, "DROP TABLE IF EXISTS {$name};\n" . $db->createCommand("SHOW CREATE TABLE {$name}")->queryOne()['Create Table'] . ";\n");
+                $write("DROP TABLE IF EXISTS {$name};\n" . $db->createCommand("SHOW CREATE TABLE {$name}")->queryOne()['Create Table'] . ";\n");
+                // Generated columns (e.g. billing_event.live_slot) are left out: MySQL rejects
+                // explicit values for them, which made restores stop at that table.
+                $columns = $db->createCommand(
+                    "SELECT COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = :t AND EXTRA NOT IN ('VIRTUAL GENERATED', 'STORED GENERATED') ORDER BY ORDINAL_POSITION",
+                    [':t' => $table],
+                )->queryColumn();
+                $columnList = implode(', ', array_map([$db, 'quoteColumnName'], $columns));
+                $insert = "INSERT INTO {$name} ({$columnList}) VALUES\n";
                 $rows = [];
-                foreach ($db->createCommand("SELECT * FROM {$name}")->queryAll() as $row) {
+                foreach ($db->createCommand("SELECT {$columnList} FROM {$name}")->queryAll() as $row) {
                     $rows[] = '(' . implode(',', array_map(static fn($v): string => $v === null ? 'NULL' : $db->quoteValue((string) $v), $row)) . ')';
                     if (count($rows) === 200) {
-                        gzwrite($gz, "INSERT INTO {$name} VALUES\n" . implode(",\n", $rows) . ";\n");
+                        $write($insert . implode(",\n", $rows) . ";\n");
                         $rows = [];
                     }
                 }
                 if ($rows !== []) {
-                    gzwrite($gz, "INSERT INTO {$name} VALUES\n" . implode(",\n", $rows) . ";\n");
+                    $write($insert . implode(",\n", $rows) . ";\n");
                 }
-                gzwrite($gz, "\n");
+                $write("\n");
             }
             $db->createCommand('COMMIT')->execute();
-            gzwrite($gz, "SET FOREIGN_KEY_CHECKS=1;\n");
-        } finally {
-            if (!gzclose($gz)) {
-                throw new \RuntimeException("cannot finish writing {$file}");
-            }
+            $write("SET FOREIGN_KEY_CHECKS=1;\n");
+        } catch (\Throwable $e) {
+            gzclose($gz);
+            @unlink($part);
+            throw $e;
+        }
+        gzclose($gz);
+        // gzclose() writes the last block and the trailer but can't report failure; the trailer's
+        // last 4 bytes hold the uncompressed size, so a complete file must end with ours.
+        $handle = fopen($part, 'rb');
+        $tail = $handle !== false && fseek($handle, -4, SEEK_END) === 0 ? fread($handle, 4) : false;
+        if ($handle !== false) {
+            fclose($handle);
+        }
+        if (!is_string($tail) || strlen($tail) !== 4 || unpack('V', $tail)[1] !== ($written & 0xFFFFFFFF)) {
+            @unlink($part);
+            throw new \RuntimeException("{$part} is incomplete (disk full?)");
+        }
+        if (!rename($part, $file)) {
+            @unlink($part);
+            throw new \RuntimeException("cannot rename {$part}");
         }
     }
 

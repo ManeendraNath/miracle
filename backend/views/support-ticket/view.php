@@ -28,52 +28,17 @@ $priorityClass = match ($model->priority) {
     SupportTicket::PRIORITY_LOW => 'bg-secondary',
     default => 'bg-info text-dark',
 };
+$this->params['subtitle'] = Html::encode($model->subject);
+$this->params['actions'] = [Html::a('<i class="fas fa-arrow-left me-1"></i> Back', ['index'], ['class' => 'btn btn-light border'])];
+if ($model->status === SupportTicket::STATUS_RESOLVED || $model->status === SupportTicket::STATUS_CLOSED) {
+    $this->params['actions'][] = Html::a('Reopen', ['reopen', 'number' => $model->ticket_number], ['class' => 'btn btn-outline-primary', 'data' => ['method' => 'post', 'confirm' => 'Reopen this support request?']]);
+} else {
+    $this->params['actions'][] = Html::a('Resolve', ['resolve', 'number' => $model->ticket_number], ['class' => 'btn btn-success', 'data' => ['method' => 'post', 'confirm' => 'Mark this support request as resolved?']]);
+    $this->params['actions'][] = Html::a('Close', ['close', 'number' => $model->ticket_number], ['class' => 'btn btn-outline-danger', 'data' => ['method' => 'post', 'confirm' => 'Close this support request?']]);
+}
 ?>
 
 <div class="support-ticket-view">
-    <div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-4">
-        <div>
-            <h1 class="h3 mb-1"><?= Html::encode($model->subject) ?></h1>
-            <div class="text-muted"><?= Html::encode($model->ticket_number) ?></div>
-        </div>
-        <div class="d-flex flex-wrap gap-2">
-            <?= Html::a('Back', ['index'], ['class' => 'btn btn-sm btn-outline-secondary']) ?>&nbsp;
-            <?php if ($model->status === SupportTicket::STATUS_RESOLVED || $model->status === SupportTicket::STATUS_CLOSED): ?>
-                <?=
-                Html::a(
-                    'Reopen',
-                    ['reopen', 'number' => $model->ticket_number],
-                    [
-                            'class' => 'btn btn-sm btn-outline-primary',
-                            'data' => ['method' => 'post', 'confirm' => 'Reopen this support request?'],
-                        ]
-                )
-                ?>&nbsp;
-            <?php else: ?>
-                <?=
-                Html::a(
-                    'Resolve',
-                    ['resolve', 'number' => $model->ticket_number],
-                    [
-                            'class' => 'btn btn-sm btn-success',
-                            'data' => ['method' => 'post', 'confirm' => 'Mark this support request as resolved?'],
-                        ]
-                )
-                ?>&nbsp;
-                <?=
-                Html::a(
-                    'Close',
-                    ['close', 'number' => $model->ticket_number],
-                    [
-                            'class' => 'btn btn-sm btn-outline-danger',
-                            'data' => ['method' => 'post', 'confirm' => 'Close this support request?'],
-                        ]
-                )
-                ?>
-            <?php endif; ?>
-        </div>
-    </div>
-
     <div class="row g-4">
         <div class="col-lg-4">
             <div class="card shadow-sm mb-4">

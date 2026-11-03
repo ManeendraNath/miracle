@@ -18,6 +18,8 @@ $this->params['breadcrumbs'][] = [
 ];
 
 $this->params['breadcrumbs'][] = $this->title;
+$this->params['subtitle'] = 'Recorded customer authentication activity.';
+$this->params['actions'] = [Html::a('<i class="fas fa-arrow-left me-1"></i> Back to History', ['index'], ['class' => 'btn btn-light border'])];
 ?>
 
 <div class="user-login-history-view">
@@ -27,28 +29,6 @@ $this->params['breadcrumbs'][] = $this->title;
         <div class="col-lg-9">
 
             <div class="card card-outline card-primary shadow-sm">
-
-                <div class="card-header">
-
-                    <div class="d-flex justify-content-between align-items-center">
-
-                        <div>
-
-                            <div class="text-muted">Recorded customer authentication activity.</div>
-
-                        </div>
-
-                        <?= Html::a(
-                            'Back to History',
-                            ['index'],
-                            [
-                                'class' => 'btn btn-light border',
-                            ],
-                        ) ?>
-
-                    </div>
-
-                </div>
 
                 <div class="card-body p-0">
 

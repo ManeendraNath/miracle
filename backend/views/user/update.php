@@ -22,21 +22,11 @@ $this->params['breadcrumbs'][] = [
 ];
 
 $this->params['breadcrumbs'][] = 'Update';
+$this->params['subtitle'] = 'Update customer account information and account status.';
 ?>
 
 <div class="user-update">
 
-    <div class="mb-3">
-
-        <h4 class="mb-1">
-            <?= Html::encode($this->title) ?>
-        </h4>
-
-        <div class="text-muted small">
-            Update customer account information and account status.
-        </div>
-
-    </div>
 
     <?=
     $this->render('_form', [

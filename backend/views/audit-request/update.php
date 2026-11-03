@@ -22,21 +22,11 @@ $this->params['breadcrumbs'][] = [
 ];
 
 $this->params['breadcrumbs'][] = 'Update';
+$this->params['subtitle'] = 'Update client, technical and audit request information.';
 ?>
 
 <div class="audit-request-update">
 
-    <div class="mb-3">
-
-        <h4 class="mb-1">
-            <?= Html::encode($this->title) ?>
-        </h4>
-
-        <div class="text-muted small">
-            Update client, technical and audit request information.
-        </div>
-
-    </div>
 
     <?=
     $this->render('_form', [

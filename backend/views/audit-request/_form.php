@@ -24,7 +24,7 @@ $isNew = $model->isNewRecord;
         <div class="card-header">
 
             <h3 class="card-title mb-0">
-                <?= $isNew ? 'Audit Request Details' : 'Update Audit Request Details' ?>
+                Audit Request Details
             </h3>
 
         </div>

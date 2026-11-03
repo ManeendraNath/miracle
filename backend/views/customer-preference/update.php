@@ -10,7 +10,8 @@ use yii\widgets\ActiveForm;
  * @var CustomerPreference $model
  * @var User $user
  */
-$this->title = 'Notification Preferences';
+$this->title = 'Notification Preferences: ' . $user->username;
+$this->params['subtitle'] = 'Which messages this customer receives.';
 
 $this->params['breadcrumbs'][] = [
     'label' => 'Notification Preferences',
@@ -31,7 +32,7 @@ $this->params['breadcrumbs'][] = $user->username;
                 <div class="card-header">
 
                     <h3 class="card-title">
-                        Notification Preferences
+                        Messages
                     </h3>
 
                 </div>

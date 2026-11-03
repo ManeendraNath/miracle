@@ -20,6 +20,10 @@ use yii\bootstrap4\Breadcrumbs;
                         }
                         ?>
                     </h1>
+                    <?php /* Pages set these instead of repeating the title in their own heading. */ ?>
+                    <?php if (!empty($this->params['subtitle'])): ?>
+                        <div class="text-muted mt-1"><?= $this->params['subtitle'] ?></div>
+                    <?php endif; ?>
                 </div><!-- /.col -->
                 <div class="col-sm-6">
                     <?php
@@ -30,6 +34,10 @@ use yii\bootstrap4\Breadcrumbs;
                         ]
                     ]);
                     ?>
+                    <?php if (!empty($this->params['actions'])): ?>
+                        <div class="clearfix"></div>
+                        <div class="d-flex flex-wrap justify-content-sm-end gap-2 mt-2"><?= implode("\n", (array) $this->params['actions']) ?></div>
+                    <?php endif; ?>
                 </div><!-- /.col -->
             </div><!-- /.row -->
         </div><!-- /.container-fluid -->

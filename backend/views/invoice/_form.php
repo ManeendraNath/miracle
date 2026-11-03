@@ -22,7 +22,7 @@ $isNew = $model->isNewRecord;
         <div class="card-header">
 
             <h3 class="card-title mb-0">
-                <?= $isNew ? 'Create Manual Invoice' : 'Update Manual Invoice' ?>
+                Invoice Details
             </h3>
 
         </div>

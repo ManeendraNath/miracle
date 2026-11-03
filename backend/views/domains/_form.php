@@ -46,7 +46,7 @@ $users = ArrayHelper::map(
 
         <div class="card-header">
             <h3 class="card-title mb-0">
-                <?= $isNew ? 'Domain Details' : 'Update Domain Details' ?>
+                Domain Details
             </h3>
         </div>
 

@@ -12,25 +12,11 @@ $this->params['breadcrumbs'][] = [
 ];
 
 $this->params['breadcrumbs'][] = $this->title;
+$this->params['subtitle'] = 'Create a discount code and configure its validity and usage limits.';
 ?>
 
 <div class="coupon-create">
 
-    <div class="mb-3">
-
-        <h4 class="mb-1">
-<?=
-Html::encode(
-    $this->title
-)
-?>
-        </h4>
-
-        <div class="text-muted small">
-            Create a discount code and configure its validity and usage limits.
-        </div>
-
-    </div>
 
     <?=
     $this->render(

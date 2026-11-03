@@ -26,13 +26,7 @@ $isNewRecord = $model->isNewRecord;
     <div class="card border-0 shadow-sm">
 
         <div class="card-header bg-white border-bottom py-3">
-            <h5 class="mb-1">
-                <?= $isNewRecord ? 'Create User' : 'Update User' ?>
-            </h5>
-
-            <div class="text-muted">
-                <?= $isNewRecord ? 'Create a new client account.' : 'Update account information and access settings.' ?>
-            </div>
+            <h5 class="mb-0">Account Details</h5>
         </div>
 
         <div class="card-body p-4">

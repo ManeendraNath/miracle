@@ -27,46 +27,15 @@ $statusClass = match ($status) {
     default => 'bg-dark',
 };
 
+$this->params['subtitle'] = 'Hosting account, server access and renewal details.';
+$this->params['actions'] = [
+    Html::a('<i class="fas fa-arrow-left mr-1"></i> Back', ['index'], ['class' => 'btn btn-light border']),
+    Html::a('<i class="fas fa-edit mr-1"></i> Update', ['update', 'id' => $model->id], ['class' => 'btn btn-primary']),
+];
 ?>
 
 <div class="hosting-view">
 
-    <div class="d-flex justify-content-between align-items-center mb-3">
-
-        <div>
-            <h4 class="mb-1">
-                <?= Html::encode($this->title) ?>
-            </h4>
-
-            <div class="text-muted small">
-                Hosting account, server access and renewal details.
-            </div>
-        </div>
-
-        <div class="d-flex gap-2">
-
-            <?= Html::a(
-                '<i class="fas fa-arrow-left mr-1"></i> Back',
-                ['index'],
-                [
-                    'class' => 'btn btn-light border',
-                ]
-            ) ?>
-
-            <?= Html::a(
-                '<i class="fas fa-edit mr-1"></i> Update',
-                [
-                    'update',
-                    'id' => $model->id,
-                ],
-                [
-                    'class' => 'btn btn-primary',
-                ]
-            ) ?>
-
-        </div>
-
-    </div>
 
     <div class="row">
 

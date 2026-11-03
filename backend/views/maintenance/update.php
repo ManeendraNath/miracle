@@ -22,21 +22,11 @@ $this->params['breadcrumbs'][] = [
 ];
 
 $this->params['breadcrumbs'][] = 'Update';
+$this->params['subtitle'] = 'Update maintenance and renewal information.';
 ?>
 
 <div class="maintenance-update">
 
-    <div class="mb-3">
-
-        <h4 class="mb-1">
-<?= Html::encode($this->title) ?>
-        </h4>
-
-        <div class="text-muted small">
-            Update maintenance and renewal information.
-        </div>
-
-    </div>
 
 <?=
 $this->render(

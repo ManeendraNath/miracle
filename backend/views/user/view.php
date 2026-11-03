@@ -41,60 +41,18 @@ switch ((int) $model->status) {
         $statusClass = 'bg-secondary';
         break;
 }
+$this->params['subtitle'] = 'User account details';
+$this->params['actions'] = [
+    Html::a('<i class="fas fa-arrow-left me-1"></i> Back', ['index'], ['class' => 'btn btn-light border']),
+    Html::a('<i class="fas fa-edit me-1"></i> Update', ['update', 'id' => $model->id], ['class' => 'btn btn-primary']),
+    Html::a('<i class="fas fa-shield-alt me-1"></i> Login History', ['/user-login-history/index', 'UserLoginHistorySearch' => ['user_id' => $model->id]], ['class' => 'btn btn-outline-secondary']),
+];
 ?>
 
 <div class="user-view">
 
     <div class="card border-0 shadow-sm">
 
-        <div class="card-header bg-white border-bottom py-3">
-
-            <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
-
-                <div>
-                    <h5 class="mb-1">
-                        <?= Html::encode($model->username) ?>
-                    </h5>
-
-                    <div class="text-muted">
-                        User account details
-                    </div>
-                </div>
-
-                <div class="d-flex gap-2">
-
-                    <?= Html::a(
-                        'Back',
-                        ['index'],
-                        [
-                            'class' => 'btn btn-light border',
-                        ],
-                    ) ?>
-
-                    <?= Html::a(
-                        'Update',
-                        ['update', 'id' => $model->id],
-                        [
-                            'class' => 'btn btn-primary',
-                        ],
-                    ) ?>
-                    <?= Html::a(
-                        '<i class="fas fa-shield-alt mr-1"></i> Login History',
-                        [
-                            '/user-login-history/index',
-                            'UserLoginHistorySearch' => [
-                                'user_id' => $model->id,
-                            ],
-                        ],
-                        [
-                            'class' => 'btn btn-outline-secondary',
-                        ],
-                    ) ?>
-                </div>
-
-            </div>
-
-        </div>
 
         <div class="card-body p-4">
 

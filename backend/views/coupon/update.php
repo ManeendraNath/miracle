@@ -19,21 +19,11 @@ $this->params['breadcrumbs'][] = [
 ];
 
 $this->params['breadcrumbs'][] = 'Update';
+$this->params['subtitle'] = 'Update discount rules, validity and usage limits.';
 ?>
 
 <div class="coupon-update">
 
-    <div class="mb-3">
-
-        <h4 class="mb-1">
-<?= Html::encode($this->title) ?>
-        </h4>
-
-        <div class="text-muted small">
-            Update discount rules, validity and usage limits.
-        </div>
-
-    </div>
 
 <?= $this->render('_form', [
     'model' => $model,

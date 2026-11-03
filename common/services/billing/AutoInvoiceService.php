@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace common\services\billing;
 
 use common\models\BillingEvent;
+use common\models\Coupon;
+use common\models\CouponAssignedUser;
 use common\models\CustomerBillingProfile;
 use common\models\Invoice;
 use common\models\InvoiceItem;
@@ -137,6 +139,7 @@ final class AutoInvoiceService
             $this->outstandingService->transferForUser($invoice);
 
             $this->calculateInvoiceTotals($invoice);
+            $this->applyAssignedCoupon($invoice);
 
             foreach ($events as $event) {
                 $event->invoice_id = $invoice->id;
@@ -177,6 +180,34 @@ final class AutoInvoiceService
             }
 
             throw $exception;
+        }
+    }
+
+    /**
+     * Puts the first usable coupon assigned to this customer (newest assignment first) on the
+     * renewal invoice. A coupon that doesn't fit (expired, used up, wrong service, invoice already
+     * discounted) is skipped; the invoice is still created without it.
+     */
+    private function applyAssignedCoupon(Invoice $invoice): void
+    {
+        $codes = Coupon::find()
+            ->alias('c')
+            ->select('c.code')
+            ->innerJoin(['a' => CouponAssignedUser::tableName()], 'a.coupon_id = c.id')
+            ->where(['a.user_id' => (int) $invoice->user_id, 'c.is_active' => Coupon::IS_ACTIVE_Y])
+            ->orderBy(['a.assigned_at' => SORT_DESC, 'c.id' => SORT_DESC])
+            ->column();
+        // Built here, not in the constructor: InvoiceCouponService itself builds an AutoInvoiceService.
+        $couponService = new InvoiceCouponService(totals: $this);
+        foreach ($codes as $code) {
+            try {
+                // Runs in a savepoint, so a rejected coupon leaves the invoice untouched.
+                $couponService->apply($invoice, (string) $code);
+                $invoice->refresh();
+                return;
+            } catch (\DomainException) {
+                continue;
+            }
         }
     }
 

@@ -5,7 +5,10 @@ declare(strict_types=1);
 namespace backend\tests\unit\billing;
 
 use Codeception\Test\Unit;
+use common\models\BillingEvent;
+use common\models\BillingRun;
 use common\models\Coupon;
+use common\models\CustomerBillingProfile;
 use common\models\CouponRedemption;
 use common\models\Invoice;
 use common\models\InvoiceItem;
@@ -160,6 +163,49 @@ final class InvoiceCouponServiceTest extends Unit
         $this->assertEquals(0.00, (float) $removed->discount_amount);
         $this->assertEquals(1770.00, (float) Invoice::findOne($invoice->id)->total_payable);
         $this->assertFalse(CouponRedemption::find()->where(['invoice_id' => $invoice->id])->exists());
+    }
+
+    public function testRenewalInvoiceGetsTheCustomersAssignedCoupon(): void
+    {
+        $other = $this->coupon('OTHERS', ['assigned_user_ids' => [(string) $this->_user->id]]);
+        $other->updateAttributes(['end_date' => '2000-01-01 00:00:00']); // expired: skipped
+        $this->coupon('MINE15', ['amount' => 15, 'assigned_user_ids' => [(string) $this->_user->id]]);
+        $this->coupon('PUBLIC50', ['amount' => 50]); // not assigned to anyone: never auto-applied
+
+        $invoice = $this->renewalInvoice(1000.00);
+
+        $this->assertSame('MINE15', $invoice->coupon_code);
+        $this->assertEquals(150.00, (float) $invoice->discount_amount);
+        $this->assertEquals(850.00, (float) $invoice->total_payable);
+        $this->assertTrue(CouponRedemption::find()->where(['invoice_id' => $invoice->id, 'coupon_code' => 'MINE15'])->exists());
+    }
+
+    public function testRenewalInvoiceIsStillCreatedWhenTheAssignedCouponDoesNotFit(): void
+    {
+        $this->coupon('BIGMIN', ['minimum_order' => 5000, 'assigned_user_ids' => [(string) $this->_user->id]]);
+
+        $invoice = $this->renewalInvoice(1000.00);
+
+        $this->assertNull($invoice->coupon_code);
+        $this->assertEquals(1000.00, (float) $invoice->total_payable);
+    }
+
+    /** Runs automatic billing for one pending hosting renewal (no GST, to keep the numbers plain). */
+    private function renewalInvoice(float $amount): Invoice
+    {
+        $profile = new CustomerBillingProfile();
+        $profile->setAttributes(['user_id' => $this->_user->id, 'legal_name' => 'Renewal Test', 'state' => 'Delhi', 'state_code' => '07', 'is_gst_applicable' => 0, 'default_discount_amount' => 0, 'created_at' => time(), 'updated_at' => time()], false);
+        $this->assertTrue($profile->save(false));
+        $run = new BillingRun();
+        $run->setAttributes(['run_number' => 'TEST-RUN-' . bin2hex(random_bytes(4)), 'status' => BillingRun::STATUS_RUNNING, 'started_at' => time(), 'created_at' => time(), 'updated_at' => time()], false);
+        $this->assertTrue($run->save(false));
+        $event = new BillingEvent();
+        $event->setAttributes(['billing_run_id' => $run->id, 'user_id' => $this->_user->id, 'item_type' => InvoiceItem::TYPE_HOSTING, 'item_id' => 1, 'description' => 'Hosting', 'period_start' => '2026-12-01', 'period_end' => '2027-11-30', 'increase_percent' => 0, 'calculated_amount' => $amount, 'amount' => $amount, 'is_manual_amount' => 0, 'due_date' => '2026-12-01', 'status' => BillingEvent::STATUS_PENDING, 'created_at' => time(), 'updated_at' => time()], false);
+        $this->assertTrue($event->save(false));
+
+        $invoice = (new AutoInvoiceService())->generateForUser((int) $run->id, (int) $this->_user->id);
+        $this->assertNotNull($invoice);
+        return $invoice;
     }
 
     /** @param array<int, float> $lines item_type => line total */

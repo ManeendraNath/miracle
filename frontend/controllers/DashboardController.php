@@ -52,9 +52,9 @@ final class DashboardController extends Controller
                         ->alias('t')
                         ->innerJoin(['i' => Invoice::tableName()], 'i.id = t.invoice_id')
                         ->where(['i.user_id' => $userId, 't.status' => Transaction::STATUS_PENDING, 't.gateway_id' => Transaction::GATEWAY_UPI_BANK])->count();
-        $domainCount = (int) Domains::find()->where(['user_id' => $userId])->count();
-        $hostingCount = (int) Hosting::find()->where(['user_id' => $userId])->count();
-        $maintenanceCount = (int) Maintenance::find()->where(['user_id' => $userId])->count();
+        $domainCount = (int) Domains::find()->where(['user_id' => $userId, 'status' => Domains::STATUS_ACTIVE])->count();
+        $hostingCount = (int) Hosting::find()->where(['user_id' => $userId, 'status' => Hosting::STATUS_ACTIVE])->count();
+        $maintenanceCount = (int) Maintenance::find()->where(['user_id' => $userId, 'status' => Maintenance::STATUS_ACTIVE])->count();
         $unreadNotifications = (int) CustomerNotification::find()->where(['user_id' => $userId, 'is_read' => 0])->count();
         $openSupportTickets = (int) SupportTicket::find()->where(['user_id' => $userId, 'status' => [SupportTicket::STATUS_OPEN, SupportTicket::STATUS_IN_PROGRESS]])->count();
         $upcomingServices = $this->upcomingServices();
@@ -99,7 +99,7 @@ final class DashboardController extends Controller
 
     private function getServiceModel($class)
     {
-        $upcomingUntil = date('Y-m-d', strtotime('+30 days'));
+        $upcomingUntil = date('Y-m-d', strtotime('+60 days')); // same window as the Renewals page
         // Includes already-expired active services: those most need renewing.
         return $class::find()
                         ->where(['user_id' => (int) Yii::$app->user->id, 'status' => $class::STATUS_ACTIVE])

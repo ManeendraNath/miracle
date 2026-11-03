@@ -23,7 +23,7 @@ class InvoiceSearch extends Invoice
         return [
             [['id', 'user_id'], 'integer'],
             [['invoice_number', 'client_name', 'status', 'due_date_range', 'created_at_range'], 'safe'],
-            [['subtotal_amount', 'discount_amount', 'total_payable'], 'number'],
+            [['total_payable'], 'number'],
         ];
     }
 
@@ -73,6 +73,7 @@ class InvoiceSearch extends Invoice
             'id' => $this->id,
             'user_id' => $this->user_id,
             'status' => $this->status,
+            'total_payable' => $this->total_payable,
         ]);
 
         // String searches

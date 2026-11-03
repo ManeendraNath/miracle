@@ -103,6 +103,8 @@ GridViewHelper::register($this);
                         'attribute' => 'created_at',
                         'label' => 'Date Added',
                         'format' => ['datetime', 'php:d M Y, h:i A'],
+                        // Range picker: a typed date would fail validation and silently drop every filter.
+                        'filter' => GridFilterHelper::dateRange($searchModel, 'created_at_range', 'Added dates'),
                     ],
                     [
                         'attribute' => 'date_range',

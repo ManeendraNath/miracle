@@ -17,6 +17,7 @@ class TransactionSearch extends Transaction
 
     // Transient placeholder to handle the composite range string text
     public $date_range;
+    public ?string $created_at_range = null;
 
     /**
      * {@inheritdoc}
@@ -24,8 +25,8 @@ class TransactionSearch extends Transaction
     public function rules(): array
     {
         return [
-            [['id', 'invoice_id', 'gateway_id', 'paid_at', 'created_at', 'updated_at'], 'integer'],
-            [['gateway_payment_id', 'gateway_order_id', 'status', 'user_payment_notes', 'payment_receipt_file', 'raw_payload', 'date_range'], 'safe'],
+            [['id', 'invoice_id', 'gateway_id'], 'integer'],
+            [['gateway_payment_id', 'gateway_order_id', 'status', 'user_payment_notes', 'payment_receipt_file', 'raw_payload', 'date_range', 'created_at_range'], 'safe'],
             [['amount', 'gateway_fee'], 'number'],
         ];
     }
@@ -81,9 +82,6 @@ class TransactionSearch extends Transaction
             'gateway_id' => $gatewayId,
             'amount' => $this->amount,
             'gateway_fee' => $this->gateway_fee,
-            'paid_at' => $this->paid_at,
-            'created_at' => $this->created_at,
-            'updated_at' => $this->updated_at,
         ]);
 
         $query->andFilterWhere(['like', 'gateway_payment_id', $this->gateway_payment_id])
@@ -95,6 +93,7 @@ class TransactionSearch extends Transaction
 
         // 📅 DYNAMIC DATE RANGE FILTERING LOGIC
         $this->applyTimestampDateRange($query, 'paid_at', $this->date_range);
+        $this->applyTimestampDateRange($query, 'created_at', $this->created_at_range);
 
         return $dataProvider;
     }

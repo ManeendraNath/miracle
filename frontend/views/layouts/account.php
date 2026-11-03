@@ -1,4 +1,16 @@
 <?php
+
+use common\models\CustomerNotification;
+use common\models\SupportTicket;
+
+/** @var yii\web\View $this */
+/** @var string $content */
+
+// Sidebar badges on every account page (a layout doesn't receive the page's variables).
+$userId = (int) Yii::$app->user->id;
+$unreadNotifications = (int) CustomerNotification::find()->where(['user_id' => $userId, 'is_read' => 0])->count();
+$openSupportTickets = (int) SupportTicket::find()->where(['user_id' => $userId, 'status' => [SupportTicket::STATUS_OPEN, SupportTicket::STATUS_IN_PROGRESS]])->count();
+
 $this->beginContent('@frontend/views/layouts/main.php');
 ?>
 
@@ -9,8 +21,8 @@ $this->beginContent('@frontend/views/layouts/main.php');
             $this->render(
                 '_account_sidebar',
                 [
-                        'openSupportTickets' => $openSupportTickets ?? 0,
-                        'unreadNotifications' => $unreadNotifications ?? 0,
+                        'openSupportTickets' => $openSupportTickets,
+                        'unreadNotifications' => $unreadNotifications,
                     ]
             )
             ?>

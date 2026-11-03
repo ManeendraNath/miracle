@@ -75,7 +75,7 @@ class DashboardController extends BaseController
             'totalInvoicesCount' => (int) Invoice::find()->count(),
             'outstandingReceivables' => $outstanding,
             'overdueInvoicesCount' => Invoice::find()
-                ->andWhere(['status' => 'Unpaid'])
+                ->andWhere(['status' => [Invoice::STATUS_UNPAID, Invoice::STATUS_PARTIALLY_PAID]])
                 ->andWhere(['<', 'due_date', date('Y-m-d')])
                 ->count(),
             'unpaidBalance' => $outstanding,

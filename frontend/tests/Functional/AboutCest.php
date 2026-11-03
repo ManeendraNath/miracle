@@ -23,6 +23,8 @@ final class AboutCest
             $I->see($heading, 'h1');
             $I->see('Contact us', 'h2');
         }
+        $I->amOnRoute('site/privacy');
+        $I->see('Grievance Officer', 'h2');
         foreach (['Terms & Conditions', 'Privacy Policy', 'Refund & Cancellation', 'Shipping & Delivery', 'About us'] as $link) {
             $I->see($link, 'footer a');
         }

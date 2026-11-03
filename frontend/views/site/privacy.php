@@ -17,7 +17,7 @@ echo $this->render('_legal', ['title' => 'Privacy Policy', 'updated' => '03 Nov 
     <li><strong>Account and contact details:</strong> name, email address, phone number, company name and billing address.</li>
     <li><strong>Service records:</strong> your domains, hosting and maintenance plans, invoices, payments and support tickets.</li>
     <li><strong>Enquiries:</strong> what you send through the contact and website-audit forms.</li>
-    <li><strong>Technical data:</strong> IP address, browser and log data needed to run and secure the site, and a session cookie that keeps you signed in.</li>
+    <li><strong>Technical data:</strong> IP address, browser and log data needed to run and secure the site, a login history (time, IP address and browser) used to alert you to sign-ins from new devices, and a session cookie that keeps you signed in.</li>
 </ul>
 
 <h2 class="h5 fw-bold mt-4">2. Payments</h2>
@@ -36,8 +36,14 @@ echo $this->render('_legal', ['title' => 'Privacy Policy', 'updated' => '03 Nov 
 <p>The site uses HTTPS, passwords are stored only as secure hashes, and staff access is limited by role.</p>
 
 <h2 class="h5 fw-bold mt-4">7. Your choices</h2>
-<p>You can view and update your details in the customer portal, or contact us to correct or delete data we are not required to keep. You can ask us at any time to stop non-essential emails.</p>
+<p>You can view and update your details in the customer portal, or contact us to correct or delete data we are not required to keep. You can turn reminder and notification emails on or off in the customer portal under My Profile &rarr; Notification Preferences.</p>
 
-<h2 class="h5 fw-bold mt-4">8. Changes</h2>
+<h2 class="h5 fw-bold mt-4">8. Grievance Officer</h2>
+<p>For any complaint or request about your personal data, contact our Grievance Officer:<br>
+<strong>Maneendra Nath</strong><br>
+Email: <a href="mailto:support@miraclewebtechnologies.com">support@miraclewebtechnologies.com</a>, <a href="mailto:antmnt.trivedi@gmail.com">antmnt.trivedi@gmail.com</a><br>
+We acknowledge complaints within 2 working days and resolve them within 30 days.</p>
+
+<h2 class="h5 fw-bold mt-4">9. Changes</h2>
 <p>We will post any change to this policy on this page with a new "last updated" date.</p>
 HTML]);

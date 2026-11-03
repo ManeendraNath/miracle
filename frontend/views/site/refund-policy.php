@@ -17,8 +17,8 @@ echo $this->render('_legal', ['title' => 'Refund & Cancellation Policy', 'update
 
 <h2 class="h5 fw-bold mt-4">2. Refunds</h2>
 <ul>
-    <li><strong>Domain registration and renewal:</strong> not refundable once the domain has been registered or renewed with the registry, because the registry fee cannot be recovered.</li>
-    <li><strong>Web hosting:</strong> a full refund if you cancel within 7 days of first activation of a new hosting plan. After that, or for renewals, no refund is given for the current period.</li>
+    <li><strong>Domain registration and renewal:</strong> never refundable, because the registry fee cannot be recovered. This includes a domain supplied as part of a hosting plan.</li>
+    <li><strong>Web hosting:</strong> a full refund if you cancel within 7 days of first activation of a new hosting plan, less the fee for any domain included with it. After that, or for renewals, no refund is given for the current period.</li>
     <li><strong>Maintenance (AMC):</strong> a full refund if you cancel before any work has been done in the paid period. Once work has started, no refund is given for that period.</li>
     <li><strong>Website design and development:</strong> an advance is refundable in full if you cancel before work begins. After work begins, the amount for work already completed is kept and any balance is refunded.</li>
     <li><strong>Duplicate or excess payments:</strong> always refunded in full, or adjusted against your next invoice if you prefer.</li>
@@ -30,6 +30,9 @@ echo $this->render('_legal', ['title' => 'Refund & Cancellation Policy', 'update
 <h2 class="h5 fw-bold mt-4">4. Failed payments</h2>
 <p>If money was debited but the payment failed or the invoice still shows as unpaid, it is usually reversed automatically by your bank within 5–7 working days. If not, contact us with the payment reference and we will resolve it.</p>
 
-<h2 class="h5 fw-bold mt-4">5. How to request a refund</h2>
+<h2 class="h5 fw-bold mt-4">5. Payment disputes</h2>
+<p>Please contact us before raising a dispute or chargeback with your bank; most issues are resolved faster directly. A service may be suspended while a chargeback on its invoice is open.</p>
+
+<h2 class="h5 fw-bold mt-4">6. How to request a refund</h2>
 <p>Raise a support ticket in the customer portal or email us with your invoice number and the reason. We reply within 2 working days.</p>
 HTML]);

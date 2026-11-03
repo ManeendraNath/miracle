@@ -1,5 +1,6 @@
 <?php
 
+use common\components\CustomYii;
 use yii\bootstrap5\ActiveForm;
 use yii\bootstrap5\Html;
 use yii\captcha\Captcha;
@@ -30,7 +31,31 @@ $this->title = 'Contact General Inquiries | Miracle Web Technologies';
             </div>
         </div>
         <div class="col-lg-5">
-            <div class="card border-0 shadow-sm p-4 text-white h-100" style="background-color: #1e293b; border-radius: 0.75rem; border-left: 5px solid #dc2626 !important;">
+            <?php
+            $address = implode('<br>', array_map(static fn($l): string => Html::encode(trim((string) $l, ' ,')), array_filter([
+                CustomYii::getSetting('address_line_1'),
+                CustomYii::getSetting('address_line_2'),
+                CustomYii::getSetting('address_line_3'),
+            ])));
+            $phone = (string) CustomYii::getSetting('mobile_1');
+            $email = (string) CustomYii::getSetting('email_1');
+            ?>
+            <div class="card border-0 shadow-sm p-4 bg-white mb-4" style="border-radius: 0.75rem;">
+                <h2 class="h5 fw-bold mb-3"><?= Html::encode(CustomYii::getSetting('site_name') ?: 'Miracle Web Technologies') ?></h2>
+                <ul class="list-unstyled small mb-0">
+                    <?php if ($address !== ''): ?>
+                        <li class="d-flex mb-2"><i class="fas fa-map-marker-alt fa-fw me-2 mt-1 text-primary"></i><span><?= $address ?></span></li>
+                    <?php endif; ?>
+                    <?php if ($phone !== ''): ?>
+                        <li class="mb-2"><i class="fas fa-phone-alt fa-fw me-2 text-primary"></i><?= Html::a('+' . Html::encode($phone), 'tel:+' . $phone) ?></li>
+                    <?php endif; ?>
+                    <?php if ($email !== ''): ?>
+                        <li class="mb-2"><i class="fas fa-envelope fa-fw me-2 text-primary"></i><?= Html::mailto(Html::encode($email), $email) ?></li>
+                    <?php endif; ?>
+                    <li><i class="fas fa-clock fa-fw me-2 text-primary"></i>Mon&ndash;Sat, 10:00 AM &ndash; 6:00 PM</li>
+                </ul>
+            </div>
+            <div class="card border-0 shadow-sm p-4 text-white" style="background-color: #1e293b; border-radius: 0.75rem; border-left: 5px solid #dc2626 !important;">
                 <h4 class="fw-bold text-white mb-3">Enterprise Channels</h4>
                 <p class="small text-slate-300">Are you looking to scale an application or provision isolated hosting servers? Skip this line and deploy our direct analysis workflow.</p>
                 <div class="mt-4">

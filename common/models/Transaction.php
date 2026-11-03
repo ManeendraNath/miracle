@@ -29,11 +29,25 @@ class Transaction extends base\Transaction
     public const GATEWAY_MANUAL = 0;
     public const GATEWAY_RAZORPAY = 1;
     public const GATEWAY_UPI_BANK = 2;
+    /** Admin "record a payment" form: only these come from the form; status/paid_at/etc. go through approve/refund. */
+    public const SCENARIO_ADMIN_ENTRY = 'admin-entry';
+
+    public function scenarios(): array
+    {
+        $scenarios = parent::scenarios();
+        $scenarios[self::SCENARIO_ADMIN_ENTRY] = ['invoice_id', 'gateway_id', 'gateway_payment_id', 'amount', 'user_payment_notes'];
+
+        return $scenarios;
+    }
+
     public function rules()
     {
         return array_merge(parent::rules(), [
             // Safe assignment for custom customer notes
             [['user_payment_notes'], 'string'],
+            // A zero or negative "payment" would lower what the invoice counts as received.
+            ['amount', 'number', 'min' => 0.01, 'tooSmall' => 'Amount must be greater than zero.'],
+            ['gateway_id', 'in', 'range' => [self::GATEWAY_MANUAL, self::GATEWAY_UPI_BANK], 'on' => self::SCENARIO_ADMIN_ENTRY, 'message' => 'Online payments are recorded by Razorpay, not by hand.'],
         ]);
     }
 }

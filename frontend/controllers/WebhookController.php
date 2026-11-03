@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace frontend\controllers;
 
+use common\models\Transaction;
+use common\services\admin\AdminAlertService;
 use common\services\payment\RazorpayService;
 use Yii;
 use yii\web\BadRequestHttpException;
@@ -59,12 +61,27 @@ final class WebhookController extends Controller
             throw new BadRequestHttpException('Unexpected payment currency.');
         }
 
+        // Orders this app didn't create (payment links, other integrations on the same Razorpay account)
+        // are none of our business: no invoice to update, nothing to alert about.
+        if (!Transaction::find()->where(['gateway_order_id' => $orderId])->exists()) {
+            Yii::info(['message' => 'Razorpay webhook for an order this app did not create.', 'orderId' => $orderId, 'paymentId' => $paymentId], __METHOD__);
+            return ['status' => 'ignored'];
+        }
+
         try {
             $razorpay->capture($orderId, $paymentId, $amountMinor);
             return ['status' => 'success'];
         } catch (\DomainException $e) {
+            // Razorpay says the customer paid for one of our orders but it can't be recorded (second
+            // payment on one order, rejected order, amount mismatch). Retrying won't change that, so tell an admin and answer
+            // 200: a 4xx makes Razorpay retry for a day and may get the webhook disabled.
             Yii::warning(['message' => 'Razorpay webhook rejected.', 'orderId' => $orderId, 'paymentId' => $paymentId, 'error' => $e->getMessage()], __METHOD__);
-            throw new BadRequestHttpException($e->getMessage(), 0, $e);
+            try {
+                AdminAlertService::paymentNotRecorded($orderId, $paymentId, $amountMinor / 100, $e->getMessage());
+            } catch (\Throwable $alertError) {
+                Yii::error(['message' => 'Could not alert admins about an unrecorded payment.', 'paymentId' => $paymentId, 'error' => $alertError->getMessage()], __METHOD__);
+            }
+            return ['status' => 'not_recorded'];
         } catch (\Throwable $e) {
             Yii::error(['message' => 'Razorpay webhook processing failed.', 'orderId' => $orderId, 'paymentId' => $paymentId, 'error' => $e->getMessage()], __METHOD__);
             throw new ServerErrorHttpException('Payment processing failed.', 0, $e);

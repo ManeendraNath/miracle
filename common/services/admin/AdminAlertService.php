@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace common\services\admin;
 
+use common\models\AdminNotification;
 use common\services\notification\AdminNotificationService;
 use common\services\notification\WhatsAppService;
 use Yii;
@@ -68,6 +69,24 @@ final class AdminAlertService extends AdminNotificationService
     {
         $title = 'Online Payment Needs Attention';
         $message = "Invoice: {$invoiceNumber} ({$invoiceStatus})\n" . "Amount: ₹{$amount}\n" . "Razorpay payment: {$paymentId}\n" . 'The customer was charged but the invoice could not accept it. Refund in Razorpay or apply it manually.';
+        self::send($title, $message, 'payment', '/transaction/index?' . http_build_query(['TransactionSearch' => ['gateway_payment_id' => $paymentId]]), true);
+    }
+
+    public static function paymentNotRecorded(string $orderId, string $paymentId, float $amount, string $reason): void
+    {
+        $title = 'Online Payment Not Recorded';
+        // Razorpay may deliver the same event again (timeouts, manual resend): alert once per payment.
+        if (AdminNotification::find()->where(['title' => $title])->andWhere(['like', 'message', $paymentId])->exists()) {
+            return;
+        }
+        $message = "Razorpay order: {$orderId}\n" . "Razorpay payment: {$paymentId}\n" . "Amount: ₹{$amount}\n" . "Reason: {$reason}\n" . 'The customer was charged but no invoice was updated. Check the payment in Razorpay and refund it or record it manually.';
+        self::send($title, $message, 'payment', '/transaction/index', true);
+    }
+
+    public static function paymentOverpaid(string $invoiceNumber, float $paid, float $excess, string $paymentId): void
+    {
+        $title = 'Online Payment Needs Attention';
+        $message = "Invoice: {$invoiceNumber}\n" . "Paid online: ₹{$paid}\n" . "Overpaid by: ₹{$excess}\n" . "Razorpay payment: {$paymentId}\n" . 'The invoice had already been partly paid another way. Refund the excess in Razorpay.';
         self::send($title, $message, 'payment', '/transaction/index?' . http_build_query(['TransactionSearch' => ['gateway_payment_id' => $paymentId]]), true);
     }
 

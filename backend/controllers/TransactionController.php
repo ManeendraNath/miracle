@@ -7,6 +7,7 @@ namespace backend\controllers;
 use backend\models\searches\TransactionSearch;
 use common\models\Invoice;
 use common\models\Transaction;
+use common\services\billing\InvoicePaymentService;
 use common\services\billing\PaymentConfirmationService;
 use common\services\billing\PaymentProcessingService;
 use Yii;
@@ -66,7 +67,7 @@ class TransactionController extends BaseController
      */
     public function actionCreate()
     {
-        $model = new Transaction();
+        $model = new Transaction(['scenario' => Transaction::SCENARIO_ADMIN_ENTRY]);
 
         if ($this->request->isPost && $model->load($this->request->post())) {
             try {
@@ -118,6 +119,8 @@ class TransactionController extends BaseController
             Yii::$app->session->setFlash('error', 'Razorpay payments are managed by the gateway and cannot be edited.');
             return $this->redirect(['view', 'id' => $model->id]);
         }
+        // Status, paid_at etc. are not editable here: approve / reject / refund handle them.
+        $model->scenario = Transaction::SCENARIO_ADMIN_ENTRY;
         if ($this->request->isPost && $model->load($this->request->post())) {
             try {
                 $this->saveAndProcessPayment($model);
@@ -165,6 +168,13 @@ class TransactionController extends BaseController
             if ((int) $paymentTransaction->gateway_id === Transaction::GATEWAY_RAZORPAY) {
                 throw new \DomainException('Razorpay payments are confirmed automatically and cannot be approved manually.');
             }
+            // E.g. paid online meanwhile: approving would collect the money twice.
+            $lockedInvoiceId = Yii::$app->db->createCommand('SELECT id FROM {{%invoice}} WHERE id = :id FOR UPDATE')->bindValue(':id', (int) $paymentTransaction->invoice_id)->queryScalar();
+            $invoice = $lockedInvoiceId !== false ? Invoice::findOne((int) $lockedInvoiceId) : null;
+            if ($invoice === null) {
+                throw new \DomainException('This payment has no invoice.');
+            }
+            (new InvoicePaymentService())->assertPayable($invoice);
             $now = time();
             $paymentTransaction->status = Transaction::STATUS_CAPTURED;
             $paymentTransaction->paid_at = $now;
@@ -212,13 +222,24 @@ class TransactionController extends BaseController
             if (!$model->save(false, ['status', 'updated_at'])) {
                 throw new \RuntimeException('Refund could not be recorded.');
             }
-            // An unapplied payment (invoice cancelled / carried forward) never touched the invoice.
+            // A closed invoice (cancelled, carried forward, refunded) is left as it is.
             $invoiceStatus = $model->invoice->status ?? null;
-            if (!in_array($invoiceStatus, [Invoice::STATUS_CANCELLED, Invoice::STATUS_CARRIED_FORWARD], true)) {
+            $close = (bool) $this->request->post('close_invoice');
+            $message = 'Payment marked as refunded. The invoice was ' . (Invoice::getStatuses()[$invoiceStatus] ?? $invoiceStatus) . ', so it is unchanged.';
+            if (!in_array($invoiceStatus, InvoicePaymentService::CLOSED_STATUSES, true)) {
                 (new PaymentProcessingService())->transactionChanged($model, false);
+                $invoice = Invoice::findOne((int) $model->invoice_id);
+                if ($close) {
+                    (new InvoicePaymentService())->closeAsRefunded($invoice);
+                    $message = 'Payment marked as refunded and the invoice closed: nothing more is owed.';
+                } elseif ($invoice->status === Invoice::STATUS_PAID) {
+                    $message = 'Payment marked as refunded. Other payments still cover the invoice, so it stays Paid.';
+                } else {
+                    $message = 'Payment marked as refunded. The invoice balance is due again.';
+                }
             }
             $dbTransaction->commit();
-            Yii::$app->session->setFlash('success', 'Payment marked as refunded. Invoice balance recalculated.');
+            Yii::$app->session->setFlash('success', $message);
         } catch (\Throwable $e) {
             if ($dbTransaction->isActive) {
                 $dbTransaction->rollBack();

@@ -47,10 +47,22 @@ $this->params['breadcrumbs'][] = $this->title;
             <?php endif; ?>
             <?php if ($model->status === Transaction::STATUS_CAPTURED): ?>
                 <?=
-                Html::a('<i class="fas fa-undo me-1"></i> Mark Refunded', ['refund', 'id' => $model->id], [
-                    'class' => 'btn btn-sm btn-outline-danger px-3',
+                Html::a('<i class="fas fa-undo me-1"></i> Refund &amp; Close Invoice', ['refund', 'id' => $model->id], [
+                    'class' => 'btn btn-sm btn-outline-danger px-3 me-2',
+                    'title' => 'The service is cancelled: nothing more is owed on this invoice.',
                     'data' => [
-                        'confirm' => "Only do this after the money has been returned (Razorpay dashboard or bank).\n\nThe invoice balance becomes due again. Renewals already granted are NOT reversed: cancel the invoice or disable the service if needed.",
+                        'confirm' => "Only do this after the money has been returned (Razorpay dashboard or bank).\n\nThe invoice is closed as Refunded: no reminders, not billed again. Renewals already granted are NOT reversed: disable the service if needed.",
+                        'method' => 'post',
+                        'params' => ['close_invoice' => 1],
+                    ],
+                ])
+                ?>
+                <?=
+                Html::a('<i class="fas fa-undo me-1"></i> Refund (Still Owed)', ['refund', 'id' => $model->id], [
+                    'class' => 'btn btn-sm btn-outline-secondary px-3',
+                    'title' => 'E.g. a wrong payment was returned: the customer still has to pay this invoice.',
+                    'data' => [
+                        'confirm' => "Only do this after the money has been returned (Razorpay dashboard or bank).\n\nThe invoice balance becomes due again and the customer can pay it.",
                         'method' => 'post',
                     ],
                 ])

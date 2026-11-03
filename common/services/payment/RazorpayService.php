@@ -7,6 +7,7 @@ namespace common\services\payment;
 use common\models\Invoice;
 use common\models\Transaction;
 use common\services\admin\AdminAlertService;
+use common\services\billing\InvoicePaymentService;
 use common\services\billing\PaymentConfirmationService;
 use common\services\billing\PaymentProcessingService;
 use Yii;
@@ -173,10 +174,11 @@ final class RazorpayService
             $transaction->paid_at = $now;
             $transaction->updated_at = $now;
 
-            // The customer has been charged, so the capture is always recorded. If the
-            // invoice can no longer take payments it is left unapplied for an admin.
+            // The customer has been charged, so the capture is always recorded. If the invoice
+            // can no longer take payments (cancelled, carried forward, or already paid some other
+            // way, e.g. an approved UPI proof) it is left unapplied for an admin to refund.
             $invoice = Invoice::findOne((int) $transaction->invoice_id);
-            $unapplied = $invoice !== null && in_array($invoice->status, [Invoice::STATUS_CANCELLED, Invoice::STATUS_CARRIED_FORWARD], true);
+            $unapplied = $invoice !== null && in_array($invoice->status, [Invoice::STATUS_CANCELLED, Invoice::STATUS_CARRIED_FORWARD, Invoice::STATUS_PAID, Invoice::STATUS_REFUNDED], true);
             if ($unapplied) {
                 $transaction->user_payment_notes = trim($transaction->user_payment_notes . "\nUNAPPLIED: invoice was {$invoice->status} when paid. Refund in Razorpay or apply manually.");
             }
@@ -187,11 +189,14 @@ final class RazorpayService
                 (new PaymentProcessingService())->transactionChanged($transaction, false);
             }
             $dbTransaction->commit();
-            if (
-                $superseded && !$unapplied && $invoice !== null && $invoice->refresh()
-                && $this->toMinor((float) $invoice->total_payable) !== $this->toMinor((float) $transaction->amount)
-            ) {
-                AdminAlertService::supersededOrderPaid($invoice->invoice_number, (float) $transaction->amount, (float) $invoice->total_payable, $paymentId);
+            if (!$unapplied && $invoice !== null && $invoice->refresh()) {
+                // E.g. an older full-amount order paid after a part payment by cheque.
+                $excess = (new InvoicePaymentService())->getCapturedAmount((int) $invoice->id) - (float) $invoice->total_payable;
+                if ($this->toMinor($excess) > 0) {
+                    AdminAlertService::paymentOverpaid($invoice->invoice_number, (float) $transaction->amount, round($excess, 2), $paymentId);
+                } elseif ($superseded && $this->toMinor((float) $invoice->total_payable) !== $this->toMinor((float) $transaction->amount)) {
+                    AdminAlertService::supersededOrderPaid($invoice->invoice_number, (float) $transaction->amount, (float) $invoice->total_payable, $paymentId);
+                }
             }
             if ($unapplied) {
                 Yii::warning(['message' => 'Razorpay payment captured on a non-payable invoice.', 'transactionId' => (int) $transaction->id, 'invoice' => $invoice->invoice_number, 'status' => $invoice->status], __METHOD__);

@@ -52,7 +52,6 @@ $this->title = 'Contact General Inquiries | Miracle Web Technologies';
                     <?php if ($email !== ''): ?>
                         <li class="mb-2"><i class="fas fa-envelope fa-fw me-2 text-primary"></i><?= Html::mailto(Html::encode($email), $email) ?></li>
                     <?php endif; ?>
-                    <li><i class="fas fa-clock fa-fw me-2 text-primary"></i>Mon&ndash;Sat, 10:00 AM &ndash; 6:00 PM</li>
                 </ul>
             </div>
             <div class="card border-0 shadow-sm p-4 text-white" style="background-color: #1e293b; border-radius: 0.75rem; border-left: 5px solid #dc2626 !important;">

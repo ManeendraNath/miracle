@@ -26,6 +26,8 @@ final class RoleAccessTest extends Unit
             'admin/update' => [false, false, true],
             'site-setting/index' => [false, false, true],
             'audit-request/view' => [true, true, true],
+            'razorpay-test/index' => [false, true, true],
+            'razorpay-test/verify' => [false, true, true],
             'audit-request/update' => [false, true, true],
             'audit-request/delete' => [false, true, true],
         ];

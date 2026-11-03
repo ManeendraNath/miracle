@@ -141,6 +141,14 @@ final class PaymentStatusTest extends Unit
         $this->assertTrue(AdminNotification::find()->where(['like', 'message', $paymentId])->andWhere(['like', 'message', 'Overpaid by: ₹400'])->exists());
     }
 
+    public function testGatewayTestOrdersAreRefusedWithLiveKeys(): void
+    {
+        $live = new RazorpayService(['enabled' => true, 'keyId' => 'rzp_live_example', 'keySecret' => 'secret']);
+        $this->assertFalse($live->isTestMode());
+        $this->expectException(\DomainException::class);
+        $live->createTestOrder(100); // refused before any API call: live keys would take real money
+    }
+
     private function billingEvent(Invoice $invoice): BillingEvent
     {
         $event = new BillingEvent();

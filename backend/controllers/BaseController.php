@@ -28,6 +28,7 @@ class BaseController extends Controller
         'customer-billing-profile' => 'Admin',
         'user-login-history' => 'Admin',
         'report' => 'Admin',
+        'razorpay-test' => 'Admin',
         // Managers can see leads; changing or deleting them is Admin work.
         'lead/update' => 'Admin',
         'lead/delete' => 'Admin',
@@ -115,6 +116,7 @@ class BaseController extends Controller
                     'resend-invoice' => ['POST'],
                     'toggle-status' => ['POST'],
                     'cpanel-password' => ['POST'],
+                    'verify' => ['POST'],
                 ],
             ],
         ];

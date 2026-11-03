@@ -143,6 +143,15 @@ use yii\helpers\Html;
                         'url' => ['/report/index'],
                         'active' => Yii::$app->controller->id === 'report',
                     ],
+                    [
+                        'label' => 'Razorpay Test',
+                        'icon' => 'vial',
+                        'url' => ['/razorpay-test/index'],
+                        'active' => Yii::$app->controller->id === 'razorpay-test',
+                        // Admin+ only, and only while test keys are configured.
+                        'visible' => \backend\controllers\BaseController::canAccess(Yii::$app->user->identity, 'razorpay-test')
+                            && (new \common\services\payment\RazorpayService())->isTestMode(),
+                    ],
                     // =====================================================================
                     // 🌐 3. INFRASTRUCTURE & ACTIVE CLIENT ASSETS
                     // =====================================================================

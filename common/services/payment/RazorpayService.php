@@ -76,23 +76,7 @@ final class RazorpayService
             return $existing;
         }
 
-        $response = (new Client(['baseUrl' => self::API_URL]))
-            ->post('orders', [
-                'amount' => $this->toMinor($amount),
-                'currency' => 'INR',
-                'receipt' => substr((string) $invoice->invoice_number, 0, 40),
-                'notes' => ['invoice_number' => (string) $invoice->invoice_number],
-            ])
-            ->setFormat(Client::FORMAT_JSON)
-            ->addHeaders(['Authorization' => 'Basic ' . base64_encode($this->_config['keyId'] . ':' . $this->_config['keySecret'])])
-            ->setOptions(['timeout' => 20])
-            ->send();
-
-        $orderId = $response->isOk ? ($response->data['id'] ?? null) : null;
-        if (!is_string($orderId) || $orderId === '') {
-            Yii::error(['message' => 'Razorpay order creation failed.', 'invoice' => $invoice->invoice_number, 'status' => $response->statusCode, 'body' => $response->content], __METHOD__);
-            throw new \RuntimeException('Could not start online payment. Please try again.');
-        }
+        $orderId = $this->requestOrder($this->toMinor($amount), (string) $invoice->invoice_number, ['invoice_number' => (string) $invoice->invoice_number]);
 
         $now = time();
         $transaction = new Transaction();
@@ -108,6 +92,67 @@ final class RazorpayService
         }
 
         return $transaction;
+    }
+
+    /** Test keys (rzp_test_…): payments are simulated and no money moves. */
+    public function isTestMode(): bool
+    {
+        return str_starts_with($this->getKeyId(), 'rzp_test_');
+    }
+
+    /**
+     * A bare Razorpay order for the admin "Razorpay Test" page: nothing is stored, no invoice is
+     * involved (its webhook is ignored as "not our order"). Refused with live keys.
+     */
+    public function createTestOrder(int $amountMinor): string
+    {
+        if (!$this->isEnabled() || !$this->isTestMode()) {
+            throw new \DomainException('Test payments need RAZORPAY_ENABLED=true and test keys (rzp_test_…).');
+        }
+        if ($amountMinor < 100) {
+            throw new \DomainException('The minimum amount is ₹1.');
+        }
+
+        return $this->requestOrder($amountMinor, 'gateway-test-' . time(), ['purpose' => 'admin gateway test']);
+    }
+
+    /** The payment as Razorpay reports it (status, method, amount...). */
+    public function fetchPayment(string $paymentId): array
+    {
+        $response = $this->api()->get('payments/' . rawurlencode($paymentId))->send();
+        if (!$response->isOk || !is_array($response->data)) {
+            throw new \RuntimeException('Razorpay did not return payment ' . $paymentId . ' (HTTP ' . $response->statusCode . ').');
+        }
+
+        return $response->data;
+    }
+
+    /** Creates an order and returns its id. */
+    private function requestOrder(int $amountMinor, string $receipt, array $notes): string
+    {
+        $response = $this->api()
+            ->post('orders', ['amount' => $amountMinor, 'currency' => 'INR', 'receipt' => substr($receipt, 0, 40), 'notes' => $notes])
+            ->setFormat(Client::FORMAT_JSON)
+            ->send();
+
+        $orderId = $response->isOk ? ($response->data['id'] ?? null) : null;
+        if (!is_string($orderId) || $orderId === '') {
+            Yii::error(['message' => 'Razorpay order creation failed.', 'receipt' => $receipt, 'status' => $response->statusCode, 'body' => $response->content], __METHOD__);
+            throw new \RuntimeException('Could not start online payment. Please try again.');
+        }
+
+        return $orderId;
+    }
+
+    private function api(): Client
+    {
+        return new Client([
+            'baseUrl' => self::API_URL,
+            'requestConfig' => [
+                'headers' => ['Authorization' => 'Basic ' . base64_encode($this->_config['keyId'] . ':' . $this->_config['keySecret'])],
+                'options' => ['timeout' => 20],
+            ],
+        ]);
     }
 
     /** Signature returned to the browser by Checkout: HMAC(order_id|payment_id, key_secret). */

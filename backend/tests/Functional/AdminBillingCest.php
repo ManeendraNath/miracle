@@ -66,6 +66,20 @@ final class AdminBillingCest
         $I->seeRecord(\common\models\Hosting::class, ['id' => $hostingId, 'current_expiry_date' => '2026-01-30', 'renewal_anchor_day' => 30]);
     }
 
+    public function razorpayTestPageOpensAndRejectsAForgedCheckout(FunctionalTester $I): void
+    {
+        $I->amOnRoute('razorpay-test/index');
+        $I->seeResponseCodeIs(200);
+        $I->see('No invoice, customer or transaction is created or changed.');
+        $I->sendAjaxPostRequest('/razorpay-test/verify', [
+            Yii::$app->request->csrfParam => $I->grabAttributeFrom('meta[name=csrf-token]', 'content'),
+            'razorpay_order_id' => 'order_forged',
+            'razorpay_payment_id' => 'pay_forged',
+            'razorpay_signature' => 'forged',
+        ]);
+        $I->see('Signature check failed');
+    }
+
     /** POST a transaction action the way its button does (with the page's CSRF token). */
     private function post(FunctionalTester $I, string $action, int $id): void
     {

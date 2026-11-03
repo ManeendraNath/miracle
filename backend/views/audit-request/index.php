@@ -1,5 +1,6 @@
 <?php
 
+use backend\controllers\BaseController;
 use common\helpers\GridActionHelper;
 use common\helpers\GridFilterHelper;
 use common\helpers\GridPaginationHelper;
@@ -155,7 +156,14 @@ GridViewHelper::register($this);
                     /*
                      * Shared Bootstrap 5 CRUD actions.
                      */
-                    GridActionHelper::crudColumn(deleteMessage: 'Are you sure you want to delete this audit request?'),
+                    GridActionHelper::crudColumn(
+                        deleteMessage: 'Are you sure you want to delete this audit request?',
+                        // Managers only view audit requests (BaseController::MIN_ROLE).
+                        visibleButtons: [
+                            'update' => BaseController::canAccess(Yii::$app->user->identity, 'audit-request', 'update'),
+                            'delete' => BaseController::canAccess(Yii::$app->user->identity, 'audit-request', 'delete'),
+                        ],
+                    ),
                 ],
             ])
             ?>

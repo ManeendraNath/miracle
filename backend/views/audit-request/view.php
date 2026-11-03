@@ -28,8 +28,10 @@ $statusLabel = AuditRequest::getStatuses()[$model->status] ?? $model->status;
 $this->params['subtitle'] = 'Website audit request and technical assessment details.';
 $this->params['actions'] = [
     Html::a('<i class="fas fa-arrow-left mr-1"></i> Back', ['index'], ['class' => 'btn btn-light border']),
-    Html::a('<i class="fas fa-edit mr-1"></i> Update', ['update', 'id' => $model->id], ['class' => 'btn btn-primary']),
 ];
+if (\backend\controllers\BaseController::canAccess(Yii::$app->user->identity, 'audit-request', 'update')) {
+    $this->params['actions'][] = Html::a('<i class="fas fa-edit mr-1"></i> Update', ['update', 'id' => $model->id], ['class' => 'btn btn-primary']);
+}
 ?>
 
 <div class="audit-request-view">

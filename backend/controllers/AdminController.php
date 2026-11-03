@@ -68,7 +68,7 @@ class AdminController extends BaseController
             }
         } else {
             $model->loadDefaultValues();
-            $model->role = Admin::getRoleSuperAdmin();
+            $model->role = Admin::getRoleManager(); // least privilege; the Superadmin raises it deliberately
             $model->status = Admin::getStatusActive();
         }
 
@@ -117,8 +117,12 @@ class AdminController extends BaseController
         }
         if ($this->request->isPost) {
             $posted = $this->request->post($model->formName(), []);
+            $currentPassword = (string) $this->request->post('current_password', '');
             $model->setAttributes(array_intersect_key($posted, array_flip(['email', 'password'])));
-            if ($model->save()) {
+            // A hijacked or unattended session must not be able to take the account over.
+            if ($currentPassword === '' || !$model->validatePassword($currentPassword)) {
+                $model->addError('email', 'Enter your current password to save changes.');
+            } elseif ($model->save()) {
                 Yii::$app->session->setFlash('success', 'Your account has been updated.');
                 return $this->refresh();
             }

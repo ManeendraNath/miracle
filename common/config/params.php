@@ -12,6 +12,8 @@ return [
     // two-factor until reset (php yii admin-2fa/reset <username>).
     'twoFactorKey' => $_ENV['TWO_FACTOR_KEY'] ?? '',
     'user.passwordResetTokenExpire' => 3600,
+    // Signup verification links; "resend verification email" issues a fresh one.
+    'user.emailVerificationTokenExpire' => 7 * 86400,
     'user.passwordMinLength' => 8,
     'bsVersion' => '5.x',
     'billing' => [

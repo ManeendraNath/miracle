@@ -134,6 +134,12 @@ trait BaseIdentityTrait
      */
     public static function findByVerificationToken(string $token): static|null
     {
+        // Token is "<random>_<issued at>"; old links stop working (a fresh one can be resent).
+        $issuedAt = (int) substr($token, (int) strrpos($token, '_') + 1);
+        if ($issuedAt + (int) (Yii::$app->params['user.emailVerificationTokenExpire'] ?? 7 * 86400) < time()) {
+            return null;
+        }
+
         return static::findOne([
                     'verification_token' => $token,
                     'status' => self::getStatusInactive(),

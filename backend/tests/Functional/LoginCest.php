@@ -66,4 +66,18 @@ final class LoginCest
         $I->amOnRoute('admin/account');
         $I->seeResponseCodeIs(200);
     }
+
+    public function accountChangesNeedTheCurrentPassword(FunctionalTester $I): void
+    {
+        $this->haveAdmin($I, 'test-account', Admin::getRoleManager(), Admin::getStatusActive());
+        $this->login($I, 'test-account', self::PASSWORD);
+        $I->amOnRoute('admin/account');
+        $I->submitForm('#account-form', ['Admin[email]' => 'taken-over@example.test', 'current_password' => 'wrong-password']);
+        $I->see('Enter your current password to save changes.');
+        $I->seeRecord(Admin::class, ['username' => 'test-account', 'email' => 'test-account@example.test']);
+
+        $I->submitForm('#account-form', ['Admin[email]' => 'renamed@example.test', 'current_password' => self::PASSWORD]);
+        $I->see('Your account has been updated.');
+        $I->seeRecord(Admin::class, ['username' => 'test-account', 'email' => 'renamed@example.test']);
+    }
 }

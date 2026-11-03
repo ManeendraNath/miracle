@@ -16,6 +16,7 @@ use frontend\models\SignupForm;
 use frontend\models\VerifyEmailForm;
 use Yii;
 use yii\base\InvalidArgumentException;
+use common\services\admin\AdminAlertService;
 use yii\captcha\CaptchaAction;
 use yii\filters\AccessControl;
 use yii\filters\VerbFilter;
@@ -165,7 +166,7 @@ class SiteController extends Controller
      */
     public function actionAudit()
     {
-        $model = new AuditRequest();
+        $model = new AuditRequest(['scenario' => AuditRequest::SCENARIO_PUBLIC]);
         if ($model->load(Yii::$app->request->post())) {
             $model->user_ip = Yii::$app->request->userIP;
             $model->status = AuditRequest::STATUS_PENDING;
@@ -196,6 +197,11 @@ class SiteController extends Controller
                             ->send();
                 } catch (\Throwable $e) {
                     Yii::error(['message' => 'Audit request email failed.', 'auditRequestId' => (int) $model->id, 'error' => $e->getMessage()], __METHOD__);
+                }
+                try {
+                    AdminAlertService::auditRequestCreated((string) $model->company_url);
+                } catch (\Throwable $e) {
+                    Yii::error(['message' => 'Audit request admin alert failed.', 'auditRequestId' => (int) $model->id, 'error' => $e->getMessage()], __METHOD__);
                 }
 
                 Yii::$app->session->setFlash('success', 'Your system matrix data has been securely logged. Our engineers are reviewing your case.');

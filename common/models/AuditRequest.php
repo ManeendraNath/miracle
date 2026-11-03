@@ -18,6 +18,11 @@ class AuditRequest extends base\AuditRequest
     public const STATUS_IN_REVIEW = 'In_Review';
     public const STATUS_CONTACTED = 'Contacted';
     public const STATUS_CLOSED = 'Closed';
+    /** The public website form (captcha); staff create/edit in the admin panel use the default scenario. */
+    public const SCENARIO_PUBLIC = 'public';
+
+    /** Captcha answer on the public form; not stored. */
+    public $verifyCode;
 
     #[\Override]
     public function rules(): array
@@ -25,6 +30,10 @@ class AuditRequest extends base\AuditRequest
         return array_merge(parent::rules(), [
             // Only http(s): the value is rendered as a link in the admin panel.
             ['company_url', 'url', 'defaultScheme' => 'https'],
+            // Used as Reply-To on the staff email.
+            ['email', 'email'],
+            ['verifyCode', 'required', 'on' => self::SCENARIO_PUBLIC],
+            ['verifyCode', 'captcha', 'captchaAction' => 'site/captcha', 'on' => self::SCENARIO_PUBLIC],
         ]);
     }
 

@@ -31,6 +31,9 @@ class BaseController extends Controller
         // Managers can see leads; changing or deleting them is Admin work.
         'lead/update' => 'Admin',
         'lead/delete' => 'Admin',
+        // Same for audit requests (customer-submitted enquiries).
+        'audit-request/update' => 'Admin',
+        'audit-request/delete' => 'Admin',
         'hosting/cpanel-password' => 'Admin',
     ];
 

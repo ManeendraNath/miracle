@@ -32,7 +32,7 @@ return [
         'status' => '0',
         'created_at' => '1548675330',
         'updated_at' => '1548675330',
-        'verification_token' => '4ch0qbfhvWwkcuWqjN8SWRq72SOw1KYT_1548675330',
+        'verification_token' => '4ch0qbfhvWwkcuWqjN8SWRq72SOw1KYT_9999999999',
     ],
     [
         'username' => 'test2.test',
@@ -43,6 +43,6 @@ return [
         'status' => '1',
         'created_at' => '1548675330',
         'updated_at' => '1548675330',
-        'verification_token' => 'already_used_token_1548675330',
+        'verification_token' => 'already_used_token_9999999999',
     ],
 ];

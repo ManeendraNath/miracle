@@ -39,6 +39,12 @@ class ResendVerificationEmailForm extends Model
         if ($user === null) {
             return false;
         }
+        // A fresh link: the old one may have expired.
+        $user->generateEmailVerificationToken();
+        $user->updated_at = time();
+        if (!$user->save(false, ['verification_token', 'updated_at'])) {
+            return false;
+        }
 
         return $mailer
             ->compose(

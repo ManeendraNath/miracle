@@ -20,13 +20,18 @@ $this->params['breadcrumbs'][] = $this->title;
             <span class="badge badge-info ml-2"><?= Html::encode($model->role) ?></span>
         </h3>
     </div>
-    <?php $form = ActiveForm::begin(['options' => ['autocomplete' => 'off']]); ?>
+    <?php $form = ActiveForm::begin(['id' => 'account-form', 'options' => ['autocomplete' => 'off']]); ?>
     <div class="card-body">
         <?= $form->field($model, 'email')->input('email') ?>
         <?= $form->field($model, 'password')->passwordInput([
             'autocomplete' => 'new-password',
             'placeholder' => 'Leave blank to keep your current password',
         ])->hint('Minimum 8 characters.') ?>
+        <div class="form-group">
+            <?= Html::label('Current password', 'current-password', ['class' => 'form-label']) ?>
+            <?= Html::passwordInput('current_password', '', ['id' => 'current-password', 'class' => 'form-control', 'autocomplete' => 'current-password', 'required' => true]) ?>
+            <small class="form-text text-muted">Required to change your email or password.</small>
+        </div>
     </div>
     <div class="card-footer text-right">
         <?= Html::submitButton('Save', ['class' => 'btn btn-primary px-4']) ?>

@@ -26,10 +26,18 @@ final class m261107_100000_encrypt_cpanel_passwords extends Migration
         }
     }
 
-    public function safeDown(): bool
+    public function safeDown(): void
     {
-        echo "Encrypted cPanel passwords are left encrypted (Hosting still reads them).\n";
-
-        return true;
+        // Back to the previous schema (plain varchar(255)), which the previous code reads.
+        $rows = (new Query())->select(['id', 'cpanel_password'])->from('{{%hosting}}')
+            ->where(['not', ['cpanel_password' => null]])->andWhere(['<>', 'cpanel_password', ''])->all($this->db);
+        foreach ($rows as $row) {
+            $plain = SecretBox::decrypt((string) $row['cpanel_password'], 'cpanel-password');
+            if ($plain === null || mb_strlen($plain) > 255) {
+                throw new \RuntimeException("cPanel password of hosting #{$row['id']} can't be decrypted (TWO_FACTOR_KEY); not rolling back.");
+            }
+            $this->update('{{%hosting}}', ['cpanel_password' => $plain], ['id' => $row['id']]);
+        }
+        $this->alterColumn('{{%hosting}}', 'cpanel_password', $this->string(255)->null());
     }
 }

@@ -25,6 +25,9 @@ final class RoleAccessTest extends Unit
             'admin/index' => [false, false, true],
             'admin/update' => [false, false, true],
             'site-setting/index' => [false, false, true],
+            'audit-request/view' => [true, true, true],
+            'audit-request/update' => [false, true, true],
+            'audit-request/delete' => [false, true, true],
         ];
         foreach ($routes as $route => $expected) {
             [$controller, $action] = explode('/', $route);

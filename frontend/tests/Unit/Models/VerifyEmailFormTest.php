@@ -48,14 +48,14 @@ final class VerifyEmailFormTest extends Unit
         $this->tester->expectThrowable(
             InvalidArgumentException::class, 
             static function (): void {
-                new VerifyEmailForm('already_used_token_1548675330');
+                new VerifyEmailForm('already_used_token_9999999999');
             },
         );
     }
 
     public function testVerifyCorrectToken(): void
     {
-        $model = new VerifyEmailForm('4ch0qbfhvWwkcuWqjN8SWRq72SOw1KYT_1548675330');
+        $model = new VerifyEmailForm('4ch0qbfhvWwkcuWqjN8SWRq72SOw1KYT_9999999999');
 
         $user = $model->verifyEmail();
 
@@ -64,5 +64,10 @@ final class VerifyEmailFormTest extends Unit
         verify($user->email)->equals('test@mail.com');
         verify($user->status)->equals(User::getStatusActive());
         verify($user->validatePassword('Test1234'))->true();
+    }
+
+    public function testExpiredTokenIsRejected(): void
+    {
+        verify(\common\models\User::findByVerificationToken('4ch0qbfhvWwkcuWqjN8SWRq72SOw1KYT_' . (time() - 8 * 86400)))->null();
     }
 }

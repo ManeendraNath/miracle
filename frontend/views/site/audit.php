@@ -52,6 +52,10 @@ $this->title = 'Deploy System Infrastructure Audit | Miracle Web Technologies';
                 <?= $form->field($model, 'message')->textarea(['rows' => 5, 'placeholder' => 'Describe your scaling bottlenecks, current database user limits, or script compilation error records...'])->label('Detailed Constraints Scope') ?>
             </div>
 
+            <?= $form->field($model, 'verifyCode')->widget(\yii\captcha\Captcha::class, [
+                'template' => '<div class="row g-2 align-items-center"><div class="col-auto">{image}</div><div class="col">{input}</div></div>',
+            ]) ?>
+
             <div class="form-group text-end mt-4">
                 <?= Html::submitButton('Submit Specification Matrix for Review ⚡', [
                     'class' => 'btn btn-lg fw-bold text-white px-5 py-3',

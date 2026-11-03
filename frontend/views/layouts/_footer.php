@@ -61,6 +61,7 @@ $socials = array_filter([
                 <ul class="list-unstyled small mb-3">
                     <li class="mb-2"><?= Html::a('Hosting plans', ['/site/index', '#' => 'hosting-tiers']) ?></li>
                     <li class="mb-2"><?= Html::a('Website audit', ['/site/audit']) ?></li>
+                    <li class="mb-2"><?= Html::a('About us', ['/site/about']) ?></li>
                     <li class="mb-2"><?= Html::a('Contact us', ['/site/contact']) ?></li>
                     <li class="mb-2"><?= Yii::$app->user->isGuest ? Html::a('Customer login', ['/site/login']) : Html::a('My account', ['/dashboard/index']) ?></li>
                 </ul>
@@ -77,6 +78,14 @@ $socials = array_filter([
         </div>
 
         <hr class="my-4 footer-rule">
-        <div class="small footer-muted">&copy; <?= date('Y') ?> <?= Html::encode($siteName) ?>. All rights reserved.</div>
+        <div class="d-flex flex-wrap justify-content-between gap-2 small footer-muted">
+            <div>&copy; <?= date('Y') ?> <?= Html::encode($siteName) ?>. All rights reserved.</div>
+            <div class="d-flex flex-wrap gap-3">
+                <?= Html::a('Terms &amp; Conditions', ['/site/terms']) ?>
+                <?= Html::a('Privacy Policy', ['/site/privacy']) ?>
+                <?= Html::a('Refund &amp; Cancellation', ['/site/refund-policy']) ?>
+                <?= Html::a('Shipping &amp; Delivery', ['/site/shipping-policy']) ?>
+            </div>
+        </div>
     </div>
 </footer>

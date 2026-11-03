@@ -14,6 +14,6 @@ final class HomeCest
         $I->amOnRoute('site/index');
         $I->see('Modern Systems.', 'h1');
         $I->amOnRoute('site/about');
-        $I->see('This is the About page.');
+        $I->see('What we do', 'h2');
     }
 }

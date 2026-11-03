@@ -221,6 +221,26 @@ class SiteController extends Controller
         return $this->render('about');
     }
 
+    public function actionTerms(): string
+    {
+        return $this->render('terms');
+    }
+
+    public function actionPrivacy(): string
+    {
+        return $this->render('privacy');
+    }
+
+    public function actionRefundPolicy(): string
+    {
+        return $this->render('refund-policy');
+    }
+
+    public function actionShippingPolicy(): string
+    {
+        return $this->render('shipping-policy');
+    }
+
     /**
      * Signs user up.
      *

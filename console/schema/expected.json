@@ -1,5 +1,5 @@
 {
-    "migrations": 49,
+    "migrations": 50,
     "columns": {
         "admin": {
             "auth_key": {
@@ -1491,6 +1491,20 @@
                 "extra": ""
             }
         },
+        "invoice_sequence": {
+            "financial_year": {
+                "type": "char(4)",
+                "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "last_number": {
+                "type": "int unsigned",
+                "null": false,
+                "default": "0",
+                "extra": ""
+            }
+        },
         "lead": {
             "created_at": {
                 "type": "int",
@@ -2381,6 +2395,9 @@
             "id": "primary",
             "invoice_id,reminder_key": "unique",
             "sent_at": "index"
+        },
+        "invoice_sequence": {
+            "financial_year": "primary"
         },
         "lead": {
             "created_at": "index",

@@ -72,6 +72,9 @@ These dynamic relational tables track the financial transaction pipeline, tax ma
     *   `discount_amount`: Numeric cell tracking promo subtractions prior to grand totals computation.
 *   **Relational Link:** Has a one-to-many relationship with `invoice_item`.
 
+### 🔢 `invoice_sequence`
+*   **Operational Purpose:** Last invoice serial per Indian financial year (`financial_year` = `2627` for April 2026 to March 2027). Locked and incremented by `InvoiceNumberService` inside the invoice transaction, which keeps the GST serial gap-free.
+
 ### 📋 `invoice_item`
 *   **Engine Type:** `InnoDB`
 *   **Operational Purpose:** Child record log storing lines and items for parent invoices.

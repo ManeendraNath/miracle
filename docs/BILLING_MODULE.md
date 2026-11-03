@@ -159,6 +159,11 @@ Manual and automatic invoices must use the same `InvoiceNumberService`.
 
 Do not keep separate automatic-number generation logic. A single service prevents behavioural drift.
 
+Format: `MWT` + Indian financial year (April-March, e.g. `2627`) + `-` + 5-digit serial, e.g. `MWT2627-00001`
+(13 characters; GST allows 16). The serial restarts each financial year and is gap-free: `assign()` locks the
+year's `invoice_sequence` row inside the invoice's own transaction, so a rolled-back invoice also returns its
+number. Invoices issued before this format (`MWT` + date + id) keep their numbers.
+
 ## 9. Outstanding balance / arrears
 
 When automatic invoicing transfers previous unpaid debt:

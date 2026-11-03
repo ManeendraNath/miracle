@@ -74,8 +74,8 @@ final class ManualInvoiceServiceTest extends Unit
                 $created->id
         );
 
-        $this->assertStringStartsWith(
-                'MWT',
+        $this->assertMatchesRegularExpression(
+                '/^MWT' . \common\services\billing\InvoiceNumberService::financialYear((int) $created->created_at) . '-\d{5}$/',
                 $created->invoice_number
         );
 

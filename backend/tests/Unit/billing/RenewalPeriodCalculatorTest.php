@@ -33,6 +33,8 @@ final class RenewalPeriodCalculatorTest extends Unit
             'Jan 31 to Feb end' => ['2026-01-31', 1, '2026-02-01', '2026-02-28'],
             'leap day yearly' => ['2028-02-29', 12, '2028-03-01', '2029-02-28'],
             'quarterly across year' => ['2026-11-30', 3, '2026-12-01', '2027-02-28'],
+            'Feb 28 yearly into leap year stays 28' => ['2027-02-28', 12, '2027-03-01', '2028-02-28'],
+            'Apr 30 yearly stays 30' => ['2026-04-30', 12, '2026-05-01', '2027-04-30'],
         ];
     }
 }

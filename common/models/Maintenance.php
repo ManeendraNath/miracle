@@ -36,14 +36,22 @@ class Maintenance extends base\Maintenance
     }
 
     #[\Override]
-    public function rules()
+    public function rules(): array
     {
         return array_merge(parent::rules(), [
             [['start_date', 'current_expiry_date'], 'date', 'format' => 'php:Y-m-d'],
+            // Rendered as a link for staff: only http(s), never javascript: or app-relative paths.
+            ['website_url', 'url', 'defaultScheme' => 'https'],
             ['renewal_cycle_months', 'integer', 'min' => 1],
             ['renewal_increase_percent', 'number', 'min' => 0, 'max' => 100],
             ['renewal_base_amount', 'number', 'min' => 0],
             ['status', 'in', 'range' => [self::STATUS_CANCELLED, self::STATUS_ACTIVE, self::STATUS_OVERDUE]],
         ]);
+    }
+
+    /** website_url as a link target, or null for legacy values that aren't http(s). */
+    public function getWebsiteHref(): ?string
+    {
+        return preg_match('~^https?://~i', (string) $this->website_url) ? $this->website_url : null;
     }
 }

@@ -138,6 +138,14 @@ final class AutoInvoiceService
 
             $this->outstandingService->transferForUser($invoice);
 
+            // The profile's fixed default discount can't exceed this run's charges
+            // (e.g. ₹500 off a ₹400 renewal): cap it rather than failing every run.
+            $currentCharges = (float) InvoiceItem::find()
+                ->where(['invoice_id' => $invoice->id])
+                ->andWhere(['<>', 'item_type', InvoiceItem::TYPE_ARREARS])
+                ->sum('total_price');
+            $invoice->discount_amount = min((float) $invoice->discount_amount, round($currentCharges, 2));
+
             $this->calculateInvoiceTotals($invoice);
             $this->applyAssignedCoupon($invoice);
 

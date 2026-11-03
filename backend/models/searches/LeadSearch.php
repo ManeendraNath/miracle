@@ -20,7 +20,7 @@ class LeadSearch extends Lead
     /**
      * {@inheritdoc}
      */
-    public function rules()
+    public function rules(): array
     {
         return [
             [['id', 'created_at', 'updated_at'], 'integer'],
@@ -31,7 +31,7 @@ class LeadSearch extends Lead
     /**
      * {@inheritdoc}
      */
-    public function scenarios()
+    public function scenarios(): array
     {
         // bypass scenarios() implementation in the parent class
         return Model::scenarios();

@@ -21,10 +21,12 @@ class LoginForm extends Model
     /**
      * {@inheritdoc}
      */
-    public function rules()
+    public function rules(): array
     {
         return [
             [['username', 'password'], 'required'],
+            // Arrays (LoginForm[username][]=x) would hit the (string) casts below.
+            [['username', 'password'], 'string', 'max' => 255],
             ['rememberMe', 'boolean'],
             ['password', 'validatePassword'],
         ];
@@ -78,7 +80,7 @@ class LoginForm extends Model
     /**
      * Finds user by [[username]]
      *
-     * @return User|null
+     * @return Admin|null
      */
     protected function getUser()
     {

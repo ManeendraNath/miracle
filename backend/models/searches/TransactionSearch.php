@@ -20,7 +20,7 @@ class TransactionSearch extends Transaction
     /**
      * {@inheritdoc}
      */
-    public function rules()
+    public function rules(): array
     {
         return [
             [['id', 'invoice_id', 'gateway_id', 'paid_at', 'created_at', 'updated_at'], 'integer'],
@@ -32,7 +32,7 @@ class TransactionSearch extends Transaction
     /**
      * {@inheritdoc}
      */
-    public function scenarios()
+    public function scenarios(): array
     {
         // bypass scenarios() implementation in the parent class
         return Model::scenarios();

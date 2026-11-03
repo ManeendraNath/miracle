@@ -9,6 +9,7 @@ use yii\helpers\Url;
 
 /** @var yii\web\View $this */
 /** @var array $metrics Summary metrics dictionary evaluated from SiteController query scopes */
+/** @var bool $canBilling Admin+ only: Managers get no money figures */
 $assetDir = Yii::$app->assetManager->getPublishedUrl('@vendor/hail812/yii2-adminlte3/src/assets');
 
 // This forces Yii to automatically publish and load all AdminLTE 3 CSS, JS, and Plugins
@@ -41,7 +42,6 @@ $kpis = [
     ['bg-secondary', (int) $metrics['totalInvoicesCount'], 'Invoices Generated', 'fas fa-file-invoice-dollar', 'View Billing History', ['/invoice/index']],
 ];
 // Managers don't see billing figures (they can't open those sections either).
-$canBilling = \backend\controllers\BaseController::canAccess(Yii::$app->user->identity, 'invoice');
 if (!$canBilling) {
     $kpis = array_filter($kpis, static fn(array $kpi): bool => $kpi[5][0] !== '/invoice/index');
 }
@@ -371,5 +371,7 @@ $(function () {
   })
 })
 JS;
-$this->registerJs($chartScript);
+if ($canBilling) {
+    $this->registerJs($chartScript);
+}
 ?>

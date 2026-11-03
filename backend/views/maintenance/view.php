@@ -82,7 +82,7 @@ $this->params['actions'] = [
 
                         <dd class="col-sm-8">
 
-                            <?= Html::a(Html::encode($model->website_url), $model->website_url, [
+                            <?= Html::a(Html::encode($model->website_url), $model->websiteHref, [
                                 'target' => '_blank',
                                 'rel' => 'noopener noreferrer',
                             ]) ?>

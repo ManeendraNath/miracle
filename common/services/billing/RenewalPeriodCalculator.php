@@ -29,11 +29,15 @@ final class RenewalPeriodCalculator
         $start = $expiry->modify('+1 day');
 
         // Same day-of-month N months later, clamped to the target month's
-        // length ("+N months" would overflow 30 Jan -> 2 Mar). A month-end
-        // expiry stays at month end (28 Feb -> 31 Mar).
+        // length ("+N months" would overflow 30 Jan -> 2 Mar). For monthly-style
+        // cycles a month-end expiry stays at month end (28 Feb -> 31 Mar).
+        // Whole years keep the calendar date like a registrar (28 Feb -> 28 Feb,
+        // 29 Feb -> 28 Feb), otherwise 28 Feb would jump to 29 Feb in leap years.
+        // ponytail: without a stored anchor day, a monthly expiry clamped to a short
+        // month (30 Jan -> 28 Feb) then rides month end; store the anchor day if that matters.
         $target = $expiry->modify('first day of +' . $months . ' months');
         $day =
-            $expiry->format('j') === $expiry->format('t')
+            $months % 12 !== 0 && $expiry->format('j') === $expiry->format('t')
                 ? (int) $target->format('t')
                 : min((int) $expiry->format('j'), (int) $target->format('t'));
         $end = $target->setDate((int) $target->format('Y'), (int) $target->format('n'), $day);

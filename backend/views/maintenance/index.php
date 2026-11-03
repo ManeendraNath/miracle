@@ -107,7 +107,7 @@ $users = ArrayHelper::map(User::find()->orderBy(['username' => SORT_ASC])->all()
                             ): string {
                                 return Html::a(
                                     Html::encode($model->website_url),
-                                    $model->website_url,
+                                    $model->websiteHref,
                                     [
                                             'target' => '_blank',
                                             'rel' => 'noopener noreferrer',

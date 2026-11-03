@@ -106,19 +106,22 @@ final class SupportController extends Controller
                 $model->created_at = $now;
                 $model->updated_at = $now;
                 if ($model->save()) {
-                    (new NotificationService())->create(
-                        $userId,
-                        'support',
-                        'Support Ticket Created',
-                        sprintf('Ticket %s has been created.', $model->ticket_number),
-                        '/support/view?number=' . $model->ticket_number,
-                    );
-                    SupportTicketMailer::ticketCreated($model);
-                    AdminAlertService::supportTicketCreated(
-                        $model->ticket_number,
-                        Yii::$app->user->identity->username,
-                        $model->subject,
-                    );
+                    // Committed: a notification failure must not 500 (the customer would resubmit a duplicate).
+                    $this->notifySafely(function () use ($model, $userId): void {
+                        (new NotificationService())->create(
+                            $userId,
+                            'support',
+                            'Support Ticket Created',
+                            sprintf('Ticket %s has been created.', $model->ticket_number),
+                            '/support/view?number=' . $model->ticket_number,
+                        );
+                        SupportTicketMailer::ticketCreated($model);
+                        AdminAlertService::supportTicketCreated(
+                            $model->ticket_number,
+                            Yii::$app->user->identity->username,
+                            $model->subject,
+                        );
+                    });
                     Yii::$app->session->setFlash('success', 'Support request submitted successfully.');
                     return $this->redirect(['view', 'number' => $model->ticket_number]);
                 }
@@ -189,9 +192,20 @@ final class SupportController extends Controller
             $ticket->status = SupportTicket::STATUS_OPEN;
         }
         $ticket->save(false, ['status', 'updated_at']);
-        SupportTicketMailer::customerReply($ticket);
-        AdminAlertService::supportCustomerReply($ticket->ticket_number, Yii::$app->user->identity->username);
+        $this->notifySafely(function () use ($ticket): void {
+            SupportTicketMailer::customerReply($ticket);
+            AdminAlertService::supportCustomerReply($ticket->ticket_number, Yii::$app->user->identity->username);
+        });
         Yii::$app->session->setFlash('success', 'Your reply has been added.');
         return $this->redirect(['view', 'number' => $ticket->ticket_number]);
+    }
+
+    private function notifySafely(callable $notify): void
+    {
+        try {
+            $notify();
+        } catch (\Throwable $e) {
+            Yii::error(['message' => 'Support notification failed.', 'error' => $e->getMessage()], __METHOD__);
+        }
     }
 }

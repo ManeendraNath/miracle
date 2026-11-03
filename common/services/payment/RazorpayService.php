@@ -180,7 +180,7 @@ final class RazorpayService
             $invoice = Invoice::findOne((int) $transaction->invoice_id);
             $unapplied = $invoice !== null && in_array($invoice->status, [Invoice::STATUS_CANCELLED, Invoice::STATUS_CARRIED_FORWARD, Invoice::STATUS_PAID, Invoice::STATUS_REFUNDED], true);
             if ($unapplied) {
-                $transaction->user_payment_notes = trim($transaction->user_payment_notes . "\nUNAPPLIED: invoice was {$invoice->status} when paid. Refund in Razorpay or apply manually.");
+                $transaction->user_payment_notes = trim($transaction->user_payment_notes . "\n" . Transaction::UNAPPLIED_NOTE_PREFIX . " invoice was {$invoice->status} when paid. Refund in Razorpay or apply manually.");
             }
             if (!$transaction->save()) {
                 throw new \RuntimeException('Captured payment could not be saved.');

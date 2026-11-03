@@ -17,7 +17,7 @@ trait ToggleStatusTrait
      */
     abstract protected function statusToggle(): array;
 
-    public function actionToggleStatus($id)
+    public function actionToggleStatus(int $id)
     {
         $model = $this->findModel($id);
         [$attribute, $on, $off] = $this->statusToggle();

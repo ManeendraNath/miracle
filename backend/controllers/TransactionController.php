@@ -217,6 +217,13 @@ class TransactionController extends BaseController
             if ($model->status !== Transaction::STATUS_CAPTURED) {
                 throw new \DomainException('Only captured payments can be refunded.');
             }
+            // Its unpaid balance already moved to a newer invoice as a fixed arrears line;
+            // a refund here would leave that line short and the refunded money uncollected.
+            // ponytail: refused outright; raise the arrears on the newer invoice if this case gets common.
+            if (($model->invoice->status ?? null) === Invoice::STATUS_CARRIED_FORWARD) {
+                $target = $model->invoice->invoiceItem->invoice ?? null; // invoiceItem = the arrears line that carried it
+                throw new \DomainException('This invoice was carried forward' . ($target !== null ? ' into ' . $target->invoice_number : '') . ', so its payments cannot be refunded here.');
+            }
             $model->status = Transaction::STATUS_REFUNDED;
             $model->updated_at = time();
             if (!$model->save(false, ['status', 'updated_at'])) {
@@ -266,6 +273,11 @@ class TransactionController extends BaseController
             }
             if ($model->status !== Transaction::STATUS_PENDING) {
                 throw new \DomainException('Only pending payments can be rejected.');
+            }
+            // A pending online order may still be paid in the customer's open checkout;
+            // failing it here would make that capture unrecordable.
+            if ((int) $model->gateway_id === Transaction::GATEWAY_RAZORPAY) {
+                throw new \DomainException('Razorpay orders are settled automatically and cannot be rejected manually.');
             }
             $model->status = Transaction::STATUS_FAILED;
             $model->updated_at = time();

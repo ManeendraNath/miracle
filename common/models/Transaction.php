@@ -31,6 +31,14 @@ class Transaction extends base\Transaction
     public const GATEWAY_UPI_BANK = 2;
     /** Admin "record a payment" form: only these come from the form; status/paid_at/etc. go through approve/refund. */
     public const SCENARIO_ADMIN_ENTRY = 'admin-entry';
+    /** Marks a Razorpay capture that could not be applied (invoice no longer payable). */
+    public const UNAPPLIED_NOTE_PREFIX = 'UNAPPLIED:';
+
+    /** Captured but kept off the invoice: an admin must refund or apply it. */
+    public function isUnapplied(): bool
+    {
+        return str_contains((string) $this->user_payment_notes, self::UNAPPLIED_NOTE_PREFIX);
+    }
 
     public function scenarios(): array
     {
@@ -40,7 +48,7 @@ class Transaction extends base\Transaction
         return $scenarios;
     }
 
-    public function rules()
+    public function rules(): array
     {
         return array_merge(parent::rules(), [
             // Safe assignment for custom customer notes

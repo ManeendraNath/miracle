@@ -47,7 +47,7 @@ class Domains extends base\Domains
      * Additional business validation rules.
      */
     #[\Override]
-    public function rules()
+    public function rules(): array
     {
         return ArrayHelper::merge(
             parent::rules(),

@@ -19,7 +19,7 @@ class MaintenanceSearch extends Maintenance
     /**
      * {@inheritdoc}
      */
-    public function rules()
+    public function rules(): array
     {
         return [
             [['id', 'user_id', 'status', 'created_at', 'updated_at'], 'integer'],
@@ -30,7 +30,7 @@ class MaintenanceSearch extends Maintenance
     /**
      * {@inheritdoc}
      */
-    public function scenarios()
+    public function scenarios(): array
     {
         // bypass scenarios() implementation in the parent class
         return Model::scenarios();

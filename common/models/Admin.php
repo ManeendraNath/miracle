@@ -65,7 +65,7 @@ class Admin extends base\Admin implements IdentityInterface
      * The two-factor columns are changed only through the methods below, never by form input.
      */
     #[\Override]
-    public function scenarios()
+    public function scenarios(): array
     {
         return array_map(
             static fn(array $attributes): array => array_values(array_diff($attributes, ['totp_secret', 'totp_last_step'])),

@@ -178,17 +178,21 @@ final class InvoiceController extends Controller
             return $this->redirect(['view', 'number' => $invoice->invoice_number]);
         }
         try {
-            $razorpay->capture($orderId, $paymentId);
-            $invoice->refresh();
-            if (in_array($invoice->status, [Invoice::STATUS_CANCELLED, Invoice::STATUS_CARRIED_FORWARD], true)) {
-                Yii::$app->session->setFlash('warning', 'Payment received, but this invoice is no longer payable. Our team will refund it or apply it to your account. Reference: ' . $paymentId);
+            // Unapplied: the invoice was already settled or closed (e.g. paid by UPI in the meantime).
+            if ($razorpay->capture($orderId, $paymentId)->isUnapplied()) {
+                Yii::$app->session->setFlash('warning', 'Payment received, but this invoice no longer needed it. Our team will refund it or apply it to your account. Reference: ' . $paymentId);
             } else {
                 Yii::$app->session->setFlash('success', 'Payment received. Thank you!');
             }
         } catch (\Throwable $e) {
             Yii::error(['message' => 'Razorpay checkout capture failed.', 'invoice' => $invoice->invoice_number, 'orderId' => $orderId, 'paymentId' => $paymentId, 'error' => $e->getMessage()], __METHOD__);
             Yii::$app->session->setFlash('warning', 'Your payment was received but could not be applied automatically. Our team has been notified and will confirm it shortly. Reference: ' . $paymentId);
-            AdminAlertService::paymentSubmitted($invoice->invoice_number, (string) $invoice->client_name, (float) $invoice->total_payable);
+            try {
+                $amount = (float) Transaction::find()->select('amount')->where(['gateway_order_id' => $orderId])->scalar();
+                AdminAlertService::paymentNotRecorded($orderId, $paymentId, $amount, $e->getMessage());
+            } catch (\Throwable $alertError) {
+                Yii::error(['message' => 'Could not alert admins about an unrecorded payment.', 'paymentId' => $paymentId, 'error' => $alertError->getMessage()], __METHOD__);
+            }
         }
         return $this->redirect(['view', 'number' => $invoice->invoice_number]);
     }

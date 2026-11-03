@@ -15,7 +15,7 @@ class BillingEvent extends base\BillingEvent
      * generated unique rule must ignore them too or rebilling fails validation.
      */
     #[\Override]
-    public function rules()
+    public function rules(): array
     {
         $rules = array_filter(
             parent::rules(),

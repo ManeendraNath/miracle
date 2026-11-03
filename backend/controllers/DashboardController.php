@@ -45,9 +45,12 @@ class DashboardController extends BaseController
                 ->limit(4)
                 ->all();
         }
+        // Managers don't see billing figures: don't compute them, so nothing reaches the page.
+        $canBilling = self::canAccess(Yii::$app->user->identity, 'invoice');
+
         // Amount still owed: payable invoices minus what has already been captured
         // against them (part-paid invoices would otherwise count in full).
-        $outstanding = (float) Yii::$app->db
+        $outstanding = !$canBilling ? 0.0 : (float) Yii::$app->db
             ->createCommand(
                 '
             SELECT COALESCE(SUM(i.total_payable), 0) - COALESCE((
@@ -77,20 +80,18 @@ class DashboardController extends BaseController
                 ->count(),
             'unpaidBalance' => $outstanding,
             // 2. Gateway Ledger Verification Streams
-            'totalRevenueCollected' =>
-                Invoice::find()
-                    ->andWhere(['status' => 'Paid'])
-                    ->sum('total_payable') ?:
-                0.0,
+            'totalRevenueCollected' => $canBilling
+                ? (float) Invoice::find()->andWhere(['status' => 'Paid'])->sum('total_payable')
+                : 0.0,
             'pendingUpiVerifications' => Transaction::find()
                 ->andWhere(['gateway_id' => Transaction::GATEWAY_UPI_BANK, 'status' => 'Pending'])
                 ->count(),
-            'capturedRevenueToday' =>
-                Transaction::find()
+            'capturedRevenueToday' => $canBilling
+                ? (float) Transaction::find()
                     ->andWhere(['status' => 'Captured'])
                     ->andWhere(['between', 'paid_at', strtotime('today'), strtotime('tomorrow') - 1])
-                    ->sum('amount') ?:
-                0.0,
+                    ->sum('amount')
+                : 0.0,
             // 3. Inbound Agency Pipeline Tracks
             'newInboundLeadsCount' => AuditRequest::find()
                 ->andWhere(['status' => 'Pending'])
@@ -112,7 +113,7 @@ class DashboardController extends BaseController
         $chartDataThisYear = [];
         $chartDataLastYear = [];
 
-        for ($i = 5; $i >= 0; $i--) {
+        for ($i = 5; $canBilling && $i >= 0; $i--) {
             // Calculate raw dates relative to loop index
             $targetTime = strtotime("first day of -$i months"); // "first day of" avoids skipping short months on the 29th-31st
             // created_at is a unix timestamp, so the bounds must be too
@@ -173,19 +174,10 @@ class DashboardController extends BaseController
 
         return $this->render('index', [
             'metrics' => $metrics,
+            'canBilling' => $canBilling,
             'openSupportTickets' => $openSupportTickets,
             'highPrioritySupportTickets' => $highPrioritySupportTickets,
             'recentSupportTickets' => $recentSupportTickets,
         ]);
-    }
-
-    public function actionUpdate()
-    {
-        return $this->render('update');
-    }
-
-    public function actionView()
-    {
-        return $this->render('view');
     }
 }

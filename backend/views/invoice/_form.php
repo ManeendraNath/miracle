@@ -6,7 +6,7 @@ use yii\widgets\ActiveForm;
 
 /** @var yii\web\View $this */
 /** @var common\models\Invoice $model */
-/** @var backend\models\forms\ManualInvoiceItemForm[] $items */
+/** @var common\models\forms\ManualInvoiceItemForm[] $items */
 /** @var array $usersList */
 $isNew = $model->isNewRecord;
 ?>

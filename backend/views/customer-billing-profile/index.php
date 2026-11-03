@@ -2,89 +2,81 @@
 
 declare(strict_types=1);
 
-use common\helpers\GridActionHelper;
+use backend\models\searches\CustomerBillingProfileSearch;
 use common\helpers\AdminIndexHelper;
-use yii\helpers\Html;
+use common\helpers\GridActionHelper;
+use common\helpers\GridFilterHelper;
+use common\helpers\GridPaginationHelper;
+use common\helpers\GridViewHelper;
+use common\models\CustomerBillingProfile;
+use common\models\User;
+use yii\grid\GridView;
+use yii\helpers\ArrayHelper;
+
+/** @var yii\web\View $this */
+/** @var CustomerBillingProfileSearch $searchModel */
+/** @var yii\data\ActiveDataProvider $dataProvider */
 
 $this->title = 'Customer Billing Profiles';
-
 $this->params['breadcrumbs'][] = $this->title;
+
+GridViewHelper::register($this);
+
+$users = ArrayHelper::map(User::find()->orderBy(['username' => SORT_ASC])->all(), 'id', 'username');
 ?>
 
-<div class="card card-outline card-primary shadow-sm">
-    <?= AdminIndexHelper::pageHeader(
-        'Legal billing information used when invoices are generated.',
-        'create',
-        'Add Billing Profile',
-    ) ?>
+<div class="customer-billing-profile-index">
 
-    <div class="card-body p-0">
+    <div class="card card-outline card-primary shadow-sm">
 
-        <div class="table-responsive">
+        <?= AdminIndexHelper::pageHeader(
+            'Legal billing information used when invoices are generated.',
+            'create',
+            'Add Billing Profile',
+        ) ?>
 
-            <table class="table table-hover align-middle mb-0">
+        <div class="card-body p-0">
 
-                <thead class="table-light">
-                    <tr>
-                        <th>Client</th>
-                        <th>Legal Name</th>
-                        <th>State / Country</th>
-                        <th>GSTIN</th>
-                        <th>PAN</th>
-                        <th class="text-end">
-                            Action
-                        </th>
-                    </tr>
-                </thead>
-
-                <tbody>
-
-                    <?php foreach ($profiles as $profile): ?>
-                        <tr>
-
-                            <td>
-                                <?= Html::encode($profile->user?->username ?? '-') ?>
-                            </td>
-
-                            <td>
-                                <?= Html::encode($profile->legal_name) ?>
-                            </td>
-
-                            <td>
-                                <?= Html::encode($profile->isForeign() ? $profile->country : $profile->state) ?>
-                            </td>
-
-                            <td>
-                                <?= Html::encode($profile->gstin ?: '-') ?>
-                            </td>
-
-                            <td>
-                                <?= Html::encode($profile->pan ?: '-') ?>
-                            </td>
-
-                            <td class="text-center text-nowrap">
-                                <?= GridActionHelper::button('update', ['update', 'id' => $profile->id]) ?>
-                            </td>
-
-                        </tr>
-
-                    <?php endforeach; ?>
-
-                    <?php if (!$profiles): ?>
-                        <tr>
-                            <td
-                                colspan="6"
-                                class="text-center text-muted py-4"
-                                >
-                                No billing profiles found.
-                            </td>
-                        </tr>
-
-                    <?php endif; ?>
-
-                </tbody>
-
-            </table>
+            <?= GridView::widget([
+                'dataProvider' => $dataProvider,
+                'filterModel' => $searchModel,
+                'layout' => GridPaginationHelper::gridLayout(),
+                'summaryOptions' => ['class' => 'text-muted small mb-3'],
+                'tableOptions' => ['class' => 'table table-hover table-striped align-middle mb-0'],
+                'filterRowOptions' => ['class' => 'bg-light'],
+                'emptyText' => 'No billing profiles found.',
+                'columns' => [
+                    [
+                        'class' => 'yii\grid\SerialColumn',
+                        'header' => '#',
+                        'headerOptions' => ['style' => 'width: 60px;', 'class' => 'text-center'],
+                        'contentOptions' => ['class' => 'text-center text-muted'],
+                    ],
+                    [
+                        'attribute' => 'user_id',
+                        'label' => 'Client',
+                        'value' => static fn (CustomerBillingProfile $model): string => $model->user?->username ?? '-',
+                        'filter' => GridFilterHelper::select2($searchModel, 'user_id', $users, 'All Clients'),
+                    ],
+                    'legal_name',
+                    [
+                        'attribute' => 'state',
+                        'label' => 'State / Country',
+                        'value' => static fn (CustomerBillingProfile $model): string => (string) ($model->isForeign() ? $model->country : $model->state),
+                    ],
+                    [
+                        'attribute' => 'gstin',
+                        'label' => 'GSTIN',
+                        'value' => static fn (CustomerBillingProfile $model): string => $model->gstin ?: '-',
+                    ],
+                    [
+                        'attribute' => 'pan',
+                        'label' => 'PAN',
+                        'value' => static fn (CustomerBillingProfile $model): string => $model->pan ?: '-',
+                    ],
+                    GridActionHelper::crudColumn(template: '{update}'),
+                ],
+            ]) ?>
 
         </div>
 

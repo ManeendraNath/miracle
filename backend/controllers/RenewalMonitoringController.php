@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace backend\controllers;
 
+use common\helpers\GridPaginationHelper;
 use common\models\User;
 use common\services\UpcomingExpiryService;
 use Yii;
@@ -73,11 +74,7 @@ final class RenewalMonitoringController extends BaseController
         $dataProvider = new ArrayDataProvider([
             'allModels' => $items,
             'pagination' => [
-                'pageSize' => 20,
-                'pageSizeLimit' => [
-                    10,
-                    100,
-                ],
+                'pageSize' => GridPaginationHelper::getPageSize(),
             ],
             'sort' => [
                 'attributes' => [

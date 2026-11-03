@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace backend\controllers;
 
+use backend\models\searches\CustomerBillingProfileSearch;
 use common\models\CustomerBillingProfile;
 use common\models\User;
 use Yii;
@@ -14,15 +15,11 @@ final class CustomerBillingProfileController extends BaseController
 {
     public function actionIndex()
     {
-        $profiles = CustomerBillingProfile::find()
-            ->with('user')
-            ->orderBy([
-                'legal_name' => SORT_ASC,
-            ])
-            ->all();
+        $searchModel = new CustomerBillingProfileSearch();
 
         return $this->render('index', [
-            'profiles' => $profiles,
+            'searchModel' => $searchModel,
+            'dataProvider' => $searchModel->search($this->request->queryParams),
         ]);
     }
 

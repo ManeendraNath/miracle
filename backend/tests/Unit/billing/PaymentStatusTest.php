@@ -85,7 +85,7 @@ final class PaymentStatusTest extends Unit
         $captured = (new RazorpayService([]))->capture($order->gateway_order_id, 'pay_test_late', 100000);
 
         $this->assertSame(Transaction::STATUS_CAPTURED, $captured->status, 'the money was taken, so it is recorded');
-        $this->assertStringContainsString('UNAPPLIED', (string) $captured->user_payment_notes);
+        $this->assertTrue($captured->isUnapplied(), 'the checkout callback warns the customer from this');
         $this->assertSame(Invoice::STATUS_PAID, Invoice::findOne($invoice->id)->status);
     }
 

@@ -3,6 +3,8 @@
 declare(strict_types=1);
 
 use common\helpers\GridActionHelper;
+use common\helpers\GridPaginationHelper;
+use common\helpers\GridViewHelper;
 use common\services\UpcomingExpiryService;
 use yii\data\ArrayDataProvider;
 use yii\grid\GridView;
@@ -10,6 +12,8 @@ use yii\helpers\Html;
 
 $this->title = 'Renewal Monitoring';
 $this->params['breadcrumbs'][] = $this->title;
+
+GridViewHelper::register($this);
 
 $typeLabels = UpcomingExpiryService::getTypes();
 $windowLabels = UpcomingExpiryService::getWindows();
@@ -234,14 +238,12 @@ Html::a(
 
         <div class="card-body p-0">
 
-            <div class="table-responsive">
-
                 <?=
                 GridView::widget([
                     'dataProvider' => $dataProvider,
-                    'layout' => "{summary}\n{items}\n{pager}",
+                    'layout' => GridPaginationHelper::gridLayout(),
                     'summaryOptions' => [
-                        'class' => 'text-muted small p-3 mb-0',
+                        'class' => 'text-muted small mb-3',
                     ],
                     'tableOptions' => [
                         'class' => 'table table-hover table-striped align-middle mb-0',
@@ -397,8 +399,6 @@ Html::a(
                     ],
                 ])
                 ?>
-
-            </div>
 
         </div>
 

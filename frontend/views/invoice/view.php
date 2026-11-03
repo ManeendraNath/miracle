@@ -241,6 +241,10 @@ JS);
                             ['class' => 'btn ' . ($canPayOnline ? 'btn-outline-secondary btn-sm' : 'btn-success')]
                         ) ?>
                     </div>
+                    <p class="small text-body-secondary text-center mt-2 mb-0">
+                        By paying you agree to our <?= Html::a('Terms &amp; Conditions', ['/site/terms'], ['target' => '_blank']) ?>
+                        and <?= Html::a('Refund &amp; Cancellation Policy', ['/site/refund-policy'], ['target' => '_blank']) ?>.
+                    </p>
                 <?php elseif ($model->status === Invoice::STATUS_PAID): ?>
                     <div class="alert alert-success small mt-3 mb-0">
                         <i class="fas fa-check-circle me-1"></i> Paid in full. Thank you!

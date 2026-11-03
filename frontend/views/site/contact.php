@@ -55,10 +55,10 @@ $this->title = 'Contact General Inquiries | Miracle Web Technologies';
                 </ul>
             </div>
             <div class="card border-0 shadow-sm p-4 text-white" style="background-color: #1e293b; border-radius: 0.75rem; border-left: 5px solid #dc2626 !important;">
-                <h4 class="fw-bold text-white mb-3">Enterprise Channels</h4>
-                <p class="small text-slate-300">Are you looking to scale an application or provision isolated hosting servers? Skip this line and deploy our direct analysis workflow.</p>
+                <h4 class="fw-bold text-white mb-3">Need a website review?</h4>
+                <p class="small text-slate-300">Tell us about your current website or hosting and we'll suggest what to improve: speed, security, design or a better hosting plan.</p>
                 <div class="mt-4">
-                    <?= Html::a('Deploy Infrastructure Questionnaire ⚡', ['site/audit'], ['class' => 'btn w-100 fw-bold py-3 text-white', 'style' => 'background-color: #dc2626 !important; border-radius: 0.5rem;']) ?>
+                    <?= Html::a('Request a website audit', ['site/audit'], ['class' => 'btn w-100 fw-bold py-3 text-white', 'style' => 'background-color: #dc2626 !important; border-radius: 0.5rem;']) ?>
                 </div>
             </div>
         </div>

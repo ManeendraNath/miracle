@@ -13,7 +13,8 @@ final class TaxCalculator
 {
     public function getRates(CustomerBillingProfile $profile): array
     {
-        if (!(bool) $profile->is_gst_applicable) {
+        // Export of services (client outside India) is zero-rated.
+        if (!(bool) $profile->is_gst_applicable || $profile->isForeign()) {
             return [
                 'cgst' => 0.0,
                 'sgst' => 0.0,

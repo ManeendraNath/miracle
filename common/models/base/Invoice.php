@@ -31,6 +31,7 @@ use Yii;
  * @property string|null $client_state
  * @property string|null $client_state_code
  * @property string|null $client_postal_code
+ * @property string|null $client_country
  * @property string|null $client_gstin
  * @property string|null $client_pan
  * @property string|null $place_of_supply
@@ -72,7 +73,7 @@ class Invoice extends \yii\db\ActiveRecord
     public function rules()
     {
         return [
-            [['client_address_line_1', 'client_address_line_2', 'coupon_id', 'coupon_code', 'due_date', 'emailed_at', 'billing_run_id', 'client_city', 'client_state', 'client_state_code', 'client_postal_code', 'client_gstin', 'client_pan', 'place_of_supply'], 'default', 'value' => null],
+            [['client_address_line_1', 'client_address_line_2', 'coupon_id', 'coupon_code', 'due_date', 'emailed_at', 'billing_run_id', 'client_city', 'client_state', 'client_state_code', 'client_postal_code', 'client_country', 'client_gstin', 'client_pan', 'place_of_supply'], 'default', 'value' => null],
             [['total_payable'], 'default', 'value' => 0.00],
             [['sgst_percent'], 'default', 'value' => 9.00],
             [['status'], 'default', 'value' => 'Unpaid'],
@@ -81,7 +82,7 @@ class Invoice extends \yii\db\ActiveRecord
             [['subtotal_amount', 'discount_amount', 'cgst_percent', 'sgst_percent', 'igst_percent', 'total_payable'], 'number'],
             [['status'], 'string'],
             [['due_date'], 'safe'],
-            [['invoice_number', 'client_city', 'client_state', 'place_of_supply'], 'string', 'max' => 100],
+            [['invoice_number', 'client_city', 'client_state', 'client_country', 'place_of_supply'], 'string', 'max' => 100],
             [['client_name', 'client_address_line_1', 'client_address_line_2'], 'string', 'max' => 255],
             [['coupon_code'], 'string', 'max' => 32],
             [['client_state_code', 'client_pan'], 'string', 'max' => 10],
@@ -125,6 +126,7 @@ class Invoice extends \yii\db\ActiveRecord
             'client_state' => 'Client State',
             'client_state_code' => 'Client State Code',
             'client_postal_code' => 'Client Postal Code',
+            'client_country' => 'Client Country',
             'client_gstin' => 'Client Gstin',
             'client_pan' => 'Client Pan',
             'place_of_supply' => 'Place Of Supply',

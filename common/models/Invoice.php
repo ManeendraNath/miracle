@@ -23,6 +23,37 @@ class Invoice extends base\Invoice
         return $this->hasMany(BillingEvent::class, ['invoice_id' => 'id']);
     }
 
+    /** Client outside India (older invoices have no country: India). */
+    public function isExport(): bool
+    {
+        $country = trim((string) $this->client_country);
+
+        return $country !== '' && $country !== CustomerBillingProfile::COUNTRY_INDIA;
+    }
+
+    /** "City, State, PIN" for India; "City, Postal code, Country" for clients abroad. */
+    public function getClientCityLine(): string
+    {
+        $parts = $this->isExport()
+            ? [$this->client_city, $this->client_postal_code, $this->client_country]
+            : [$this->client_city, $this->client_state, $this->client_postal_code];
+
+        return implode(', ', array_filter($parts, static fn ($part): bool => trim((string) $part) !== ''));
+    }
+
+    /** Line every export invoice must carry; null for clients in India. */
+    public function getExportNote(): ?string
+    {
+        if (!$this->isExport()) {
+            return null;
+        }
+        $arn = trim((string) (\Yii::$app->params['billing']['lutArn'] ?? ''));
+
+        return $arn !== ''
+            ? "Export of services: supply meant for export under LUT without payment of IGST (LUT ARN {$arn})."
+            : 'Export of services: zero-rated supply, no GST charged.';
+    }
+
     public static function getStatuses(): array
     {
         return [

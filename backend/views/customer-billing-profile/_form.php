@@ -53,6 +53,11 @@ $form = ActiveForm::begin([
             </div>
         </div>
 
+        <?= $form->field($model, 'country')
+            ->dropDownList(CustomerBillingProfile::countryOptions())
+            ->hint('Outside India: export of services, no GST; state, GSTIN and PAN are not used.') ?>
+        <?= $this->render('@common/views/_billing_country_js') ?>
+
         <div class="row">
             <div class="col-md-6">
                 <?= $form->field($model, 'city')->textInput(['maxlength' => true]) ?>

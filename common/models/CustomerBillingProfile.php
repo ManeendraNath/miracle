@@ -19,6 +19,7 @@ use yii\helpers\ArrayHelper;
  * @property string $state
  * @property string|null $state_code
  * @property string|null $postal_code
+ * @property string $country
  * @property string|null $gstin
  * @property string|null $pan
  * @property int $created_at
@@ -77,12 +78,40 @@ class CustomerBillingProfile extends base\CustomerBillingProfile
         'Other Territory' => '97',
     ];
 
+    public const COUNTRY_INDIA = 'India';
+
+    /** GST place-of-supply for clients outside India (state code 96 on the GST portal). */
+    public const FOREIGN_STATE = 'Foreign Country';
+    public const FOREIGN_STATE_CODE = '96';
+
+    /** Outside India: no GST, no Indian state / GSTIN / PAN. An empty country is the India default. */
+    public function isForeign(): bool
+    {
+        $country = trim((string) $this->country);
+
+        return $country !== '' && $country !== self::COUNTRY_INDIA;
+    }
+
+    /** @return string[] country names */
+    public static function countries(): array
+    {
+        return require __DIR__ . '/data/countries.php';
+    }
+
+    /** @return array<string, string> India first, then the rest A-Z, for dropdowns */
+    public static function countryOptions(): array
+    {
+        $names = self::countries();
+
+        return [self::COUNTRY_INDIA => self::COUNTRY_INDIA] + array_combine($names, $names);
+    }
+
     public function scenarios(): array
     {
         $scenarios = parent::scenarios();
         // "!" = validated but never mass-assigned.
         $scenarios[self::SCENARIO_CUSTOMER] = [
-            'legal_name', 'address_line_1', 'address_line_2', 'city', 'state', 'postal_code', 'gstin', 'pan',
+            'legal_name', 'address_line_1', 'address_line_2', 'city', 'state', 'postal_code', 'country', 'gstin', 'pan',
             '!state_code', '!user_id',
         ];
 
@@ -94,16 +123,27 @@ class CustomerBillingProfile extends base\CustomerBillingProfile
         return ArrayHelper::merge(
             // Normalise first so the base length checks see the trimmed value ('' becomes null there).
             [
-                [['legal_name', 'address_line_1', 'address_line_2', 'city', 'state', 'postal_code', 'gstin', 'pan'], 'trim'],
+                [['legal_name', 'address_line_1', 'address_line_2', 'city', 'state', 'postal_code', 'country', 'gstin', 'pan'], 'trim'],
+                // Outside India the GST fields don't apply: fixed state, no GSTIN/PAN.
+                ['state', 'filter', 'filter' => fn ($state) => $this->isForeign() ? self::FOREIGN_STATE : $state],
+                [['gstin', 'pan'], 'filter', 'filter' => fn ($value) => $this->isForeign() ? null : $value],
                 [['gstin', 'pan'], 'filter', 'filter' => 'strtoupper', 'skipOnEmpty' => true],
             ],
             parent::rules(),
             [
-                ['state', 'in', 'range' => array_keys(self::GST_STATES), 'strict' => true, 'message' => 'Select a state from the list.'],
-                ['state_code', 'filter', 'filter' => fn ($code) => self::GST_STATES[$this->state] ?? $code],
+                ['country', 'required'],
+                ['country', 'in', 'range' => self::countries(), 'strict' => true, 'message' => 'Select a country from the list.'],
+                [
+                    'state', 'in', 'range' => array_keys(self::GST_STATES), 'strict' => true, 'message' => 'Select a state from the list.',
+                    'when' => fn (): bool => !$this->isForeign(), 'whenClient' => self::WHEN_INDIA_JS,
+                ],
+                ['state_code', 'filter', 'filter' => fn ($code) => $this->isForeign() ? self::FOREIGN_STATE_CODE : (self::GST_STATES[$this->state] ?? $code)],
                 [['legal_name', 'state', 'state_code'], 'required'],
                 [['address_line_1', 'city', 'postal_code'], 'required', 'on' => self::SCENARIO_CUSTOMER],
-                ['postal_code', 'match', 'pattern' => '/^\d{6}$/', 'message' => 'Enter a valid 6-digit PIN code.'],
+                [
+                    'postal_code', 'match', 'pattern' => '/^\d{6}$/', 'message' => 'Enter a valid 6-digit PIN code.',
+                    'when' => fn (): bool => !$this->isForeign(), 'whenClient' => self::WHEN_INDIA_JS,
+                ],
                 [
                     'gstin', 'match', 'pattern' => '/^\d{2}[A-Z]{5}\d{4}[A-Z][1-9A-Z]Z[0-9A-Z]$/',
                     'message' => 'Enter a valid 15-character GSTIN (e.g. 07ABCDE1234F1Z2).',
@@ -112,6 +152,19 @@ class CustomerBillingProfile extends base\CustomerBillingProfile
                 ['gstin', 'validateGstinMatches'],
             ]
         );
+    }
+
+    /** Browser-side twin of !isForeign() for the forms' client validation. */
+    private const WHEN_INDIA_JS = "function () { var c = $('#customerbillingprofile-country').val(); return !c || c === 'India'; }";
+
+    /** No GST on supplies to clients outside India, whatever was set before the country changed. */
+    public function beforeSave($insert): bool
+    {
+        if ($this->isForeign()) {
+            $this->is_gst_applicable = 0;
+        }
+
+        return parent::beforeSave($insert);
     }
 
     /** GSTIN = state code (2) + PAN (10) + 3 chars, so it must agree with the chosen state and the PAN. */
@@ -168,7 +221,8 @@ class CustomerBillingProfile extends base\CustomerBillingProfile
                             'address_line_1' => 'Address Line 1',
                             'address_line_2' => 'Address Line 2',
                             'state_code' => 'State Code',
-                            'postal_code' => 'Postal Code',
+                            'postal_code' => 'PIN / Postal Code',
+                            'country' => 'Country',
                             'gstin' => 'GSTIN',
                             'pan' => 'PAN',
                         ]

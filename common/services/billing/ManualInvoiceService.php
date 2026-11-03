@@ -406,6 +406,7 @@ final class ManualInvoiceService
         $invoice->client_state = $profile->state;
         $invoice->client_state_code = $profile->state_code;
         $invoice->client_postal_code = $profile->postal_code;
+        $invoice->client_country = $profile->country;
         $invoice->client_gstin = $profile->gstin;
         $invoice->client_pan = $profile->pan;
         $invoice->place_of_supply = $profile->state;

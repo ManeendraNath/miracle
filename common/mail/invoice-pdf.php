@@ -154,19 +154,7 @@ $igstAmount = $tax['igstAmount'];
 
             <?php endif; ?>
 
-            <?=
-            Html::encode(
-                    implode(
-                            ', ',
-                            array_filter([
-                $invoice->client_city,
-                $invoice->client_state,
-                $invoice
-                ->client_postal_code,
-                            ])
-                    )
-            )
-            ?>
+            <?= Html::encode($invoice->getClientCityLine()) ?>
         </td>
 
         <td>
@@ -463,6 +451,10 @@ $igstAmount = $tax['igstAmount'];
     </tr>
 
 </table>
+
+<?php if ($invoice->getExportNote() !== null): ?>
+    <p><?= Html::encode($invoice->getExportNote()) ?></p>
+<?php endif; ?>
 
 <!-- MANUAL PAYMENT DETAIL -->
 <div class="payment-box">

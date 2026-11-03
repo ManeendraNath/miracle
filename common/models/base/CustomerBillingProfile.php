@@ -16,6 +16,7 @@ use Yii;
  * @property string $state
  * @property string|null $state_code
  * @property string|null $postal_code
+ * @property string $country
  * @property string|null $gstin
  * @property string|null $pan
  * @property int $is_gst_applicable
@@ -43,12 +44,13 @@ class CustomerBillingProfile extends \yii\db\ActiveRecord
         return [
             [['address_line_1', 'address_line_2', 'city', 'state_code', 'postal_code', 'gstin', 'pan'], 'default', 'value' => null],
             [['is_gst_applicable'], 'default', 'value' => 0],
+            [['country'], 'default', 'value' => 'India'],
             [['default_discount_amount'], 'default', 'value' => 0.00],
             [['user_id', 'legal_name', 'state', 'created_at', 'updated_at'], 'required'],
             [['user_id', 'is_gst_applicable', 'created_at', 'updated_at'], 'integer'],
             [['default_discount_amount'], 'number'],
             [['legal_name', 'address_line_1', 'address_line_2'], 'string', 'max' => 255],
-            [['city', 'state'], 'string', 'max' => 100],
+            [['city', 'state', 'country'], 'string', 'max' => 100],
             [['state_code', 'pan'], 'string', 'max' => 10],
             [['postal_code'], 'string', 'max' => 20],
             [['gstin'], 'string', 'max' => 15],
@@ -72,6 +74,7 @@ class CustomerBillingProfile extends \yii\db\ActiveRecord
             'state' => 'State',
             'state_code' => 'State Code',
             'postal_code' => 'Postal Code',
+            'country' => 'Country',
             'gstin' => 'Gstin',
             'pan' => 'Pan',
             'is_gst_applicable' => 'Is Gst Applicable',

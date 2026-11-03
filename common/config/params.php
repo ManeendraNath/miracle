@@ -17,6 +17,9 @@ return [
     'billing' => [
         'supplierState' => 'Delhi',
         'supplierStateCode' => '07',
+        // ARN of this financial year's LUT (GST RFD-11). Set = invoices to clients outside India say
+        // "Supply meant for export under LUT without payment of IGST".
+        'lutArn' => $_ENV['BILLING_LUT_ARN'] ?? '',
         'gst' => [
             'cgst' => 0.00,
             'sgst' => 0.00,

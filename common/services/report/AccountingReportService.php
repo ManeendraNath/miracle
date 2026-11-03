@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace common\services\report;
 
+use common\models\CustomerBillingProfile;
 use common\models\Invoice;
 use common\models\Transaction;
 use common\services\billing\TaxCalculator;
@@ -53,7 +54,7 @@ final class AccountingReportService
     public function invoiceRows(int $start, int $end): \Generator
     {
         yield [
-            'Invoice Number', 'Issue Date', 'Due Date', 'Customer Name', 'Customer GSTIN', 'Customer State',
+            'Invoice Number', 'Issue Date', 'Due Date', 'Customer Name', 'Customer GSTIN', 'Customer State', 'Customer Country',
             'State Code', 'Place of Supply', 'Subtotal', 'Discount', 'Taxable Value', 'CGST %', 'CGST Amount',
             'SGST %', 'SGST Amount', 'IGST %', 'IGST Amount', 'Total Payable', 'Status', 'Coupon Code',
         ];
@@ -71,6 +72,7 @@ final class AccountingReportService
                 $invoice->client_name,
                 (string) $invoice->client_gstin,
                 (string) $invoice->client_state,
+                (string) ($invoice->client_country ?: CustomerBillingProfile::COUNTRY_INDIA),
                 (string) $invoice->client_state_code,
                 (string) $invoice->place_of_supply,
                 self::money($invoice->subtotal_amount),

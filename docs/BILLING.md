@@ -102,6 +102,23 @@ payment: a Razorpay order is fixed at the old amount), and has no admin discount
 Previous-outstanding (arrears) lines are never discounted. Totals are recomputed with
 `AutoInvoiceService::calculateInvoiceTotals()`.
 
+Renewal invoices from the billing run also get, automatically, the newest active coupon an admin
+has assigned to that customer ("Only For These Customers"), if it passes the same checks. A coupon
+that doesn't fit is skipped; coupons assigned to nobody are never applied automatically.
+
+## Foreign clients (export of services)
+
+A billing profile whose **Country** is not India is billed as an export of services:
+
+- No GST (`TaxCalculator::getRates()` returns 0 %, and `is_gst_applicable` is saved as 0).
+- State is saved as "Foreign Country" with GST state code `96`; GSTIN and PAN are cleared;
+  the postal code has no 6-digit PIN rule.
+- Invoices keep the country (`invoice.client_country`; NULL on older invoices = India) and
+  print an export note. With `BILLING_LUT_ARN` set in `.env` (this financial year's LUT, GST RFD-11)
+  the note reads "supply meant for export under LUT without payment of IGST (LUT ARN ...)";
+  renew the LUT every April and update the value.
+- Amounts stay in INR.
+
 ## Admin roles
 
 | Role | Access |

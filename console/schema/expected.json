@@ -1,5 +1,5 @@
 {
-    "migrations": 47,
+    "migrations": 48,
     "columns": {
         "admin": {
             "auth_key": {
@@ -870,6 +870,12 @@
                 "default": null,
                 "extra": ""
             },
+            "country": {
+                "type": "varchar(100)",
+                "null": false,
+                "default": "India",
+                "extra": ""
+            },
             "created_at": {
                 "type": "int",
                 "null": false,
@@ -1229,6 +1235,12 @@
                 "extra": ""
             },
             "client_city": {
+                "type": "varchar(100)",
+                "null": true,
+                "default": null,
+                "extra": ""
+            },
+            "client_country": {
                 "type": "varchar(100)",
                 "null": true,
                 "default": null,

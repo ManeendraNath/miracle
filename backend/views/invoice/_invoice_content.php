@@ -64,8 +64,9 @@ $money = static function (int|float|string|null $amount): string {
             <p class="text-uppercase fw-bold text-muted text-xs mb-1">Invoiced To:</p>
             <h5 class="fw-bold text-dark mb-1"><?= Html::encode($model->client_name) ?></h5>
             <p class="text-secondary text-sm mb-0">
-                <?= Html::encode($model->client_address_line_1) ?><br>
-                <?= Html::encode($model->client_address_line_2) ?>
+                <?php foreach ([$model->client_address_line_1, $model->client_address_line_2, $model->getClientCityLine()] as $line): ?>
+                    <?php if ($line): ?><?= Html::encode($line) ?><br><?php endif; ?>
+                <?php endforeach; ?>
             </p>
         </div>
         <div class="col-6 text-end">
@@ -339,6 +340,10 @@ $money = static function (int|float|string|null $amount): string {
             </div>
         </div>
     </div>
+
+    <?php if ($model->getExportNote() !== null): ?>
+        <p class="text-sm text-secondary mt-3 mb-0"><?= Html::encode($model->getExportNote()) ?></p>
+    <?php endif; ?>
 
     <hr class="my-5">
     <div class="text-center text-muted text-xs">

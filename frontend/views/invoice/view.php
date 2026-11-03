@@ -104,7 +104,7 @@ JS);
                     <div class="col-sm-6">
                         <div class="small text-uppercase text-body-secondary fw-semibold mb-1">Billed to</div>
                         <div class="fw-semibold"><?= Html::encode($model->client_name) ?></div>
-                        <?php foreach ([$model->client_address_line_1, $model->client_address_line_2, implode(', ', array_filter([$model->client_city, $model->client_state, $model->client_postal_code]))] as $line): ?>
+                        <?php foreach ([$model->client_address_line_1, $model->client_address_line_2, $model->getClientCityLine()] as $line): ?>
                             <?php if ($line): ?>
                                 <div class="text-body-secondary"><?= Html::encode($line) ?></div>
                             <?php endif; ?>
@@ -178,6 +178,9 @@ JS);
                             </tr>
                         </table>
                     </div>
+                    <?php if ($model->getExportNote() !== null): ?>
+                        <div class="col-12 small text-body-secondary mt-2"><?= Html::encode($model->getExportNote()) ?></div>
+                    <?php endif; ?>
                 </div>
             </div>
         </div>

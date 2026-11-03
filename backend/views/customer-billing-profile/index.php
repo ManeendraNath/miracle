@@ -27,7 +27,7 @@ $this->params['breadcrumbs'][] = $this->title;
                     <tr>
                         <th>Client</th>
                         <th>Legal Name</th>
-                        <th>State</th>
+                        <th>State / Country</th>
                         <th>GSTIN</th>
                         <th>PAN</th>
                         <th class="text-end">
@@ -50,7 +50,7 @@ $this->params['breadcrumbs'][] = $this->title;
                             </td>
 
                             <td>
-                        <?= Html::encode($profile->state) ?>
+                                <?= Html::encode($profile->isForeign() ? $profile->country : $profile->state) ?>
                             </td>
 
                             <td>

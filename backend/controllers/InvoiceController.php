@@ -190,6 +190,7 @@ class InvoiceController extends BaseController
                 'client_state' => $model->client_state,
                 'client_state_code' => $model->client_state_code,
                 'client_postal_code' => $model->client_postal_code,
+                'client_country' => $model->client_country,
                 'client_gstin' => $model->client_gstin,
                 'client_pan' => $model->client_pan,
                 'place_of_supply' => $model->place_of_supply,

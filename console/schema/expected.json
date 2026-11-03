@@ -1,5 +1,5 @@
 {
-    "migrations": 48,
+    "migrations": 49,
     "columns": {
         "admin": {
             "auth_key": {
@@ -1137,7 +1137,7 @@
                 "extra": ""
             },
             "cpanel_password": {
-                "type": "varchar(255)",
+                "type": "text",
                 "null": true,
                 "default": null,
                 "extra": ""

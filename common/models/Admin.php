@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace common\models;
 
+use common\helpers\SecretBox;
 use common\components\Totp;
 use common\models\traits\AutoTimestampTrait;
 use common\models\traits\BaseIdentityTrait;
@@ -124,9 +125,6 @@ class Admin extends base\Admin implements IdentityInterface
     // TWO-FACTOR SIGN-IN (TOTP)
     // ======================================================================
 
-    /** totp_secret holds this prefix + base64 of the secret encrypted with params['twoFactorKey']. */
-    private const TOTP_ENCRYPTED = 'enc:';
-
     public function hasTwoFactor(): bool
     {
         return $this->totp_secret !== null;
@@ -135,27 +133,19 @@ class Admin extends base\Admin implements IdentityInterface
     /** Whether TWO_FACTOR_KEY is set, so new secrets can be stored encrypted. */
     public static function canStoreTwoFactor(): bool
     {
-        return strlen((string) (Yii::$app->params['twoFactorKey'] ?? '')) >= 32;
+        return SecretBox::hasKey();
     }
 
     private static function encryptTotpSecret(string $secret): string
     {
-        if (!self::canStoreTwoFactor()) {
-            throw new \RuntimeException('Set TWO_FACTOR_KEY (64 hex characters) in .env to use two-factor sign-in.');
-        }
-        return self::TOTP_ENCRYPTED . base64_encode(Yii::$app->security->encryptByKey($secret, Yii::$app->params['twoFactorKey']));
+        return SecretBox::encrypt($secret);
     }
 
     /** The plain base32 secret. Secrets saved before encryption existed are stored as-is. */
     private function totpSecret(): string
     {
-        if (!str_starts_with($this->totp_secret, self::TOTP_ENCRYPTED)) {
-            return $this->totp_secret;
-        }
-        $secret = self::canStoreTwoFactor()
-            ? Yii::$app->security->decryptByKey(base64_decode(substr($this->totp_secret, strlen(self::TOTP_ENCRYPTED))), Yii::$app->params['twoFactorKey'])
-            : false;
-        if (!is_string($secret)) {
+        $secret = SecretBox::decrypt((string) $this->totp_secret);
+        if ($secret === null) {
             throw new \RuntimeException("Two-factor secret of admin #{$this->id} can't be decrypted: TWO_FACTOR_KEY is missing or changed. "
                 . 'Restore the old key, or run: php yii admin-2fa/reset ' . $this->username);
         }
@@ -185,7 +175,7 @@ class Admin extends base\Admin implements IdentityInterface
         }
         $this->totp_last_step = $step;
         // Encrypt a secret saved before encryption existed, now that the key is set.
-        if (!str_starts_with($this->totp_secret, self::TOTP_ENCRYPTED) && self::canStoreTwoFactor()) {
+        if (!SecretBox::isEncrypted($this->totp_secret) && self::canStoreTwoFactor()) {
             $this->updateAttributes(['totp_secret' => self::encryptTotpSecret($this->totp_secret)]);
         }
         return true;

@@ -115,10 +115,12 @@ $users = ArrayHelper::map(
 
                 <div class="col-md-4">
 
-<?= $form->field($model, 'cpanel_password')->passwordInput([
+<?php /* The saved password is never sent to the browser; a value here replaces it. */ ?>
+<?= $form->field($model, 'new_cpanel_password')->passwordInput([
     'maxlength' => true,
     'autocomplete' => 'new-password',
-]) ?>
+    'value' => '',
+])->hint($model->cpanel_password ? 'A password is saved. Leave blank to keep it.' : '') ?>
 
                 </div>
 

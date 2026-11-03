@@ -160,9 +160,25 @@ $this->params['actions'] = [
 
                         <dd class="col-sm-8">
 
-                            <span class="text-muted">
-                                Hidden for security
-                            </span>
+                            <?php $identity = Yii::$app->user->identity; ?>
+                            <?php if (!$model->cpanel_password): ?>
+                                <span class="text-muted">-</span>
+                            <?php elseif ($identity !== null && $identity->isAdmin()): ?>
+                                <code id="cpanel-password">••••••••</code>
+                                <button type="button" class="btn btn-xs btn-outline-primary ms-2" id="cpanel-password-show"
+                                        data-url="<?= Html::encode(\yii\helpers\Url::to(['cpanel-password', 'id' => $model->id])) ?>">Show</button>
+                                <?php $this->registerJs(<<<'JS'
+$('#cpanel-password-show').on('click', function () {
+    var button = $(this);
+    $.post(button.data('url'), {[yii.getCsrfParam()]: yii.getCsrfToken()}).done(function (data) {
+        $('#cpanel-password').text(data.password !== null ? data.password : data.error);
+        button.remove();
+    });
+});
+JS); ?>
+                            <?php else: ?>
+                                <span class="text-muted">Saved (visible to Admins)</span>
+                            <?php endif; ?>
 
                         </dd>
 

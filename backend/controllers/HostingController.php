@@ -6,6 +6,7 @@ use backend\controllers\traits\ToggleStatusTrait;
 use backend\models\searches\HostingSearch;
 use common\models\Hosting;
 use yii\web\NotFoundHttpException;
+use yii\web\Response;
 
 /**
  * HostingController implements the CRUD actions for Hosting model.
@@ -13,6 +14,17 @@ use yii\web\NotFoundHttpException;
 class HostingController extends BaseController
 {
     use ToggleStatusTrait;
+
+    /**
+     * The saved cPanel password, fetched only when an Admin clicks "Show" (Admin-only and POST in
+     * BaseController), so it's never part of a rendered page, the browser cache or history.
+     */
+    public function actionCpanelPassword(int $id): Response
+    {
+        $plain = $this->findModel($id)->getCpanelPasswordPlain();
+
+        return $this->asJson(['password' => $plain, 'error' => $plain === null ? "Can't be decrypted (TWO_FACTOR_KEY changed?)" : null]);
+    }
 
     /**
      * Lists all Hosting models.

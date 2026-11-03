@@ -22,8 +22,7 @@ final class GridViewHelper
      */
     public static function register(View $view): void
     {
+        // Tooltips are initialised for every page by layouts/main.php.
         GridPaginationHelper::registerPageSizeScript($view);
-
-        GridActionHelper::registerTooltips($view);
     }
 }

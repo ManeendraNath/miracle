@@ -6,20 +6,53 @@ namespace common\helpers;
 
 use yii\grid\ActionColumn;
 use yii\helpers\Html;
-use yii\helpers\Url;
-use yii\web\View;
 
+/**
+ * The row action buttons every admin list uses: small outlined icon buttons with a tooltip.
+ * GridViews use crudColumn(); hand-built tables call button() directly.
+ */
 final class GridActionHelper
 {
+    /** action => [icon, colour, tooltip] */
+    private const BUTTONS = [
+        'view' => ['fa-eye', 'info', 'View'],
+        'update' => ['fa-edit', 'primary', 'Update'],
+        'delete' => ['fa-trash', 'danger', 'Delete'],
+        'disable' => ['fa-ban', 'warning', 'Disable'],
+        'enable' => ['fa-check', 'success', 'Enable'],
+    ];
+
     private function __construct()
     {
     }
 
     /**
-     * @param callable|null $isEnabled fn($model): bool, used by the {toggle-status} button
+     * One action button. $type is a key of BUTTONS; $options are merged in (e.g. 'title', 'data').
      */
-    public static function crudColumn(string $template = '{view} {update} {delete}', string $deleteMessage = 'Are you sure you want to delete this record?', ?callable $urlCreator = null, ?callable $isEnabled = null): array
+    public static function button(string $type, string|array $url, array $options = []): string
     {
+        [$icon, $colour, $title] = self::BUTTONS[$type];
+
+        return Html::a('<i class="fas ' . $icon . '"></i>', $url, array_merge([
+            'class' => 'btn btn-xs btn-outline-' . $colour,
+            'title' => $title,
+            'data-bs-toggle' => 'tooltip',
+            'data-bs-placement' => 'top',
+        ], $options));
+    }
+
+    /**
+     * @param callable|null $isEnabled fn($model): bool, used by the {toggle-status} button
+     * @param callable|null $urlCreator fn(string $action, $model): array, when the routes aren't the default [action, 'id' => id]
+     * @param array<string, callable|bool> $visibleButtons action => fn($model): bool, to hide a button on some rows
+     */
+    public static function crudColumn(
+        string $template = '{view} {update} {delete}',
+        string $deleteMessage = 'Are you sure you want to delete this record?',
+        ?callable $urlCreator = null,
+        ?callable $isEnabled = null,
+        array $visibleButtons = [],
+    ): array {
         $column = [
             'class' => ActionColumn::class,
             'header' => 'Actions',
@@ -31,92 +64,26 @@ final class GridActionHelper
             'contentOptions' => [
                 'class' => 'text-center text-nowrap',
             ],
+            'visibleButtons' => $visibleButtons,
             'buttons' => [
-                'view' => static function (string|array $url): string {
-                    return Html::a(
-                        '<i class="fas fa-eye"></i>',
-                        $url,
-                        [
-                            'class' => 'btn btn-xs btn-outline-info',
-                            'title' => 'View',
-                            'data-bs-toggle' => 'tooltip',
-                            'data-bs-placement' => 'top',
-                        ]
-                    );
-                },
-                'update' => static function (string|array $url): string {
-                    return Html::a(
-                        '<i class="fas fa-edit"></i>',
-                        $url,
-                        [
-                            'class' => 'btn btn-xs btn-outline-primary',
-                            'title' => 'Update',
-                            'data-bs-toggle' => 'tooltip',
-                            'data-bs-placement' => 'top',
-                        ]
-                    );
-                },
+                'view' => static fn (string|array $url): string => self::button('view', $url),
+                'update' => static fn (string|array $url): string => self::button('update', $url),
                 'toggle-status' => static function (string|array $url, $model) use ($isEnabled): string {
                     $enabled = $isEnabled !== null ? (bool) $isEnabled($model) : true;
-                    return Html::a(
-                        $enabled ? '<i class="fas fa-ban"></i>' : '<i class="fas fa-check"></i>',
-                        $url,
-                        [
-                            'class' => 'btn btn-xs ' . ($enabled ? 'btn-outline-warning' : 'btn-outline-success'),
-                            'title' => $enabled ? 'Disable' : 'Enable',
-                            'data-bs-toggle' => 'tooltip',
-                            'data-bs-placement' => 'top',
-                            'data' => [
-                                'confirm' => $enabled ? 'Disable this record?' : 'Enable this record?',
-                                'method' => 'post',
-                            ],
-                        ]
-                    );
+
+                    return self::button($enabled ? 'disable' : 'enable', $url, [
+                        'data' => ['confirm' => $enabled ? 'Disable this record?' : 'Enable this record?', 'method' => 'post'],
+                    ]);
                 },
-                'delete' => static function (string|array $url) use ($deleteMessage): string {
-                    return Html::a(
-                        '<i class="fas fa-trash"></i>',
-                        $url,
-                        [
-                            'class' => 'btn btn-xs btn-outline-danger',
-                            'title' => 'Delete',
-                            'data-bs-toggle' => 'tooltip',
-                            'data-bs-placement' => 'top',
-                            'data' => [
-                                'confirm' => $deleteMessage,
-                                'method' => 'post',
-                            ],
-                        ]
-                    );
-                },
+                'delete' => static fn (string|array $url): string => self::button('delete', $url, [
+                    'data' => ['confirm' => $deleteMessage, 'method' => 'post'],
+                ]),
             ],
         ];
         if ($urlCreator !== null) {
             $column['urlCreator'] = $urlCreator;
         }
-        return $column;
-    }
 
-    /**
-     * Registers Bootstrap 5 tooltips for GridView elements.
-     *
-     * Call once from an index page containing elements with:
-     *
-     * data-bs-toggle="tooltip"
-     */
-    public static function registerTooltips(View $view): void
-    {
-        $view->registerJs(<<<'JS'
-if (
-    typeof bootstrap !== 'undefined'
-    && typeof bootstrap.Tooltip !== 'undefined'
-) {
-    document
-        .querySelectorAll('[data-bs-toggle="tooltip"]')
-        .forEach(function (element) {
-            new bootstrap.Tooltip(element);
-        });
-}
-JS);
+        return $column;
     }
 }

@@ -19,8 +19,6 @@ use yii\helpers\Html;
  */
 $this->title = 'Login & Security History';
 $this->params['breadcrumbs'][] = $this->title;
-
-GridActionHelper::registerTooltips($this);
 ?>
 
 <div class="user-login-history-index">
@@ -165,4 +163,3 @@ GridActionHelper::registerTooltips($this);
     </div>
 
 </div>
-``

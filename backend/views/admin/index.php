@@ -1,5 +1,6 @@
 <?php
 
+use common\helpers\GridActionHelper;
 use common\helpers\AdminIndexHelper;
 use yii\helpers\Html;
 use yii\grid\GridView;
@@ -53,31 +54,7 @@ $this->params['breadcrumbs'][] = $this->title;
                 'format' => 'email',
             ],
 
-            [
-                'class' => 'yii\grid\ActionColumn',
-                'header' => 'Actions Panel',
-                'headerOptions' => ['class' => 'text-primary font-weight-bold text-center', 'style' => 'width: 150px;'],
-                'contentOptions' => ['class' => 'text-center'],
-                'template' => '{update} {delete}',
-                'buttons' => [
-                    'update' => function ($url, $model) {
-                        return Html::a('<i class="fas fa-edit"></i>', ['update', 'id' => $model->id], [
-                            'class' => 'btn btn-xs btn-outline-primary mx-1',
-                            'title' => 'Modify Settings'
-                        ]);
-                    },
-                    'delete' => function ($url, $model) {
-                        return Html::a('<i class="fas fa-trash-alt"></i>', ['delete', 'id' => $model->id], [
-                            'class' => 'btn btn-xs btn-outline-danger mx-1',
-                            'data' => [
-                                'confirm' => 'Are you certain you want to revoke this administrative account status profile?',
-                                'method' => 'post',
-                            ],
-                            'title' => 'Delete Account'
-                        ]);
-                    },
-                ],
-            ],
+            GridActionHelper::crudColumn(deleteMessage: 'Delete this administrator account?'),
         ],
     ]); ?>
 </div>

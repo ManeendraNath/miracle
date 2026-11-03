@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use common\helpers\GridActionHelper;
 use common\services\UpcomingExpiryService;
 use yii\data\ArrayDataProvider;
 use yii\grid\GridView;
@@ -25,18 +26,6 @@ $typeClasses = [
     UpcomingExpiryService::TYPE_MAINTENANCE => 'bg-secondary',
 ];
 
-$this->registerJs(<<<'JS'
-if (
-    typeof bootstrap !== 'undefined'
-    && typeof bootstrap.Tooltip !== 'undefined'
-) {
-    document
-        .querySelectorAll('[data-bs-toggle="tooltip"]')
-        .forEach(function (element) {
-            new bootstrap.Tooltip(element);
-        });
-}
-JS);
 ?>
 
 <div class="renewal-monitoring-index">
@@ -400,40 +389,11 @@ Html::a(
                                 'class' => 'text-nowrap',
                             ],
                         ],
-                        [
-                            'label' => 'Action',
-                            'format' => 'raw',
-                            'value' => static function (array $item) use (
-                                $routeMap
-                            ): string {
-                                $route = $routeMap[$item['type']] ?? null;
-
-                                if ($route === null) {
-                                    return '';
-                                }
-
-                                return Html::a(
-                                    '<i class="fas fa-eye"></i>',
-                                    [
-                                            $route,
-                                            'id' => $item['id'],
-                                        ],
-                                    [
-                                            'class' => 'btn btn-sm btn-outline-info',
-                                            'title' => 'View Service',
-                                            'data-bs-toggle' => 'tooltip',
-                                            'data-bs-placement' => 'top',
-                                        ]
-                                );
-                            },
-                            'headerOptions' => [
-                                'class' => 'text-center',
-                                'style' => 'width: 90px;',
-                            ],
-                            'contentOptions' => [
-                                'class' => 'text-center',
-                            ],
-                        ],
+                        GridActionHelper::crudColumn(
+                            template: '{view}',
+                            urlCreator: static fn (string $action, array $item): array => [$routeMap[$item['type']] ?? '', 'id' => $item['id']],
+                            visibleButtons: ['view' => static fn (array $item): bool => isset($routeMap[$item['type']])],
+                        ),
                     ],
                 ])
                 ?>

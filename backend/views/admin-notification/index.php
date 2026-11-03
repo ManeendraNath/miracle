@@ -1,5 +1,6 @@
 <?php
 
+use common\helpers\GridActionHelper;
 use common\helpers\AdminIndexHelper;
 use yii\grid\GridView;
 use yii\helpers\Html;
@@ -41,15 +42,7 @@ $this->params['breadcrumbs'][] = $this->title;
                         'attribute' => 'is_read',
                         'value' => static fn($model) => $model->is_read ? 'Read' : 'Unread',
                     ],
-                    [
-                        'class' => yii\grid\ActionColumn::class,
-                        'template' => '{read}',
-                        'buttons' => [
-                            'read' => static function ($url, $model) {
-                                return Html::a('Open', ['read', 'id' => $model->id], ['class' => 'btn btn-sm btn-primary']);
-                            },
-                        ],
-                    ],
+                    GridActionHelper::crudColumn(template: '{view}', urlCreator: static fn (string $action, $model): array => ['read', 'id' => $model->id]),
                 ],
             ])
             ?>

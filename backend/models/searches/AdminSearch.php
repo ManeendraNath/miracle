@@ -17,7 +17,7 @@ class AdminSearch extends Admin
     public function rules(): array
     {
         return [
-            [['id', 'status', 'created_at', 'updated_at'], 'integer'],
+            [['id', 'status'], 'integer'],
             [['username', 'email', 'role'], 'safe'],
         ];
     }
@@ -58,11 +58,10 @@ class AdminSearch extends Admin
         }
 
         // grid filtering conditions
+        // Not created_at/updated_at: Admin fills them in on construction, which hid every row.
         $query->andFilterWhere([
             'id' => $this->id,
             'status' => $this->status,
-            'created_at' => $this->created_at,
-            'updated_at' => $this->updated_at,
         ]);
 
         $query->andFilterWhere(['like', 'username', $this->username])

@@ -154,9 +154,6 @@ GridViewHelper::register($this);
                         GridActionHelper::crudColumn(
                             template: '{view} {update} {toggle-status}',
                             isEnabled: static fn(Coupon $model): bool => $model->is_active === Coupon::IS_ACTIVE_Y,
-                            urlCreator: static function (string $action, Coupon $model): array {
-                                return [$action, 'id' => $model->id];
-                            },
                         ),
                     ],
                 ]) ?>

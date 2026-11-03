@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use common\helpers\GridActionHelper;
 use common\helpers\AdminIndexHelper;
 use yii\helpers\Html;
 
@@ -61,16 +62,8 @@ $this->params['breadcrumbs'][] = $this->title;
                                 <?= Html::encode($profile->pan ?: '-') ?>
                             </td>
 
-                            <td class="text-end">
-
-                                <?= Html::a(
-                                    'Edit',
-                                    ['update', 'id' => $profile->id],
-                                    [
-                                        'class' => 'btn btn-sm btn-outline-primary',
-                                    ],
-                                ) ?>
-
+                            <td class="text-center text-nowrap">
+                                <?= GridActionHelper::button('update', ['update', 'id' => $profile->id]) ?>
                             </td>
 
                         </tr>

@@ -6,6 +6,7 @@ use yii\data\ActiveDataProvider;
 use common\helpers\GridFilterHelper;
 use yii\grid\GridView;
 use common\helpers\AdminIndexHelper;
+use common\helpers\GridActionHelper;
 use yii\helpers\Html;
 
 /**
@@ -206,42 +207,7 @@ GridView::widget([
                 'text-nowrap',
             ],
         ],
-        [
-            'label' => 'Actions',
-            'format' => 'raw',
-            'value' =>
-            static function (
-                CustomerPreference $model
-            ): string {
-                return Html::a(
-                    '<i class="fas fa-edit"></i>',
-                    [
-                            'update',
-                            'userId' =>
-                            $model->user_id,
-                        ],
-                    [
-                            'class' =>
-                            'btn btn-sm '
-                            . 'btn-outline-primary',
-                            'title' =>
-                            'Manage Preferences',
-                            'data-bs-toggle' =>
-                            'tooltip',
-                        ]
-                );
-            },
-            'headerOptions' => [
-                'style' =>
-                'width: 90px;',
-                'class' =>
-                'text-center',
-            ],
-            'contentOptions' => [
-                'class' =>
-                'text-center',
-            ],
-        ],
+        GridActionHelper::crudColumn(template: '{update}', urlCreator: static fn (string $action, CustomerPreference $model): array => ['update', 'userId' => $model->user_id]),
     ],
 ])
 ?>
@@ -254,12 +220,3 @@ GridView::widget([
 
 </div>
 
-                <?php
-                $this->registerJs(<<<'JS'
-document
-    .querySelectorAll('[data-bs-toggle="tooltip"]')
-    .forEach(function (element) {
-        new bootstrap.Tooltip(element);
-    });
-JS);
-                ?>

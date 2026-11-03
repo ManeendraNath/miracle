@@ -15,6 +15,32 @@ namespace common\models;
  */
 class Lead extends base\Lead
 {
+    /** The admin "Update Status" form: only the status comes from the form. */
+    public const SCENARIO_STATUS = 'status';
+
+    public static function getStatuses(): array
+    {
+        return [
+            'Pending' => 'Pending Review',
+            'In Progress' => 'In Progress',
+            'Completed' => 'Completed',
+            'Rejected' => 'Rejected',
+        ];
+    }
+
+    public function scenarios(): array
+    {
+        return parent::scenarios() + [self::SCENARIO_STATUS => ['status']];
+    }
+
+    public function rules(): array
+    {
+        return array_merge(parent::rules(), [
+            // A status outside the list (older data) may be kept, just not newly chosen.
+            ['status', 'in', 'range' => array_keys(self::getStatuses()), 'on' => self::SCENARIO_STATUS, 'when' => fn (self $m): bool => $m->isAttributeChanged('status')],
+        ]);
+    }
+
     public static function getSources()
     {
         return [

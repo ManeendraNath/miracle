@@ -4,7 +4,7 @@ use yii\helpers\Html;
 use yii\helpers\Url;
 use common\models\AdminNotification;
 
-$adminNotifications = AdminNotification::find()
+$adminNotifications = AdminNotification::visibleTo(Yii::$app->user->identity)
         ->orderBy([
             'is_read' => SORT_ASC,
             'created_at' => SORT_DESC,
@@ -12,8 +12,8 @@ $adminNotifications = AdminNotification::find()
         ->limit(10)
         ->all();
 
-$adminNotificationCount = AdminNotification::find()
-        ->where([
+$adminNotificationCount = AdminNotification::visibleTo(Yii::$app->user->identity)
+        ->andWhere([
             'is_read' => 0,
         ])
         ->count();

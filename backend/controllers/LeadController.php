@@ -8,7 +8,6 @@ use Yii;
 use backend\models\searches\LeadSearch;
 use common\models\Lead;
 use yii\web\NotFoundHttpException;
-use yii\web\ForbiddenHttpException;
 
 /**
  * LeadController manages incoming customer infrastructure audit requirements records.
@@ -44,17 +43,15 @@ class LeadController extends BaseController
      */
     public function actionUpdate(int $id)
     {
-        $user = Yii::$app->user->identity;
-        // Deny managers from editing lead statuses directly
-        if ($user === null || (!$user->isSuperAdmin() && !$user->isAdmin())) {
-            throw new ForbiddenHttpException('Access Denied: Your staff tier lacks capability modifications privileges.');
-        }
-
         $model = $this->findModel($id);
+        $model->scenario = Lead::SCENARIO_STATUS;
 
-        if ($model->load(Yii::$app->request->post()) && $model->save()) {
-            Yii::$app->session->setFlash('success', 'Lead configuration pipeline state updated.');
-            return $this->redirect(['view', 'id' => $model->id]);
+        if ($model->load(Yii::$app->request->post())) {
+            $model->updated_at = time();
+            if ($model->save()) {
+                Yii::$app->session->setFlash('success', 'Lead status updated.');
+                return $this->redirect(['view', 'id' => $model->id]);
+            }
         }
 
         return $this->render('update', [

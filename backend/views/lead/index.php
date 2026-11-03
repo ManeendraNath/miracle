@@ -1,5 +1,6 @@
 <?php
 
+use backend\controllers\BaseController;
 use common\helpers\GridActionHelper;
 use common\helpers\GridFilterHelper;
 use common\helpers\GridPaginationHelper;
@@ -131,7 +132,14 @@ GridViewHelper::register($this);
                     /*
                      * Shared CRUD actions.
                      */
-                    GridActionHelper::crudColumn(deleteMessage: 'Are you sure you want to delete this lead?'),
+                    GridActionHelper::crudColumn(
+                        deleteMessage: 'Are you sure you want to delete this lead?',
+                        // Managers only view leads (BaseController::MIN_ROLE).
+                        visibleButtons: [
+                            'update' => BaseController::canAccess(Yii::$app->user->identity, 'lead', 'update'),
+                            'delete' => BaseController::canAccess(Yii::$app->user->identity, 'lead', 'delete'),
+                        ],
+                    ),
                 ],
             ]) ?>
         </div>

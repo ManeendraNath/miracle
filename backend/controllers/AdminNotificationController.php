@@ -15,7 +15,7 @@ final class AdminNotificationController extends BaseController
     {
         return $this->render('index', [
             'dataProvider' => new ActiveDataProvider([
-                'query' => AdminNotification::find()->orderBy([
+                'query' => AdminNotification::visibleTo(Yii::$app->user->identity)->orderBy([
                     'created_at' => SORT_DESC,
                 ]),
                 'pagination' => [
@@ -27,7 +27,7 @@ final class AdminNotificationController extends BaseController
 
     public function actionRead(int $id)
     {
-        $model = AdminNotification::findOne($id);
+        $model = AdminNotification::visibleTo(Yii::$app->user->identity)->andWhere(['id' => $id])->one();
         if ($model === null) {
             throw new NotFoundHttpException('Notification not found.');
         }

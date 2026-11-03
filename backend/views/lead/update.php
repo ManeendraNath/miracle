@@ -1,39 +1,34 @@
 <?php
 
+declare(strict_types=1);
+
+use common\models\Lead;
 use yii\bootstrap5\ActiveForm;
-use yii\bootstrap5\Html;
+use yii\helpers\Html;
 
 /** @var yii\web\View $this */
-/** @var common\models\AuditRequest $model */
+/** @var common\models\Lead $model */
 
-$this->title = 'Modify System Intake Pipeline State: Lead #' . $model->id;
+$this->title = 'Update Lead: ' . $model->lead_name;
+$this->params['breadcrumbs'][] = ['label' => 'Leads', 'url' => ['index']];
+$this->params['breadcrumbs'][] = ['label' => $model->lead_name, 'url' => ['view', 'id' => $model->id]];
+$this->params['breadcrumbs'][] = 'Update';
+$this->params['subtitle'] = 'Move the lead to its current stage.';
 ?>
-<div class="lead-update container py-4" style="font-family: 'Inter', system-ui, sans-serif;">
+<div class="lead-update">
+    <div class="card card-outline card-primary shadow-sm" style="max-width: 600px;">
+        <div class="card-body">
+            <?php $form = ActiveForm::begin(); ?>
 
-    <div class="mb-3">
-        <?= Html::a('Cancel & Exit', ['view', 'id' => $model->id], ['class' => 'btn btn-outline-secondary']) ?>
-    </div>
+            <?php // Keep an older status that's not in the list selectable, so saving doesn't silently reset it. ?>
+            <?= $form->field($model, 'status')->dropDownList(Lead::getStatuses() + [$model->status => $model->status]) ?>
 
-    <div class="card border-0 shadow-sm p-4 bg-white" style="border-radius: 0.75rem; max-width: 600px;">
-        <h3 class="fw-bold text-dark mb-2">🎭 Transition Pipeline State</h3>
-        <p class="text-muted small border-bottom pb-3 mb-4">Client: <strong><?= Html::encode($model->name) ?></strong></p>
+            <div class="d-flex justify-content-end gap-2 mt-3">
+                <?= Html::a('Cancel', ['view', 'id' => $model->id], ['class' => 'btn btn-light border']) ?>
+                <?= Html::submitButton('<i class="fas fa-save me-1"></i> Save', ['class' => 'btn btn-primary']) ?>
+            </div>
 
-        <?php $form = ActiveForm::begin(); ?>
-
-        <?= $form->field($model, 'status')->dropDownList([
-            'Pending' => 'Pending Review',
-            'In Progress' => 'Audit Processing / Environment Provisioning',
-            'Completed' => 'Completed / Invoices Delivered',
-            'Rejected' => 'Rejected / Disqualified'
-        ], ['class' => 'form-select py-2'])->label('Assign Target Pipeline Stage') ?>
-
-        <div class="form-group mt-4 text-end">
-            <?= Html::submitButton('Update State Code ✓', [
-                'class' => 'btn text-white fw-bold px-4 py-2',
-                'style' => 'background-color: #00a3e0; border: none; border-radius: 0.5rem;'
-            ]) ?>
+            <?php ActiveForm::end(); ?>
         </div>
-
-        <?php ActiveForm::end(); ?>
     </div>
 </div>

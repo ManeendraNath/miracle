@@ -1,54 +1,42 @@
 <?php
 
-use yii\bootstrap5\Html;
+declare(strict_types=1);
+
+use backend\controllers\BaseController;
+use yii\helpers\Html;
 use yii\widgets\DetailView;
 
 /** @var yii\web\View $this */
-/** @var common\models\AuditRequest $model */
+/** @var common\models\Lead $model */
 
-$this->title = 'Lead Assessment Profile #' . $model->id;
+$this->title = $model->lead_name;
+$this->params['breadcrumbs'][] = ['label' => 'Leads', 'url' => ['index']];
+$this->params['breadcrumbs'][] = $this->title;
+$this->params['subtitle'] = 'Lead #' . (int) $model->id;
+$this->params['actions'] = [Html::a('<i class="fas fa-arrow-left me-1"></i> Back', ['index'], ['class' => 'btn btn-light border'])];
+if (BaseController::canAccess(Yii::$app->user->identity, 'lead', 'update')) {
+    $this->params['actions'][] = Html::a('<i class="fas fa-edit me-1"></i> Update Status', ['update', 'id' => $model->id], ['class' => 'btn btn-primary']);
+}
 ?>
-<div class="lead-view container py-4" style="font-family: 'Inter', system-ui, sans-serif;">
-
-    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
-        <div>
-            <?= Html::a('← Back to CRM Pipeline Grid', ['index'], ['class' => 'btn btn-outline-secondary']) ?>
-        </div>
-        <div>
-            <?= Html::a('Modify Pipeline Status 📝', ['update', 'id' => $model->id], [
-                'class' => 'btn text-white fw-bold px-4',
-                'style' => 'background-color: #00a3e0; border: none;'
+<div class="lead-view">
+    <div class="card card-outline card-primary shadow-sm">
+        <div class="card-body p-0">
+            <?= DetailView::widget([
+                'model' => $model,
+                'options' => ['class' => 'table table-bordered align-middle mb-0'],
+                'attributes' => [
+                    'lead_name',
+                    'phone_number',
+                    'source',
+                    [
+                        'attribute' => 'status',
+                        'format' => 'raw',
+                        'value' => Html::tag('span', Html::encode($model->status), ['class' => 'badge bg-secondary']),
+                    ],
+                    'created_at:datetime',
+                    'updated_at:datetime',
+                ],
             ]) ?>
         </div>
-    </div>
-
-    <div class="card border-0 shadow-sm p-4 bg-white" style="border-radius: 0.75rem;">
-        <h3 class="fw-bold text-dark border-bottom pb-3 mb-4">📋 Comprehensive Specification Matrix</h3>
-
-        <?= DetailView::widget([
-            'model' => $model,
-            'attributes' => [
-                'id',
-                'name',
-                'email:email',
-                'company_url:url',
-                'current_framework',
-                'hosting_environment',
-                [
-                    'attribute' => 'message',
-                    'format' => 'ntext',
-                    'contentOptions' => ['style' => 'background-color: #f8fafc; font-size: 0.95rem; border-left: 4px solid #00a3e0; padding: 15px;']
-                ],
-                [
-                    'attribute' => 'status',
-                    'format' => 'raw',
-                    'value' => Html::tag('span', Html::encode($model->status), ['class' => 'badge bg-secondary px-3 py-2 text-uppercase fs-6'])
-                ],
-                [
-                    'attribute' => 'created_at',
-                    'value' => date('d-M-Y H:i:s', (int) $model->created_at),
-                ],
-            ],
-        ]) ?>
     </div>
 </div>

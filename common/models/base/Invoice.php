@@ -49,6 +49,7 @@ use Yii;
  */
 class Invoice extends \yii\db\ActiveRecord
 {
+
     /**
      * ENUM field values
      */

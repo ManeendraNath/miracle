@@ -28,6 +28,8 @@ use Yii;
  */
 class CustomerBillingProfile extends \yii\db\ActiveRecord
 {
+
+
     /**
      * {@inheritdoc}
      */
@@ -43,8 +45,8 @@ class CustomerBillingProfile extends \yii\db\ActiveRecord
     {
         return [
             [['address_line_1', 'address_line_2', 'city', 'state_code', 'postal_code', 'gstin', 'pan'], 'default', 'value' => null],
-            [['is_gst_applicable'], 'default', 'value' => 0],
             [['country'], 'default', 'value' => 'India'],
+            [['is_gst_applicable'], 'default', 'value' => 0],
             [['default_discount_amount'], 'default', 'value' => 0.00],
             [['user_id', 'legal_name', 'state', 'created_at', 'updated_at'], 'required'],
             [['user_id', 'is_gst_applicable', 'created_at', 'updated_at'], 'integer'],
@@ -93,4 +95,5 @@ class CustomerBillingProfile extends \yii\db\ActiveRecord
     {
         return $this->hasOne(User::class, ['id' => 'user_id']);
     }
+
 }

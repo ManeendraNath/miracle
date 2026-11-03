@@ -17,7 +17,13 @@ $formatter = Yii::$app->formatter;
         <h1 class="h3 fw-bold mb-1">Account Security</h1>
         <div class="text-body-secondary">Review successful sign-ins recorded for your account.</div>
     </div>
-    <?= Html::a('<i class="fas fa-key me-1"></i> Change Password', ['/account/change-password'], ['class' => 'btn btn-primary']) ?>
+    <div class="d-flex flex-wrap gap-2">
+        <?= Html::a('<i class="fas fa-sign-out-alt me-1"></i> Sign Out Other Devices', ['sign-out-other-devices'], [
+            'class' => 'btn btn-outline-danger',
+            'data' => ['method' => 'post', 'confirm' => 'Sign out every other browser and device using your account? This one stays signed in.'],
+        ]) ?>
+        <?= Html::a('<i class="fas fa-key me-1"></i> Change Password', ['/account/change-password'], ['class' => 'btn btn-primary']) ?>
+    </div>
 </div>
 
 <div class="card border-0 shadow-sm">

@@ -18,4 +18,5 @@ echo $this->render('_card', [
     ],
     'note' => ['If this was you, you don\'t need to do anything. If it wasn\'t, reset your password now.'],
     'button' => ['Reset Password', Yii::$app->urlManager->createAbsoluteUrl(['site/request-password-reset'])],
+    'footnote' => 'Resetting your password signs out every device. You can also sign out all other devices from Account Security after you sign in.',
 ]);

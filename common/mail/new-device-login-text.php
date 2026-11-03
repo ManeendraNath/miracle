@@ -23,3 +23,7 @@ If this was you, you don't need to do anything.
 
 If it wasn't you, reset your password now:
 <?= Yii::$app->urlManager->createAbsoluteUrl(['site/request-password-reset']) ?>
+
+
+Resetting your password signs out every device. You can also sign out all other devices from Account Security after you sign in:
+<?= Yii::$app->urlManager->createAbsoluteUrl(['security/index']) ?>

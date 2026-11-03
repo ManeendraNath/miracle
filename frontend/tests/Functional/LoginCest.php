@@ -79,6 +79,24 @@ final class LoginCest
         $I->seeEmailIsSent(1);
     }
 
+    public function signOutOtherDevicesRotatesKeyButKeepsThisBrowser(FunctionalTester $I): void
+    {
+        $I->submitForm('#login-form', $this->formParams('erau', 'password_0'));
+        $I->amOnRoute('security/index');
+        $I->see('Sign Out Other Devices');
+
+        $I->sendAjaxPostRequest(\yii\helpers\Url::to(['/security/sign-out-other-devices']), [
+            '_csrf-frontend' => $I->grabAttributeFrom('meta[name=csrf-token]', 'content'),
+        ]);
+
+        // Every other session and remember-me cookie carries the old key, which no longer validates.
+        $user = \common\models\User::findOne(['username' => 'erau']);
+        $I->assertFalse($user->validateAuthKey('tUu1qHcde0diwUol3xeI-18MuHkkprQI'));
+        $I->amOnRoute('security/index');
+        $I->see('Sign Out (erau)');
+        $I->see('You have been signed out of all other devices.');
+    }
+
     private function signInAgain(FunctionalTester $I): void
     {
         $I->click('Sign Out (erau)');

@@ -186,7 +186,8 @@ echo "== Deploying (maintenance mode on)"
 STAGE=code
 # Web entry points answer 503 and cron jobs skip while this exists.
 # ponytail: a cron run already in progress is not waited for; add a wait here if runs get long.
-mkdir -p "$APP/runtime"
+# runtime/logs: crontab output (billing-cron.log, read by the admin Cron Log page).
+mkdir -p "$APP/runtime/logs"
 touch "$MAINTENANCE_FLAG"
 
 sync_code "$REPO"

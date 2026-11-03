@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 use common\models\Invoice;
@@ -129,32 +130,12 @@ $igstAmount = $tax['igstAmount'];
         <td width="55%">
             <strong>Billed To</strong><br>
 
-            <?=
-            Html::encode(
-                    $invoice->client_name
-            )
-            ?><br>
+            <?= Html::encode($invoice->client_name) ?><br>
 
-            <?=
-            Html::encode(
-                    $invoice
-                    ->client_address_line_1
-            )
-            ?><br>
+            <?= Html::encode($invoice ->client_address_line_1) ?><br>
 
-            <?php
-            if (
-                    $invoice
-                    ->client_address_line_2
-            ):
-                ?>
-
-                <?=
-                Html::encode(
-                        $invoice
-                        ->client_address_line_2
-                )
-                ?><br>
+            <?php if ($invoice ->client_address_line_2): ?>
+                <?= Html::encode($invoice ->client_address_line_2) ?><br>
 
             <?php endif; ?>
 
@@ -166,27 +147,13 @@ $igstAmount = $tax['igstAmount'];
 
         <td>
             <strong>Invoice:</strong>
-            <?=
-            Html::encode(
-                    $invoice->invoice_number
-            )
-            ?><br>
+            <?= Html::encode($invoice->invoice_number) ?><br>
 
             <strong>Issue Date:</strong>
-            <?=
-            date(
-                    'd M Y',
-                    (int) $invoice->created_at
-            )
-            ?><br>
+            <?= date('d M Y', (int) $invoice->created_at) ?><br>
 
             <strong>Due Date:</strong>
-            <?=
-            Html::encode(
-                    (string)
-                    $invoice->due_date
-            )
-            ?>
+            <?= Html::encode((string) $invoice->due_date) ?>
         </td>
     </tr>
 </table>
@@ -206,52 +173,26 @@ $igstAmount = $tax['igstAmount'];
 
     <tbody>
 
-        <?php
-        foreach (
-                $invoice->items as $item
-        ):
-            ?>
-
+        <?php foreach ($invoice->items as $item): ?>
             <tr>
                 <td>
-                    <?=
-                    Html::encode(
-                            $item->category
-                    )
-                    ?>
+                    <?= Html::encode($item->category) ?>
                 </td>
 
                 <td>
-                    <?=
-                    Html::encode(
-                            $item->description
-                    )
-                    ?>
+                    <?= Html::encode($item->description) ?>
                 </td>
 
                 <td class="right">
-                    <?=
-                    (int)
-                    $item->quantity
-                    ?>
+                    <?= (int) $item->quantity ?>
                 </td>
 
                 <td class="right">
-                    <?=
-                    $money(
-                            (float)
-                            $item->unit_price
-                    )
-                    ?>
+                    <?= $money((float) $item->unit_price) ?>
                 </td>
 
                 <td class="right">
-                    <?=
-                    $money(
-                            (float)
-                            $item->total_price
-                    )
-                    ?>
+                    <?= $money((float) $item->total_price) ?>
                 </td>
             </tr>
 
@@ -270,12 +211,7 @@ $igstAmount = $tax['igstAmount'];
         </td>
 
         <td class="right">
-            <?=
-            $money(
-                    (float)
-                    $invoice->subtotal_amount
-            )
-            ?>
+            <?= $money((float) $invoice->subtotal_amount) ?>
         </td>
     </tr>
 
@@ -288,12 +224,7 @@ $igstAmount = $tax['igstAmount'];
 
         <td class="right">
             -
-            <?=
-            $money(
-                    (float)
-                    $invoice->discount_amount
-            )
-            ?>
+            <?= $money((float) $invoice->discount_amount) ?>
         </td>
     </tr>
 
@@ -305,102 +236,53 @@ $igstAmount = $tax['igstAmount'];
         </td>
 
         <td class="right">
-            <?=
-            $money(
-                    $taxableAmount
-            )
-            ?>
+            <?= $money($taxableAmount) ?>
         </td>
     </tr>
 
-    <?php
-    if (
-            (float) $invoice->cgst_percent > 0
-    ):
-        ?>
-
+    <?php if ((float) $invoice->cgst_percent > 0): ?>
         <tr>
             <td></td>
 
             <td>
                 CGST
-                (<?=
-                number_format(
-                        (float)
-                        $invoice->cgst_percent,
-                        2
-                )
-                ?>%)
+                (<?= number_format((float) $invoice->cgst_percent, 2) ?>%)
             </td>
 
             <td class="right">
-                <?=
-                $money(
-                        $cgstAmount
-                )
-                ?>
+                <?= $money($cgstAmount) ?>
             </td>
         </tr>
 
     <?php endif; ?>
 
-    <?php
-    if (
-            (float) $invoice->sgst_percent > 0
-    ):
-        ?>
-
+    <?php if ((float) $invoice->sgst_percent > 0): ?>
         <tr>
             <td></td>
 
             <td>
                 SGST
-                (<?=
-                number_format(
-                        (float)
-                        $invoice->sgst_percent,
-                        2
-                )
-                ?>%)
+                (<?= number_format((float) $invoice->sgst_percent, 2) ?>%)
             </td>
 
             <td class="right">
-                <?=
-                $money(
-                        $sgstAmount
-                )
-                ?>
+                <?= $money($sgstAmount) ?>
             </td>
         </tr>
 
     <?php endif; ?>
 
-    <?php
-    if (
-            (float) $invoice->igst_percent > 0
-    ):
-        ?>
-
+    <?php if ((float) $invoice->igst_percent > 0): ?>
         <tr>
             <td></td>
 
             <td>
                 IGST
-                (<?=
-                number_format(
-                        (float)
-                        $invoice->igst_percent,
-                        2
-                )
-                ?>%)
+                (<?= number_format((float) $invoice->igst_percent, 2) ?>%)
             </td>
 
             <td class="right">
-                <?=
-                $money(
-                        $igstAmount
-                )
-                ?>
+                <?= $money($igstAmount) ?>
             </td>
         </tr>
 
@@ -414,12 +296,7 @@ $igstAmount = $tax['igstAmount'];
         </td>
 
         <td class="right">
-            <?=
-            $money(
-                    (float)
-                    $invoice->total_payable
-            )
-            ?>
+            <?= $money((float) $invoice->total_payable) ?>
         </td>
     </tr>
 
@@ -431,12 +308,7 @@ $igstAmount = $tax['igstAmount'];
         </td>
 
         <td class="right">
-            <?=
-            $money(
-                    (float)
-                    $capturedAmount
-            )
-            ?>
+            <?= $money((float) $capturedAmount) ?>
         </td>
     </tr>
 
@@ -448,12 +320,7 @@ $igstAmount = $tax['igstAmount'];
         </td>
 
         <td class="right">
-            <?=
-            $money(
-                    (float)
-                    $outstandingAmount
-            )
-            ?>
+            <?= $money((float) $outstandingAmount) ?>
         </td>
     </tr>
 
@@ -474,8 +341,7 @@ $igstAmount = $tax['igstAmount'];
 
         <?php if (
             !empty($payment['accountName'])
-        ): ?>
-
+): ?>
             <tr>
                 <td class="payment-label">
                     Account Name
@@ -492,8 +358,7 @@ $igstAmount = $tax['igstAmount'];
 
         <?php if (
             !empty($payment['bankName'])
-        ): ?>
-
+): ?>
             <tr>
                 <td class="payment-label">
                     Bank
@@ -510,8 +375,7 @@ $igstAmount = $tax['igstAmount'];
 
         <?php if (
             !empty($payment['accountNumber'])
-        ): ?>
-
+): ?>
             <tr>
                 <td class="payment-label">
                     Account Number
@@ -528,8 +392,7 @@ $igstAmount = $tax['igstAmount'];
 
         <?php if (
             !empty($payment['ifsc'])
-        ): ?>
-
+): ?>
             <tr>
                 <td class="payment-label">
                     IFSC
@@ -546,8 +409,7 @@ $igstAmount = $tax['igstAmount'];
 
         <?php if (
             !empty($payment['upiId'])
-        ): ?>
-
+): ?>
             <tr>
                 <td class="payment-label">
                     UPI ID

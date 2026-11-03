@@ -28,9 +28,9 @@ class ServiceRenewalHistory extends \yii\db\ActiveRecord
     /**
      * ENUM field values
      */
-    const ITEM_TYPE_DOMAIN = 'domain';
-    const ITEM_TYPE_HOSTING = 'hosting';
-    const ITEM_TYPE_MAINTENANCE = 'maintenance';
+    public const ITEM_TYPE_DOMAIN = 'domain';
+    public const ITEM_TYPE_HOSTING = 'hosting';
+    public const ITEM_TYPE_MAINTENANCE = 'maintenance';
 
     /**
      * {@inheritdoc}

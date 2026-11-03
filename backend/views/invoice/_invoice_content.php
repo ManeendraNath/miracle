@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 use common\models\Invoice;
@@ -68,24 +69,14 @@ $money = static function (int|float|string|null $amount): string {
             <h5 class="fw-bold text-dark mb-1"><?= Html::encode($model->client_name) ?></h5>
             <p class="text-secondary text-sm mb-0">
                 <?php foreach ([$model->client_address_line_1, $model->client_address_line_2, $model->getClientCityLine(), ...$model->getClientTaxLines()] as $line): ?>
-                    <?php if ($line): ?><?= Html::encode($line) ?><br><?php endif; ?>
+                    <?= $line ? Html::encode($line) . '<br>' : '' ?>
                 <?php endforeach; ?>
             </p>
         </div>
         <div class="col-6 text-end">
             <p class="text-uppercase fw-bold text-muted text-xs mb-1">Timeline Dates:</p>
-            <p class="text-sm text-dark mb-1"><strong>Issue Date:</strong> <?=
-                Yii::$app->formatter->asDate(
-                        $model->created_at,
-                        'php:d M Y'
-                )
-                ?></p>
-            <p class="text-sm text-danger mb-0"><strong>Due Date:</strong><?=
-                $model->due_date ? Yii::$app->formatter->asDate(
-                                $model->due_date,
-                                'php:d M Y'
-                        ) : 'Upon Receipt'
-                ?></p>
+            <p class="text-sm text-dark mb-1"><strong>Issue Date:</strong> <?= Yii::$app->formatter->asDate($model->created_at, 'php:d M Y') ?></p>
+            <p class="text-sm text-danger mb-0"><strong>Due Date:</strong><?= $model->due_date ? Yii::$app->formatter->asDate($model->due_date, 'php:d M Y') : 'Upon Receipt' ?></p>
         </div>
     </div>
 
@@ -138,25 +129,14 @@ $money = static function (int|float|string|null $amount): string {
             <tbody>
 
                 <?php if ($items): ?>
-
                     <?php foreach ($items as $item): ?>
-
                         <tr>
 
                             <td class="fw-semibold">
 
-                                <?=
-                                Html::encode(
-                                        $item->category
-                                )
-                                ?>
+                                <?= Html::encode($item->category) ?>
 
-                                <?php
-                                if (
-                                        (int) $item->item_type === InvoiceItem::TYPE_ARREARS
-                                ):
-                                    ?>
-
+                                <?php if ((int) $item->item_type === InvoiceItem::TYPE_ARREARS): ?>
                                     <div>
                                         <span class="badge bg-warning text-dark">
                                             Previous Balance
@@ -168,13 +148,7 @@ $money = static function (int|float|string|null $amount): string {
                             </td>
 
                             <td>
-                                <?=
-                                nl2br(
-                                        Html::encode(
-                                                $item->description
-                                        )
-                                )
-                                ?>
+                                <?= nl2br(Html::encode($item->description)) ?>
                             </td>
 
                             <td class="text-center">
@@ -194,7 +168,6 @@ $money = static function (int|float|string|null $amount): string {
                     <?php endforeach; ?>
 
                 <?php else: ?>
-
                     <tr>
                         <td colspan="5" class="text-center text-muted py-4">
                             No invoice items are available.
@@ -220,11 +193,7 @@ $money = static function (int|float|string|null $amount): string {
                         </td>
 
                         <td class="text-end">
-                            <?=
-                            $money(
-                                    $subtotal
-                            )
-                            ?>
+                            <?= $money($subtotal) ?>
                         </td>
                     </tr>
 
@@ -235,11 +204,7 @@ $money = static function (int|float|string|null $amount): string {
 
                         <td class="text-end">
                             -
-                            <?=
-                            $money(
-                                    $discount
-                            )
-                            ?>
+                            <?= $money($discount) ?>
                         </td>
                     </tr>
 
@@ -249,59 +214,29 @@ $money = static function (int|float|string|null $amount): string {
                         </td>
 
                         <td class="text-end">
-                            <?=
-                            $money(
-                                    $taxableAmount
-                            )
-                            ?>
+                            <?= $money($taxableAmount) ?>
                         </td>
                     </tr>
 
-                    <?php
-                    if (
-                            (float) $model->cgst_percent > 0
-                    ):
-                        ?>
-
+                    <?php if ((float) $model->cgst_percent > 0): ?>
                         <tr>
                             <td>
                                 CGST
-                                (<?=
-                                number_format(
-                                        (float)
-                                        $model->cgst_percent,
-                                        2
-                                )
-                                ?>%)
+                                (<?= number_format((float) $model->cgst_percent, 2) ?>%)
                             </td>
 
                             <td class="text-end">
-                                <?=
-                                $money(
-                                        $cgstAmount
-                                )
-                                ?>
+                                <?= $money($cgstAmount) ?>
                             </td>
                         </tr>
 
                     <?php endif; ?>
 
-                    <?php
-                    if (
-                            (float) $model->sgst_percent > 0
-                    ):
-                        ?>
-
+                    <?php if ((float) $model->sgst_percent > 0): ?>
                         <tr>
                             <td>
                                 SGST
-                                (<?=
-                                number_format(
-                                        (float)
-                                        $model->sgst_percent,
-                                        2
-                                )
-                                ?>%)
+                                (<?= number_format((float) $model->sgst_percent, 2) ?>%)
                             </td>
 
                             <td class="text-end">

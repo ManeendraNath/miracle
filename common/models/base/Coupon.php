@@ -33,10 +33,10 @@ class Coupon extends \yii\db\ActiveRecord
     /**
      * ENUM field values
      */
-    const TYPE_F = 'F';
-    const TYPE_P = 'P';
-    const IS_ACTIVE_Y = 'Y';
-    const IS_ACTIVE_N = 'N';
+    public const TYPE_F = 'F';
+    public const TYPE_P = 'P';
+    public const IS_ACTIVE_Y = 'Y';
+    public const IS_ACTIVE_N = 'N';
 
     /**
      * {@inheritdoc}

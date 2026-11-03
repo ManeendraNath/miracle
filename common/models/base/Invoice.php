@@ -52,12 +52,12 @@ class Invoice extends \yii\db\ActiveRecord
     /**
      * ENUM field values
      */
-    const STATUS_UNPAID = 'Unpaid';
-    const STATUS_PARTIALLY_PAID = 'Partially_Paid';
-    const STATUS_PAID = 'Paid';
-    const STATUS_CARRIED_FORWARD = 'Carried_Forward';
-    const STATUS_CANCELLED = 'Cancelled';
-    const STATUS_REFUNDED = 'Refunded';
+    public const STATUS_UNPAID = 'Unpaid';
+    public const STATUS_PARTIALLY_PAID = 'Partially_Paid';
+    public const STATUS_PAID = 'Paid';
+    public const STATUS_CARRIED_FORWARD = 'Carried_Forward';
+    public const STATUS_CANCELLED = 'Cancelled';
+    public const STATUS_REFUNDED = 'Refunded';
 
     /**
      * {@inheritdoc}

@@ -25,10 +25,10 @@ class AuditRequest extends \yii\db\ActiveRecord
     /**
      * ENUM field values
      */
-    const STATUS_PENDING = 'Pending';
-    const STATUS_IN_REVIEW = 'In_Review';
-    const STATUS_CONTACTED = 'Contacted';
-    const STATUS_CLOSED = 'Closed';
+    public const STATUS_PENDING = 'Pending';
+    public const STATUS_IN_REVIEW = 'In_Review';
+    public const STATUS_CONTACTED = 'Contacted';
+    public const STATUS_CLOSED = 'Closed';
 
     /**
      * {@inheritdoc}

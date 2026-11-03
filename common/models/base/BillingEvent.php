@@ -41,10 +41,10 @@ class BillingEvent extends \yii\db\ActiveRecord
     /**
      * ENUM field values
      */
-    const STATUS_PENDING = 'Pending';
-    const STATUS_INVOICED = 'Invoiced';
-    const STATUS_FULFILLED = 'Fulfilled';
-    const STATUS_CANCELLED = 'Cancelled';
+    public const STATUS_PENDING = 'Pending';
+    public const STATUS_INVOICED = 'Invoiced';
+    public const STATUS_FULFILLED = 'Fulfilled';
+    public const STATUS_CANCELLED = 'Cancelled';
 
     /**
      * {@inheritdoc}

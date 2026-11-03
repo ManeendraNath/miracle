@@ -36,8 +36,8 @@ $users = ArrayHelper::map(
 
     <?php
     // Renewal pricing is Admin-only; Managers see it read-only (BaseController::loadService ignores it).
-$canEditPricing = \backend\controllers\BaseController::canEditRenewalPricing();
-$form = ActiveForm::begin([
+    $canEditPricing = \backend\controllers\BaseController::canEditRenewalPricing();
+    $form = ActiveForm::begin([
         'options' => [
             'autocomplete' => 'off',
         ],

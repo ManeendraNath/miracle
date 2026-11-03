@@ -24,9 +24,9 @@ class BillingRun extends \yii\db\ActiveRecord
     /**
      * ENUM field values
      */
-    const STATUS_RUNNING = 'Running';
-    const STATUS_COMPLETED = 'Completed';
-    const STATUS_FAILED = 'Failed';
+    public const STATUS_RUNNING = 'Running';
+    public const STATUS_COMPLETED = 'Completed';
+    public const STATUS_FAILED = 'Failed';
 
     /**
      * {@inheritdoc}

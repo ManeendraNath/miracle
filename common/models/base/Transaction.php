@@ -31,11 +31,11 @@ class Transaction extends \yii\db\ActiveRecord
     /**
      * ENUM field values
      */
-    const STATUS_PENDING = 'Pending';
-    const STATUS_AUTHORIZED = 'Authorized';
-    const STATUS_CAPTURED = 'Captured';
-    const STATUS_FAILED = 'Failed';
-    const STATUS_REFUNDED = 'Refunded';
+    public const STATUS_PENDING = 'Pending';
+    public const STATUS_AUTHORIZED = 'Authorized';
+    public const STATUS_CAPTURED = 'Captured';
+    public const STATUS_FAILED = 'Failed';
+    public const STATUS_REFUNDED = 'Refunded';
 
     /**
      * {@inheritdoc}

@@ -37,4 +37,37 @@ final class RenewalPeriodCalculatorTest extends Unit
             'Apr 30 yearly stays 30' => ['2026-04-30', 12, '2026-05-01', '2027-04-30'],
         ];
     }
+
+    public function testMonthlyCycleReturnsToItsAnchorDayAfterAShortMonth(): void
+    {
+        $calculator = new RenewalPeriodCalculator();
+        $expiry = '2026-01-30';
+        $ends = [];
+        for ($i = 0; $i < 4; $i++) {
+            $expiry = $calculator->calculate($expiry, 1, 30)['end'];
+            $ends[] = $expiry;
+        }
+        // Without the anchor this drifted to 31 Mar, 30 Apr, 31 May.
+        $this->assertSame(['2026-02-28', '2026-03-30', '2026-04-30', '2026-05-30'], $ends);
+    }
+
+    public function testMonthEndAnchorStaysAtMonthEnd(): void
+    {
+        $this->assertSame('2026-03-31', (new RenewalPeriodCalculator())->calculate('2026-02-28', 1, 31)['end']);
+        $this->assertSame('2026-04-30', (new RenewalPeriodCalculator())->calculate('2026-03-31', 1, 31)['end']);
+    }
+
+    public function testYearlyCyclesIgnoreTheAnchor(): void
+    {
+        $this->assertSame('2028-02-28', (new RenewalPeriodCalculator())->calculate('2027-02-28', 12, 31)['end']);
+    }
+
+    public function testAnchorDayForAStaffEnteredDate(): void
+    {
+        $this->assertSame(30, RenewalPeriodCalculator::anchorDayFor('2026-01-30'));
+        $this->assertSame(31, RenewalPeriodCalculator::anchorDayFor('2026-02-28'));
+        $this->assertSame(31, RenewalPeriodCalculator::anchorDayFor('2026-04-30'));
+        $this->assertSame(15, RenewalPeriodCalculator::anchorDayFor('2026-04-15'));
+        $this->assertNull(RenewalPeriodCalculator::anchorDayFor('not-a-date'));
+    }
 }

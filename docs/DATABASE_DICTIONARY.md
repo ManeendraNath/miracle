@@ -45,6 +45,9 @@ These business ledger tables store infrastructure asset items, account parameter
     *   `NextRenewalDate`: Evaluates expirations. Used by the alerts engine to calculate upcoming client billing cycles.
     *   `UserID`: Foreign key mapping the asset link back onto the target owner in the `user` table.
 
+### 📅 `renewal_anchor_day` (on `domains`, `hosting`, `maintenance`)
+*   Day of month the service renews on (`31` = month end). Set when staff save an expiry date; renewals keep it, so a monthly service returns to its day after a short month (30 Jan → 28 Feb → 30 Mar). Yearly cycles keep the calendar date instead. See `RenewalPeriodCalculator`.
+
 ### 🐋 `hosting`
 *   **Engine Type:** `InnoDB`
 *   **Operational Purpose:** Tracks cPanel hosting allocations, server IP nodes, and secure user credentials mapped to active reseller packages.

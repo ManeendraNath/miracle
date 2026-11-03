@@ -12,6 +12,7 @@ use Yii;
  * @property string $website_url
  * @property string $start_date
  * @property string $current_expiry_date Extended automatically when a renewal history ledger record is verified
+ * @property int|null $renewal_anchor_day Day of month it renews on (31 = month end)
  * @property int $status 0: Cancelled, 1: Active, 2: Overdue
  * @property int $created_at
  * @property int $updated_at

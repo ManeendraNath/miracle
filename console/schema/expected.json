@@ -1,5 +1,5 @@
 {
-    "migrations": 50,
+    "migrations": 51,
     "columns": {
         "admin": {
             "auth_key": {
@@ -1092,6 +1092,12 @@
                 "default": null,
                 "extra": ""
             },
+            "renewal_anchor_day": {
+                "type": "tinyint unsigned",
+                "null": true,
+                "default": null,
+                "extra": ""
+            },
             "renewal_base_amount": {
                 "type": "decimal(10,2)",
                 "null": true,
@@ -1169,6 +1175,12 @@
             "primary_domain": {
                 "type": "varchar(255)",
                 "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "renewal_anchor_day": {
+                "type": "tinyint unsigned",
+                "null": true,
                 "default": null,
                 "extra": ""
             },
@@ -1567,6 +1579,12 @@
                 "null": false,
                 "default": null,
                 "extra": "auto_increment"
+            },
+            "renewal_anchor_day": {
+                "type": "tinyint unsigned",
+                "null": true,
+                "default": null,
+                "extra": ""
             },
             "renewal_base_amount": {
                 "type": "decimal(10,2)",

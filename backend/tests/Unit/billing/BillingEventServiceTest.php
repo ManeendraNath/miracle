@@ -58,6 +58,23 @@ final class BillingEventServiceTest extends Unit
         $this->assertEquals(1200.00, (float) $event->amount);
     }
 
+    public function testAnchorDayFromTheServiceIsUsedForThePeriod(): void
+    {
+        $suffix = bin2hex(random_bytes(4));
+        $user = new User();
+        $user->username = 'anchor-' . $suffix;
+        $user->email = 'anchor-' . $suffix . '@example.test';
+        $user->password = 'AnchorTestPassword1';
+        $user->status = User::getStatusActive();
+        $user->created_at = $user->updated_at = time();
+        $this->assertTrue($user->save(), json_encode($user->errors));
+
+        // Expiry was clamped to 28 Feb by an earlier renewal; the service renews on the 30th.
+        $event = (new BillingEventService())->create($this->billingRun(), new BillableRenewal((int) $user->id, InvoiceItem::TYPE_HOSTING, 987655, 'Hosting', '2026-02-28', 1000.00, 1, 0.0, 30));
+
+        $this->assertSame(['2026-03-01', '2026-03-30'], [$event->period_start, $event->period_end]);
+    }
+
     private function billingRun(): int
     {
         $run = new BillingRun();

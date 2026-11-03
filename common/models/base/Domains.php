@@ -13,6 +13,7 @@ use Yii;
  * @property string $registrar
  * @property string $registered_date
  * @property string $current_expiry_date Automatically extended when a renewal history item is added
+ * @property int|null $renewal_anchor_day Day of month it renews on (31 = month end)
  * @property int $status 0: Inactive, 1: Active, 2: Expired
  * @property int $created_at
  * @property int $updated_at

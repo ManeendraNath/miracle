@@ -14,6 +14,7 @@ use Yii;
  * @property string|null $cpanel_username
  * @property string|null $cpanel_password
  * @property string $current_expiry_date
+ * @property int|null $renewal_anchor_day Day of month it renews on (31 = month end)
  * @property int $status 0: Inactive, 1: Active, 2: Suspended/Expired
  * @property int $created_at
  * @property int $updated_at

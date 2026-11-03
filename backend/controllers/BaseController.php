@@ -64,6 +64,10 @@ class BaseController extends Controller
         if (!self::canEditRenewalPricing()) {
             $model->setAttributes($kept, false);
         }
+        // Staff set the expiry: that day becomes the renewal day (renewals themselves keep it).
+        if ($model->isAttributeChanged('current_expiry_date', false) && (string) $model->current_expiry_date !== '') {
+            $model->renewal_anchor_day = \common\services\billing\RenewalPeriodCalculator::anchorDayFor((string) $model->current_expiry_date);
+        }
         return true;
     }
 

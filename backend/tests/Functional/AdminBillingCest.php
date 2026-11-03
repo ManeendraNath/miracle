@@ -51,6 +51,21 @@ final class AdminBillingCest
         $I->see('so its payments cannot be refunded here.');
     }
 
+    public function staffSettingTheExpiryDateSetsTheRenewalDay(FunctionalTester $I): void
+    {
+        $suffix = bin2hex(random_bytes(4));
+        $userId = $I->haveRecord(User::class, ['username' => 'anchor-customer-' . $suffix, 'email' => 'anchor-' . $suffix . '@example.test', 'auth_key' => 'x', 'password_hash' => 'x', 'status' => User::getStatusActive(), 'created_at' => time(), 'updated_at' => time()]);
+        $hostingId = (int) $I->haveRecord(\common\models\Hosting::class, ['user_id' => $userId, 'primary_domain' => 'anchor-' . $suffix . '.test', 'current_expiry_date' => '2026-02-28', 'renewal_anchor_day' => 31, 'status' => 1, 'created_at' => time(), 'updated_at' => time()]);
+
+        $I->amOnRoute('hosting/update', ['id' => $hostingId]);
+        $I->sendAjaxPostRequest('/hosting/update?id=' . $hostingId, [
+            Yii::$app->request->csrfParam => $I->grabAttributeFrom('meta[name=csrf-token]', 'content'),
+            'Hosting[current_expiry_date]' => '2026-01-30',
+        ]);
+
+        $I->seeRecord(\common\models\Hosting::class, ['id' => $hostingId, 'current_expiry_date' => '2026-01-30', 'renewal_anchor_day' => 30]);
+    }
+
     /** POST a transaction action the way its button does (with the page's CSRF token). */
     private function post(FunctionalTester $I, string $action, int $id): void
     {

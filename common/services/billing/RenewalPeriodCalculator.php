@@ -8,7 +8,10 @@ use DateTimeImmutable;
 
 final class RenewalPeriodCalculator
 {
-    public function calculate(string $expiryDate, int $months): array
+    /**
+     * @param int|null $anchorDay day of month the service renews on (31 = month end); null = derive from the expiry
+     */
+    public function calculate(string $expiryDate, int $months, ?int $anchorDay = null): array
     {
         if ($months < 1) {
             throw new \InvalidArgumentException('Renewal period must be positive.');
@@ -28,23 +31,37 @@ final class RenewalPeriodCalculator
 
         $start = $expiry->modify('+1 day');
 
-        // Same day-of-month N months later, clamped to the target month's
-        // length ("+N months" would overflow 30 Jan -> 2 Mar). For monthly-style
-        // cycles a month-end expiry stays at month end (28 Feb -> 31 Mar).
-        // Whole years keep the calendar date like a registrar (28 Feb -> 28 Feb,
-        // 29 Feb -> 28 Feb), otherwise 28 Feb would jump to 29 Feb in leap years.
-        // ponytail: without a stored anchor day, a monthly expiry clamped to a short
-        // month (30 Jan -> 28 Feb) then rides month end; store the anchor day if that matters.
+        // Same day-of-month N months later, clamped to the target month's length
+        // ("+N months" would overflow 30 Jan -> 2 Mar).
+        // - Whole years keep the calendar date like a registrar (28 Feb -> 28 Feb, 29 Feb -> 28 Feb).
+        // - Other cycles return to the service's anchor day after a short month
+        //   (anchor 30: 30 Jan -> 28 Feb -> 30 Mar). Without an anchor, a month-end
+        //   expiry stays at month end (28 Feb -> 31 Mar).
         $target = $expiry->modify('first day of +' . $months . ' months');
-        $day =
-            $months % 12 !== 0 && $expiry->format('j') === $expiry->format('t')
-                ? (int) $target->format('t')
-                : min((int) $expiry->format('j'), (int) $target->format('t'));
+        $daysInTarget = (int) $target->format('t');
+        if ($months % 12 === 0) {
+            $day = min((int) $expiry->format('j'), $daysInTarget);
+        } elseif ($anchorDay !== null) {
+            $day = min(max(1, $anchorDay), $daysInTarget);
+        } else {
+            $day = $expiry->format('j') === $expiry->format('t') ? $daysInTarget : min((int) $expiry->format('j'), $daysInTarget);
+        }
         $end = $target->setDate((int) $target->format('Y'), (int) $target->format('n'), $day);
 
         return [
             'start' => $start->format('Y-m-d'),
             'end' => $end->format('Y-m-d'),
         ];
+    }
+
+    /** Anchor day for an expiry date staff entered: its day of month, or 31 when it is a month end. */
+    public static function anchorDayFor(string $date): ?int
+    {
+        $parsed = DateTimeImmutable::createFromFormat('!Y-m-d', $date);
+        if ($parsed === false) {
+            return null;
+        }
+
+        return $parsed->format('j') === $parsed->format('t') ? 31 : (int) $parsed->format('j');
     }
 }

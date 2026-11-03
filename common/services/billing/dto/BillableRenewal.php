@@ -20,7 +20,8 @@ final readonly class BillableRenewal
         public string $currentExpiryDate,
         public float $baseAmount,
         public ?int $cycleMonths = null,
-        public ?float $increasePercent = null
+        public ?float $increasePercent = null,
+        public ?int $anchorDay = null
     ) {
     }
 }

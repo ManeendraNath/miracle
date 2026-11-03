@@ -75,7 +75,8 @@ final class BillingEventService
 
         $period = $this->periods->calculate(
             $renewal->currentExpiryDate,
-            $cycle
+            $cycle,
+            $renewal->anchorDay
         );
 
         $existing = $this->findExisting(

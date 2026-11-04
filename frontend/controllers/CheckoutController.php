@@ -39,20 +39,35 @@ final class CheckoutController extends Controller
 
         $itemType = $this->resolveOwnedAssetType($type, $id, $userId);
 
-        $invoice = Invoice::find()
+        $find = static fn(array $statuses): ?Invoice => Invoice::find()
             ->alias('i')
             ->innerJoin(['ii' => InvoiceItem::tableName()], 'ii.invoice_id = i.id')
             ->where([
                 'i.user_id' => $userId,
                 'ii.item_type' => $itemType,
                 'ii.item_id' => $id,
-                'i.status' => [Invoice::STATUS_UNPAID, Invoice::STATUS_PARTIALLY_PAID],
+                'i.status' => $statuses,
             ])
             ->orderBy([
                 'i.created_at' => SORT_DESC,
                 'i.id' => SORT_DESC,
             ])
             ->one();
+        $payable = [Invoice::STATUS_UNPAID, Invoice::STATUS_PARTIALLY_PAID];
+        $invoice = $find($payable);
+
+        // Its renewal invoice was carried forward: the balance is owed on the newer invoice that took it
+        // (an arrears line pointing back at it), possibly carried forward again.
+        for ($from = $invoice === null ? $find([Invoice::STATUS_CARRIED_FORWARD]) : null, $hops = 0; $from !== null && $hops < 10; $hops++) {
+            $from = Invoice::find()->alias('i')
+                ->innerJoin(['ii' => InvoiceItem::tableName()], 'ii.invoice_id = i.id')
+                ->where(['i.user_id' => $userId, 'ii.item_type' => InvoiceItem::TYPE_ARREARS, 'ii.source_invoice_id' => (int) $from->id])
+                ->one();
+            if ($from !== null && in_array($from->status, $payable, true)) {
+                $invoice = $from;
+                break;
+            }
+        }
 
         if ($invoice === null) {
             Yii::$app->session->setFlash(

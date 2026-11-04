@@ -33,6 +33,11 @@ The database unique constraint is authoritative.
 If a previous renewal was manually overridden, the overridden final
 amount becomes the base for the next percentage increase.
 
+The increase is yearly, not per renewal: domains and hosting go up at every renewal of a year or
+longer and at every 12th monthly one; maintenance at the start of every 3-year block. If the cycle
+length changed since the previous renewal (e.g. yearly to monthly), the previous amount no longer
+fits, so the service's renewal base amount (set for the new cycle) is billed instead.
+
 ### Asset configuration overrides global configuration
 
 NULL:

@@ -60,6 +60,21 @@ final class PaymentStatusTest extends Unit
         $this->assertSame(Invoice::STATUS_REFUNDED, Invoice::findOne($invoice->id)->status);
     }
 
+    public function testPayingASuspendedHostingRenewalReactivatesIt(): void
+    {
+        $hosting = new \common\models\Hosting();
+        $hosting->setAttributes(['user_id' => $this->_user->id, 'primary_domain' => 'suspended-' . bin2hex(random_bytes(4)) . '.test', 'current_expiry_date' => '2026-11-30', 'status' => \common\models\Hosting::STATUS_SUSPENDED, 'created_at' => time(), 'updated_at' => time()], false);
+        $this->assertTrue($hosting->save(false));
+        $invoice = $this->invoice(1000.00);
+        $this->billingEvent($invoice)->updateAttributes(['item_id' => $hosting->id]);
+
+        $payment = $this->payment($invoice, Transaction::GATEWAY_UPI_BANK, Transaction::STATUS_CAPTURED);
+        (new PaymentProcessingService())->transactionChanged($payment);
+
+        $hosting->refresh();
+        $this->assertSame(['2027-11-30', \common\models\Hosting::STATUS_ACTIVE], [(string) $hosting->current_expiry_date, (int) $hosting->status]);
+    }
+
     public function testInvoiceWithAKeptPaymentCannotBeClosedAsRefunded(): void
     {
         $invoice = $this->invoice(1000.00);

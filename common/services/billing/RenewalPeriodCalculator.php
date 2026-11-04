@@ -11,6 +11,17 @@ final class RenewalPeriodCalculator
     /**
      * @param int|null $anchorDay day of month the service renews on (31 = month end); null = derive from the expiry
      */
+    /**
+     * Whole months a billed period covers, rounded: 01 May -> 30 May (anchor 30) is 1, 01 Mar 2027 ->
+     * 28 Feb 2028 (yearly from a 28 Feb expiry) is 12. Periods are inclusive of both dates.
+     */
+    public static function months(string $periodStart, string $periodEnd): int
+    {
+        $diff = (new DateTimeImmutable($periodStart))->diff((new DateTimeImmutable($periodEnd))->modify('+1 day'));
+
+        return $diff->y * 12 + $diff->m + ($diff->d >= 15 ? 1 : 0);
+    }
+
     public function calculate(string $expiryDate, int $months, ?int $anchorDay = null): array
     {
         if ($months < 1) {

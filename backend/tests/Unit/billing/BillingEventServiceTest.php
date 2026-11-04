@@ -58,6 +58,28 @@ final class BillingEventServiceTest extends Unit
         $this->assertEquals(1200.00, (float) $event->amount);
     }
 
+    public function testPriceFollowsTheCycleAndRisesOncePerYear(): void
+    {
+        $prices = new \common\services\billing\RenewalPriceCalculator();
+        $itemId = random_int(100000, 999999);
+        $suffix = bin2hex(random_bytes(4));
+        $user = new User(['username' => 'price-' . $suffix, 'email' => 'price-' . $suffix . '@example.test', 'status' => User::getStatusActive(), 'created_at' => time(), 'updated_at' => time()]);
+        $user->password = 'PriceTestPassword';
+        $this->assertTrue($user->save(), json_encode($user->errors));
+        $fulfil = function (string $start, string $end, float $amount) use ($itemId, $user): void {
+            $event = new \common\models\BillingEvent();
+            $event->setAttributes(['billing_run_id' => $this->billingRun(), 'user_id' => (int) $user->id, 'item_type' => InvoiceItem::TYPE_HOSTING, 'item_id' => $itemId, 'description' => 'Hosting', 'period_start' => $start, 'period_end' => $end, 'previous_amount' => 0, 'increase_percent' => 0, 'calculated_amount' => $amount, 'amount' => $amount, 'is_manual_amount' => 0, 'due_date' => $start, 'status' => \common\models\BillingEvent::STATUS_FULFILLED, 'created_at' => time(), 'updated_at' => time()], false);
+            $this->assertTrue($event->save(false));
+        };
+
+        $fulfil('2025-01-01', '2025-12-31', 6000.00);
+        $this->assertEquals(6600.00, $prices->calculate(InvoiceItem::TYPE_HOSTING, $itemId, 6000.00, 10.0, 12)->amount, 'yearly: +10%');
+        $this->assertEquals(600.00, $prices->calculate(InvoiceItem::TYPE_HOSTING, $itemId, 600.00, 10.0, 1)->amount, 'switched to monthly: the base for the new cycle, not ₹6000');
+
+        $fulfil('2026-01-01', '2026-01-31', 600.00);
+        $this->assertEquals(600.00, $prices->calculate(InvoiceItem::TYPE_HOSTING, $itemId, 600.00, 10.0, 1)->amount, 'monthly: no rise after one month');
+    }
+
     public function testAnchorDayFromTheServiceIsUsedForThePeriod(): void
     {
         $suffix = bin2hex(random_bytes(4));

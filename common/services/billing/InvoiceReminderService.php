@@ -40,14 +40,15 @@ final class InvoiceReminderService
                     continue;
                 }
                 $daysUntilDue = (int) $today->diff($dueDate)->format('%r%a');
-                if (!in_array($daysUntilDue, self::REMINDER_DAYS, true)) {
+                $threshold = ServiceRenewalReminderService::dueThreshold($daysUntilDue, self::REMINDER_DAYS);
+                if ($threshold === null) {
                     continue;
                 }
                 $preferences = CustomerPreference::forUser((int) $invoice->user_id);
                 if (!(bool) $preferences->payment_reminders) {
                     continue;
                 }
-                if ($this->sendReminder($invoice, $outstanding, $daysUntilDue)) {
+                if ($this->sendReminder($invoice, $outstanding, $daysUntilDue, $threshold)) {
                     $sentCount++;
                 }
             } catch (\Throwable $e) {
@@ -57,10 +58,11 @@ final class InvoiceReminderService
         return $sentCount;
     }
 
-    private function sendReminder(Invoice $invoice, float $outstanding, int $daysUntilDue): bool
+    private function sendReminder(Invoice $invoice, float $outstanding, int $daysUntilDue, int $threshold): bool
     {
         // Due date is part of the key so a changed due date gets its own reminder schedule.
-        $key = $this->getReminderKey($daysUntilDue) . '|' . $invoice->due_date;
+        // Keyed by the reminder day, so a catch-up after a skipped run isn't repeated the next day.
+        $key = $this->getReminderKey($threshold) . '|' . $invoice->due_date;
         $alreadySent = Yii::$app->db
                 ->createCommand('SELECT id FROM {{%invoice_reminder_log}} WHERE invoice_id = :invoiceId AND reminder_key = :reminderKey LIMIT 1')
                 ->bindValues([':invoiceId' => (int) $invoice->id, ':reminderKey' => $key])

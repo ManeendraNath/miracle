@@ -111,7 +111,7 @@ final class RenewalFulfilmentService
             throw new \RuntimeException("Billing asset not found for event {$event->id}.");
         }
 
-        $months = $this->monthDifference($event->period_start, $event->period_end);
+        $months = RenewalPeriodCalculator::months((string) $event->period_start, (string) $event->period_end);
 
         $history = new ServiceRenewalHistory();
 
@@ -144,8 +144,16 @@ final class RenewalFulfilmentService
         }
 
         $asset->updated_at = $now;
+        $attributes = ['current_expiry_date', 'updated_at'];
+        // Paid up again: a service staff suspended for non-payment goes back into billing and reminders.
+        // Inactive / cancelled services are disabled on purpose and stay as they are.
+        if (($asset instanceof Hosting && (int) $asset->status === Hosting::STATUS_SUSPENDED)
+            || ($asset instanceof Maintenance && (int) $asset->status === Maintenance::STATUS_OVERDUE)) {
+            $asset->status = $asset instanceof Hosting ? Hosting::STATUS_ACTIVE : Maintenance::STATUS_ACTIVE;
+            $attributes[] = 'status';
+        }
 
-        if (!$asset->save(false, ['current_expiry_date', 'updated_at'])) {
+        if (!$asset->save(false, $attributes)) {
             throw new \RuntimeException('Unable to update service expiry.');
         }
 
@@ -178,15 +186,4 @@ final class RenewalFulfilmentService
         };
     }
 
-    private function monthDifference(string $start, string $end): int
-    {
-        $a = new \DateTimeImmutable($start);
-        $b = new \DateTimeImmutable($end);
-
-        $b = $b->modify('+1 day');
-
-        $diff = $a->diff($b);
-
-        return $diff->y * 12 + $diff->m;
-    }
 }

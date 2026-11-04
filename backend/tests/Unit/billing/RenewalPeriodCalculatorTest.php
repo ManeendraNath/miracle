@@ -70,4 +70,22 @@ final class RenewalPeriodCalculatorTest extends Unit
         $this->assertSame(15, RenewalPeriodCalculator::anchorDayFor('2026-04-15'));
         $this->assertNull(RenewalPeriodCalculator::anchorDayFor('not-a-date'));
     }
+
+    public function testMonthsCoveredIsRoundedForAnchorAndFebruaryPeriods(): void
+    {
+        $this->assertSame(1, RenewalPeriodCalculator::months('2026-05-01', '2026-05-30'));
+        $this->assertSame(1, RenewalPeriodCalculator::months('2026-01-31', '2026-02-28'));
+        $this->assertSame(12, RenewalPeriodCalculator::months('2027-03-01', '2028-02-28'));
+        $this->assertSame(12, RenewalPeriodCalculator::months('2026-12-02', '2027-12-01'));
+        $this->assertSame(24, RenewalPeriodCalculator::months('2026-12-02', '2028-12-01'));
+    }
+
+    public function testReminderCatchUpCoversOnlyTheLastTwoDays(): void
+    {
+        $days = [60, 30, 15, 7, 3, 1];
+        $this->assertSame(30, \common\services\billing\ServiceRenewalReminderService::dueThreshold(30, $days));
+        $this->assertSame(30, \common\services\billing\ServiceRenewalReminderService::dueThreshold(28, $days), 'missed by 2 days');
+        $this->assertNull(\common\services\billing\ServiceRenewalReminderService::dueThreshold(27, $days), 'older misses are not sent');
+        $this->assertSame(-1, \common\services\billing\ServiceRenewalReminderService::dueThreshold(-2, [1, 0, -1, -3]));
+    }
 }

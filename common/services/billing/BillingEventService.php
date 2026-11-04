@@ -94,6 +94,8 @@ final class BillingEventService
             ) {
                 $existing->billing_run_id =
                     $runId;
+                // The service may have been moved to the right customer after the failed run.
+                $existing->user_id = $renewal->userId;
 
                 // Due date counts from the run that actually invoices it, so a
                 // delayed run doesn't produce an invoice that is already overdue.
@@ -104,7 +106,7 @@ final class BillingEventService
                 $existing->description = $renewal->description;
                 $existing->period_end = $period['end'];
                 if (!(int) $existing->is_manual_amount) {
-                    $price = $this->prices->calculate($renewal->itemType, $renewal->itemId, $renewal->baseAmount, $increase);
+                    $price = $this->prices->calculate($renewal->itemType, $renewal->itemId, $renewal->baseAmount, $increase, $cycle);
                     $existing->previous_amount = $price->previousAmount;
                     $existing->increase_percent = $price->increasePercent;
                     $existing->calculated_amount = $price->amount;
@@ -119,6 +121,7 @@ final class BillingEventService
                         false,
                         [
                         'billing_run_id',
+                        'user_id',
                         'due_date',
                         'description',
                         'period_end',
@@ -144,7 +147,8 @@ final class BillingEventService
             $renewal->itemType,
             $renewal->itemId,
             $renewal->baseAmount,
-            $increase
+            $increase,
+            $cycle
         );
 
         $event = new BillingEvent();

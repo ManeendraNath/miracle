@@ -65,9 +65,41 @@ class BaseController extends Controller
         if (!self::canEditRenewalPricing()) {
             $model->setAttributes($kept, false);
         }
+        $expiryChanged = $model->isAttributeChanged('current_expiry_date', false);
+        if (!$model->getIsNewRecord() && ($expiryChanged || $model->isAttributeChanged('user_id', false)) && !$this->guardOpenRenewal($model, $expiryChanged)) {
+            return false;
+        }
         // Staff set the expiry: that day becomes the renewal day (renewals themselves keep it).
-        if ($model->isAttributeChanged('current_expiry_date', false) && (string) $model->current_expiry_date !== '') {
+        if ($expiryChanged && (string) $model->current_expiry_date !== '') {
             $model->renewal_anchor_day = \common\services\billing\RenewalPeriodCalculator::anchorDayFor((string) $model->current_expiry_date);
+        }
+        return true;
+    }
+
+    /**
+     * A renewal already invoiced was priced and dated from the current expiry and customer: changing either
+     * would bill an overlapping second period (or the wrong customer), so it is refused until that invoice is
+     * paid or cancelled. A renewal not invoiced yet is released on an expiry change; the next run re-dates it.
+     */
+    private function guardOpenRenewal(\common\models\Domains|\common\models\Hosting|\common\models\Maintenance $model, bool $expiryChanged): bool
+    {
+        $type = match (true) {
+            $model instanceof \common\models\Domains => \common\models\InvoiceItem::TYPE_DOMAIN,
+            $model instanceof \common\models\Hosting => \common\models\InvoiceItem::TYPE_HOSTING,
+            default => \common\models\InvoiceItem::TYPE_MAINTENANCE,
+        };
+        $where = ['item_type' => $type, 'item_id' => (int) $model->id];
+        $invoiced = \common\models\BillingEvent::find()->where($where + ['status' => \common\models\BillingEvent::STATUS_INVOICED])->one();
+        if ($invoiced !== null) {
+            $number = \common\models\Invoice::find()->select('invoice_number')->where(['id' => $invoiced->invoice_id])->scalar();
+            $model->addError($expiryChanged ? 'current_expiry_date' : 'user_id', 'Renewal invoice ' . ($number ?: '#' . $invoiced->invoice_id) . ' is open for this service. It must be paid or cancelled before the expiry date or customer can change.');
+            return false;
+        }
+        if ($expiryChanged) {
+            \common\models\BillingEvent::updateAll(
+                ['status' => \common\models\BillingEvent::STATUS_CANCELLED, 'notes' => 'Expiry date changed by staff; the next billing run re-dates the renewal.', 'updated_at' => time()],
+                $where + ['status' => \common\models\BillingEvent::STATUS_PENDING, 'invoice_id' => null]
+            );
         }
         return true;
     }

@@ -76,29 +76,69 @@ final class ServiceRenewalReminderService
             return false;
         }
         $daysUntilExpiry = (int) $today->diff($expiry)->format('%r%a');
-        if (!in_array($daysUntilExpiry, self::REMINDER_DAYS, true)) {
+        $threshold = self::dueThreshold($daysUntilExpiry, self::REMINDER_DAYS);
+        if ($threshold === null) {
             return false;
         }
+        // Staff hear about it whatever the customer's email preference.
+        $this->alertStaff($type, $serviceId, $userId, $serviceName, $expiryDate, $threshold, $daysUntilExpiry);
         $preferences = CustomerPreference::forUser($userId);
         if (!(bool) $preferences->renewal_reminders) {
             return false;
         }
-        return $this->sendReminder($type, $serviceId, $userId, $serviceName, $expiryDate, $daysUntilExpiry);
+        return $this->sendReminder($type, $serviceId, $userId, $serviceName, $expiryDate, $daysUntilExpiry, $threshold);
     }
 
-    private function sendReminder(string $type, int $serviceId, int $userId, string $serviceName, string $expiryDate, int $daysBefore): bool
+    /**
+     * The reminder day due now: today's, or one missed in the last 2 days (the cron skips runs during a
+     * deploy). Older misses are not caught up, so a new invoice or service doesn't get a stale reminder.
+     *
+     * @param int[] $reminderDays
+     */
+    public static function dueThreshold(int $days, array $reminderDays): ?int
+    {
+        $due = array_filter($reminderDays, static fn(int $threshold): bool => $threshold >= $days && $threshold - $days <= 2);
+
+        return $due === [] ? null : min($due);
+    }
+
+    private function logged(string $type, int $serviceId, string $key): bool
+    {
+        return ServiceReminderLog::find()->where(['service_type' => $type, 'service_id' => $serviceId, 'reminder_key' => $key])->exists();
+    }
+
+    private function log(string $type, int $serviceId, int $userId, string $key, int $daysBefore): void
+    {
+        $log = new ServiceReminderLog();
+        $log->service_type = $type;
+        $log->service_id = $serviceId;
+        $log->user_id = $userId;
+        $log->reminder_key = $key;
+        $log->days_before = $daysBefore;
+        $log->sent_at = time();
+        $log->created_at = time();
+        $log->save(false);
+    }
+
+    private function alertStaff(string $type, int $serviceId, int $userId, string $serviceName, string $expiryDate, int $threshold, int $daysBefore): void
+    {
+        $key = 'staff_' . $threshold . '@' . $expiryDate;
+        try {
+            if (!$this->logged($type, $serviceId, $key)) {
+                $this->log($type, $serviceId, $userId, $key, $daysBefore);
+                AdminAlertService::serviceExpiring($serviceName, $expiryDate);
+            }
+        } catch (\Throwable $e) {
+            Yii::error(['message' => 'Staff expiry alert failed.', 'serviceType' => $type, 'serviceId' => $serviceId, 'error' => $e->getMessage()], __METHOD__);
+        }
+    }
+
+    private function sendReminder(string $type, int $serviceId, int $userId, string $serviceName, string $expiryDate, int $daysBefore, int $threshold): bool
     {
         try {
             // Expiry date in the key so each renewal cycle gets its own reminders.
-            $key = 'before_' . $daysBefore . '@' . $expiryDate;
-            $alreadySent = ServiceReminderLog::find()
-                    ->where([
-                        'service_type' => $type,
-                        'service_id' => $serviceId,
-                        'reminder_key' => $key,
-                    ])
-                    ->exists();
-            if ($alreadySent) {
+            $key = 'before_' . $threshold . '@' . $expiryDate;
+            if ($this->logged($type, $serviceId, $key)) {
                 return false;
             }
             $client = User::findOne($userId);
@@ -128,18 +168,9 @@ final class ServiceRenewalReminderService
                 return false;
             }
 
-            $log = new ServiceReminderLog();
-            $log->service_type = $type;
-            $log->service_id = $serviceId;
-            $log->user_id = $userId;
-            $log->reminder_key = $key;
-            $log->days_before = $daysBefore;
-            $log->sent_at = time();
-            $log->created_at = time();
-            $log->save(false);
+            $this->log($type, $serviceId, $userId, $key, $daysBefore);
             // After the log row, so a failed send doesn't re-create these on every cron run.
             (new NotificationService())->create($userId, 'renewal', 'Renewal Reminder', sprintf('%s expires in %d day(s).', $serviceName, $daysBefore), '/renewal/index');
-            AdminAlertService::serviceExpiring($serviceName, $expiryDate);
             return true;
         } catch (\Throwable $e) {
             Yii::error(['serviceType' => $type, 'serviceId' => $serviceId, 'error' => $e->getMessage()], __METHOD__);

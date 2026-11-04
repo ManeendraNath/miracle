@@ -86,8 +86,16 @@ final class RazorpaySyncTest extends Unit
         $this->assertNull($this->service()->refundPayment('pay_r', 100000), 'already refunded: only record it');
         $this->assertCount(1, $this->_http->flushRequests(), 'no second refund is sent');
 
+        // Partial refund of ₹400 made in the dashboard: recording that amount works, any other amount is refused.
         $this->reply(['id' => 'pay_r', 'status' => 'captured', 'amount' => 100000, 'amount_refunded' => 40000]);
-        $this->expectException(\DomainException::class);
+        $this->assertNull($this->service()->refundPayment('pay_r', 40000));
+        $this->reply(['id' => 'pay_r', 'status' => 'captured', 'amount' => 100000, 'amount_refunded' => 40000]);
+        $this->reply(['id' => 'rfnd_unit_2', 'amount' => 60000]);
+        $this->assertSame('rfnd_unit_2', $this->service()->refundPayment('pay_r', 60000, 40000), 'the rest, once the ₹400 is recorded');
+        $this->_http->flushRequests();
+
+        $this->reply(['id' => 'pay_r', 'status' => 'captured', 'amount' => 100000, 'amount_refunded' => 40000]);
+        $this->expectExceptionMessage('Enter ₹400.00 as the refund amount');
         $this->service()->refundPayment('pay_r', 100000);
     }
 

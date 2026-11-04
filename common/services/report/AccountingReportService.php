@@ -97,12 +97,12 @@ final class AccountingReportService
     }
 
     /**
-     * Header row, then one row per payment captured (paid_at) in [$start, $end). A refund only flips
-     * the status to Refunded and keeps paid_at, so refunded payments appear with that status.
+     * Header row, then one row per payment captured (paid_at) in [$start, $end). A refund keeps paid_at:
+     * the Refunded column shows how much went back (status Refunded when all of it did).
      */
     public function paymentRows(int $start, int $end): \Generator
     {
-        yield ['Paid Date', 'Invoice Number', 'Customer', 'Method', 'Reference', 'Amount', 'Gateway Fee', 'Status'];
+        yield ['Paid Date', 'Invoice Number', 'Customer', 'Method', 'Reference', 'Amount', 'Gateway Fee', 'Refunded', 'Status'];
         $query = Transaction::find()
             ->with('invoice')
             ->where(['status' => [Transaction::STATUS_CAPTURED, Transaction::STATUS_REFUNDED]])
@@ -119,6 +119,7 @@ final class AccountingReportService
                 (string) $payment->gateway_payment_id,
                 self::money($payment->amount),
                 self::money($payment->gateway_fee),
+                self::money($payment->refunded_amount),
                 $payment->status,
             ];
         }

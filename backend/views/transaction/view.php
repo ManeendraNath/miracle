@@ -29,30 +29,12 @@ if ($model->status === Transaction::STATUS_PENDING && (int) $model->gateway_id !
         ],
     ]);
 }
-if ($model->status === Transaction::STATUS_CAPTURED) {
-    // Razorpay payments are refunded through Razorpay by the button itself; others are returned by hand first.
-    $viaRazorpay = (int) $model->gateway_id === Transaction::GATEWAY_RAZORPAY && (string) $model->gateway_payment_id !== '' && (new RazorpayService())->isEnabled();
-    $refundStep = $viaRazorpay
-        ? 'The full amount is refunded to the customer through Razorpay now (5-7 working days to reach them).'
-        : 'Only do this after the money has been returned (bank / UPI).';
-    $this->params['actions'][] = Html::a('<i class="fas fa-undo me-1"></i> Refund &amp; Close Invoice', ['refund', 'id' => $model->id], [
-        'class' => 'btn btn-outline-danger',
-        'title' => 'The service is cancelled: nothing more is owed on this invoice.',
-        'data' => [
-            'confirm' => $refundStep . "\n\nThe invoice is closed as Refunded: no reminders, not billed again. Renewals already granted are NOT reversed: disable the service if needed.",
-            'method' => 'post',
-            'params' => ['close_invoice' => 1],
-        ],
-    ]);
-    $this->params['actions'][] = Html::a('<i class="fas fa-undo me-1"></i> Refund (Still Owed)', ['refund', 'id' => $model->id], [
-        'class' => 'btn btn-outline-secondary',
-        'title' => 'E.g. a wrong payment was returned: the customer still has to pay this invoice.',
-        'data' => [
-            'confirm' => $refundStep . "\n\nThe invoice balance becomes due again and the customer can pay it.",
-            'method' => 'post',
-        ],
-    ]);
-}
+$refundable = round((float) $model->amount - (float) $model->refunded_amount, 2);
+// Razorpay payments are refunded through Razorpay by the form itself; others are returned by hand first.
+$viaRazorpay = (int) $model->gateway_id === Transaction::GATEWAY_RAZORPAY && (string) $model->gateway_payment_id !== '' && (new RazorpayService())->isEnabled();
+$refundStep = $viaRazorpay
+    ? 'The amount is refunded to the customer through Razorpay now (5-7 working days to reach them).'
+    : 'Only do this after the money has been returned (bank / UPI).';
 ?>
 <div class="transaction-view container-fluid pt-3">
     <div class="mb-4">
@@ -131,6 +113,11 @@ if ($model->status === Transaction::STATUS_CAPTURED) {
                                 'visible' => (float) $model->gateway_fee > 0,
                             ],
                             [
+                                'attribute' => 'refunded_amount',
+                                'value' => Yii::$app->formatter->asCurrency($model->refunded_amount, 'INR'),
+                                'visible' => (float) $model->refunded_amount > 0,
+                            ],
+                            [
                                 'attribute' => 'status',
                                 'format' => 'raw',
                                 'value' => function ($model) {
@@ -160,5 +147,35 @@ if ($model->status === Transaction::STATUS_CAPTURED) {
                 </div>
             </div>
         </div>
+        <?php if ($model->status === Transaction::STATUS_CAPTURED && $refundable > 0): ?>
+            <div class="col-lg-4">
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-light fw-semibold"><i class="fas fa-undo me-1"></i> Refund</div>
+                    <div class="card-body">
+                        <?= Html::beginForm(['refund', 'id' => $model->id], 'post') ?>
+                        <label class="form-label small" for="refund-amount">Amount to refund (₹)</label>
+                        <input type="number" id="refund-amount" name="refund_amount" class="form-control mb-1" step="0.01" min="0.01" max="<?= $refundable ?>" value="<?= $refundable ?>" required>
+                        <p class="small text-body-secondary"><?= Html::encode($refundStep) ?> A smaller amount is a partial refund, e.g. keeping a domain fee.</p>
+                        <div class="d-grid gap-2">
+                            <?= Html::submitButton('Refund (Still Owed)', [
+                                'class' => 'btn btn-outline-secondary',
+                                'name' => 'close_invoice',
+                                'value' => '0',
+                                'title' => 'E.g. a wrong payment was returned: the customer still has to pay this invoice.',
+                                'data-confirm' => $refundStep . "\n\nThe refunded amount becomes due again on the invoice.",
+                            ]) ?>
+                            <?= Html::submitButton('Refund &amp; Close Invoice', [
+                                'class' => 'btn btn-outline-danger',
+                                'name' => 'close_invoice',
+                                'value' => '1',
+                                'title' => 'Full refund only: the service is cancelled and nothing more is owed.',
+                                'data-confirm' => $refundStep . "\n\nFull refund only. The invoice is closed as Refunded: no reminders, not billed again. Renewals already granted are NOT reversed: disable the service if needed.",
+                            ]) ?>
+                        </div>
+                        <?= Html::endForm() ?>
+                    </div>
+                </div>
+            </div>
+        <?php endif; ?>
     </div>
 </div>

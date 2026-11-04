@@ -51,6 +51,37 @@ final class AdminBillingCest
         $I->see('so its payments cannot be refunded here.');
     }
 
+    public function unappliedPaymentOnACarriedForwardInvoiceCanBeRefunded(FunctionalTester $I): void
+    {
+        $payment = $this->transaction($I, $this->invoice($I, Invoice::STATUS_CARRIED_FORWARD), Transaction::GATEWAY_MANUAL, Transaction::STATUS_CAPTURED);
+        Transaction::updateAll(['user_payment_notes' => Transaction::UNAPPLIED_NOTE_PREFIX . ' invoice was Carried_Forward when paid.'], ['id' => $payment]);
+        $this->post($I, 'refund', $payment);
+        $I->seeRecord(Transaction::class, ['id' => $payment, 'status' => Transaction::STATUS_REFUNDED]);
+    }
+
+    public function partialRefundKeepsThePaymentAndReopensTheBalance(FunctionalTester $I): void
+    {
+        $payment = $this->transaction($I, $this->invoice($I, Invoice::STATUS_PAID), Transaction::GATEWAY_UPI_BANK, Transaction::STATUS_CAPTURED);
+        $this->post($I, 'refund', $payment, ['refund_amount' => '400']);
+        $I->seeRecord(Transaction::class, ['id' => $payment, 'status' => Transaction::STATUS_CAPTURED, 'refunded_amount' => 400]);
+        $I->seeRecord(Invoice::class, ['id' => Transaction::findOne($payment)->invoice_id, 'status' => Invoice::STATUS_PARTIALLY_PAID]);
+
+        $this->post($I, 'refund', $payment, ['refund_amount' => '700']);
+        $I->see('Enter a refund amount between ₹0.01 and ₹600.00.');
+        $this->post($I, 'refund', $payment);
+        $I->seeRecord(Transaction::class, ['id' => $payment, 'status' => Transaction::STATUS_REFUNDED, 'refunded_amount' => 1000]);
+    }
+
+    public function refundAndCloseIsRefusedBeforeAnythingIsRefunded(FunctionalTester $I): void
+    {
+        $invoiceId = $this->invoice($I, Invoice::STATUS_PAID);
+        $payment = $this->transaction($I, $invoiceId, Transaction::GATEWAY_UPI_BANK, Transaction::STATUS_CAPTURED);
+        $this->transaction($I, $invoiceId, Transaction::GATEWAY_MANUAL, Transaction::STATUS_CAPTURED);
+        $this->post($I, 'refund', $payment, ['close_invoice' => '1']);
+        $I->see('Other payments on this invoice are still kept');
+        $I->seeRecord(Transaction::class, ['id' => $payment, 'status' => Transaction::STATUS_CAPTURED, 'refunded_amount' => 0]);
+    }
+
     public function staffSettingTheExpiryDateSetsTheRenewalDay(FunctionalTester $I): void
     {
         $suffix = bin2hex(random_bytes(4));
@@ -81,13 +112,14 @@ final class AdminBillingCest
     }
 
     /** POST a transaction action the way its button does (with the page's CSRF token). */
-    private function post(FunctionalTester $I, string $action, int $id): void
+    private function post(FunctionalTester $I, string $action, int $id, array $data = []): void
     {
         $I->amOnRoute('transaction/view', ['id' => $id]);
         $I->sendAjaxPostRequest('/transaction/' . $action . '?id=' . $id, [
             Yii::$app->request->csrfParam => $I->grabAttributeFrom('meta[name=csrf-token]', 'content'),
-        ]);
+        ] + $data);
         $I->dontSee('Unable to verify your data submission');
+        $I->amOnRoute('transaction/view', ['id' => $id]); // the flash shows on the next page
     }
 
     private function invoice(FunctionalTester $I, string $status): int

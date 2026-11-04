@@ -14,19 +14,21 @@ final class InvoicePaymentService
     public const CLOSED_STATUSES = [Invoice::STATUS_CANCELLED, Invoice::STATUS_CARRIED_FORWARD, Invoice::STATUS_REFUNDED];
 
     /**
-     * Amount actually received.
-     *
-     * Only Captured transactions represent settled payments.
+     * Amount actually received and kept: Captured payments less any partial refund. Unapplied
+     * payments (taken after the invoice was settled or closed) are held for refund, not counted.
      */
     public function getCapturedAmount(
-        int $invoiceId
+        int $invoiceId,
+        ?int $exceptTransactionId = null
     ): float {
         $amount = Transaction::find()
                 ->where([
                     'invoice_id' => $invoiceId,
                     'status' => Transaction::STATUS_CAPTURED,
                 ])
-                ->sum('amount');
+                ->andWhere(['or', ['user_payment_notes' => null], ['not like', 'user_payment_notes', Transaction::UNAPPLIED_NOTE_PREFIX]])
+                ->andFilterWhere(['<>', 'id', $exceptTransactionId])
+                ->sum('amount - refunded_amount');
 
         return round(
             (float) ($amount ?: 0),
@@ -135,13 +137,9 @@ final class InvoicePaymentService
      */
     public function closeAsRefunded(Invoice $invoice): void
     {
-        if ($this->getCapturedAmount((int) $invoice->id) > 0) {
-            throw new \DomainException('Other payments on this invoice are still kept, so it can\'t be closed as refunded.');
-        }
-        $proofPending = Transaction::find()->where(['invoice_id' => (int) $invoice->id, 'status' => Transaction::STATUS_PENDING])
-            ->andWhere(['<>', 'gateway_id', Transaction::GATEWAY_RAZORPAY])->exists();
-        if ($proofPending) {
-            throw new \DomainException('A payment proof on this invoice is still pending. Approve or reject it first.');
+        $blocker = $this->closeBlocker($invoice);
+        if ($blocker !== null) {
+            throw new \DomainException($blocker);
         }
         $invoice->status = Invoice::STATUS_REFUNDED;
         $invoice->updated_at = time();
@@ -165,6 +163,21 @@ final class InvoicePaymentService
             ['status' => BillingEvent::STATUS_CANCELLED, 'notes' => 'Invoice closed as refunded.', 'updated_at' => time()],
             ['invoice_id' => $invoiceIds, 'status' => [BillingEvent::STATUS_PENDING, BillingEvent::STATUS_INVOICED]]
         );
+    }
+
+    /**
+     * Why the invoice can't be closed as refunded, or null. $refundingTransactionId: the payment about
+     * to be fully refunded, checked before the money is sent so a refusal never follows a refund.
+     */
+    public function closeBlocker(Invoice $invoice, ?int $refundingTransactionId = null): ?string
+    {
+        if ($this->getCapturedAmount((int) $invoice->id, $refundingTransactionId) > 0) {
+            return 'Other payments on this invoice are still kept, so it can\'t be closed as refunded.';
+        }
+        $proofPending = Transaction::find()->where(['invoice_id' => (int) $invoice->id, 'status' => Transaction::STATUS_PENDING])
+            ->andWhere(['<>', 'gateway_id', Transaction::GATEWAY_RAZORPAY])->exists();
+
+        return $proofPending ? 'A payment proof on this invoice is still pending. Approve or reject it first.' : null;
     }
 
     /** Refuses a new payment on an invoice that is already settled or closed. */

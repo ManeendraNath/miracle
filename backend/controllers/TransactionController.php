@@ -206,53 +206,80 @@ class TransactionController extends BaseController
     }
 
     /**
-     * Refunds a payment and recalculates the invoice from the remaining captured payments.
-     * Razorpay payments are refunded through the Razorpay API (or just recorded if the dashboard
-     * already refunded them); UPI / bank payments are recorded after the money was returned by hand.
+     * Refunds all or part of a payment (POST refund_amount, default: what is left) and recalculates the
+     * invoice from what is kept. Razorpay payments are refunded through the Razorpay API (or only recorded
+     * when the dashboard already refunded that amount); UPI / bank refunds are returned by hand first.
+     * Every check runs before Razorpay is called, so a refusal never follows money that was sent.
      */
     public function actionRefund(int $id)
     {
+        $close = (bool) $this->request->post('close_invoice');
         $dbTransaction = Yii::$app->db->beginTransaction();
+        $refundId = null;
         try {
+            // Lock order as approve and capture: transaction row, then invoice.
             Yii::$app->db->createCommand('SELECT id FROM {{%transaction}} WHERE id = :id FOR UPDATE')->bindValue(':id', $id)->queryScalar();
             $model = $this->findModel($id);
             if ($model->status !== Transaction::STATUS_CAPTURED) {
                 throw new \DomainException('Only captured payments can be refunded.');
             }
-            // Its unpaid balance already moved to a newer invoice as a fixed arrears line;
-            // a refund here would leave that line short and the refunded money uncollected.
+            Yii::$app->db->createCommand('SELECT id FROM {{%invoice}} WHERE id = :id FOR UPDATE')->bindValue(':id', (int) $model->invoice_id)->queryScalar();
+            $invoice = Invoice::findOne((int) $model->invoice_id);
+
+            $remaining = round((float) $model->amount - (float) $model->refunded_amount, 2);
+            $input = trim((string) $this->request->post('refund_amount', ''));
+            $amount = $input === '' ? $remaining : round((float) $input, 2);
+            if (($input !== '' && !is_numeric($input)) || $amount <= 0 || $amount > $remaining) {
+                throw new \DomainException('Enter a refund amount between ₹0.01 and ₹' . number_format($remaining, 2) . '.');
+            }
+            $full = abs($amount - $remaining) < 0.005;
+
+            // Its unpaid balance already moved to a newer invoice as a fixed arrears line; refunding it here
+            // would leave that line short. An unapplied payment was never part of the arrears, so it can go back.
             // ponytail: refused outright; raise the arrears on the newer invoice if this case gets common.
-            if (($model->invoice->status ?? null) === Invoice::STATUS_CARRIED_FORWARD) {
-                $target = $model->invoice->invoiceItem->invoice ?? null; // invoiceItem = the arrears line that carried it
+            if (($invoice->status ?? null) === Invoice::STATUS_CARRIED_FORWARD && !$model->isUnapplied()) {
+                $target = $invoice->invoiceItem->invoice ?? null; // invoiceItem = the arrears line that carried it
                 throw new \DomainException('This invoice was carried forward' . ($target !== null ? ' into ' . $target->invoice_number : '') . ', so its payments cannot be refunded here.');
             }
+            $paymentService = new InvoicePaymentService();
+            $canReconcile = $invoice !== null && !in_array($invoice->status, InvoicePaymentService::CLOSED_STATUSES, true);
+            if ($close) {
+                if (!$full) {
+                    throw new \DomainException('Only a full refund can close the invoice. Use "Refund (Still Owed)" for a partial refund.');
+                }
+                $blocker = $canReconcile ? $paymentService->closeBlocker($invoice, (int) $model->id) : null;
+                if ($blocker !== null) {
+                    throw new \DomainException($blocker);
+                }
+            }
+
+            $note = 'Refunded ₹' . number_format($amount, 2) . ' on ' . date('d M Y') . '.';
             $razorpay = new RazorpayService();
             if ((int) $model->gateway_id === Transaction::GATEWAY_RAZORPAY && (string) $model->gateway_payment_id !== '' && $razorpay->isEnabled()) {
-                // Last step before saving, so a validation failure never sends money. If the save below
-                // still fails, pressing Refund again finds it refunded in Razorpay and just records it.
-                $refundId = $razorpay->refundPayment((string) $model->gateway_payment_id, (int) round((float) $model->amount * 100));
-                $model->user_payment_notes = trim($model->user_payment_notes . "\n" . ($refundId !== null ? 'Refunded through Razorpay: ' . $refundId : 'Already refunded in the Razorpay dashboard.'));
-                Yii::info(['message' => 'Razorpay refund.', 'transactionId' => $id, 'refundId' => $refundId], __METHOD__);
+                $refundId = $razorpay->refundPayment((string) $model->gateway_payment_id, (int) round($amount * 100), (int) round((float) $model->refunded_amount * 100));
+                // Kept even if the save below fails: the money has gone.
+                Yii::warning(['message' => 'Razorpay refund sent.', 'transactionId' => $id, 'refundId' => $refundId, 'amount' => $amount], __METHOD__);
+                $note = 'Refunded ₹' . number_format($amount, 2) . ($refundId !== null ? ' through Razorpay: ' . $refundId : ' (refunded in the Razorpay dashboard)') . '.';
             }
-            $model->status = Transaction::STATUS_REFUNDED;
+            $model->refunded_amount = round((float) $model->refunded_amount + $amount, 2);
+            $model->status = $full ? Transaction::STATUS_REFUNDED : Transaction::STATUS_CAPTURED;
+            $model->user_payment_notes = trim($model->user_payment_notes . "\n" . $note);
             $model->updated_at = time();
-            if (!$model->save(false, ['status', 'user_payment_notes', 'updated_at'])) {
+            if (!$model->save(false, ['refunded_amount', 'status', 'user_payment_notes', 'updated_at'])) {
                 throw new \RuntimeException('Refund could not be recorded.');
             }
-            // A closed invoice (cancelled, carried forward, refunded) is left as it is.
-            $invoiceStatus = $model->invoice->status ?? null;
-            $close = (bool) $this->request->post('close_invoice');
-            $message = 'Payment marked as refunded. The invoice was ' . (Invoice::getStatuses()[$invoiceStatus] ?? $invoiceStatus) . ', so it is unchanged.';
-            if (!in_array($invoiceStatus, InvoicePaymentService::CLOSED_STATUSES, true)) {
+
+            $message = 'Refund of ₹' . number_format($amount, 2) . ' recorded. The invoice was ' . (Invoice::getStatuses()[$invoice->status ?? ''] ?? $invoice->status ?? '-') . ', so it is unchanged.';
+            if ($canReconcile) {
                 (new PaymentProcessingService())->transactionChanged($model, false);
-                $invoice = Invoice::findOne((int) $model->invoice_id);
+                $invoice->refresh();
                 if ($close) {
-                    (new InvoicePaymentService())->closeAsRefunded($invoice);
-                    $message = 'Payment marked as refunded and the invoice closed: nothing more is owed.';
+                    $paymentService->closeAsRefunded($invoice);
+                    $message = 'Payment refunded and the invoice closed: nothing more is owed.';
                 } elseif ($invoice->status === Invoice::STATUS_PAID) {
-                    $message = 'Payment marked as refunded. Other payments still cover the invoice, so it stays Paid.';
+                    $message = 'Refund of ₹' . number_format($amount, 2) . ' recorded. Other payments still cover the invoice, so it stays Paid.';
                 } else {
-                    $message = 'Payment marked as refunded. The invoice balance is due again.';
+                    $message = 'Refund of ₹' . number_format($amount, 2) . ' recorded. The invoice balance is due again.';
                 }
             }
             $dbTransaction->commit();
@@ -261,8 +288,9 @@ class TransactionController extends BaseController
             if ($dbTransaction->isActive) {
                 $dbTransaction->rollBack();
             }
-            Yii::error(['message' => 'Refund recording failed.', 'transactionId' => $id, 'error' => $e->getMessage()], __METHOD__);
-            Yii::$app->session->setFlash('error', $e instanceof \DomainException ? $e->getMessage() : 'Refund could not be recorded.');
+            Yii::error(['message' => 'Refund recording failed.', 'transactionId' => $id, 'refundId' => $refundId, 'error' => $e->getMessage()], __METHOD__);
+            $sent = $refundId !== null ? ' Razorpay HAS refunded the money (' . $refundId . '): press Refund again with the same amount to record it.' : '';
+            Yii::$app->session->setFlash('error', ($e instanceof \DomainException ? $e->getMessage() : 'Refund could not be recorded.') . $sent);
         }
         return $this->redirect(['view', 'id' => $id]);
     }

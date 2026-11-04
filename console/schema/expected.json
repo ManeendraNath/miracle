@@ -1,5 +1,5 @@
 {
-    "migrations": 51,
+    "migrations": 52,
     "columns": {
         "admin": {
             "auth_key": {
@@ -2102,6 +2102,12 @@
                 "type": "longtext",
                 "null": true,
                 "default": null,
+                "extra": ""
+            },
+            "refunded_amount": {
+                "type": "decimal(10,2)",
+                "null": false,
+                "default": "0.00",
                 "extra": ""
             },
             "status": {

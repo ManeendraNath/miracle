@@ -29,6 +29,9 @@ $details = [
     'Submitted' => $formatter->asDatetime($model->created_at, 'php:d M Y, h:i A'),
     'Confirmed' => $model->paid_at ? $formatter->asDatetime($model->paid_at, 'php:d M Y, h:i A') : '-',
 ];
+if ((float) $model->refunded_amount > 0) {
+    $details['Refunded'] = $formatter->asCurrency($model->refunded_amount, 'INR');
+}
 ?>
 
 <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-end gap-3 mb-4">

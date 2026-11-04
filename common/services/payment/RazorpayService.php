@@ -131,24 +131,26 @@ final class RazorpayService
     }
 
     /**
-     * Fully refunds a captured payment through Razorpay and returns the refund id, or null when
-     * Razorpay shows it already fully refunded (e.g. from the dashboard), so only the record is missing.
+     * Refunds $amountMinor of a captured payment through Razorpay and returns the refund id. Returns null
+     * when Razorpay already shows exactly that amount refunded beyond what the app has recorded
+     * ($recordedRefundMinor), e.g. a refund made from the dashboard: then only the record is missing.
      */
-    public function refundPayment(string $paymentId, int $amountMinor): ?string
+    public function refundPayment(string $paymentId, int $amountMinor, int $recordedRefundMinor = 0): ?string
     {
         try {
             $payment = $this->fetchPayment($paymentId);
         } catch (\RuntimeException $e) {
             throw new \DomainException('Could not check the payment with Razorpay, nothing was refunded: ' . $e->getMessage(), 0, $e);
         }
-        $refunded = (int) ($payment['amount_refunded'] ?? 0);
-        if ($refunded >= $amountMinor) {
+        $unrecorded = (int) ($payment['amount_refunded'] ?? 0) - $recordedRefundMinor;
+        if ($unrecorded === $amountMinor) {
             return null;
         }
-        if ($refunded > 0) {
-            throw new \DomainException('This payment is already partly refunded in Razorpay. Refund the rest from the Razorpay dashboard, then use Refund again to record it.');
+        if ($unrecorded !== 0) {
+            $shown = number_format(max($unrecorded, 0) / 100, 2);
+            throw new \DomainException("Razorpay shows ₹{$shown} refunded on this payment that is not recorded here. Enter ₹{$shown} as the refund amount to record it first.");
         }
-        if (($payment['status'] ?? null) !== 'captured') {
+        if (!in_array($payment['status'] ?? null, ['captured', 'refunded'], true)) {
             throw new \DomainException('Razorpay shows this payment as "' . ($payment['status'] ?? 'unknown') . '", so it cannot be refunded.');
         }
 

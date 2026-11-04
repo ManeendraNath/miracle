@@ -174,6 +174,15 @@ final class AdminBillingCest
         ]);
         $I->see('must be paid or cancelled before the expiry date or customer can change');
         $I->seeRecord(\common\models\Hosting::class, ['id' => $hostingId, 'current_expiry_date' => '2026-12-01']);
+
+        // Once that balance was carried onto a newer invoice the change is allowed.
+        Invoice::updateAll(['status' => Invoice::STATUS_CARRIED_FORWARD], ['id' => $invoiceId]);
+        $I->amOnRoute('hosting/update', ['id' => $hostingId]);
+        $I->sendAjaxPostRequest('/hosting/update?id=' . $hostingId, [
+            Yii::$app->request->csrfParam => $I->grabAttributeFrom('meta[name=csrf-token]', 'content'),
+            'Hosting[current_expiry_date]' => '2026-12-05',
+        ]);
+        $I->seeRecord(\common\models\Hosting::class, ['id' => $hostingId, 'current_expiry_date' => '2026-12-05']);
     }
 
     public function razorpayTestPageOpensAndRejectsAForgedCheckout(FunctionalTester $I): void

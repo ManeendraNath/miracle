@@ -52,17 +52,4 @@ class BillingEvent extends base\BillingEvent
                         ])
                         ->one();
     }
-
-    public static function fulfilledCount(
-        int $itemType,
-        int $itemId
-    ): int {
-        return (int) static::find()
-                        ->where([
-                            'item_type' => $itemType,
-                            'item_id' => $itemId,
-                            'status' => self::STATUS_FULFILLED,
-                        ])
-                        ->count();
-    }
 }

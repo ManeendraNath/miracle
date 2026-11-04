@@ -77,9 +77,11 @@ class BaseController extends Controller
     }
 
     /**
-     * A renewal already invoiced was priced and dated from the current expiry and customer: changing either
+     * A renewal on an open invoice was priced and dated from the current expiry and customer: changing either
      * would bill an overlapping second period (or the wrong customer), so it is refused until that invoice is
-     * paid or cancelled. A renewal not invoiced yet is released on an expiry change; the next run re-dates it.
+     * paid or cancelled. Once its balance was carried onto a newer invoice it is a fixed arrears amount and
+     * the change is allowed. An expiry before the end of a renewal already paid is refused (that period would
+     * never be billed again). A renewal not invoiced yet is released after the save; the next run re-dates it.
      */
     private function guardOpenRenewal(\common\models\Domains|\common\models\Hosting|\common\models\Maintenance $model, bool $expiryChanged): bool
     {
@@ -89,17 +91,29 @@ class BaseController extends Controller
             default => \common\models\InvoiceItem::TYPE_MAINTENANCE,
         };
         $where = ['item_type' => $type, 'item_id' => (int) $model->id];
-        $invoiced = \common\models\BillingEvent::find()->where($where + ['status' => \common\models\BillingEvent::STATUS_INVOICED])->one();
-        if ($invoiced !== null) {
-            $number = \common\models\Invoice::find()->select('invoice_number')->where(['id' => $invoiced->invoice_id])->scalar();
-            $model->addError($expiryChanged ? 'current_expiry_date' : 'user_id', 'Renewal invoice ' . ($number ?: '#' . $invoiced->invoice_id) . ' is open for this service. It must be paid or cancelled before the expiry date or customer can change.');
+        $open = \common\models\Invoice::find()->alias('i')
+            ->innerJoin(['e' => \common\models\BillingEvent::tableName()], 'e.invoice_id = i.id')
+            ->where(['e.item_type' => $type, 'e.item_id' => (int) $model->id, 'e.status' => \common\models\BillingEvent::STATUS_INVOICED])
+            ->andWhere(['i.status' => [\common\models\Invoice::STATUS_UNPAID, \common\models\Invoice::STATUS_PARTIALLY_PAID]])
+            ->one();
+        $attribute = $expiryChanged ? 'current_expiry_date' : 'user_id';
+        if ($open !== null) {
+            $model->addError($attribute, 'Renewal invoice ' . $open->invoice_number . ' is open for this service. It must be paid or cancelled before the expiry date or customer can change.');
             return false;
         }
         if ($expiryChanged) {
-            \common\models\BillingEvent::updateAll(
-                ['status' => \common\models\BillingEvent::STATUS_CANCELLED, 'notes' => 'Expiry date changed by staff; the next billing run re-dates the renewal.', 'updated_at' => time()],
-                $where + ['status' => \common\models\BillingEvent::STATUS_PENDING, 'invoice_id' => null]
-            );
+            $paidUntil = \common\models\BillingEvent::find()->select('MAX(period_end)')->where($where + ['status' => \common\models\BillingEvent::STATUS_FULFILLED])->scalar();
+            if (is_string($paidUntil) && (string) $model->current_expiry_date < $paidUntil) {
+                $model->addError($attribute, 'A paid renewal runs until ' . Yii::$app->formatter->asDate($paidUntil, 'php:d M Y') . '. The expiry date cannot be earlier.');
+                return false;
+            }
+            // Only once the change is saved: an edit that fails validation must not release anything.
+            $model->on(\yii\db\ActiveRecord::EVENT_AFTER_UPDATE, static function () use ($where): void {
+                \common\models\BillingEvent::updateAll(
+                    ['status' => \common\models\BillingEvent::STATUS_CANCELLED, 'notes' => 'Expiry date changed by staff; the next billing run re-dates the renewal.', 'updated_at' => time()],
+                    $where + ['status' => \common\models\BillingEvent::STATUS_PENDING, 'invoice_id' => null]
+                );
+            });
         }
         return true;
     }

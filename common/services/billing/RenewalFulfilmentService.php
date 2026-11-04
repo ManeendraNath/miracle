@@ -145,8 +145,10 @@ final class RenewalFulfilmentService
 
         $asset->updated_at = $now;
         $attributes = ['current_expiry_date', 'updated_at'];
-        // The one-time price was used for this renewal; later ones are calculated from it again.
-        if ((int) $event->is_manual_amount && $asset->next_renewal_amount !== null) {
+        // The one-time price was used for this renewal; later ones are calculated from it again. A different
+        // value was set meanwhile for the renewal after this one, so it stays.
+        if ((int) $event->is_manual_amount && $asset->next_renewal_amount !== null
+            && abs((float) $asset->next_renewal_amount - (float) $event->amount) < 0.005) {
             $asset->next_renewal_amount = null;
             $attributes[] = 'next_renewal_amount';
         }

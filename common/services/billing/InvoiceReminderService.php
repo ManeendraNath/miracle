@@ -40,7 +40,7 @@ final class InvoiceReminderService
                     continue;
                 }
                 $daysUntilDue = (int) $today->diff($dueDate)->format('%r%a');
-                $threshold = ServiceRenewalReminderService::dueThreshold($daysUntilDue, self::REMINDER_DAYS);
+                $threshold = ServiceRenewalReminderService::dueThreshold($daysUntilDue, self::REMINDER_DAYS, $dueDate, (int) $invoice->created_at);
                 if ($threshold === null) {
                     continue;
                 }

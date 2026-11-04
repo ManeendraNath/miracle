@@ -33,15 +33,17 @@ The database unique constraint is authoritative.
 If a previous renewal was manually overridden, the overridden final
 amount becomes the base for the next percentage increase.
 
-The increase is yearly, not per renewal: domains and hosting go up at every renewal of a year or
-longer and at every 12th monthly one; maintenance at the start of every 3-year block. If the cycle
-length changed since the previous renewal (e.g. yearly to monthly), the previous amount no longer
-fits, so the service's renewal base amount (set for the new cycle) is billed instead.
+The increase is yearly, not per renewal: it applies each time the renewals on the current cycle pass
+a year (maintenance: a 3-year block). Domains and hosting go up at every renewal of a year or longer
+and at every 12th monthly one; yearly maintenance every 3rd renewal. If the cycle length changed since
+the previous renewal (e.g. yearly to monthly), the previous amount no longer fits, so the service's
+renewal base amount (set for the new cycle) is billed and the count starts again.
 
 An Admin can set a one-time **Next Renewal Price** on a domain, hosting or maintenance service
 (e.g. a negotiated rate). The next renewal is billed exactly that (a manual amount, so later
 increases build on it) and the field clears once that renewal is paid. A renewal already invoiced
-keeps its price: cancel that invoice first if the new price must apply to it.
+keeps its price: cancel that invoice first if the new price must apply to it. Clearing the field before
+the renewal is invoiced returns it to the calculated price.
 
 ### Asset configuration overrides global configuration
 

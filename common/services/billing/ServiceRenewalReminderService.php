@@ -35,7 +35,7 @@ final class ServiceRenewalReminderService
         $sent = 0;
         $domains = Domains::find()->where(['status' => Domains::STATUS_ACTIVE])->andWhere(['>=', 'current_expiry_date', $today->format('Y-m-d')])->all();
         foreach ($domains as $domain) {
-            $serviceProcessed = $this->processService('domain', (int) $domain->id, (int) $domain->user_id, (string) $domain->domain_url, (string) $domain->current_expiry_date, $today);
+            $serviceProcessed = $this->processService('domain', (int) $domain->id, (int) $domain->user_id, (string) $domain->domain_url, (string) $domain->current_expiry_date, $today, (int) $domain->created_at);
             if ($serviceProcessed) {
                 $sent++;
             }
@@ -48,7 +48,7 @@ final class ServiceRenewalReminderService
         $sent = 0;
         $hostings = Hosting::find()->where(['status' => Hosting::STATUS_ACTIVE])->andWhere(['>=', 'current_expiry_date', $today->format('Y-m-d')])->all();
         foreach ($hostings as $hosting) {
-            $serviceProcessed = $this->processService('hosting', (int) $hosting->id, (int) $hosting->user_id, (string) $hosting->primary_domain, (string) $hosting->current_expiry_date, $today);
+            $serviceProcessed = $this->processService('hosting', (int) $hosting->id, (int) $hosting->user_id, (string) $hosting->primary_domain, (string) $hosting->current_expiry_date, $today, (int) $hosting->created_at);
             if ($serviceProcessed) {
                 $sent++;
             }
@@ -61,7 +61,7 @@ final class ServiceRenewalReminderService
         $sent = 0;
         $maintenances = Maintenance::find()->where(['status' => Maintenance::STATUS_ACTIVE])->andWhere(['>=', 'current_expiry_date', $today->format('Y-m-d')])->all();
         foreach ($maintenances as $maintenance) {
-            $serviceProcessed = $this->processService('maintenance', (int) $maintenance->id, (int) $maintenance->user_id, (string) $maintenance->website_url, (string) $maintenance->current_expiry_date, $today);
+            $serviceProcessed = $this->processService('maintenance', (int) $maintenance->id, (int) $maintenance->user_id, (string) $maintenance->website_url, (string) $maintenance->current_expiry_date, $today, (int) $maintenance->created_at);
             if ($serviceProcessed) {
                 $sent++;
             }
@@ -69,14 +69,14 @@ final class ServiceRenewalReminderService
         return $sent;
     }
 
-    private function processService(string $type, int $serviceId, int $userId, string $serviceName, string $expiryDate, DateTimeImmutable $today): bool
+    private function processService(string $type, int $serviceId, int $userId, string $serviceName, string $expiryDate, DateTimeImmutable $today, int $createdAt = 0): bool
     {
         $expiry = DateTimeImmutable::createFromFormat('!Y-m-d', $expiryDate);
         if (!$expiry) {
             return false;
         }
         $daysUntilExpiry = (int) $today->diff($expiry)->format('%r%a');
-        $threshold = self::dueThreshold($daysUntilExpiry, self::REMINDER_DAYS);
+        $threshold = self::dueThreshold($daysUntilExpiry, self::REMINDER_DAYS, $expiry, $createdAt);
         if ($threshold === null) {
             return false;
         }
@@ -91,15 +91,25 @@ final class ServiceRenewalReminderService
 
     /**
      * The reminder day due now: today's, or one missed in the last 2 days (the cron skips runs during a
-     * deploy). Older misses are not caught up, so a new invoice or service doesn't get a stale reminder.
+     * deploy). Older misses are not caught up, and a missed day is only caught up if the invoice or service
+     * already existed on it, so one created just after a reminder day doesn't get it on day one.
      *
      * @param int[] $reminderDays
+     * @param DateTimeImmutable|null $target the due/expiry date the days count down to
      */
-    public static function dueThreshold(int $days, array $reminderDays): ?int
+    public static function dueThreshold(int $days, array $reminderDays, ?DateTimeImmutable $target = null, int $createdAt = 0): ?int
     {
         $due = array_filter($reminderDays, static fn(int $threshold): bool => $threshold >= $days && $threshold - $days <= 2);
+        if ($due === []) {
+            return null;
+        }
+        $threshold = min($due);
+        if ($threshold !== $days && $target !== null && $createdAt > 0
+            && $createdAt >= $target->modify(sprintf('%+d days', -$threshold + 1))->getTimestamp()) {
+            return null;
+        }
 
-        return $due === [] ? null : min($due);
+        return $threshold;
     }
 
     private function logged(string $type, int $serviceId, string $key): bool

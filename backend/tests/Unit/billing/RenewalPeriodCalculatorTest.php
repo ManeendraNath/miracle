@@ -87,5 +87,11 @@ final class RenewalPeriodCalculatorTest extends Unit
         $this->assertSame(30, \common\services\billing\ServiceRenewalReminderService::dueThreshold(28, $days), 'missed by 2 days');
         $this->assertNull(\common\services\billing\ServiceRenewalReminderService::dueThreshold(27, $days), 'older misses are not sent');
         $this->assertSame(-1, \common\services\billing\ServiceRenewalReminderService::dueThreshold(-2, [1, 0, -1, -3]));
+
+        // Due 2026-12-30: the 30-day reminder day was 2026-11-30. Missed by 2 days, caught up only if it existed then.
+        $due = new \DateTimeImmutable('2026-12-30');
+        $this->assertSame(30, \common\services\billing\ServiceRenewalReminderService::dueThreshold(28, $days, $due, strtotime('2026-11-20')));
+        $this->assertNull(\common\services\billing\ServiceRenewalReminderService::dueThreshold(28, $days, $due, strtotime('2026-12-02 10:00')), 'created after the reminder day');
+        $this->assertSame(30, \common\services\billing\ServiceRenewalReminderService::dueThreshold(30, $days, $due, strtotime('2026-11-30 10:00')), 'on the day itself it is sent');
     }
 }

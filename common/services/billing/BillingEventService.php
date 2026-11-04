@@ -105,16 +105,14 @@ final class BillingEventService
                 // price or cycle after the failed run. A manually set amount is kept.
                 $existing->description = $renewal->description;
                 $existing->period_end = $period['end'];
-                if ($renewal->overrideAmount !== null) {
-                    $existing->amount = round($renewal->overrideAmount, 2);
-                    $existing->is_manual_amount = 1;
-                } elseif (!(int) $existing->is_manual_amount) {
-                    $price = $this->prices->calculate($renewal->itemType, $renewal->itemId, $renewal->baseAmount, $increase, $cycle);
-                    $existing->previous_amount = $price->previousAmount;
-                    $existing->increase_percent = $price->increasePercent;
-                    $existing->calculated_amount = $price->amount;
-                    $existing->amount = $price->amount;
-                }
+                // Manual amounts only come from the Admin's one-time Next Renewal Price, so the current value
+                // of that field decides: set -> bill it; cleared meanwhile -> back to the calculated price.
+                $price = $this->prices->calculate($renewal->itemType, $renewal->itemId, $renewal->baseAmount, $increase, $cycle);
+                $existing->previous_amount = $price->previousAmount;
+                $existing->increase_percent = $price->increasePercent;
+                $existing->calculated_amount = $price->amount;
+                $existing->amount = $renewal->overrideAmount !== null ? round($renewal->overrideAmount, 2) : $price->amount;
+                $existing->is_manual_amount = $renewal->overrideAmount !== null ? 1 : 0;
 
                 $existing->updated_at =
                     time();

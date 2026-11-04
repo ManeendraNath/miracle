@@ -47,10 +47,21 @@ final class BillingCollectorService
         $events = [];
 
         foreach ($renewals as $renewal) {
-            $event = $this->eventService->create(
-                $runId,
-                $renewal
-            );
+            // One bad service (e.g. an invalid date or cycle) must not stop everyone else's billing.
+            try {
+                $event = $this->eventService->create(
+                    $runId,
+                    $renewal
+                );
+            } catch (\Throwable $e) {
+                \Yii::error(['message' => 'Renewal skipped: billing event could not be created.', 'itemType' => $renewal->itemType, 'itemId' => $renewal->itemId, 'error' => $e->getMessage()], __METHOD__);
+                try {
+                    \common\services\admin\AdminAlertService::renewalSkipped($renewal->description, $e->getMessage());
+                } catch (\Throwable) {
+                    // Logged above; the run goes on.
+                }
+                continue;
+            }
 
             // An event created by an earlier billing run
             // must remain attached to that original run.

@@ -33,7 +33,7 @@ final class BillingEventServiceTest extends Unit
         parent::_after();
     }
 
-    public function testPendingEventMovedToANewRunIsRepricedUnlessTheAmountWasSetByHand(): void
+    public function testPendingEventMovedToANewRunFollowsThePriceAndTheOneTimeOverride(): void
     {
         $suffix = bin2hex(random_bytes(4));
         $user = new User();
@@ -53,14 +53,14 @@ final class BillingEventServiceTest extends Unit
         $event = $service->create($this->billingRun(), $renewal(1500.00));
         $this->assertEquals(1500.00, (float) $event->amount);
 
-        $event->updateAttributes(['is_manual_amount' => 1, 'amount' => 1200.00]);
-        $event = $service->create($this->billingRun(), $renewal(1800.00));
-        $this->assertEquals(1200.00, (float) $event->amount);
-
-        // An Admin's one-time "next renewal price" wins over the calculated one.
+        // An Admin's one-time "next renewal price" wins over the calculated one...
         $override = new BillableRenewal((int) $user->id, InvoiceItem::TYPE_HOSTING, 987654, 'Hosting', '2026-11-30', 1800.00, 12, 0.0, null, 999.00);
         $event = $service->create($this->billingRun(), $override);
         $this->assertSame([999.00, 1], [(float) $event->amount, (int) $event->is_manual_amount]);
+
+        // ...and once the Admin clears it before the renewal is invoiced, the calculated price is back.
+        $event = $service->create($this->billingRun(), $renewal(1800.00));
+        $this->assertSame([1800.00, 0], [(float) $event->amount, (int) $event->is_manual_amount]);
     }
 
     public function testPriceFollowsTheCycleAndRisesOncePerYear(): void
@@ -83,6 +83,15 @@ final class BillingEventServiceTest extends Unit
 
         $fulfil('2026-01-01', '2026-01-31', 600.00);
         $this->assertEquals(600.00, $prices->calculate(InvoiceItem::TYPE_HOSTING, $itemId, 600.00, 10.0, 1)->amount, 'monthly: no rise after one month');
+
+        // The yearly renewal before the switch doesn't count: the rise comes after 12 monthly renewals.
+        for ($month = 2; $month <= 11; $month++) {
+            $start = sprintf('2026-%02d-01', $month);
+            $fulfil($start, date('Y-m-t', strtotime($start)), 600.00);
+        }
+        $this->assertEquals(600.00, $prices->calculate(InvoiceItem::TYPE_HOSTING, $itemId, 600.00, 10.0, 1)->amount, 'after 11 months');
+        $fulfil('2026-12-01', '2026-12-31', 600.00);
+        $this->assertEquals(660.00, $prices->calculate(InvoiceItem::TYPE_HOSTING, $itemId, 600.00, 10.0, 1)->amount, 'the 13th monthly renewal');
     }
 
     public function testAnchorDayFromTheServiceIsUsedForThePeriod(): void

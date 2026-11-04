@@ -9,10 +9,11 @@ use common\models\InvoiceItem;
 use common\services\billing\dto\RenewalPriceResult;
 
 /**
- * Renewal price = the previous final billed amount, raised by the increase once per year:
- * domains/hosting at every yearly renewal (every 12th monthly one), maintenance at the start of every
- * 3-year block. When the cycle length changed since the previous renewal (e.g. yearly -> monthly),
- * that amount no longer fits, so the service's renewal base amount for the new cycle is used instead.
+ * Renewal price = the previous final billed amount, raised by the increase each time the service passes a
+ * year (maintenance: a 3-year block) of renewals on its current cycle: every yearly or longer renewal,
+ * every 12th monthly one, the 2nd and 3rd of a 24-month maintenance (at 48 and 72 months), and so on.
+ * When the cycle length changed since the previous renewal (e.g. yearly -> monthly), that amount no longer
+ * fits, so the service's renewal base amount for the new cycle is used and the count starts again.
  */
 final class RenewalPriceCalculator
 {
@@ -30,16 +31,26 @@ final class RenewalPriceCalculator
             throw new \InvalidArgumentException('Increase percentage cannot be negative.');
         }
 
-        $previous = BillingEvent::previousFulfilled($itemType, $itemId);
-        if ($previous === null || RenewalPeriodCalculator::months((string) $previous->period_start, (string) $previous->period_end) !== $cycleMonths) {
-            return new RenewalPriceResult(round($baseAmount, 2), $previous === null ? round($increasePercent, 2) : 0.0, round($baseAmount, 2));
+        $fulfilled = BillingEvent::find()
+            ->where(['item_type' => $itemType, 'item_id' => $itemId, 'status' => BillingEvent::STATUS_FULFILLED])
+            ->orderBy(['period_end' => SORT_DESC, 'id' => SORT_DESC])
+            ->all();
+        // Renewals in a row on the current cycle, newest first; an older cycle doesn't count.
+        $sameCycle = 0;
+        foreach ($fulfilled as $event) {
+            if (RenewalPeriodCalculator::months((string) $event->period_start, (string) $event->period_end) !== $cycleMonths) {
+                break;
+            }
+            $sameCycle++;
+        }
+        if ($sameCycle === 0) {
+            return new RenewalPriceResult(round($baseAmount, 2), $fulfilled === [] ? round($increasePercent, 2) : 0.0, round($baseAmount, 2));
         }
 
-        $renewalsPerYear = max(1, intdiv(12, $cycleMonths));
-        $block = $itemType === InvoiceItem::TYPE_MAINTENANCE ? 3 * $renewalsPerYear : $renewalsPerYear;
-        $completed = BillingEvent::fulfilledCount($itemType, $itemId);
-        $previousAmount = (float) $previous->amount;
-        $amount = $completed % $block === 0 ? $previousAmount * (1 + ($increasePercent / 100)) : $previousAmount;
+        $span = $itemType === InvoiceItem::TYPE_MAINTENANCE ? 36 : 12;
+        $previousAmount = (float) $fulfilled[0]->amount;
+        $passesBoundary = intdiv($sameCycle * $cycleMonths, $span) > intdiv(($sameCycle - 1) * $cycleMonths, $span);
+        $amount = $passesBoundary ? $previousAmount * (1 + ($increasePercent / 100)) : $previousAmount;
 
         return new RenewalPriceResult(round($previousAmount, 2), round($increasePercent, 2), round($amount, 2));
     }

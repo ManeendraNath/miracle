@@ -105,6 +105,13 @@ final class AdminAlertService extends AdminNotificationService
         self::send($title, $message, 'billing', '/customer-billing-profile/index', true);
     }
 
+    public static function renewalSkipped(string $service, string $reason): void
+    {
+        $title = 'Renewal Not Billed';
+        $message = "Service: {$service}\n" . "Reason: {$reason}\n" . 'The rest of the billing run went ahead. Fix the service (expiry date, cycle, price) and it is billed on the next run.';
+        self::send($title, $message, 'billing', '/renewal-monitoring/index', true);
+    }
+
     public static function billingDetailsChanged(int $profileId, string $customer, string $legalName, bool $created): void
     {
         $title = $created ? 'Customer Added Billing Details' : 'Customer Updated Billing Details';

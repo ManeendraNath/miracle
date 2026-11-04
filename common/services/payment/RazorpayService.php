@@ -73,6 +73,8 @@ final class RazorpayService
                 'status' => Transaction::STATUS_PENDING,
             ])
             ->andWhere(['not', ['gateway_order_id' => null]])
+            // Only recent orders: syncPending() looks back 3 days, so a reused order must leave it time to catch a lost payment.
+            ->andWhere(['>=', 'created_at', time() - 86400])
             ->orderBy(['id' => SORT_DESC])
             ->one();
         if ($existing !== null && $this->toMinor((float) $existing->amount) === $this->toMinor($amount)) {
@@ -95,6 +97,47 @@ final class RazorpayService
         }
 
         return $transaction;
+    }
+
+    /**
+     * Locks the invoice's unpaid Razorpay orders. Call BEFORE locking the invoice row: capture() locks
+     * the order first and the invoice second, so the same order avoids deadlocks.
+     */
+    public static function lockUnpaidOrders(int $invoiceId): void
+    {
+        Yii::$app->db->createCommand(
+            'SELECT id FROM {{%transaction}} WHERE invoice_id = :invoice AND gateway_id = :gateway AND status = :status AND gateway_payment_id IS NULL FOR UPDATE',
+            [':invoice' => $invoiceId, ':gateway' => Transaction::GATEWAY_RAZORPAY, ':status' => Transaction::STATUS_PENDING]
+        )->queryColumn();
+    }
+
+    /**
+     * Retires the invoice's unpaid orders after its total changed: the next "Pay online" creates one for
+     * the new total, and capture() still records a superseded order paid from a checkout left open.
+     */
+    public static function supersedeUnpaidOrders(int $invoiceId): void
+    {
+        Transaction::updateAll(
+            ['status' => Transaction::STATUS_FAILED, 'user_payment_notes' => self::SUPERSEDED_NOTE, 'updated_at' => time()],
+            self::unpaidOrderCondition($invoiceId)
+        );
+    }
+
+    /** Every other row: proofs, manual payments, paid orders (NULL-safe, unlike ['not', unpaidOrderCondition()]). */
+    public static function notUnpaidOrderCondition(): array
+    {
+        return ['or', ['gateway_id' => null], ['<>', 'gateway_id', Transaction::GATEWAY_RAZORPAY], ['not', ['gateway_payment_id' => null]]];
+    }
+
+    /** Razorpay orders created for the invoice but not paid yet. */
+    public static function unpaidOrderCondition(int $invoiceId): array
+    {
+        return [
+            'invoice_id' => $invoiceId,
+            'gateway_id' => Transaction::GATEWAY_RAZORPAY,
+            'status' => Transaction::STATUS_PENDING,
+            'gateway_payment_id' => null,
+        ];
     }
 
     /** Test keys (rzp_test_…): payments are simulated and no money moves. */
@@ -240,7 +283,9 @@ final class RazorpayService
     private function requestOrder(int $amountMinor, string $receipt, array $notes): string
     {
         $response = $this->api()
-            ->post('orders', ['amount' => $amountMinor, 'currency' => 'INR', 'receipt' => substr($receipt, 0, 40), 'notes' => $notes])
+            // payment_capture: capture on payment even if the account is set to manual capture; the app treats
+            // a verified checkout as paid.
+            ->post('orders', ['amount' => $amountMinor, 'currency' => 'INR', 'receipt' => substr($receipt, 0, 40), 'notes' => $notes, 'payment_capture' => 1])
             ->setFormat(Client::FORMAT_JSON)
             ->send();
 

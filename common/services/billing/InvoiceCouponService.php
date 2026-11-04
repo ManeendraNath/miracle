@@ -34,7 +34,7 @@ final class InvoiceCouponService
         $paymentStarted = Transaction::find()
             ->where(['invoice_id' => (int) $invoice->id])
             ->andWhere(['<>', 'status', Transaction::STATUS_FAILED])
-            ->andWhere(['not', self::unpaidOrderCondition((int) $invoice->id)])
+            ->andWhere(RazorpayService::notUnpaidOrderCondition())
             ->exists();
         if ($paymentStarted) {
             return 'Coupons cannot be changed once a payment has been made or started for this invoice.';
@@ -79,22 +79,12 @@ final class InvoiceCouponService
         });
     }
 
-    /** Razorpay orders created for this invoice but not paid yet. */
-    private static function unpaidOrderCondition(int $invoiceId): array
-    {
-        return [
-            'invoice_id' => $invoiceId,
-            'gateway_id' => Transaction::GATEWAY_RAZORPAY,
-            'status' => Transaction::STATUS_PENDING,
-            'gateway_payment_id' => null,
-        ];
-    }
-
     private function change(Invoice $invoice, callable $edit): Invoice
     {
         $db = Yii::$app->db;
         $dbTransaction = $db->beginTransaction();
         try {
+            RazorpayService::lockUnpaidOrders((int) $invoice->id);
             $id = $db->createCommand('SELECT id FROM {{%invoice}} WHERE id = :id FOR UPDATE', [':id' => (int) $invoice->id])->queryScalar();
             $locked = $id !== false ? Invoice::findOne((int) $id) : null;
             if ($locked === null) {
@@ -105,10 +95,7 @@ final class InvoiceCouponService
                 throw new \DomainException($reason);
             }
             // The pending order is for the old total; the next "Pay online" creates a new one.
-            Transaction::updateAll(
-                ['status' => Transaction::STATUS_FAILED, 'user_payment_notes' => RazorpayService::SUPERSEDED_NOTE, 'updated_at' => time()],
-                self::unpaidOrderCondition((int) $locked->id)
-            );
+            RazorpayService::supersedeUnpaidOrders((int) $locked->id);
             $edit($locked);
             $this->totals->calculateInvoiceTotals($locked);
             if ((float) $locked->total_payable <= 0) {

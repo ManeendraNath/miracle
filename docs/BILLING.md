@@ -97,8 +97,11 @@ Coupons are applied by an admin on manual invoices (coupon code field).
 
 Customers can also apply / remove a coupon themselves on the invoice page (any invoice,
 including automatic renewals), via `InvoiceCouponService`. Allowed only while the invoice is
-Unpaid, has no payment of any kind (captured, refunded, proof under review, or a started online
-payment: a Razorpay order is fixed at the old amount), and has no admin discount without a coupon.
+Unpaid, has no payment of any kind (captured, refunded or proof under review), and has no admin
+discount without a coupon. An unpaid Razorpay order does not block it: it is superseded (the next
+"Pay online" creates an order for the new total), and if the old checkout is still paid,
+`RazorpayService::capture()` records it and alerts an admin about any excess. Editing a manual
+invoice retires unpaid orders the same way; only a proof under review blocks the edit.
 Previous-outstanding (arrears) lines are never discounted. Totals are recomputed with
 `AutoInvoiceService::calculateInvoiceTotals()`.
 

@@ -7,6 +7,7 @@ namespace backend\controllers;
 use backend\models\searches\TransactionSearch;
 use common\models\Invoice;
 use common\models\Transaction;
+use common\services\admin\AdminAlertService;
 use common\services\billing\InvoicePaymentService;
 use common\services\billing\PaymentConfirmationService;
 use common\services\billing\PaymentProcessingService;
@@ -184,7 +185,17 @@ class TransactionController extends BaseController
                 throw new \RuntimeException('Payment could not be approved.');
             }
             (new PaymentProcessingService())->transactionChanged($paymentTransaction, false);
+            $excess = (new InvoicePaymentService())->getCapturedAmount((int) $invoice->id) - (float) $invoice->total_payable;
             $dbTransaction->commit();
+            // E.g. a proof submitted for the full balance, approved after another payment was recorded.
+            if (round($excess, 2) > 0) {
+                try {
+                    AdminAlertService::paymentOverpaid($invoice->invoice_number, (float) $paymentTransaction->amount, round($excess, 2), (string) $paymentTransaction->gateway_payment_id, false);
+                } catch (\Throwable $alertError) {
+                    Yii::error(['message' => 'Overpayment alert failed.', 'transactionId' => $id, 'error' => $alertError->getMessage()], __METHOD__);
+                }
+                Yii::$app->session->setFlash('warning', 'This approval overpays invoice ' . $invoice->invoice_number . ' by ₹' . number_format($excess, 2) . '. Refund the difference to the customer.');
+            }
         } catch (\Throwable $e) {
             if ($dbTransaction->isActive) {
                 $dbTransaction->rollBack();
@@ -318,8 +329,12 @@ class TransactionController extends BaseController
                 throw new \DomainException('Razorpay orders are settled automatically and cannot be rejected manually.');
             }
             $model->status = Transaction::STATUS_FAILED;
+            // Frees the reference (unique) so the customer can resubmit the genuine one; still readable here.
+            if ((string) $model->gateway_payment_id !== '') {
+                $model->gateway_payment_id = substr('REJECTED-' . $model->id . '-' . $model->gateway_payment_id, 0, 100);
+            }
             $model->updated_at = time();
-            if (!$model->save(false, ['status', 'updated_at'])) {
+            if (!$model->save(false, ['status', 'gateway_payment_id', 'updated_at'])) {
                 throw new \RuntimeException('Payment could not be rejected.');
             }
             $dbTransaction->commit();

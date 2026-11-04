@@ -234,6 +234,26 @@ final class ManualInvoiceServiceTest extends Unit
         );
     }
 
+    public function testAbandonedOnlineOrderIsRetiredInsteadOfBlockingTheEdit(): void
+    {
+        $service = new ManualInvoiceService();
+        $invoice = $service->create($this->newInvoice(), [$this->item('Old Service', 'Original line', 1, 5000.00)]);
+        $order = new \common\models\Transaction();
+        $order->setAttributes(['invoice_id' => $invoice->id, 'gateway_id' => \common\models\Transaction::GATEWAY_RAZORPAY, 'gateway_order_id' => 'order_abandoned_' . bin2hex(random_bytes(4)), 'amount' => (float) $invoice->total_payable, 'status' => \common\models\Transaction::STATUS_PENDING, 'created_at' => time(), 'updated_at' => time()], false);
+        $this->assertTrue($order->save(false));
+
+        $service->update($invoice, [$this->item('Development', 'Updated', 1, 8000.00)]);
+
+        $order->refresh();
+        $this->assertSame([\common\models\Transaction::STATUS_FAILED, \common\services\payment\RazorpayService::SUPERSEDED_NOTE], [$order->status, $order->user_payment_notes]);
+
+        $proof = new \common\models\Transaction();
+        $proof->setAttributes(['invoice_id' => $invoice->id, 'gateway_id' => \common\models\Transaction::GATEWAY_UPI_BANK, 'gateway_payment_id' => 'UTR' . bin2hex(random_bytes(4)), 'amount' => 100, 'status' => \common\models\Transaction::STATUS_PENDING, 'created_at' => time(), 'updated_at' => time()], false);
+        $this->assertTrue($proof->save(false));
+        $this->expectExceptionMessage('payment proof awaiting review');
+        $service->update(Invoice::findOne($invoice->id), [$this->item('Development', 'Again', 1, 9000.00)]);
+    }
+
     public function testRejectsInvoiceWithoutItems(): void
     {
         $this->expectException(

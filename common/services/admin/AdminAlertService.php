@@ -83,10 +83,11 @@ final class AdminAlertService extends AdminNotificationService
         self::send($title, $message, 'payment', '/transaction/index', true);
     }
 
-    public static function paymentOverpaid(string $invoiceNumber, float $paid, float $excess, string $paymentId): void
+    public static function paymentOverpaid(string $invoiceNumber, float $paid, float $excess, string $paymentId, bool $online = true): void
     {
-        $title = 'Online Payment Needs Attention';
-        $message = "Invoice: {$invoiceNumber}\n" . "Paid online: ₹{$paid}\n" . "Overpaid by: ₹{$excess}\n" . "Razorpay payment: {$paymentId}\n" . 'The invoice had already been partly paid another way. Refund the excess in Razorpay.';
+        $title = ($online ? 'Online' : 'Approved') . ' Payment Needs Attention';
+        $message = "Invoice: {$invoiceNumber}\n" . ($online ? 'Paid online' : 'Approved proof') . ": ₹{$paid}\n" . "Overpaid by: ₹{$excess}\n" . ($online ? 'Razorpay payment' : 'Reference') . ": {$paymentId}\n"
+            . 'The invoice had already been partly paid another way. Refund the excess' . ($online ? ' in Razorpay.' : ' to the customer.');
         self::send($title, $message, 'payment', '/transaction/index?' . http_build_query(['TransactionSearch' => ['gateway_payment_id' => $paymentId]]), true);
     }
 

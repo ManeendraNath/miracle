@@ -42,6 +42,16 @@ final class AdminBillingCest
         $I->see('Razorpay orders are settled automatically and cannot be rejected manually.');
     }
 
+    public function rejectedProofFreesItsReferenceForAResubmit(FunctionalTester $I): void
+    {
+        $proof = $this->transaction($I, $this->invoice($I, Invoice::STATUS_UNPAID), Transaction::GATEWAY_UPI_BANK, Transaction::STATUS_PENDING);
+        $utr = 'UTR' . $proof;
+        Transaction::updateAll(['gateway_payment_id' => $utr], ['id' => $proof]);
+        $this->post($I, 'reject', $proof);
+        $I->seeRecord(Transaction::class, ['id' => $proof, 'status' => Transaction::STATUS_FAILED, 'gateway_payment_id' => 'REJECTED-' . $proof . '-' . $utr]);
+        $I->dontSeeRecord(Transaction::class, ['gateway_payment_id' => $utr]);
+    }
+
     public function paymentOnACarriedForwardInvoiceCannotBeRefunded(FunctionalTester $I): void
     {
         $payment = $this->transaction($I, $this->invoice($I, Invoice::STATUS_CARRIED_FORWARD), Transaction::GATEWAY_MANUAL, Transaction::STATUS_CAPTURED);

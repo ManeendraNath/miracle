@@ -7,8 +7,10 @@ namespace common\services\billing;
 use common\models\CustomerBillingProfile;
 use common\models\Invoice;
 use common\models\InvoiceItem;
+use common\models\Transaction;
 use common\models\User;
 use common\services\notification\NotificationService;
+use common\services\payment\RazorpayService;
 use common\models\forms\ManualInvoiceItemForm;
 use Yii;
 
@@ -160,6 +162,7 @@ final class ManualInvoiceService
         $dbTransaction = Yii::$app->db->beginTransaction();
 
         try {
+            RazorpayService::lockUnpaidOrders((int) $invoice->id);
             $invoiceId = Yii::$app->db
                 ->createCommand(
                     'SELECT id
@@ -188,16 +191,18 @@ final class ManualInvoiceService
                 throw new \DomainException('An invoice with captured payments ' . 'cannot be modified.');
             }
 
-            // A pending online order or payment proof was created for the current total; changing
-            // the total now would let it be paid at the old amount.
-            $pendingPayment = \common\models\Transaction::find()
-                ->where(['invoice_id' => $lockedInvoice->id, 'status' => \common\models\Transaction::STATUS_PENDING])
+            // A payment proof was submitted for the current total: approve or reject it first. An unpaid
+            // online order is retired instead (as a coupon change does), so an abandoned checkout can't lock the invoice.
+            $proofPending = Transaction::find()
+                ->where(['invoice_id' => $lockedInvoice->id, 'status' => Transaction::STATUS_PENDING])
+                ->andWhere(RazorpayService::notUnpaidOrderCondition())
                 ->exists();
-            if ($pendingPayment) {
+            if ($proofPending) {
                 throw new \DomainException(
-                    'This invoice has a payment in progress (online order or proof awaiting review) and cannot be modified.',
+                    'This invoice has a payment proof awaiting review. Approve or reject it before editing.',
                 );
             }
+            RazorpayService::supersedeUnpaidOrders((int) $lockedInvoice->id);
 
             $hasAutomaticItems = InvoiceItem::find()
                 ->where([

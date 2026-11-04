@@ -59,11 +59,9 @@ final class ManualInvoiceItemForm extends Model
         ];
     }
 
+    /** From the unit price as stored (2 decimals), so the line total always equals quantity x shown price. */
     public function getTotal(): float
     {
-        return round(
-            $this->quantity * $this->unit_price,
-            2
-        );
+        return round($this->quantity * round($this->unit_price, 2), 2);
     }
 }

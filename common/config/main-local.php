@@ -44,8 +44,10 @@ return [
                 [
                     'class' => yii\log\FileTarget::class,
                     'categories' => [
-                        'common\services\notification\WhatsAppService',
+                        'common\services\notification\WhatsAppService*',
                     ],
+                    // Never dump $_SERVER/$_POST/$_SESSION: Dotenv puts every .env secret in $_SERVER.
+                    'logVars' => [],
                     'logFile' => '@runtime/logs/whatsapp.log',
                     'levels' => ['error', 'warning', 'info'],
                 ],

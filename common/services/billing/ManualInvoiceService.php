@@ -295,6 +295,9 @@ final class ManualInvoiceService
             $lockedInvoice->discount_amount = $discount;
 
             $lockedInvoice->coupon_code = $couponCode !== '' ? $couponCode : null;
+            if ($couponCode === '') {
+                $lockedInvoice->coupon_id = null;
+            }
 
             $lockedInvoice->due_date = $invoice->due_date;
 

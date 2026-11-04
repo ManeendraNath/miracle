@@ -40,19 +40,13 @@ class InvoiceController extends BaseController
     {
         $model = $this->findModelByNumber($number);
         $paymentService = new InvoicePaymentService();
-        $totals = $this->calculateDisplayTotals($model);
 
-        return $this->render(
-            'view',
-            array_merge(
-                [
-                                    'model' => $model,
-                                    'capturedAmount' => $paymentService->getCapturedAmount((int) $model->id),
-                                    'outstandingAmount' => $paymentService->getOutstanding($model),
-                                ],
-                $totals
-            )
-        );
+        // Tax lines come from TaxCalculator::forInvoice() in the view (arrears are not taxed).
+        return $this->render('view', [
+            'model' => $model,
+            'capturedAmount' => $paymentService->getCapturedAmount((int) $model->id),
+            'outstandingAmount' => $paymentService->getOutstanding($model),
+        ]);
     }
 
     /**
@@ -290,21 +284,5 @@ class InvoiceController extends BaseController
                             return sprintf('%s (%s)', $user['username'], $user['email']);
             }
         );
-    }
-
-    private function calculateDisplayTotals(Invoice $model): array
-    {
-        $subtotal = (float) $model->subtotal_amount;
-        $discountedSubtotal = max(0, $subtotal - (float) $model->discount_amount);
-        $cgstAmount = round($discountedSubtotal * ((float) $model->cgst_percent / 100), 2);
-        $sgstAmount = round($discountedSubtotal * ((float) $model->sgst_percent / 100), 2);
-        $igstAmount = round($discountedSubtotal * ((float) $model->igst_percent / 100), 2);
-        return [
-            'subtotal' => $subtotal,
-            'cgstAmount' => $cgstAmount,
-            'sgstAmount' => $sgstAmount,
-            'igstAmount' => $igstAmount,
-            'grandTotal' => (float) $model->total_payable,
-        ];
     }
 }

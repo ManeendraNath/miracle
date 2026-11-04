@@ -10,7 +10,7 @@ $verifyLink = Yii::$app->urlManager->createAbsoluteUrl(['site/verify-email', 'to
 
 Email Verification
 
-Hello <?= $user->username ?>,
+Hello,
 
 Thank you for registering.
 

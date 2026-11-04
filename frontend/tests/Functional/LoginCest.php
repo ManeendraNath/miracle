@@ -39,6 +39,11 @@ final class LoginCest
             'LoginForm' => ['username' => ['x'], 'password' => ['y']],
         ]);
         $I->seeResponseCodeIs(200);
+        $I->sendAjaxPostRequest('/site/login', [
+            \Yii::$app->request->csrfParam => $I->grabAttributeFrom('meta[name=csrf-token]', 'content'),
+            'LoginForm' => 'x',
+        ]);
+        $I->seeResponseCodeIs(200);
     }
 
     public function passwordResetNeedsTheCaptcha(FunctionalTester $I): void

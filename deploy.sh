@@ -150,6 +150,9 @@ done
 exec 9>/home/rpocncwk/.miracle-deploy.lock
 flock -n 9 || die "another deployment is running"
 [ -r "$APP/.env" ] || die "$APP/.env is missing"
+# Email links (password reset, verification, invoices) are built from it; without it they would follow
+# the request's Host header or lose their buttons.
+grep -Eq '^FRONTEND_BASE_URL=["'"'"']?https?://' "$APP/.env" || die "FRONTEND_BASE_URL (e.g. https://miraclewebtechnologies.com) is not set in $APP/.env"
 [ -r "$APP/yii" ] || die "$APP/yii is missing"
 
 cd "$REPO"

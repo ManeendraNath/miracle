@@ -37,6 +37,8 @@ final class ProfileForm extends Model
             ['username', 'trim'],
             ['username', 'required'],
             ['username', 'string', 'min' => 2, 'max' => 255],
+            // Same rule as signup; an existing name that predates it can be kept as it is.
+            ['username', 'match', 'pattern' => '/^[A-Za-z0-9._@-]+$/', 'message' => 'Username may only contain letters, numbers and . _ @ -', 'when' => fn(): bool => $this->username !== (string) $this->_user->username],
             ['username', 'validateUsernameUnique'],
             ['mobile', 'string', 'max' => 20],
             ['whatsapp', 'string', 'max' => 20],

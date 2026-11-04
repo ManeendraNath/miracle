@@ -57,6 +57,8 @@ class Domains extends base\Domains
                             ['renewal_cycle_months', 'integer', 'min' => 1],
                             ['renewal_increase_percent', 'number', 'min' => 0, 'max' => 100],
                             ['renewal_base_amount', 'number', 'min' => 0],
+                            ['next_renewal_amount', 'number', 'min' => 0.01],
+                            ['next_renewal_amount', 'default', 'value' => null],
                             ['status', 'in', 'range' => array_keys(self::getStatuses())],
                         ]
         );

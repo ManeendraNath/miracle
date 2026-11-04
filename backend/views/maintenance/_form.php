@@ -96,6 +96,8 @@ $form = ActiveForm::begin([
             'placeholder' => 'Initial renewal amount',
         ]) ?>
 
+        <?= $form->field($model, 'next_renewal_amount')->input('number', ['disabled' => !$canEditPricing, 'min' => '0.01', 'step' => '0.01', 'placeholder' => 'Calculated'])->hint('One-time price for the next renewal invoice, e.g. a negotiated rate. Later renewals build on it. Cleared once that renewal is paid.') ?>
+
         <div class="row">
 
             <div class="col-md-6">

@@ -13,6 +13,8 @@ use common\models\traits\DateRangeSearchTrait;
  */
 class TransactionSearch extends Transaction
 {
+    use \common\models\traits\ScalarInputTrait;
+
     use DateRangeSearchTrait;
 
     // Transient placeholder to handle the composite range string text

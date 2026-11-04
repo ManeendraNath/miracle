@@ -38,6 +38,11 @@ longer and at every 12th monthly one; maintenance at the start of every 3-year b
 length changed since the previous renewal (e.g. yearly to monthly), the previous amount no longer
 fits, so the service's renewal base amount (set for the new cycle) is billed instead.
 
+An Admin can set a one-time **Next Renewal Price** on a domain, hosting or maintenance service
+(e.g. a negotiated rate). The next renewal is billed exactly that (a manual amount, so later
+increases build on it) and the field clears once that renewal is paid. A renewal already invoiced
+keeps its price: cancel that invoice first if the new price must apply to it.
+
 ### Asset configuration overrides global configuration
 
 NULL:

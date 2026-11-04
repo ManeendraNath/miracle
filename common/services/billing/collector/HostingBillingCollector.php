@@ -81,7 +81,9 @@ final class HostingBillingCollector
                 increasePercent:
                     $model->renewal_increase_percent !== null ? (float) $model->renewal_increase_percent : null,
                 anchorDay:
-                    $model->renewal_anchor_day !== null ? (int) $model->renewal_anchor_day : null
+                    $model->renewal_anchor_day !== null ? (int) $model->renewal_anchor_day : null,
+                overrideAmount:
+                    $model->next_renewal_amount !== null ? (float) $model->next_renewal_amount : null
             );
         }
 

@@ -41,7 +41,7 @@ class BaseController extends Controller
     private const ROLE_RANK = ['Manager' => 1, 'Admin' => 2, 'Superadmin' => 3];
 
     /** Service fields that set what renewal invoices charge: Admin and up only. */
-    public const RENEWAL_PRICING_ATTRIBUTES = ['renewal_base_amount', 'renewal_increase_percent', 'renewal_cycle_months'];
+    public const RENEWAL_PRICING_ATTRIBUTES = ['renewal_base_amount', 'next_renewal_amount', 'renewal_increase_percent', 'renewal_cycle_months'];
 
     /** Whether the signed-in staff member may set renewal pricing on services. */
     public static function canEditRenewalPricing(): bool

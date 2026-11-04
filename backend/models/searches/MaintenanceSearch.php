@@ -13,6 +13,8 @@ use common\models\traits\DateRangeSearchTrait;
  */
 class MaintenanceSearch extends Maintenance
 {
+    use \common\models\traits\ScalarInputTrait;
+
     use DateRangeSearchTrait;
 
     public ?string $expiry_date_range = null;

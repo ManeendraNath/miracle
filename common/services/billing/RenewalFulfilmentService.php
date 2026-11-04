@@ -145,6 +145,11 @@ final class RenewalFulfilmentService
 
         $asset->updated_at = $now;
         $attributes = ['current_expiry_date', 'updated_at'];
+        // The one-time price was used for this renewal; later ones are calculated from it again.
+        if ((int) $event->is_manual_amount && $asset->next_renewal_amount !== null) {
+            $asset->next_renewal_amount = null;
+            $attributes[] = 'next_renewal_amount';
+        }
         // Paid up again: a service staff suspended for non-payment goes back into billing and reminders.
         // Inactive / cancelled services are disabled on purpose and stay as they are.
         if (($asset instanceof Hosting && (int) $asset->status === Hosting::STATUS_SUSPENDED)

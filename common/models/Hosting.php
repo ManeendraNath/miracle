@@ -88,6 +88,8 @@ class Hosting extends base\Hosting
                     'number',
                     'min' => 0,
                 ],
+                ['next_renewal_amount', 'number', 'min' => 0.01],
+                ['next_renewal_amount', 'default', 'value' => null],
 
                 [['primary_domain'], 'unique'],
 

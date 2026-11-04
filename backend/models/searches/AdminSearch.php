@@ -12,6 +12,8 @@ use common\models\Admin;
  */
 class AdminSearch extends Admin
 {
+    use \common\models\traits\ScalarInputTrait;
+
     /**
      * {@inheritdoc}
      */

@@ -10,6 +10,8 @@ use yii\data\ActiveDataProvider;
 
 final class CustomerPreferenceSearch extends CustomerPreference
 {
+    use \common\models\traits\ScalarInputTrait;
+
     public ?string $customer = null;
 
     #[\Override]

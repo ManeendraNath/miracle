@@ -13,6 +13,7 @@ use Yii;
  * @property string $start_date
  * @property string $current_expiry_date Extended automatically when a renewal history ledger record is verified
  * @property int|null $renewal_anchor_day Day of month it renews on (31 = month end)
+ * @property float|null $next_renewal_amount One-time price for the next renewal (Admin), cleared once it is fulfilled
  * @property int $status 0: Cancelled, 1: Active, 2: Overdue
  * @property int $created_at
  * @property int $updated_at
@@ -66,6 +67,7 @@ class Maintenance extends \yii\db\ActiveRecord
             'renewal_cycle_months' => 'Renewal Cycle Months',
             'renewal_increase_percent' => 'Renewal Increase Percent',
             'renewal_base_amount' => 'Renewal Base Amount',
+            'next_renewal_amount' => 'Next Renewal Price (one-time)',
         ];
     }
 

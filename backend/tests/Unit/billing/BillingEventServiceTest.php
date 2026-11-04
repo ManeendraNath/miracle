@@ -56,6 +56,11 @@ final class BillingEventServiceTest extends Unit
         $event->updateAttributes(['is_manual_amount' => 1, 'amount' => 1200.00]);
         $event = $service->create($this->billingRun(), $renewal(1800.00));
         $this->assertEquals(1200.00, (float) $event->amount);
+
+        // An Admin's one-time "next renewal price" wins over the calculated one.
+        $override = new BillableRenewal((int) $user->id, InvoiceItem::TYPE_HOSTING, 987654, 'Hosting', '2026-11-30', 1800.00, 12, 0.0, null, 999.00);
+        $event = $service->create($this->billingRun(), $override);
+        $this->assertSame([999.00, 1], [(float) $event->amount, (int) $event->is_manual_amount]);
     }
 
     public function testPriceFollowsTheCycleAndRisesOncePerYear(): void

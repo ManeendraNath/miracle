@@ -11,6 +11,8 @@ use yii\data\ActiveDataProvider;
 
 final class SupportTicketSearch extends SupportTicket
 {
+    use \common\models\traits\ScalarInputTrait;
+
     public function rules(): array
     {
         return [[['ticket_number', 'subject', 'priority', 'status'], 'safe']];

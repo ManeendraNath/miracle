@@ -15,6 +15,8 @@ use yii\data\ActiveDataProvider;
  */
 class AuditRequestSearch extends AuditRequest
 {
+    use \common\models\traits\ScalarInputTrait;
+
     use DateRangeSearchTrait;
 
     public ?string $created_at_range = null;

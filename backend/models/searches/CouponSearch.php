@@ -11,6 +11,8 @@ use yii\data\ActiveDataProvider;
 
 final class CouponSearch extends Coupon
 {
+    use \common\models\traits\ScalarInputTrait;
+
     public ?string $validity_range = null;
 
     public function rules(): array

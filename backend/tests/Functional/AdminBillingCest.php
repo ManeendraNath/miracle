@@ -33,6 +33,23 @@ final class AdminBillingCest
         $I->see('Service Expiries');
     }
 
+    public function serviceFormsShowTheNextRenewalPrice(FunctionalTester $I): void
+    {
+        foreach (['domains/create', 'hosting/create', 'maintenance/create'] as $route) {
+            $I->amOnRoute($route);
+            $I->seeResponseCodeIs(200);
+            $I->see('Next Renewal Price (one-time)');
+        }
+    }
+
+    public function arrayInASearchFilterDoesNotBreakTheList(FunctionalTester $I): void
+    {
+        $I->amOnPage('/invoice/index?InvoiceSearch[invoice_number][]=x&InvoiceSearch[status][]=y');
+        $I->seeResponseCodeIs(200);
+        $I->amOnPage('/transaction/index?TransactionSearch[gateway_payment_id][]=x');
+        $I->seeResponseCodeIs(200);
+    }
+
     public function pendingRazorpayOrderCannotBeRejected(FunctionalTester $I): void
     {
         $order = $this->transaction($I, $this->invoice($I, Invoice::STATUS_UNPAID), Transaction::GATEWAY_RAZORPAY, Transaction::STATUS_PENDING);

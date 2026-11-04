@@ -21,7 +21,8 @@ final readonly class BillableRenewal
         public float $baseAmount,
         public ?int $cycleMonths = null,
         public ?float $increasePercent = null,
-        public ?int $anchorDay = null
+        public ?int $anchorDay = null,
+        public ?float $overrideAmount = null
     ) {
     }
 }

@@ -11,6 +11,8 @@ use yii\data\ActiveDataProvider;
 
 final class UserLoginHistorySearch extends UserLoginHistory
 {
+    use \common\models\traits\ScalarInputTrait;
+
     use DateRangeSearchTrait;
 
     public ?string $customer = null;

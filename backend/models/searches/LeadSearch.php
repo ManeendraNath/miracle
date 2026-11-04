@@ -12,6 +12,8 @@ use yii\data\ActiveDataProvider;
  */
 class LeadSearch extends Lead
 {
+    use \common\models\traits\ScalarInputTrait;
+
     use \common\models\traits\DateRangeSearchTrait;
 
     public ?string $created_at_range = null;

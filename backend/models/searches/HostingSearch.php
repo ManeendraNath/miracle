@@ -15,6 +15,8 @@ use yii\data\ActiveDataProvider;
  */
 class HostingSearch extends Hosting
 {
+    use \common\models\traits\ScalarInputTrait;
+
     use DateRangeSearchTrait;
 
     public ?string $expiry_date_range = null;

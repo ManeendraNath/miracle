@@ -15,6 +15,8 @@ use yii\data\ActiveDataProvider;
  */
 class DomainsSearch extends Domains
 {
+    use \common\models\traits\ScalarInputTrait;
+
     use DateRangeSearchTrait;
 
     /**

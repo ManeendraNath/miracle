@@ -11,6 +11,8 @@ use yii\data\ActiveDataProvider;
 
 final class CustomerBillingProfileSearch extends CustomerBillingProfile
 {
+    use \common\models\traits\ScalarInputTrait;
+
     public function rules(): array
     {
         return [

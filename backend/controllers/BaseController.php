@@ -144,6 +144,7 @@ class BaseController extends Controller
                     'approve' => ['POST'],
                     'reject' => ['POST'],
                     'refund' => ['POST'],
+                    'apply' => ['POST'],
                     'cancel' => ['POST'],
                     'resend-invoice' => ['POST'],
                     'toggle-status' => ['POST'],

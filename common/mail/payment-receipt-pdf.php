@@ -72,6 +72,12 @@ $money = static fn(int|float|string|null $amount): string => 'INR ' . number_for
 <div class="success">Payment Confirmed</div>
 <div class="amount"><?= Html::encode($money($transaction->amount)) ?></div>
 <table class="details">
+    <?php if ((float) $transaction->refunded_amount > 0): ?>
+    <tr>
+        <td>Refunded</td>
+        <td><?= Html::encode($money($transaction->refunded_amount)) ?><?= $transaction->refunded_at ? ' on ' . Yii::$app->formatter->asDate($transaction->refunded_at, 'php:d M Y') : '' ?> (net received <?= Html::encode($money((float) $transaction->amount - (float) $transaction->refunded_amount)) ?>)</td>
+    </tr>
+    <?php endif; ?>
     <tr>
         <td>Invoice</td>
         <td><?= Html::encode($invoice->invoice_number) ?></td>

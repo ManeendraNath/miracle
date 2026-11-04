@@ -21,6 +21,8 @@ final class PaymentProofForm extends Model
             [['gateway_payment_id', 'user_payment_notes'], 'trim'],
             ['gateway_payment_id', 'required'],
             ['gateway_payment_id', 'string', 'min' => 6, 'max' => 100],
+            // A Razorpay payment id would take the reference the online payment itself is recorded under.
+            ['gateway_payment_id', 'match', 'not' => true, 'pattern' => '/^pay_/i', 'message' => 'That is an online (Razorpay) payment reference. Online payments are confirmed automatically, so no proof is needed.'],
             ['user_payment_notes', 'string', 'max' => 1000],
             ['receiptFile', 'required'],
             ['receiptFile', 'file', 'extensions' => ['jpg', 'jpeg', 'png', 'pdf'], 'mimeTypes' => ['image/jpeg', 'image/png', 'application/pdf'], 'maxSize' => 5 * 1024 * 1024, 'checkExtensionByMimeType' => true],

@@ -8,6 +8,7 @@ use common\models\BillingEvent;
 use common\models\Invoice;
 use common\models\InvoiceItem;
 use common\models\Transaction;
+use common\services\payment\RazorpayService;
 
 final class InvoicePaymentService
 {
@@ -26,7 +27,7 @@ final class InvoicePaymentService
                     'invoice_id' => $invoiceId,
                     'status' => Transaction::STATUS_CAPTURED,
                 ])
-                ->andWhere(['or', ['user_payment_notes' => null], ['not like', 'user_payment_notes', Transaction::UNAPPLIED_NOTE_PREFIX]])
+                ->andWhere(['is_unapplied' => 0])
                 ->andFilterWhere(['<>', 'id', $exceptTransactionId])
                 ->sum('amount - refunded_amount');
 
@@ -135,9 +136,9 @@ final class InvoicePaymentService
      * run doesn't carry it forward and reminders stop. (A refund alone leaves it payable, e.g. when a
      * wrong payment was returned so the customer can pay again.)
      */
-    public function closeAsRefunded(Invoice $invoice): void
+    public function closeAsRefunded(Invoice $invoice, ?int $keptTransactionId = null): void
     {
-        $blocker = $this->closeBlocker($invoice);
+        $blocker = $this->closeBlocker($invoice, $keptTransactionId);
         if ($blocker !== null) {
             throw new \DomainException($blocker);
         }
@@ -152,32 +153,52 @@ final class InvoicePaymentService
         }
         // Release the billed periods (this invoice's and those carried into it) so the next
         // billing run invoices them again, as cancelling does. Fulfilled renewals stay as they are.
-        $invoiceIds = [(int) $invoice->id];
-        for ($ids = $invoiceIds; $ids !== [];) {
-            $ids = array_map('intval', InvoiceItem::find()->select('source_invoice_id')
-                ->where(['invoice_id' => $ids, 'item_type' => InvoiceItem::TYPE_ARREARS])
-                ->andWhere(['not', ['source_invoice_id' => null]])->andWhere(['not', ['source_invoice_id' => $invoiceIds]])->column());
-            $invoiceIds = [...$invoiceIds, ...$ids];
-        }
         BillingEvent::updateAll(
             ['status' => BillingEvent::STATUS_CANCELLED, 'notes' => 'Invoice closed as refunded.', 'updated_at' => time()],
-            ['invoice_id' => $invoiceIds, 'status' => [BillingEvent::STATUS_PENDING, BillingEvent::STATUS_INVOICED]]
+            ['invoice_id' => $this->withCarriedInvoiceIds((int) $invoice->id), 'status' => [BillingEvent::STATUS_PENDING, BillingEvent::STATUS_INVOICED]]
         );
     }
 
     /**
-     * Why the invoice can't be closed as refunded, or null. $refundingTransactionId: the payment about
-     * to be fully refunded, checked before the money is sent so a refusal never follows a refund.
+     * Why the invoice can't be closed as refunded, or null. $refundingTransactionId: the payment being
+     * refunded now (fully, or partly with the rest kept by agreement), checked before any money is sent.
      */
     public function closeBlocker(Invoice $invoice, ?int $refundingTransactionId = null): ?string
     {
         if ($this->getCapturedAmount((int) $invoice->id, $refundingTransactionId) > 0) {
             return 'Other payments on this invoice are still kept, so it can\'t be closed as refunded.';
         }
-        $proofPending = Transaction::find()->where(['invoice_id' => (int) $invoice->id, 'status' => Transaction::STATUS_PENDING])
-            ->andWhere(['<>', 'gateway_id', Transaction::GATEWAY_RAZORPAY])->exists();
+        // Closing releases the periods of invoices carried into this one too; money kept on those would
+        // then be stranded while the period is billed again in full.
+        foreach ($this->withCarriedInvoiceIds((int) $invoice->id) as $sourceId) {
+            if ($sourceId !== (int) $invoice->id && $this->getCapturedAmount($sourceId) > 0) {
+                $number = Invoice::find()->select('invoice_number')->where(['id' => $sourceId])->scalar();
+                return 'Earlier invoice ' . $number . ' (carried into this one) still has payments kept on it, so this invoice can\'t be closed as refunded. Use "Refund (Still Owed)".';
+            }
+        }
 
-        return $proofPending ? 'A payment proof on this invoice is still pending. Approve or reject it first.' : null;
+        return $this->hasPendingProof((int) $invoice->id) ? 'A payment on this invoice is still awaiting review. Approve or reject it first.' : null;
+    }
+
+    /** A payment awaiting review (UPI/bank proof or an admin-entered pending payment); unpaid online orders don't count. */
+    public function hasPendingProof(int $invoiceId): bool
+    {
+        return Transaction::find()->where(['invoice_id' => $invoiceId, 'status' => Transaction::STATUS_PENDING])
+            ->andWhere(RazorpayService::notUnpaidOrderCondition())->exists();
+    }
+
+    /** The invoice plus every invoice carried into it (followed back along arrears lines). @return int[] */
+    private function withCarriedInvoiceIds(int $invoiceId): array
+    {
+        $invoiceIds = [$invoiceId];
+        for ($ids = $invoiceIds; $ids !== [];) {
+            $ids = array_map('intval', InvoiceItem::find()->select('source_invoice_id')
+                ->where(['invoice_id' => $ids, 'item_type' => InvoiceItem::TYPE_ARREARS])
+                ->andWhere(['not', ['source_invoice_id' => null]])->andWhere(['not', ['source_invoice_id' => $invoiceIds]])->column());
+            $invoiceIds = [...$invoiceIds, ...$ids];
+        }
+
+        return $invoiceIds;
     }
 
     /** Refuses a new payment on an invoice that is already settled or closed. */

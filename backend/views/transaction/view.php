@@ -147,12 +147,36 @@ $refundStep = $viaRazorpay
                 </div>
             </div>
         </div>
+        <?php if ($model->status === Transaction::STATUS_CAPTURED && $model->isUnapplied()): ?>
+            <?php
+            $payableInvoices = Invoice::find()->select('invoice_number')
+                ->where(['user_id' => (int) $model->invoice->user_id, 'status' => [Invoice::STATUS_UNPAID, Invoice::STATUS_PARTIALLY_PAID]])
+                ->andWhere(['<>', 'id', (int) $model->invoice_id])->orderBy(['id' => SORT_DESC])->column();
+            ?>
+            <div class="col-lg-4">
+                <div class="card shadow-sm mb-4 border-warning">
+                    <div class="card-header bg-warning-subtle fw-semibold"><i class="fas fa-exchange-alt me-1"></i> Unapplied payment</div>
+                    <div class="card-body">
+                        <p class="small">This payment arrived after invoice <?= Html::encode($model->invoice->invoice_number) ?> was already settled or closed, so it isn't counted anywhere. Refund it, or apply it to another invoice of this customer.</p>
+                        <?php if ($payableInvoices !== []): ?>
+                            <?= Html::beginForm(['apply', 'id' => $model->id], 'post') ?>
+                            <?= Html::dropDownList('target_invoice', null, array_combine($payableInvoices, $payableInvoices), ['class' => 'form-select mb-2', 'aria-label' => 'Invoice to apply it to']) ?>
+                            <?= Html::submitButton('Apply to invoice', ['class' => 'btn btn-warning w-100', 'data-confirm' => 'Count this payment towards the selected invoice?']) ?>
+                            <?= Html::endForm() ?>
+                        <?php else: ?>
+                            <p class="small text-body-secondary mb-0">The customer has no unpaid invoice to apply it to.</p>
+                        <?php endif; ?>
+                    </div>
+                </div>
+            </div>
+        <?php endif; ?>
         <?php if ($model->status === Transaction::STATUS_CAPTURED && $refundable > 0): ?>
             <div class="col-lg-4">
                 <div class="card shadow-sm mb-4">
                     <div class="card-header bg-light fw-semibold"><i class="fas fa-undo me-1"></i> Refund</div>
                     <div class="card-body">
                         <?= Html::beginForm(['refund', 'id' => $model->id], 'post') ?>
+                        <?= Html::hiddenInput('refunded_before', (string) $model->refunded_amount) ?>
                         <label class="form-label small" for="refund-amount">Amount to refund (₹)</label>
                         <input type="number" id="refund-amount" name="refund_amount" class="form-control mb-1" step="0.01" min="0.01" max="<?= $refundable ?>" value="<?= $refundable ?>" required>
                         <p class="small text-body-secondary"><?= Html::encode($refundStep) ?> A smaller amount is a partial refund, e.g. keeping a domain fee.</p>
@@ -168,8 +192,8 @@ $refundStep = $viaRazorpay
                                 'class' => 'btn btn-outline-danger',
                                 'name' => 'close_invoice',
                                 'value' => '1',
-                                'title' => 'Full refund only: the service is cancelled and nothing more is owed.',
-                                'data-confirm' => $refundStep . "\n\nFull refund only. The invoice is closed as Refunded: no reminders, not billed again. Renewals already granted are NOT reversed: disable the service if needed.",
+                                'title' => 'Nothing more is owed: the service is cancelled, or the rest is kept by agreement (e.g. a domain fee).',
+                                'data-confirm' => $refundStep . "\n\nThe invoice is closed as Refunded: no reminders, not billed again. Anything not refunded is kept. Renewals already granted are NOT reversed: disable the service if needed.",
                             ]) ?>
                         </div>
                         <?= Html::endForm() ?>

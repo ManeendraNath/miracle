@@ -244,6 +244,12 @@ class TransactionController extends BaseController
                 throw new \DomainException('Enter a refund amount between ₹0.01 and ₹' . number_format($remaining, 2) . '.');
             }
             $full = abs($amount - $remaining) < 0.005;
+            // The form carries what was refunded when it was shown: a second tab or a double click with the
+            // same partial amount would otherwise pass every check again and send it twice.
+            $expected = $this->request->post('refunded_before');
+            if ($expected !== null && abs((float) $expected - (float) $model->refunded_amount) >= 0.005) {
+                throw new \DomainException('This payment was refunded meanwhile (now ₹' . number_format((float) $model->refunded_amount, 2) . '). Check the amount and try again.');
+            }
 
             // Its unpaid balance already moved to a newer invoice as a fixed arrears line; refunding it here
             // would leave that line short. An unapplied payment was never part of the arrears, so it can go back.
@@ -254,10 +260,8 @@ class TransactionController extends BaseController
             }
             $paymentService = new InvoicePaymentService();
             $canReconcile = $invoice !== null && !in_array($invoice->status, InvoicePaymentService::CLOSED_STATUSES, true);
+            // Closing after a partial refund keeps the rest by agreement (e.g. a domain fee): nothing more is owed.
             if ($close) {
-                if (!$full) {
-                    throw new \DomainException('Only a full refund can close the invoice. Use "Refund (Still Owed)" for a partial refund.');
-                }
                 $blocker = $canReconcile ? $paymentService->closeBlocker($invoice, (int) $model->id) : null;
                 if ($blocker !== null) {
                     throw new \DomainException($blocker);
@@ -273,10 +277,11 @@ class TransactionController extends BaseController
                 $note = 'Refunded ₹' . number_format($amount, 2) . ($refundId !== null ? ' through Razorpay: ' . $refundId : ' (refunded in the Razorpay dashboard)') . '.';
             }
             $model->refunded_amount = round((float) $model->refunded_amount + $amount, 2);
+            $model->refunded_at = time();
             $model->status = $full ? Transaction::STATUS_REFUNDED : Transaction::STATUS_CAPTURED;
             $model->user_payment_notes = trim($model->user_payment_notes . "\n" . $note);
             $model->updated_at = time();
-            if (!$model->save(false, ['refunded_amount', 'status', 'user_payment_notes', 'updated_at'])) {
+            if (!$model->save(false, ['refunded_amount', 'refunded_at', 'status', 'user_payment_notes', 'updated_at'])) {
                 throw new \RuntimeException('Refund could not be recorded.');
             }
 
@@ -285,8 +290,8 @@ class TransactionController extends BaseController
                 (new PaymentProcessingService())->transactionChanged($model, false);
                 $invoice->refresh();
                 if ($close) {
-                    $paymentService->closeAsRefunded($invoice);
-                    $message = 'Payment refunded and the invoice closed: nothing more is owed.';
+                    $paymentService->closeAsRefunded($invoice, (int) $model->id);
+                    $message = 'Refund of ₹' . number_format($amount, 2) . ' recorded and the invoice closed: nothing more is owed.' . ($full ? '' : ' The rest of the payment is kept.');
                 } elseif ($invoice->status === Invoice::STATUS_PAID) {
                     $message = 'Refund of ₹' . number_format($amount, 2) . ' recorded. Other payments still cover the invoice, so it stays Paid.';
                 } else {
@@ -350,6 +355,53 @@ class TransactionController extends BaseController
     }
 
     /**
+     * Moves an unapplied payment (taken after its invoice was settled or closed) onto another payable
+     * invoice of the same customer, where it counts like any payment. POST target_invoice = invoice number.
+     */
+    public function actionApply(int $id)
+    {
+        $dbTransaction = Yii::$app->db->beginTransaction();
+        try {
+            // Lock order as approve and capture: transaction row, then invoice.
+            Yii::$app->db->createCommand('SELECT id FROM {{%transaction}} WHERE id = :id FOR UPDATE')->bindValue(':id', $id)->queryScalar();
+            $model = $this->findModel($id);
+            if ($model->status !== Transaction::STATUS_CAPTURED || !$model->isUnapplied()) {
+                throw new \DomainException('Only an unapplied captured payment can be applied to another invoice.');
+            }
+            $from = Invoice::findOne((int) $model->invoice_id);
+            $number = trim((string) $this->request->post('target_invoice', ''));
+            $targetId = Yii::$app->db->createCommand('SELECT id FROM {{%invoice}} WHERE invoice_number = :number AND user_id = :user FOR UPDATE')
+                ->bindValues([':number' => $number, ':user' => (int) ($from->user_id ?? 0)])->queryScalar();
+            $target = $targetId !== false ? Invoice::findOne((int) $targetId) : null;
+            if ($target === null || (int) $target->id === (int) $model->invoice_id) {
+                throw new \DomainException('Choose another invoice of the same customer.');
+            }
+            $paymentService = new InvoicePaymentService();
+            $paymentService->assertPayable($target);
+            $model->invoice_id = (int) $target->id;
+            $model->is_unapplied = 0;
+            $model->user_payment_notes = trim($model->user_payment_notes . "\nApplied to invoice " . $target->invoice_number . ' on ' . date('d M Y') . ' (paid on ' . ($from->invoice_number ?? '-') . ').');
+            $model->updated_at = time();
+            if (!$model->save(false, ['invoice_id', 'is_unapplied', 'user_payment_notes', 'updated_at'])) {
+                throw new \RuntimeException('The payment could not be moved.');
+            }
+            (new PaymentProcessingService())->transactionChanged($model, false);
+            $excess = $paymentService->getCapturedAmount((int) $target->id) - (float) $target->total_payable;
+            $dbTransaction->commit();
+            Yii::$app->session->setFlash(round($excess, 2) > 0 ? 'warning' : 'success', 'Payment applied to invoice ' . $target->invoice_number . '.'
+                . (round($excess, 2) > 0 ? ' It now overpays that invoice by ₹' . number_format($excess, 2) . ': refund the difference.' : ''));
+        } catch (\Throwable $e) {
+            if ($dbTransaction->isActive) {
+                $dbTransaction->rollBack();
+            }
+            Yii::error(['message' => 'Applying a payment failed.', 'transactionId' => $id, 'error' => $e->getMessage()], __METHOD__);
+            Yii::$app->session->setFlash('error', $e instanceof \DomainException ? $e->getMessage() : 'The payment could not be applied.');
+        }
+
+        return $this->redirect(['view', 'id' => $id]);
+    }
+
+    /**
      * Transactions are financial ledger records.
      *
      * Physical deletion is deliberately disabled.
@@ -405,6 +457,13 @@ class TransactionController extends BaseController
         $dbTransaction = Yii::$app->db->beginTransaction();
 
         try {
+            // An edit must not overwrite a payment approved or rejected meanwhile in another tab.
+            if (!$model->getIsNewRecord()) {
+                $status = Yii::$app->db->createCommand('SELECT status FROM {{%transaction}} WHERE id = :id FOR UPDATE')->bindValue(':id', (int) $model->id)->queryScalar();
+                if ($status !== Transaction::STATUS_PENDING) {
+                    throw new \DomainException('This payment was ' . strtolower((string) $status) . ' meanwhile and can no longer be edited.');
+                }
+            }
             if (!$model->save()) {
                 throw new \RuntimeException('Transaction could not be saved: ' . json_encode($model->errors, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
             }

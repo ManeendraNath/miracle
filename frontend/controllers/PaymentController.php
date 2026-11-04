@@ -99,6 +99,8 @@ final class PaymentController extends Controller
                 't.id' => $id,
                 'i.user_id' => (int) Yii::$app->user->id,
                 't.status' => Transaction::STATUS_CAPTURED,
+                // Not counted on the invoice: it is refunded or applied elsewhere by staff.
+                't.is_unapplied' => 0,
             ])
             ->one();
 

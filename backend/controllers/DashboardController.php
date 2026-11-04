@@ -61,7 +61,7 @@ class DashboardController extends BaseController
             SELECT COALESCE(SUM(i.total_payable), 0) - COALESCE((
                 SELECT SUM(t.amount - t.refunded_amount) FROM {{%transaction}} t
                 JOIN {{%invoice}} i2 ON i2.id = t.invoice_id
-                WHERE t.status = :captured AND i2.status IN (:unpaid, :partial)
+                WHERE t.status = :captured AND t.is_unapplied = 0 AND i2.status IN (:unpaid, :partial)
             ), 0)
             FROM {{%invoice}} i
             WHERE i.status IN (:unpaid, :partial)

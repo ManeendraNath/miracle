@@ -57,7 +57,7 @@ class Transaction extends base\Transaction
     /** Captured but kept off the invoice: an admin must refund or apply it. */
     public function isUnapplied(): bool
     {
-        return str_contains((string) $this->user_payment_notes, self::UNAPPLIED_NOTE_PREFIX);
+        return (bool) $this->is_unapplied;
     }
 
     public function scenarios(): array

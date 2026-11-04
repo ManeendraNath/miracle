@@ -1,5 +1,5 @@
 {
-    "migrations": 53,
+    "migrations": 54,
     "columns": {
         "admin": {
             "auth_key": {
@@ -2104,6 +2104,12 @@
                 "default": null,
                 "extra": ""
             },
+            "is_unapplied": {
+                "type": "tinyint",
+                "null": false,
+                "default": "0",
+                "extra": ""
+            },
             "paid_at": {
                 "type": "int",
                 "null": true,
@@ -2126,6 +2132,12 @@
                 "type": "decimal(10,2)",
                 "null": false,
                 "default": "0.00",
+                "extra": ""
+            },
+            "refunded_at": {
+                "type": "int",
+                "null": true,
+                "default": null,
                 "extra": ""
             },
             "status": {

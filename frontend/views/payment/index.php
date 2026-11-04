@@ -46,7 +46,9 @@ $formatter = Yii::$app->formatter;
                 'label' => 'Amount',
                 'headerOptions' => ['class' => 'text-end'],
                 'contentOptions' => ['class' => 'text-end text-nowrap'],
-                'value' => static fn(Transaction $model): string => $formatter->asCurrency($model->amount, 'INR'),
+                'format' => 'raw',
+                'value' => static fn(Transaction $model): string => $formatter->asCurrency($model->amount, 'INR')
+                    . ((float) $model->refunded_amount > 0 ? '<div class="small text-body-secondary">' . $formatter->asCurrency($model->refunded_amount, 'INR') . ' refunded</div>' : ''),
             ],
             [
                 'label' => 'Status',

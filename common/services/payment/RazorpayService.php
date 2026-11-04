@@ -189,6 +189,9 @@ final class RazorpayService
         if ($unrecorded === $amountMinor) {
             return null;
         }
+        if ($unrecorded < 0) {
+            throw new \DomainException('Razorpay shows less refunded on this payment than recorded here (a refund may have failed). Check the refund in the Razorpay dashboard before refunding more.');
+        }
         if ($unrecorded !== 0) {
             $shown = number_format(max($unrecorded, 0) / 100, 2);
             throw new \DomainException("Razorpay shows ₹{$shown} refunded on this payment that is not recorded here. Enter ₹{$shown} as the refund amount to record it first.");
@@ -391,7 +394,8 @@ final class RazorpayService
             $invoice = Invoice::findOne((int) $transaction->invoice_id);
             $unapplied = $invoice !== null && in_array($invoice->status, [Invoice::STATUS_CANCELLED, Invoice::STATUS_CARRIED_FORWARD, Invoice::STATUS_PAID, Invoice::STATUS_REFUNDED], true);
             if ($unapplied) {
-                $transaction->user_payment_notes = trim($transaction->user_payment_notes . "\n" . Transaction::UNAPPLIED_NOTE_PREFIX . " invoice was {$invoice->status} when paid. Refund in Razorpay or apply manually.");
+                $transaction->is_unapplied = 1;
+                $transaction->user_payment_notes = trim($transaction->user_payment_notes . "\n" . Transaction::UNAPPLIED_NOTE_PREFIX . " invoice was {$invoice->status} when paid. Refund it, or apply it to another invoice of this customer.");
             }
             if (!$transaction->save()) {
                 throw new \RuntimeException('Captured payment could not be saved.');

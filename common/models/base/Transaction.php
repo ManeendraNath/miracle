@@ -15,6 +15,8 @@ use Yii;
  * @property float $amount
  * @property float|null $gateway_fee
  * @property float $refunded_amount
+ * @property int|null $refunded_at
+ * @property int $is_unapplied 1: captured after the invoice was settled/closed; held for refund or applying elsewhere
  * @property string $status
  * @property string|null $user_payment_notes User remarks e.g., Sent from Rahul UPI wallet
  * @property string|null $payment_receipt_file File directory storage path path for uploaded snapshot proofs
@@ -54,9 +56,10 @@ class Transaction extends \yii\db\ActiveRecord
         return [
             [['gateway_id', 'gateway_payment_id', 'gateway_order_id', 'user_payment_notes', 'payment_receipt_file', 'raw_payload', 'paid_at', 'confirmation_emailed_at'], 'default', 'value' => null],
             [['gateway_fee', 'refunded_amount'], 'default', 'value' => 0.00],
+            [['is_unapplied'], 'default', 'value' => 0],
             [['status'], 'default', 'value' => 'Pending'],
             [['invoice_id', 'amount', 'created_at', 'updated_at'], 'required'],
-            [['invoice_id', 'gateway_id', 'paid_at', 'confirmation_emailed_at', 'created_at', 'updated_at'], 'integer'],
+            [['invoice_id', 'gateway_id', 'paid_at', 'confirmation_emailed_at', 'refunded_at', 'is_unapplied', 'created_at', 'updated_at'], 'integer'],
             [['amount', 'gateway_fee', 'refunded_amount'], 'number'],
             [['status', 'user_payment_notes', 'raw_payload'], 'string'],
             [['gateway_payment_id', 'gateway_order_id'], 'string', 'max' => 100],

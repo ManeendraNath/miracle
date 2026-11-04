@@ -44,7 +44,7 @@ if ((float) $model->refunded_amount > 0) {
     </div>
     <div class="d-flex gap-2">
         <?= Html::a('<i class="fas fa-arrow-left me-1"></i> Back', ['index'], ['class' => 'btn btn-outline-secondary']) ?>
-        <?php if ($model->status === Transaction::STATUS_CAPTURED): ?>
+        <?php if ($model->status === Transaction::STATUS_CAPTURED && !$model->isUnapplied()): ?>
             <?= Html::a('<i class="fas fa-download me-1"></i> Download Receipt', ['receipt', 'id' => $model->id], ['class' => 'btn btn-primary', 'target' => '_blank']) ?>
         <?php endif; ?>
     </div>

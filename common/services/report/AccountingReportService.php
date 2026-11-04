@@ -102,7 +102,7 @@ final class AccountingReportService
      */
     public function paymentRows(int $start, int $end): \Generator
     {
-        yield ['Paid Date', 'Invoice Number', 'Customer', 'Method', 'Reference', 'Amount', 'Gateway Fee', 'Refunded', 'Status'];
+        yield ['Paid Date', 'Invoice Number', 'Customer', 'Method', 'Reference', 'Amount', 'Gateway Fee', 'Refunded', 'Refund Date', 'Status'];
         $query = Transaction::find()
             ->with('invoice')
             ->where(['status' => [Transaction::STATUS_CAPTURED, Transaction::STATUS_REFUNDED]])
@@ -120,7 +120,8 @@ final class AccountingReportService
                 self::money($payment->amount),
                 self::money($payment->gateway_fee),
                 self::money($payment->refunded_amount),
-                $payment->status,
+                $payment->refunded_at ? date('Y-m-d', (int) $payment->refunded_at) : '',
+                $payment->isUnapplied() ? $payment->status . ' (unapplied)' : $payment->status,
             ];
         }
     }

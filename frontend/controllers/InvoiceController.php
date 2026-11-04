@@ -126,7 +126,7 @@ final class InvoiceController extends Controller
             $invoice->refresh();
             $outstanding = (new InvoicePaymentService())->getOutstanding($invoice);
             $payable = in_array($invoice->status, [Invoice::STATUS_UNPAID, Invoice::STATUS_PARTIALLY_PAID], true) && $outstanding > 0;
-            $proofPending = Transaction::find()->where(['invoice_id' => $invoice->id, 'gateway_id' => Transaction::GATEWAY_UPI_BANK, 'status' => Transaction::STATUS_PENDING])->exists();
+            $proofPending = (new InvoicePaymentService())->hasPendingProof((int) $invoice->id);
             if (!$razorpay->isEnabled() || !$payable || $proofPending) {
                 $dbTransaction->rollBack();
                 Yii::$app->response->statusCode = 422;

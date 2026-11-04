@@ -75,6 +75,27 @@ final class PaymentStatusTest extends Unit
         $this->assertSame(['2027-11-30', \common\models\Hosting::STATUS_ACTIVE], [(string) $hosting->current_expiry_date, (int) $hosting->status]);
     }
 
+    public function testCloseIsRefusedWhileAnInvoiceCarriedIntoItKeepsMoney(): void
+    {
+        $source = $this->invoice(1000.00);
+        $this->payment($source, Transaction::GATEWAY_UPI_BANK, Transaction::STATUS_CAPTURED, null, 300.00);
+        $source->updateAttributes(['status' => Invoice::STATUS_CARRIED_FORWARD]);
+        $target = $this->invoice(500.00);
+        $line = new InvoiceItem();
+        $line->setAttributes(['invoice_id' => $target->id, 'item_type' => InvoiceItem::TYPE_ARREARS, 'source_invoice_id' => $source->id, 'category' => 'Arrears', 'description' => 'Carried', 'quantity' => 1, 'unit_price' => 700, 'total_price' => 700], false);
+        $this->assertTrue($line->save(false));
+
+        $this->assertStringContainsString($source->invoice_number, (string) (new InvoicePaymentService())->closeBlocker($target));
+    }
+
+    public function testCancelIsRefusedWhileAPaymentAwaitsReview(): void
+    {
+        $invoice = $this->invoice(1000.00);
+        $this->payment($invoice, Transaction::GATEWAY_UPI_BANK, Transaction::STATUS_PENDING);
+        $this->expectExceptionMessage('awaiting review');
+        (new \common\services\billing\InvoiceCancellationService())->cancel($invoice, 'test');
+    }
+
     public function testInvoiceWithAKeptPaymentCannotBeClosedAsRefunded(): void
     {
         $invoice = $this->invoice(1000.00);

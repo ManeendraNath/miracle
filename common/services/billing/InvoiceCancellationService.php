@@ -42,6 +42,10 @@ final class InvoiceCancellationService
                 throw new \DomainException('An invoice with captured payments cannot be cancelled. Use the refund workflow instead.');
             }
 
+            if ($this->paymentService->hasPendingProof((int) $lockedInvoice->id)) {
+                throw new \DomainException('A payment on this invoice is awaiting review. Approve or reject it before cancelling.');
+            }
+
             $hasArrears = InvoiceItem::find()->where(['invoice_id' => $lockedInvoice->id, 'item_type' => InvoiceItem::TYPE_ARREARS])->exists();
 
             if ($hasArrears) {

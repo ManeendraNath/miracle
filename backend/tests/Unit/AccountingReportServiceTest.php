@@ -97,7 +97,7 @@ final class AccountingReportServiceTest extends Unit
         $rows = $this->rows((new AccountingReportService())->paymentRows(...AccountingReportService::range('2001-03-01', '2001-03-31')), 'Reference');
         $this->assertSame([$this->_prefix . 'cap', $this->_prefix . 'ref'], array_keys($rows));
         $this->assertSame(
-            ['Paid Date' => '2001-03-05', 'Invoice Number' => $this->_prefix . 'pay', 'Customer' => 'Acme Pvt Ltd', 'Method' => 'Razorpay', 'Reference' => $this->_prefix . 'cap', 'Amount' => '500.00', 'Gateway Fee' => '2.36', 'Refunded' => '0.00', 'Status' => 'Captured'],
+            ['Paid Date' => '2001-03-05', 'Invoice Number' => $this->_prefix . 'pay', 'Customer' => 'Acme Pvt Ltd', 'Method' => 'Razorpay', 'Reference' => $this->_prefix . 'cap', 'Amount' => '500.00', 'Gateway Fee' => '2.36', 'Refunded' => '0.00', 'Refund Date' => '', 'Status' => 'Captured'],
             $rows[$this->_prefix . 'cap']
         );
         $this->assertSame(['UPI / Bank Transfer', 'Refunded'], [$rows[$this->_prefix . 'ref']['Method'], $rows[$this->_prefix . 'ref']['Status']]);

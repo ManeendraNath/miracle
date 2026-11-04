@@ -193,11 +193,7 @@ final class ManualInvoiceService
 
             // A payment proof was submitted for the current total: approve or reject it first. An unpaid
             // online order is retired instead (as a coupon change does), so an abandoned checkout can't lock the invoice.
-            $proofPending = Transaction::find()
-                ->where(['invoice_id' => $lockedInvoice->id, 'status' => Transaction::STATUS_PENDING])
-                ->andWhere(RazorpayService::notUnpaidOrderCondition())
-                ->exists();
-            if ($proofPending) {
+            if ($this->paymentService->hasPendingProof((int) $lockedInvoice->id)) {
                 throw new \DomainException(
                     'This invoice has a payment proof awaiting review. Approve or reject it before editing.',
                 );

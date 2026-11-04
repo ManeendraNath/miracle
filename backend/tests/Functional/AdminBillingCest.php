@@ -78,10 +78,45 @@ final class AdminBillingCest
         $I->see('so its payments cannot be refunded here.');
     }
 
+    public function partialRefundCanCloseTheInvoiceKeepingTheRest(FunctionalTester $I): void
+    {
+        $payment = $this->transaction($I, $this->invoice($I, Invoice::STATUS_PAID), Transaction::GATEWAY_UPI_BANK, Transaction::STATUS_CAPTURED);
+        $this->post($I, 'refund', $payment, ['refund_amount' => '800', 'close_invoice' => '1', 'refunded_before' => '0.00']);
+        $I->seeRecord(Transaction::class, ['id' => $payment, 'status' => Transaction::STATUS_CAPTURED, 'refunded_amount' => 800]);
+        $I->seeRecord(Invoice::class, ['id' => Transaction::findOne($payment)->invoice_id, 'status' => Invoice::STATUS_REFUNDED]);
+
+        // The same form submitted again (second tab) is refused instead of refunding twice.
+        $this->post($I, 'refund', $payment, ['refund_amount' => '100', 'refunded_before' => '0.00']);
+        $I->see('This payment was refunded meanwhile');
+        $I->seeRecord(Transaction::class, ['id' => $payment, 'refunded_amount' => 800]);
+    }
+
+    public function customerTypedUnappliedTextStillCountsAsPaid(FunctionalTester $I): void
+    {
+        $invoiceId = $this->invoice($I, Invoice::STATUS_UNPAID);
+        $proof = $this->transaction($I, $invoiceId, Transaction::GATEWAY_UPI_BANK, Transaction::STATUS_PENDING);
+        Transaction::updateAll(['user_payment_notes' => 'UNAPPLIED: sent from HDFC', 'gateway_payment_id' => 'UTR-NOTE-' . $proof], ['id' => $proof]);
+        $this->post($I, 'approve', $proof);
+        $I->seeRecord(Invoice::class, ['id' => $invoiceId, 'status' => Invoice::STATUS_PAID]);
+    }
+
+    public function unappliedPaymentCanBeAppliedToAnotherInvoice(FunctionalTester $I): void
+    {
+        $paidId = $this->invoice($I, Invoice::STATUS_PAID);
+        $userId = (int) Invoice::findOne($paidId)->user_id;
+        $targetId = (int) $I->haveRecord(Invoice::class, ['user_id' => $userId, 'invoice_number' => 'TEST-ADM-T' . $paidId, 'client_name' => 'Billing Test', 'subtotal_amount' => 1000, 'discount_amount' => 0, 'total_payable' => 1000, 'status' => Invoice::STATUS_UNPAID, 'created_at' => time(), 'updated_at' => time()]);
+        $payment = $this->transaction($I, $paidId, Transaction::GATEWAY_RAZORPAY, Transaction::STATUS_CAPTURED);
+        Transaction::updateAll(['is_unapplied' => 1], ['id' => $payment]);
+
+        $this->post($I, 'apply', $payment, ['target_invoice' => 'TEST-ADM-T' . $paidId]);
+        $I->seeRecord(Transaction::class, ['id' => $payment, 'invoice_id' => $targetId, 'is_unapplied' => 0]);
+        $I->seeRecord(Invoice::class, ['id' => $targetId, 'status' => Invoice::STATUS_PAID]);
+    }
+
     public function unappliedPaymentOnACarriedForwardInvoiceCanBeRefunded(FunctionalTester $I): void
     {
         $payment = $this->transaction($I, $this->invoice($I, Invoice::STATUS_CARRIED_FORWARD), Transaction::GATEWAY_MANUAL, Transaction::STATUS_CAPTURED);
-        Transaction::updateAll(['user_payment_notes' => Transaction::UNAPPLIED_NOTE_PREFIX . ' invoice was Carried_Forward when paid.'], ['id' => $payment]);
+        Transaction::updateAll(['is_unapplied' => 1, 'user_payment_notes' => Transaction::UNAPPLIED_NOTE_PREFIX . ' invoice was Carried_Forward when paid.'], ['id' => $payment]);
         $this->post($I, 'refund', $payment);
         $I->seeRecord(Transaction::class, ['id' => $payment, 'status' => Transaction::STATUS_REFUNDED]);
     }

@@ -12,6 +12,8 @@ use common\services\billing\PaymentConfirmationService;
 use common\services\billing\PaymentProcessingService;
 use Yii;
 use yii\httpclient\Client;
+use yii\httpclient\StreamTransport;
+use yii\httpclient\Transport;
 
 /**
  * Razorpay Standard Checkout: order creation, signature checks and capture.
@@ -32,7 +34,8 @@ final class RazorpayService
 
     private array $_config;
 
-    public function __construct(?array $config = null)
+    /** @param Transport|null $transport tests pass a MockTransport; null = real HTTP */
+    public function __construct(?array $config = null, private ?Transport $_transport = null)
     {
         $this->_config = $config ?? (Yii::$app->params['razorpay'] ?? []);
     }
@@ -127,6 +130,110 @@ final class RazorpayService
         return $response->data;
     }
 
+    /**
+     * Fully refunds a captured payment through Razorpay and returns the refund id, or null when
+     * Razorpay shows it already fully refunded (e.g. from the dashboard), so only the record is missing.
+     */
+    public function refundPayment(string $paymentId, int $amountMinor): ?string
+    {
+        try {
+            $payment = $this->fetchPayment($paymentId);
+        } catch (\RuntimeException $e) {
+            throw new \DomainException('Could not check the payment with Razorpay, nothing was refunded: ' . $e->getMessage(), 0, $e);
+        }
+        $refunded = (int) ($payment['amount_refunded'] ?? 0);
+        if ($refunded >= $amountMinor) {
+            return null;
+        }
+        if ($refunded > 0) {
+            throw new \DomainException('This payment is already partly refunded in Razorpay. Refund the rest from the Razorpay dashboard, then use Refund again to record it.');
+        }
+        if (($payment['status'] ?? null) !== 'captured') {
+            throw new \DomainException('Razorpay shows this payment as "' . ($payment['status'] ?? 'unknown') . '", so it cannot be refunded.');
+        }
+
+        $response = $this->api()
+            ->post('payments/' . rawurlencode($paymentId) . '/refund', ['amount' => $amountMinor, 'speed' => 'normal'])
+            ->setFormat(Client::FORMAT_JSON)
+            ->send();
+        $refundId = $response->isOk ? ($response->data['id'] ?? null) : null;
+        if (!is_string($refundId) || $refundId === '') {
+            Yii::error(['message' => 'Razorpay refund failed.', 'paymentId' => $paymentId, 'status' => $response->statusCode, 'body' => $response->content], __METHOD__);
+            throw new \DomainException('Razorpay refused the refund: ' . ($response->data['error']['description'] ?? 'HTTP ' . $response->statusCode) . '.');
+        }
+
+        return $refundId;
+    }
+
+    /**
+     * Cron safety net for payments whose browser callback and webhook were both lost:
+     * asks Razorpay about orders still pending after $minAge seconds (up to $maxAge old) and records
+     * any captured payment, then fills in Razorpay's fee where it is still missing.
+     *
+     * @return array{captured: int, fees: int, errors: int}
+     */
+    public function syncPending(int $minAge = 1800, int $maxAge = 3 * 86400): array
+    {
+        $result = ['captured' => 0, 'fees' => 0, 'errors' => 0];
+        $now = time();
+        $orders = Transaction::find()
+            ->where(['gateway_id' => Transaction::GATEWAY_RAZORPAY])
+            ->andWhere(['not', ['gateway_order_id' => null]])
+            ->andWhere(['or', ['status' => Transaction::STATUS_PENDING], ['status' => Transaction::STATUS_FAILED, 'user_payment_notes' => self::SUPERSEDED_NOTE]])
+            ->andWhere(['between', 'created_at', $now - $maxAge, $now - $minAge])
+            ->all();
+        foreach ($orders as $order) {
+            try {
+                $response = $this->api()->get('orders/' . rawurlencode((string) $order->gateway_order_id) . '/payments')->send();
+                if (!$response->isOk) {
+                    throw new \RuntimeException('HTTP ' . $response->statusCode);
+                }
+                foreach ($response->data['items'] ?? [] as $payment) {
+                    if (($payment['status'] ?? null) === 'captured') {
+                        $this->capture((string) $order->gateway_order_id, (string) $payment['id'], (int) $payment['amount'], isset($payment['fee']) ? (int) $payment['fee'] : null);
+                        $result['captured']++;
+                        break;
+                    }
+                }
+            } catch (\Throwable $e) {
+                $result['errors']++;
+                Yii::error(['message' => 'Razorpay sync failed for an order.', 'orderId' => $order->gateway_order_id, 'error' => $e->getMessage()], __METHOD__);
+            }
+        }
+
+        // Payments recorded from the browser callback have no fee until the webhook or this sync adds it.
+        $unpriced = Transaction::find()
+            ->where(['gateway_id' => Transaction::GATEWAY_RAZORPAY, 'status' => [Transaction::STATUS_CAPTURED, Transaction::STATUS_REFUNDED]])
+            ->andWhere(['not', ['gateway_payment_id' => null]])
+            ->andWhere(['or', ['gateway_fee' => null], ['gateway_fee' => 0]])
+            ->andWhere(['>=', 'paid_at', $now - 30 * 86400])
+            ->orderBy(['id' => SORT_DESC])
+            ->limit(50)
+            ->all();
+        foreach ($unpriced as $payment) {
+            try {
+                $fee = $this->fetchPayment((string) $payment->gateway_payment_id)['fee'] ?? null;
+                if (is_int($fee) && $fee > 0 && $this->saveFee($payment, $fee)) {
+                    $result['fees']++;
+                }
+            } catch (\Throwable $e) {
+                $result['errors']++;
+                Yii::error(['message' => 'Razorpay fee lookup failed.', 'paymentId' => $payment->gateway_payment_id, 'error' => $e->getMessage()], __METHOD__);
+            }
+        }
+
+        return $result;
+    }
+
+    /** Razorpay's fee for the payment, GST included (what Razorpay keeps from the settlement). */
+    private function saveFee(Transaction $transaction, int $feeMinor): bool
+    {
+        $transaction->gateway_fee = $feeMinor / 100;
+        $transaction->updated_at = time();
+
+        return $transaction->save(false, ['gateway_fee', 'updated_at']);
+    }
+
     /** Creates an order and returns its id. */
     private function requestOrder(int $amountMinor, string $receipt, array $notes): string
     {
@@ -148,6 +255,7 @@ final class RazorpayService
     {
         return new Client([
             'baseUrl' => self::API_URL,
+            'transport' => $this->_transport ?? StreamTransport::class,
             'requestConfig' => [
                 'headers' => ['Authorization' => 'Basic ' . base64_encode($this->_config['keyId'] . ':' . $this->_config['keySecret'])],
                 'options' => ['timeout' => 20],
@@ -181,9 +289,10 @@ final class RazorpayService
      * @param int|null $amountMinor amount reported by Razorpay in paise; null when
      *                              the caller only has a verified checkout signature
      *                              (the order itself fixes the amount)
+     * @param int|null $feeMinor    Razorpay's fee incl. GST in paise, when known (webhook, sync)
      * @throws \DomainException when the payment does not match a pending order
      */
-    public function capture(string $orderId, string $paymentId, ?int $amountMinor = null): Transaction
+    public function capture(string $orderId, string $paymentId, ?int $amountMinor = null, ?int $feeMinor = null): Transaction
     {
         $db = Yii::$app->db;
         $dbTransaction = $db->beginTransaction();
@@ -198,6 +307,10 @@ final class RazorpayService
             if ($transaction->status === Transaction::STATUS_CAPTURED) {
                 if ($transaction->gateway_payment_id !== $paymentId) {
                     throw new \DomainException('Captured payment reference does not match.');
+                }
+                // The webhook usually arrives after the browser callback and is the first to know the fee.
+                if ($feeMinor !== null && (float) $transaction->gateway_fee <= 0) {
+                    $this->saveFee($transaction, $feeMinor);
                 }
                 $dbTransaction->commit();
                 return $transaction;
@@ -218,6 +331,9 @@ final class RazorpayService
             $transaction->status = Transaction::STATUS_CAPTURED;
             $transaction->paid_at = $now;
             $transaction->updated_at = $now;
+            if ($feeMinor !== null) {
+                $transaction->gateway_fee = $feeMinor / 100;
+            }
 
             // The customer has been charged, so the capture is always recorded. If the invoice
             // can no longer take payments (cancelled, carried forward, or already paid some other

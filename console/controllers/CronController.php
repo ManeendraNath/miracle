@@ -12,6 +12,7 @@ use common\services\billing\AutoBillingService;
 use common\services\billing\InvoiceDeliveryService;
 use common\services\billing\InvoiceReminderService;
 use common\services\billing\ServiceRenewalReminderService;
+use common\services\payment\RazorpayService;
 use common\models\WhatsappLog;
 use common\models\Invoice;
 
@@ -101,6 +102,25 @@ class CronController extends Controller
         return $this->runLocked('miracle:renewal-reminders', 'Renewal reminders', function (): string {
             $count = (new ServiceRenewalReminderService())->sendReminders();
             return sprintf('Sent %d reminder(s).', $count);
+        });
+    }
+
+    /**
+     * Records Razorpay payments whose callback and webhook were both missed, and fills in Razorpay's fees.
+     * Every 30 minutes: php yii cron/razorpay-sync
+     */
+    public function actionRazorpaySync(): int
+    {
+        return $this->runLocked('miracle:razorpay-sync', 'Razorpay sync', function (): string {
+            $razorpay = new RazorpayService();
+            if (!$razorpay->isEnabled()) {
+                return 'Razorpay is not enabled.';
+            }
+            $result = $razorpay->syncPending();
+            if ($result['errors'] > 0) {
+                throw new \RuntimeException(sprintf('Recorded %d missed payment(s) and %d fee(s); %d lookup(s) failed, see the app log.', $result['captured'], $result['fees'], $result['errors']));
+            }
+            return sprintf('Recorded %d missed payment(s) and %d fee(s).', $result['captured'], $result['fees']);
         });
     }
 

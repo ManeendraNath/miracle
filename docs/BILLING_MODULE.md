@@ -254,6 +254,12 @@ The command is protected by the configured Yii MySQL mutex using lock name:
 miracle:auto-billing
 ```
 
+Razorpay safety net, every 30 minutes (records payments whose callback and webhook were both lost, and fills in Razorpay's fee):
+
+```bash
+*/30 * * * * /usr/local/bin/php /home/rpocncwk/miracle/yii cron/razorpay-sync >> /home/rpocncwk/miracle/runtime/logs/billing-cron.log 2>&1
+```
+
 Keep `CronController::actionRunBilling()` as the operational entry point. Avoid maintaining a second production billing command unless it has a distinct documented purpose.
 
 ## 15. Logging and failures

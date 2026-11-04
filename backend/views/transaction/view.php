@@ -2,6 +2,7 @@
 
 use common\models\Invoice;
 use common\models\Transaction;
+use common\services\payment\RazorpayService;
 use yii\bootstrap5\Html;
 use yii\widgets\DetailView;
 
@@ -29,11 +30,16 @@ if ($model->status === Transaction::STATUS_PENDING && (int) $model->gateway_id !
     ]);
 }
 if ($model->status === Transaction::STATUS_CAPTURED) {
+    // Razorpay payments are refunded through Razorpay by the button itself; others are returned by hand first.
+    $viaRazorpay = (int) $model->gateway_id === Transaction::GATEWAY_RAZORPAY && (string) $model->gateway_payment_id !== '' && (new RazorpayService())->isEnabled();
+    $refundStep = $viaRazorpay
+        ? 'The full amount is refunded to the customer through Razorpay now (5-7 working days to reach them).'
+        : 'Only do this after the money has been returned (bank / UPI).';
     $this->params['actions'][] = Html::a('<i class="fas fa-undo me-1"></i> Refund &amp; Close Invoice', ['refund', 'id' => $model->id], [
         'class' => 'btn btn-outline-danger',
         'title' => 'The service is cancelled: nothing more is owed on this invoice.',
         'data' => [
-            'confirm' => "Only do this after the money has been returned (Razorpay dashboard or bank).\n\nThe invoice is closed as Refunded: no reminders, not billed again. Renewals already granted are NOT reversed: disable the service if needed.",
+            'confirm' => $refundStep . "\n\nThe invoice is closed as Refunded: no reminders, not billed again. Renewals already granted are NOT reversed: disable the service if needed.",
             'method' => 'post',
             'params' => ['close_invoice' => 1],
         ],
@@ -42,7 +48,7 @@ if ($model->status === Transaction::STATUS_CAPTURED) {
         'class' => 'btn btn-outline-secondary',
         'title' => 'E.g. a wrong payment was returned: the customer still has to pay this invoice.',
         'data' => [
-            'confirm' => "Only do this after the money has been returned (Razorpay dashboard or bank).\n\nThe invoice balance becomes due again and the customer can pay it.",
+            'confirm' => $refundStep . "\n\nThe invoice balance becomes due again and the customer can pay it.",
             'method' => 'post',
         ],
     ]);
@@ -118,6 +124,11 @@ if ($model->status === Transaction::STATUS_CAPTURED) {
                             [
                                 'attribute' => 'amount',
                                 'value' => Yii::$app->formatter->asCurrency($model->amount, 'INR'),
+                            ],
+                            [
+                                'label' => 'Razorpay Fee (incl. GST)',
+                                'value' => Yii::$app->formatter->asCurrency($model->gateway_fee, 'INR') . ' (you receive ' . Yii::$app->formatter->asCurrency((float) $model->amount - (float) $model->gateway_fee, 'INR') . ')',
+                                'visible' => (float) $model->gateway_fee > 0,
                             ],
                             [
                                 'attribute' => 'status',

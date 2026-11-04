@@ -53,6 +53,7 @@ final class RazorpayWebhookTest extends Unit
 
         $order = Transaction::findOne($this->_order->id);
         $this->assertSame([Transaction::STATUS_CAPTURED, 'pay_wh_ok'], [$order->status, $order->gateway_payment_id]);
+        $this->assertEqualsWithDelta(23.60, (float) $order->gateway_fee, 0.001, "Razorpay's fee from the webhook is stored");
         $this->assertSame(Invoice::STATUS_PAID, Invoice::findOne($this->_invoice->id)->status);
         $this->assertSame(1, (int) Transaction::find()->where(['invoice_id' => $this->_invoice->id, 'status' => Transaction::STATUS_CAPTURED])->count());
     }
@@ -87,7 +88,6 @@ final class RazorpayWebhookTest extends Unit
         Yii::$app->user->login($user);
         $controller = new \frontend\controllers\InvoiceController('invoice', Yii::$app);
         Yii::$app->controller = $controller; // redirect(['view']) resolves against it
-        Yii::$app->controller = $controller; // redirect(['view']) resolves against it
         $post = static fn(array $data) => Yii::$app->request->setBodyParams($data);
         $orderId = (string) $this->_order->gateway_order_id;
 
@@ -107,7 +107,7 @@ final class RazorpayWebhookTest extends Unit
 
     private function event(string $event, string $paymentId, int $amountMinor): string
     {
-        return json_encode(['event' => $event, 'payload' => ['payment' => ['entity' => ['id' => $paymentId, 'order_id' => $this->_order->gateway_order_id, 'amount' => $amountMinor, 'currency' => 'INR', 'status' => 'captured']]]], JSON_THROW_ON_ERROR);
+        return json_encode(['event' => $event, 'payload' => ['payment' => ['entity' => ['id' => $paymentId, 'order_id' => $this->_order->gateway_order_id, 'amount' => $amountMinor, 'fee' => 2360, 'currency' => 'INR', 'status' => 'captured']]]], JSON_THROW_ON_ERROR);
     }
 
     private function deliver(string $body, ?string $signature = null): array

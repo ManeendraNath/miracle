@@ -6,7 +6,7 @@ Customer portal and admin panel for domain, hosting and maintenance billing
 - `frontend/` — customer portal (services, invoices, payments, support)
 - `backend/` — admin panel
 - `console/` — cron jobs (`cron/run-billing`, `cron/payment-reminders`,
-  `cron/send-reminders`, `cron/whatsapp-cleanup`, `backup/run`) and migrations
+  `cron/send-reminders`, `cron/whatsapp-cleanup`, `cron/razorpay-sync`, `backup/run`) and migrations
 - `common/services/` — billing, notification and support logic
 
 Billing rules: [docs/BILLING.md](docs/BILLING.md), [docs/BILLING_MODULE.md](docs/BILLING_MODULE.md).

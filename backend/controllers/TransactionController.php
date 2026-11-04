@@ -10,6 +10,7 @@ use common\models\Transaction;
 use common\services\billing\InvoicePaymentService;
 use common\services\billing\PaymentConfirmationService;
 use common\services\billing\PaymentProcessingService;
+use common\services\payment\RazorpayService;
 use Yii;
 use yii\web\NotFoundHttpException;
 use common\services\notification\NotificationService;
@@ -205,8 +206,9 @@ class TransactionController extends BaseController
     }
 
     /**
-     * Records a refund made outside the app (Razorpay dashboard or bank) and
-     * recalculates the invoice from the remaining captured payments.
+     * Refunds a payment and recalculates the invoice from the remaining captured payments.
+     * Razorpay payments are refunded through the Razorpay API (or just recorded if the dashboard
+     * already refunded them); UPI / bank payments are recorded after the money was returned by hand.
      */
     public function actionRefund(int $id)
     {
@@ -224,9 +226,17 @@ class TransactionController extends BaseController
                 $target = $model->invoice->invoiceItem->invoice ?? null; // invoiceItem = the arrears line that carried it
                 throw new \DomainException('This invoice was carried forward' . ($target !== null ? ' into ' . $target->invoice_number : '') . ', so its payments cannot be refunded here.');
             }
+            $razorpay = new RazorpayService();
+            if ((int) $model->gateway_id === Transaction::GATEWAY_RAZORPAY && (string) $model->gateway_payment_id !== '' && $razorpay->isEnabled()) {
+                // Last step before saving, so a validation failure never sends money. If the save below
+                // still fails, pressing Refund again finds it refunded in Razorpay and just records it.
+                $refundId = $razorpay->refundPayment((string) $model->gateway_payment_id, (int) round((float) $model->amount * 100));
+                $model->user_payment_notes = trim($model->user_payment_notes . "\n" . ($refundId !== null ? 'Refunded through Razorpay: ' . $refundId : 'Already refunded in the Razorpay dashboard.'));
+                Yii::info(['message' => 'Razorpay refund.', 'transactionId' => $id, 'refundId' => $refundId], __METHOD__);
+            }
             $model->status = Transaction::STATUS_REFUNDED;
             $model->updated_at = time();
-            if (!$model->save(false, ['status', 'updated_at'])) {
+            if (!$model->save(false, ['status', 'user_payment_notes', 'updated_at'])) {
                 throw new \RuntimeException('Refund could not be recorded.');
             }
             // A closed invoice (cancelled, carried forward, refunded) is left as it is.

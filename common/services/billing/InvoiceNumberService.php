@@ -78,10 +78,14 @@ final class InvoiceNumberService
         if ($db->getTransaction() === null) {
             throw new \LogicException('Invoice numbers must be assigned inside the invoice transaction.');
         }
-        $db->createCommand('INSERT IGNORE INTO {{%invoice_sequence}} (financial_year, last_number) VALUES (:fy, 0)', [':fy' => $financialYear])->execute();
-        $last = (int) $db->createCommand('SELECT last_number FROM {{%invoice_sequence}} WHERE financial_year = :fy FOR UPDATE', [':fy' => $financialYear])->queryScalar();
-        $db->createCommand()->update('{{%invoice_sequence}}', ['last_number' => $last + 1], ['financial_year' => $financialYear])->execute();
+        // One statement takes the exclusive row lock straight away (INSERT IGNORE + SELECT FOR UPDATE took a
+        // shared lock first, so two invoices numbered at once could deadlock). LAST_INSERT_ID(x) hands back x.
+        $db->createCommand(
+            'INSERT INTO {{%invoice_sequence}} (financial_year, last_number) VALUES (:fy, LAST_INSERT_ID(1))
+             ON DUPLICATE KEY UPDATE last_number = LAST_INSERT_ID(last_number + 1)',
+            [':fy' => $financialYear]
+        )->execute();
 
-        return $last + 1;
+        return (int) $db->createCommand('SELECT LAST_INSERT_ID()')->queryScalar();
     }
 }

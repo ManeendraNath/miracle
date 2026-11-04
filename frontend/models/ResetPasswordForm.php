@@ -14,6 +14,8 @@ use yii\base\Model;
  */
 class ResetPasswordForm extends Model
 {
+    use \common\models\traits\ScalarInputTrait;
+
     public string $password = '';
     private User|null $_user = null;
     /**

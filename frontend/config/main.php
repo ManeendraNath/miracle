@@ -12,6 +12,10 @@ $params = array_merge(
 );
 
 $baseUrl = str_replace('/frontend/web', '', (new Request())->getBaseUrl());
+// Absolute links in emails (password reset, email verification) use the configured site address, never
+// the request's Host header, which a client can forge to have a reset link point at another site.
+$siteUrl = parse_url((string) ($params['frontendBaseUrl'] ?? ''));
+$hostInfo = isset($siteUrl['scheme'], $siteUrl['host']) ? $siteUrl['scheme'] . '://' . $siteUrl['host'] . (isset($siteUrl['port']) ? ':' . $siteUrl['port'] : '') : null;
 
 return [
     'id' => 'app-frontend',
@@ -78,6 +82,7 @@ return [
         // -----------------------------------------------------
         'urlManager' => [
             'baseUrl' => $baseUrl,
+            'hostInfo' => $hostInfo,
             'enablePrettyUrl' => true,
             'showScriptName' => false,
             'rules' => [

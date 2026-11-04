@@ -199,7 +199,7 @@ $assets = [
                     <div class="d-flex justify-content-between align-items-center border-bottom pb-3 mb-3">
                         <div>
                             <div class="h4 mb-0"><?= Yii::$app->formatter->asCurrency((float) $metrics['totalRevenueCollected'], 'INR') ?></div>
-                            <small class="text-muted">Lifetime revenue from paid invoices</small>
+                            <small class="text-muted">Lifetime payments received, less refunds</small>
                         </div>
                         <div class="text-right">
                             <div class="h5 mb-0 text-success">+<?= Yii::$app->formatter->asCurrency((float) $metrics['capturedRevenueToday'], 'INR') ?></div>

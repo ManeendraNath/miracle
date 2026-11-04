@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 /** @var yii\web\View $this */
 /** @var common\models\SupportTicket $ticket */
-$link = $_ENV['FRONTEND_BASE_URL'] . '/support/view?number=' . rawurlencode($ticket->ticket_number);
+$link = rtrim((string) (Yii::$app->params['frontendBaseUrl'] ?? ''), '/') . '/support/view?number=' . rawurlencode($ticket->ticket_number);
 
 echo $this->render('_card', [
     'tone' => 'info',

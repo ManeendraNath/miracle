@@ -34,6 +34,7 @@ final class SignupFormTest extends Unit
                 'username' => 'some_username',
                 'email' => 'some_email@example.com',
                 'password' => 'some_password1',
+                'verifyCode' => 'testme',
             ],
         );
 
@@ -68,6 +69,7 @@ final class SignupFormTest extends Unit
                 'username' => 'troy.becker',
                 'email' => 'nicolas.dianna@hotmail.com',
                 'password' => 'some_password1',
+                'verifyCode' => 'testme',
             ],
         );
 

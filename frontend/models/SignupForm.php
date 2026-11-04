@@ -14,21 +14,29 @@ use yii\mail\MailerInterface;
  */
 class SignupForm extends Model
 {
+    use \common\models\traits\ScalarInputTrait;
+
     public string $username = '';
     public string $email = '';
     public string $password = '';
     /** Set by signup(): false when the account was created but the verification email failed. */
     public bool $verificationEmailSent = false;
+    /** Bot check, as on the contact form: each of these forms sends an email. */
+    public string $verifyCode = '';
+
     /**
      * {@inheritdoc}
      */
     public function rules(): array
     {
         return [
+            ['verifyCode', 'captcha'],
             ['username', 'trim'],
             ['username', 'required'],
             ['username', 'unique', 'targetClass' => User::class, 'message' => 'This username has already been taken.'],
             ['username', 'string', 'min' => 2, 'max' => 255],
+            // Echoed into the verification email: no spaces or links.
+            ['username', 'match', 'pattern' => '/^[A-Za-z0-9._@-]+$/', 'message' => 'Username may only contain letters, numbers and . _ @ -'],
 
             ['email', 'trim'],
             ['email', 'required'],

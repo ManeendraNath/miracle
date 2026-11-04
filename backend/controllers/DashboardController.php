@@ -47,6 +47,11 @@ class DashboardController extends BaseController
         }
         // Managers don't see billing figures: don't compute them, so nothing reaches the page.
         $canBilling = self::canAccess(Yii::$app->user->identity, 'invoice');
+        // Money actually received (by payment date) and kept: captured payments less refunds, GST included.
+        $received = static fn(?int $from, ?int $to): float => (float) Transaction::find()
+            ->where(['status' => [Transaction::STATUS_CAPTURED, Transaction::STATUS_REFUNDED]])
+            ->andFilterWhere(['between', 'paid_at', $from, $to])
+            ->sum('amount - refunded_amount');
 
         // Amount still owed: payable invoices minus what has already been captured
         // against them (part-paid invoices would otherwise count in full).
@@ -54,7 +59,7 @@ class DashboardController extends BaseController
             ->createCommand(
                 '
             SELECT COALESCE(SUM(i.total_payable), 0) - COALESCE((
-                SELECT SUM(t.amount) FROM {{%transaction}} t
+                SELECT SUM(t.amount - t.refunded_amount) FROM {{%transaction}} t
                 JOIN {{%invoice}} i2 ON i2.id = t.invoice_id
                 WHERE t.status = :captured AND i2.status IN (:unpaid, :partial)
             ), 0)
@@ -80,18 +85,11 @@ class DashboardController extends BaseController
                 ->count(),
             'unpaidBalance' => $outstanding,
             // 2. Gateway Ledger Verification Streams
-            'totalRevenueCollected' => $canBilling
-                ? (float) Invoice::find()->andWhere(['status' => 'Paid'])->sum('total_payable')
-                : 0.0,
+            'totalRevenueCollected' => $canBilling ? $received(null, null) : 0.0,
             'pendingUpiVerifications' => Transaction::find()
                 ->andWhere(['gateway_id' => Transaction::GATEWAY_UPI_BANK, 'status' => 'Pending'])
                 ->count(),
-            'capturedRevenueToday' => $canBilling
-                ? (float) Transaction::find()
-                    ->andWhere(['status' => 'Captured'])
-                    ->andWhere(['between', 'paid_at', strtotime('today'), strtotime('tomorrow') - 1])
-                    ->sum('amount')
-                : 0.0,
+            'capturedRevenueToday' => $canBilling ? $received(strtotime('today'), strtotime('tomorrow') - 1) : 0.0,
             // 3. Inbound Agency Pipeline Tracks
             'newInboundLeadsCount' => AuditRequest::find()
                 ->andWhere(['status' => 'Pending'])
@@ -123,25 +121,15 @@ class DashboardController extends BaseController
             // Formats readable month strings labels (e.g., "Oct 2026")
             $chartLabels[] = date('M Y', $targetTime);
 
-            // 💰 Calculate Gross Settled Transactions for Current Year
-            $currentYearRevenue =
-                (float) Invoice::find()
-                    ->where(['status' => 'Paid'])
-                    ->andWhere(['between', 'created_at', $startOfMonth, $endOfMonth])
-                    ->sum('total_payable') ?:
-                0.0;
+            // Money received in the month (by payment date), less refunds
+            $currentYearRevenue = $received($startOfMonth, $endOfMonth);
             $chartDataThisYear[] = $currentYearRevenue;
 
             // 💰 Calculate Corresponding Month Revenue for Last Year (Comparison Vector)
             $startOfMonthLastYear = strtotime(date('Y-m-01 00:00:00', strtotime("first day of -$i months -1 year")));
             $endOfMonthLastYear = strtotime(date('Y-m-t 23:59:59', strtotime("first day of -$i months -1 year")));
 
-            $lastYearRevenue =
-                (float) Invoice::find()
-                    ->where(['status' => 'Paid'])
-                    ->andWhere(['between', 'created_at', $startOfMonthLastYear, $endOfMonthLastYear])
-                    ->sum('total_payable') ?:
-                0.0;
+            $lastYearRevenue = $received($startOfMonthLastYear, $endOfMonthLastYear);
             $chartDataLastYear[] = $lastYearRevenue;
         }
 

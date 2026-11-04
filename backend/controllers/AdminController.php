@@ -93,6 +93,9 @@ class AdminController extends BaseController
             if (!$this->hasOtherActiveSuperadmin($model) && !$this->isActiveSuperadmin($model)) {
                 Yii::$app->session->setFlash('error', 'At least one active Superadmin must remain.');
             } elseif ($model->save()) {
+                if ((int) $model->id === (int) Yii::$app->user->id && (string) ($this->request->post($model->formName())['password'] ?? '') !== '') {
+                    Yii::$app->user->switchIdentity($model, 0); // own password changed: stay signed in here
+                }
                 Yii::$app->session->setFlash('success', 'Administrative security profile parameters updated perfectly.');
                 return $this->redirect(['view', 'id' => $model->id]);
             }
@@ -123,6 +126,10 @@ class AdminController extends BaseController
             if ($currentPassword === '' || !$model->validatePassword($currentPassword)) {
                 $model->addError('email', 'Enter your current password to save changes.');
             } elseif ($model->save()) {
+                // A new password rotates the auth key, which signs out every other session; keep this one.
+                if ((string) ($posted['password'] ?? '') !== '') {
+                    Yii::$app->user->switchIdentity($model, 0);
+                }
                 Yii::$app->session->setFlash('success', 'Your account has been updated.');
                 return $this->refresh();
             }

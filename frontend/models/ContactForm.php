@@ -12,6 +12,8 @@ use yii\mail\MailerInterface;
  */
 class ContactForm extends Model
 {
+    use \common\models\traits\ScalarInputTrait;
+
     public string $name = '';
     public string $email = '';
     public string $subject = '';

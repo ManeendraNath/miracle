@@ -8,6 +8,8 @@ use yii\base\Model;
 
 final class PaymentProofForm extends Model
 {
+    use \common\models\traits\ScalarInputTrait;
+
     public string $gateway_payment_id = '';
     public string $user_payment_notes = '';
     public $receiptFile;

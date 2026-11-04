@@ -30,7 +30,7 @@ final class ResendVerificationEmailFormTest extends Unit
     {
         $model = new ResendVerificationEmailForm();
 
-        $model->attributes = ['email' => 'aaa@bbb.cc'];
+        $model->attributes = ['email' => 'aaa@bbb.cc', 'verifyCode' => 'testme'];
 
         // Unknown or already-verified emails validate fine (no account enumeration)
         // but no email is sent.
@@ -45,7 +45,7 @@ final class ResendVerificationEmailFormTest extends Unit
     {
         $model = new ResendVerificationEmailForm();
 
-        $model->attributes = ['email' => ''];
+        $model->attributes = ['email' => '', 'verifyCode' => 'testme'];
 
         verify($model->validate())
             ->false();
@@ -59,7 +59,7 @@ final class ResendVerificationEmailFormTest extends Unit
     {
         $model = new ResendVerificationEmailForm();
 
-        $model->attributes = ['email' => 'test2@mail.com'];
+        $model->attributes = ['email' => 'test2@mail.com', 'verifyCode' => 'testme'];
 
         // Unknown or already-verified emails validate fine (no account enumeration)
         // but no email is sent.
@@ -74,7 +74,7 @@ final class ResendVerificationEmailFormTest extends Unit
     {
         $model = new ResendVerificationEmailForm();
 
-        $model->attributes = ['email' => 'test@mail.com'];
+        $model->attributes = ['email' => 'test@mail.com', 'verifyCode' => 'testme'];
 
         verify($model->validate())
             ->true();

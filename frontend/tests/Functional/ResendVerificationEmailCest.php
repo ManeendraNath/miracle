@@ -30,6 +30,7 @@ final class ResendVerificationEmailCest
     {
         return [
             'ResendVerificationEmailForm[email]' => $email,
+            'ResendVerificationEmailForm[verifyCode]' => 'testme',
         ];
     }
 

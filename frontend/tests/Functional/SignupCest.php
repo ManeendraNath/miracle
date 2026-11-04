@@ -33,6 +33,7 @@ final class SignupCest
                 'SignupForm[username]' => 'tester',
                 'SignupForm[email]' => 'ttttt',
                 'SignupForm[password]' => 'tester_password1',
+                'SignupForm[verifyCode]' => 'testme',
             ]
         );
         $I->dontSee('Username cannot be blank.', '.invalid-feedback');
@@ -48,6 +49,7 @@ final class SignupCest
                 'SignupForm[username]' => 'tester',
                 'SignupForm[email]' => 'tester.email@example.com',
                 'SignupForm[password]' => 'tester_password1',
+                'SignupForm[verifyCode]' => 'testme',
             ],
         );
 

@@ -9,6 +9,8 @@ use yii\base\Model;
 
 final class ProfileForm extends Model
 {
+    use \common\models\traits\ScalarInputTrait;
+
     public string $username = '';
     public string $email = '';
     public string $mobile = '';

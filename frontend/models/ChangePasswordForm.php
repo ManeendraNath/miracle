@@ -9,6 +9,8 @@ use yii\base\Model;
 
 final class ChangePasswordForm extends Model
 {
+    use \common\models\traits\ScalarInputTrait;
+
     public string $currentPassword = '';
     public string $newPassword = '';
     public string $confirmPassword = '';

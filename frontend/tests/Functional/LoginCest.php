@@ -32,6 +32,22 @@ final class LoginCest
         ];
     }
 
+    public function postedArrayIsAValidationErrorNotA500(FunctionalTester $I): void
+    {
+        $I->sendAjaxPostRequest('/site/login', [
+            \Yii::$app->request->csrfParam => $I->grabAttributeFrom('meta[name=csrf-token]', 'content'),
+            'LoginForm' => ['username' => ['x'], 'password' => ['y']],
+        ]);
+        $I->seeResponseCodeIs(200);
+    }
+
+    public function passwordResetNeedsTheCaptcha(FunctionalTester $I): void
+    {
+        $I->amOnRoute('site/request-password-reset');
+        $I->submitForm('#request-password-reset-form', ['PasswordResetRequestForm[email]' => 'test@mail.com', 'PasswordResetRequestForm[verifyCode]' => 'wrong']);
+        $I->seeValidationError('The verification code is incorrect.');
+    }
+
     public function checkEmpty(FunctionalTester $I): void
     {
         $I->submitForm('#login-form', $this->formParams('', ''));

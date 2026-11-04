@@ -78,6 +78,12 @@ $labelOptions = ['class' => 'form-label fw-semibold small'];
                         ])->textInput()->label('Your Email', $labelOptions) ?>
                     </div>
 
+                    <div class="mb-4">
+                        <?= $form->field($model, 'verifyCode')->widget(\yii\captcha\Captcha::class, [
+                            'template' => '<div class="row g-2 align-items-center"><div class="col-auto">{image}</div><div class="col">{input}</div></div>',
+                        ])->label('Verification Code', $labelOptions) ?>
+                    </div>
+
                     <div class="d-grid">
                         <?= Html::submitButton(
                             'Send',

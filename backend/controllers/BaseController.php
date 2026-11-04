@@ -69,6 +69,23 @@ class BaseController extends Controller
         if (!$model->getIsNewRecord() && ($expiryChanged || $model->isAttributeChanged('user_id', false)) && !$this->guardOpenRenewal($model, $expiryChanged)) {
             return false;
         }
+        // Disabled from the edit form (as with the toggle): the service is not renewed.
+        // 0 = Inactive / Cancelled for all three; a domain can also be marked Deleted. Suspended (hosting) and
+        // Overdue (maintenance) are about non-payment: the renewal is still owed.
+        $disabled = (int) $model->status === 0 || ($model instanceof \common\models\Domains && (int) $model->status === \common\models\Domains::STATUS_DELETED);
+        if (!$model->getIsNewRecord() && $model->isAttributeChanged('status', false) && $disabled) {
+            $model->on(\yii\db\ActiveRecord::EVENT_AFTER_UPDATE, static function () use ($model): void {
+                $type = match (true) {
+                    $model instanceof \common\models\Domains => \common\models\InvoiceItem::TYPE_DOMAIN,
+                    $model instanceof \common\models\Hosting => \common\models\InvoiceItem::TYPE_HOSTING,
+                    default => \common\models\InvoiceItem::TYPE_MAINTENANCE,
+                };
+                $warning = (new \common\services\billing\RenewalReleaseService())->releaseForDisabledService($type, (int) $model->id);
+                if ($warning !== null) {
+                    Yii::$app->session->setFlash('warning', $warning);
+                }
+            });
+        }
         // Staff set the expiry: that day becomes the renewal day (renewals themselves keep it).
         if ($expiryChanged && (string) $model->current_expiry_date !== '') {
             $model->renewal_anchor_day = \common\services\billing\RenewalPeriodCalculator::anchorDayFor((string) $model->current_expiry_date);

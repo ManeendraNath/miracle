@@ -12,7 +12,7 @@ $name = Html::encode(CustomYii::getSetting('site_name') ?: 'Miracle Web Technolo
 $refund = Url::to(['/site/refund-policy']);
 $privacy = Url::to(['/site/privacy']);
 
-echo $this->render('_legal', ['title' => 'Terms & Conditions', 'updated' => '03 Nov 2026', 'body' => <<<HTML
+echo $this->render('_legal', ['title' => 'Terms & Conditions', 'updated' => '04 Nov 2026', 'body' => <<<HTML
 <p>{$name} is owned and operated by Nidhi Trivedi. These terms apply to every service bought from {$name} ("we", "us") through this website, the customer portal, an invoice or a quotation. By placing an order or paying an invoice you accept them.</p>
 
 <h2 class="h5 fw-bold mt-4">1. Services</h2>
@@ -25,8 +25,8 @@ echo $this->render('_legal', ['title' => 'Terms & Conditions', 'updated' => '03 
 <ul>
     <li>All prices are in Indian Rupees (INR). GST is not charged while we are not registered under GST; if we register, GST will be added at the applicable rate and shown on the invoice.</li>
     <li>Invoices are payable by the due date shown. Payments can be made online through Razorpay (cards, UPI, net banking, wallets) or by UPI / bank transfer with the payment proof uploaded in the portal.</li>
-    <li>We never charge your card or account automatically. Each renewal is a separate invoice that you choose to pay.</li>
-    <li>Renewal prices may change. The price shown on the renewal invoice is the one that applies.</li>
+    <li>We never charge your card or account automatically: renewals are invoiced and you choose when to pay. Renewals due around the same time share one invoice, and an overdue balance is carried onto your next invoice.</li>
+    <li>Renewal prices include a yearly increase (for maintenance, once every three years) at the rate agreed for the service. The price shown on the renewal invoice is the one that applies.</li>
     <li>Recurring services (domains, hosting, maintenance) are invoiced before each renewal. A service may be suspended if its invoice remains unpaid after the due date, and a domain that is not renewed in time may expire and be lost or carry a registry recovery fee.</li>
 </ul>
 

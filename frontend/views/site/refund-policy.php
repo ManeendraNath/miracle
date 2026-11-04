@@ -9,11 +9,11 @@ use yii\helpers\Html;
 
 $name = Html::encode(CustomYii::getSetting('site_name') ?: 'Miracle Web Technologies');
 
-echo $this->render('_legal', ['title' => 'Refund & Cancellation Policy', 'updated' => '03 Nov 2026', 'body' => <<<HTML
+echo $this->render('_legal', ['title' => 'Refund & Cancellation Policy', 'updated' => '04 Nov 2026', 'body' => <<<HTML
 <p>This policy explains how you can cancel a service bought from {$name} and when a refund is given.</p>
 
 <h2 class="h5 fw-bold mt-4">1. Cancelling a service</h2>
-<p>You can cancel any recurring service (domain, hosting or maintenance) by raising a support ticket in the customer portal or emailing us before its next renewal date. The service then stays active until the end of the period already paid for and is not renewed.</p>
+<p>You can cancel any recurring service (domain, hosting or maintenance) by raising a support ticket in the customer portal or emailing us before its next renewal date. The service then stays active until the end of the period already paid for and is not renewed: a renewal invoice for it that has not been paid yet is cancelled.</p>
 
 <h2 class="h5 fw-bold mt-4">2. Refunds</h2>
 <ul>
@@ -21,7 +21,7 @@ echo $this->render('_legal', ['title' => 'Refund & Cancellation Policy', 'update
     <li><strong>Web hosting:</strong> a full refund if you cancel within 7 days of first activation of a new hosting plan, less the fee for any domain included with it. After that, or for renewals, no refund is given for the current period.</li>
     <li><strong>Maintenance (AMC):</strong> a full refund if you cancel before any work has been done in the paid period. Once work has started, no refund is given for that period.</li>
     <li><strong>Website design and development:</strong> an advance is refundable in full if you cancel before work begins. After work begins, the amount for work already completed is kept and any balance is refunded.</li>
-    <li><strong>Duplicate or excess payments:</strong> always refunded in full, or adjusted against your next invoice if you prefer.</li>
+    <li><strong>Duplicate or excess payments:</strong> always refunded. A payment made on an invoice that was already paid can instead be applied to another unpaid invoice of yours, if you prefer.</li>
 </ul>
 
 <h2 class="h5 fw-bold mt-4">3. How refunds are paid</h2>

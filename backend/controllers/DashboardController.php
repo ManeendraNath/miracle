@@ -49,7 +49,7 @@ class DashboardController extends BaseController
         $canBilling = self::canAccess(Yii::$app->user->identity, 'invoice');
         // Money actually received (by payment date) and kept: captured payments less refunds, GST included.
         $received = static fn(?int $from, ?int $to): float => (float) Transaction::find()
-            ->where(['status' => [Transaction::STATUS_CAPTURED, Transaction::STATUS_REFUNDED]])
+            ->where(['status' => [Transaction::STATUS_CAPTURED, Transaction::STATUS_REFUNDED], 'is_unapplied' => 0])
             ->andFilterWhere(['between', 'paid_at', $from, $to])
             ->sum('amount - refunded_amount');
 

@@ -151,13 +151,13 @@ $refundStep = $viaRazorpay
             <?php
             $payableInvoices = Invoice::find()->select('invoice_number')
                 ->where(['user_id' => (int) $model->invoice->user_id, 'status' => [Invoice::STATUS_UNPAID, Invoice::STATUS_PARTIALLY_PAID]])
-                ->andWhere(['<>', 'id', (int) $model->invoice_id])->orderBy(['id' => SORT_DESC])->column();
+                ->orderBy(['id' => SORT_DESC])->column();
             ?>
             <div class="col-lg-4">
                 <div class="card shadow-sm mb-4 border-warning">
                     <div class="card-header bg-warning-subtle fw-semibold"><i class="fas fa-exchange-alt me-1"></i> Unapplied payment</div>
                     <div class="card-body">
-                        <p class="small">This payment arrived after invoice <?= Html::encode($model->invoice->invoice_number) ?> was already settled or closed, so it isn't counted anywhere. Refund it, or apply it to another invoice of this customer.</p>
+                        <p class="small">This payment arrived after invoice <?= Html::encode($model->invoice->invoice_number) ?> was already settled or closed, so it isn't counted anywhere. Refund it, or apply it to an unpaid invoice of this customer.</p>
                         <?php if ($payableInvoices !== []): ?>
                             <?= Html::beginForm(['apply', 'id' => $model->id], 'post') ?>
                             <?= Html::dropDownList('target_invoice', null, array_combine($payableInvoices, $payableInvoices), ['class' => 'form-select mb-2', 'aria-label' => 'Invoice to apply it to']) ?>
@@ -171,6 +171,11 @@ $refundStep = $viaRazorpay
             </div>
         <?php endif; ?>
         <?php if ($model->status === Transaction::STATUS_CAPTURED && $refundable > 0): ?>
+            <?php
+            $invoiceClosed = in_array($model->invoice->status ?? null, \common\services\billing\InvoicePaymentService::CLOSED_STATUSES, true);
+            $stillOwedNote = $invoiceClosed ? 'The invoice is closed and stays as it is.' : 'The refunded amount becomes due again on the invoice.';
+            $stillOwedNote = $model->isUnapplied() ? 'This payment was not counted on the invoice, so its balance does not change.' : $stillOwedNote;
+            ?>
             <div class="col-lg-4">
                 <div class="card shadow-sm mb-4">
                     <div class="card-header bg-light fw-semibold"><i class="fas fa-undo me-1"></i> Refund</div>
@@ -186,14 +191,14 @@ $refundStep = $viaRazorpay
                                 'name' => 'close_invoice',
                                 'value' => '0',
                                 'title' => 'E.g. a wrong payment was returned: the customer still has to pay this invoice.',
-                                'data-confirm' => $refundStep . "\n\nThe refunded amount becomes due again on the invoice.",
+                                'data-confirm' => $refundStep . "\n\n" . $stillOwedNote,
                             ]) ?>
                             <?= Html::submitButton('Refund &amp; Close Invoice', [
                                 'class' => 'btn btn-outline-danger',
                                 'name' => 'close_invoice',
                                 'value' => '1',
                                 'title' => 'Nothing more is owed: the service is cancelled, or the rest is kept by agreement (e.g. a domain fee).',
-                                'data-confirm' => $refundStep . "\n\nThe invoice is closed as Refunded: no reminders, not billed again. Anything not refunded is kept. Renewals already granted are NOT reversed: disable the service if needed.",
+                                'data-confirm' => $refundStep . "\n\nThe invoice is closed as Refunded: no reminders. Anything not refunded is kept. An unpaid renewal on it is billed again in full on the next run, with no credit for money kept, unless the service is disabled. Renewals already granted are NOT reversed: disable the service if needed.",
                             ]) ?>
                         </div>
                         <?= Html::endForm() ?>

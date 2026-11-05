@@ -150,9 +150,6 @@ done
 exec 9>/home/rpocncwk/.miracle-deploy.lock
 flock -n 9 || die "another deployment is running"
 [ -r "$APP/.env" ] || die "$APP/.env is missing"
-# Email links (password reset, verification, invoices) are built from it; without it they would follow
-# the request's Host header or lose their buttons.
-grep -Eq '^FRONTEND_BASE_URL=["'"'"']?https?://' "$APP/.env" || die "FRONTEND_BASE_URL (e.g. https://miraclewebtechnologies.com) is not set in $APP/.env"
 [ -r "$APP/yii" ] || die "$APP/yii is missing"
 
 cd "$REPO"
@@ -166,6 +163,10 @@ if [ -z "${DEPLOY_RESTARTED:-}" ]; then
         DEPLOY_RESTARTED=1 exec bash deploy.sh
     fi
 fi
+# Email links (password reset, verification, invoices) are built from it; without it they would follow
+# the request's Host header or lose their buttons.
+# After the restart above, so a fix to this check can't be blocked by the old one.
+grep -Eq '^[[:space:]]*(export[[:space:]]+)?FRONTEND_BASE_URL[[:space:]]*=[[:space:]]*["'"'"']?https?://[^[:space:]"'"'"'/]' "$APP/.env" || die "FRONTEND_BASE_URL (e.g. https://miraclewebtechnologies.com) is not set in $APP/.env"
 echo "Deploying commit $(git rev-parse --short HEAD)"
 TRACKED=$(git ls-files .env yii {common,frontend,backend,console}/config/params-local.php)
 [ -z "$TRACKED" ] || die "production-only files are tracked by Git: $TRACKED"
@@ -216,7 +217,13 @@ fi
 MIGRATED=1
 php yii migrate/up --interactive=0
 
-for d in frontend/runtime backend/runtime console/runtime common/runtime storage/payment-receipts frontend/web/assets backend/web/assets; do
+# Logs and customers' payment proofs: not readable by other accounts on the server.
+for d in frontend/runtime backend/runtime console/runtime common/runtime storage/payment-receipts; do
+    mkdir -p "$APP/$d"
+    chmod -R u=rwX,g=rwX,o= "$APP/$d"
+done
+# Served by the web server.
+for d in frontend/web/assets backend/web/assets; do
     mkdir -p "$APP/$d"
     chmod -R 775 "$APP/$d"
 done

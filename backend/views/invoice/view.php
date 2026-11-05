@@ -67,7 +67,11 @@ $this->params['actions'][] = Html::button('<i class="fas fa-print me-1"></i> Pri
                             <tr>
                                 <td><?= Html::encode($transaction->gateway_payment_id) ?></td>
                                 <td><?= Html::encode($transaction->status) ?></td>
-                                <td><?= Yii::$app->formatter->asCurrency($transaction->amount, 'INR') ?></td>
+                                <td>
+                                    <?= Yii::$app->formatter->asCurrency($transaction->amount, 'INR') ?>
+                                    <?= (float) $transaction->refunded_amount > 0 ? Html::tag('div', 'Refunded ' . Yii::$app->formatter->asCurrency($transaction->refunded_amount, 'INR'), ['class' => 'small text-danger']) : '' ?>
+                                    <?= (int) $transaction->is_unapplied === 1 ? Html::tag('div', 'Unapplied', ['class' => 'badge bg-warning text-dark']) : '' ?>
+                                </td>
                                 <td><?= $transaction->payment_receipt_file ? Html::a('View Receipt', ['/transaction/receipt', 'id' => $transaction->id], ['target' => '_blank', 'class' => 'btn btn-sm btn-info']) : '<span class="text-muted">N/A</span>' ?></td>
                             </tr>
     <?php endforeach; ?>

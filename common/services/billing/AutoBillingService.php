@@ -13,6 +13,9 @@ final class AutoBillingService
     /** Held for a whole run. Staff changes to a service's expiry, customer or status take it too. */
     public const LOCK_NAME = 'miracle:auto-billing';
 
+    /** What the last run could not bill (also saved on the run), or null. */
+    public ?string $problems = null;
+
     public function __construct(
         private readonly BillingCollectorService $collector = new BillingCollectorService(),
         private readonly AutoInvoiceService $invoiceService = new AutoInvoiceService()
@@ -35,6 +38,11 @@ final class AutoBillingService
                 __METHOD__
             );
             $invoices = $this->invoiceService->generatePendingInvoices((int) $run->id);
+            $parts = array_filter([
+                $this->collector->skipped > 0 ? $this->collector->skipped . ' renewal(s) skipped' : '',
+                $this->invoiceService->failedCustomers > 0 ? $this->invoiceService->failedCustomers . ' customer(s) failed' : '',
+            ]);
+            $this->problems = $parts === [] ? null : implode(', ', $parts);
             $this->markCompleted($run);
             Yii::info(
                 [
@@ -83,7 +91,7 @@ final class AutoBillingService
         $now = time();
         $run->status = BillingRun::STATUS_COMPLETED;
         $run->completed_at = $now;
-        $run->failure_message = null;
+        $run->failure_message = $this->problems;
         $run->updated_at = $now;
         if (!$run->save()) {
             throw new \RuntimeException('Unable to mark billing run as completed: ' . json_encode($run->errors, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));

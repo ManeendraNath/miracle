@@ -173,7 +173,8 @@ final class SupportController extends Controller
             Yii::$app->session->setFlash('warning', 'This support request is closed.');
             return $this->redirect(['view', 'number' => $number]);
         }
-        $message = trim((string) Yii::$app->request->post('message', ''));
+        $posted = Yii::$app->request->post('message', '');
+        $message = is_string($posted) ? trim($posted) : '';
         if ($message === '' || mb_strlen($message) > 10000) {
             Yii::$app->session->setFlash('error', 'Please enter a valid reply.');
             return $this->redirect(['view', 'number' => $number]);

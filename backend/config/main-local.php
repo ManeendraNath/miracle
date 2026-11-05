@@ -4,7 +4,8 @@ declare(strict_types=1);
 
 use yii\web\Cookie;
 
-$secureCookies = filter_var($_ENV['COOKIE_SECURE'] ?? false, FILTER_VALIDATE_BOOLEAN);
+// Explicit COOKIE_SECURE wins; otherwise on whenever the site runs on https.
+$secureCookies = filter_var($_ENV['COOKIE_SECURE'] ?? str_starts_with((string) ($_ENV['FRONTEND_BASE_URL'] ?? ''), 'https://'), FILTER_VALIDATE_BOOLEAN);
 
 $config = [
     'components' => [

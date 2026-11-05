@@ -12,6 +12,9 @@ use DateTimeImmutable;
 
 final class BillingCollectorService
 {
+    /** Renewals the last collect() could not bill. */
+    public int $skipped = 0;
+
     public function __construct(
         private readonly DomainBillingCollector $domainCollector = new DomainBillingCollector(),
         private readonly HostingBillingCollector $hostingCollector = new HostingBillingCollector(),
@@ -45,6 +48,7 @@ final class BillingCollectorService
         );
 
         $events = [];
+        $this->skipped = 0;
 
         foreach ($renewals as $renewal) {
             // One bad service (e.g. an invalid date or cycle) must not stop everyone else's billing.
@@ -54,6 +58,7 @@ final class BillingCollectorService
                     $renewal
                 );
             } catch (\Throwable $e) {
+                $this->skipped++;
                 \Yii::error(['message' => 'Renewal skipped: billing event could not be created.', 'itemType' => $renewal->itemType, 'itemId' => $renewal->itemId, 'error' => $e->getMessage()], __METHOD__);
                 try {
                     \common\services\admin\AdminAlertService::renewalSkipped($renewal->description, $e->getMessage());

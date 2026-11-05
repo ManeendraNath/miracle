@@ -70,6 +70,7 @@ class Hosting extends base\Hosting
         return ArrayHelper::merge(
             parent::rules(),
             [
+                ['current_expiry_date', 'date', 'format' => 'php:Y-m-d'],
                 [
                     ['renewal_cycle_months'],
                     'integer',

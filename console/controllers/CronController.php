@@ -39,15 +39,36 @@ class CronController extends Controller
             $this->stdout("Billing cron already running.\n", Console::FG_YELLOW);
             return ExitCode::OK;
         }
+        $problems = null;
         try {
             Yii::info('Automatic billing cron started.', __METHOD__);
-            $invoices = (new AutoBillingService())->run();
+            $billing = new AutoBillingService();
+            $invoices = $billing->run();
+            $problems = $billing->problems;
             $count = count($invoices);
             $this->stdout("Billing completed. Generated {$count} invoice(s).\n", Console::FG_GREEN);
             foreach ($invoices as $invoice) {
                 $this->stdout(sprintf("%s | Client #%d | %.2f\n", $invoice->invoice_number, $invoice->user_id, $invoice->total_payable));
             }
+        } catch (\Throwable $e) {
+            Yii::error($e, __METHOD__);
+            $this->stderr('Billing failed: ' . $e->getMessage() . PHP_EOL, Console::FG_RED);
+            return ExitCode::UNSPECIFIED_ERROR;
+        } finally {
+            $mutex->release($lockName);
+        }
+        if ($problems !== null) {
+            $this->stderr("Billing finished with failures: {$problems}. Admins were alerted; they are retried on the next run.\n", Console::FG_RED);
+        }
 
+        // Not under the billing lock: a slow mail server must not block staff saving service changes.
+        // Its own lock stops an overlapping cron sending the same invoices twice.
+        $emailLock = 'miracle:invoice-email';
+        if (!$mutex->acquire($emailLock)) {
+            $this->stdout("Invoice emails are already being sent; the rest go on the next run.\n", Console::FG_YELLOW);
+            return $problems === null ? ExitCode::OK : ExitCode::UNSPECIFIED_ERROR;
+        }
+        try {
             // Email this run's invoices plus any recent ones whose earlier send failed.
             $failed = 0;
             $deliveryService = new InvoiceDeliveryService();
@@ -63,15 +84,14 @@ class CronController extends Controller
             Yii::info(['message' => 'Automatic billing completed.', 'invoiceCount' => $count, 'emailFailures' => $failed], __METHOD__);
             if ($failed > 0) {
                 $this->stderr("Billing finished with {$failed} invoice email failure(s); they will be retried on the next run.\n", Console::FG_RED);
-                return ExitCode::UNSPECIFIED_ERROR;
             }
-            return ExitCode::OK;
+            return $failed > 0 || $problems !== null ? ExitCode::UNSPECIFIED_ERROR : ExitCode::OK;
         } catch (\Throwable $e) {
             Yii::error($e, __METHOD__);
             $this->stderr('Billing failed: ' . $e->getMessage() . PHP_EOL, Console::FG_RED);
             return ExitCode::UNSPECIFIED_ERROR;
         } finally {
-            $mutex->release($lockName);
+            $mutex->release($emailLock);
         }
     }
 

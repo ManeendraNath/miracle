@@ -135,8 +135,8 @@ final class ServiceRenewalReminderService
         $key = 'staff_' . $threshold . '@' . $expiryDate;
         try {
             if (!$this->logged($type, $serviceId, $key)) {
-                $this->log($type, $serviceId, $userId, $key, $daysBefore);
                 AdminAlertService::serviceExpiring($serviceName, $expiryDate);
+                $this->log($type, $serviceId, $userId, $key, $daysBefore);
             }
         } catch (\Throwable $e) {
             Yii::error(['message' => 'Staff expiry alert failed.', 'serviceType' => $type, 'serviceId' => $serviceId, 'error' => $e->getMessage()], __METHOD__);

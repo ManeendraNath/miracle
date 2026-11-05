@@ -70,6 +70,15 @@ final class ResendVerificationEmailFormTest extends Unit
         $this->tester->dontSeeEmailIsSent();
     }
 
+    public function testAccountStaffSetInactiveCannotReactivateItself(): void
+    {
+        \common\models\User::updateAll(['verification_token' => null], ['email' => 'test@mail.com']);
+        $model = new ResendVerificationEmailForm();
+        $model->attributes = ['email' => 'test@mail.com', 'verifyCode' => 'testme'];
+
+        verify($model->sendEmail(Yii::$app->mailer, Yii::$app->params['supportEmail'], Yii::$app->name))->false();
+    }
+
     public function testSuccessfullyResend(): void
     {
         $model = new ResendVerificationEmailForm();

@@ -151,6 +151,10 @@ final class ManualInvoiceService
             throw new \DomainException('Only unpaid invoices can be modified.');
         }
 
+        if (empty($invoice->due_date)) {
+            throw new \DomainException('Invoice due date is required.');
+        }
+
         $subtotal = $this->calculateSubtotal($items);
 
         if ($subtotal <= 0) {

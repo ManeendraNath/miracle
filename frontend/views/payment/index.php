@@ -79,7 +79,7 @@ $formatter = Yii::$app->formatter;
             [
                 'format' => 'raw',
                 'contentOptions' => ['class' => 'text-end text-nowrap pe-3'],
-                'value' => static fn(Transaction $model): string => ($model->status === Transaction::STATUS_CAPTURED
+                'value' => static fn(Transaction $model): string => ($model->status === Transaction::STATUS_CAPTURED && !$model->isUnapplied()
                         ? Html::a('<i class="fas fa-download"></i>', ['receipt', 'id' => $model->id], ['class' => 'btn btn-sm btn-outline-secondary me-1', 'target' => '_blank', 'title' => 'Receipt', 'aria-label' => 'Receipt'])
                         : '')
                     . Html::a('View', ['view', 'id' => $model->id], ['class' => 'btn btn-sm btn-outline-primary']),

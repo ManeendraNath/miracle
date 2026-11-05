@@ -285,13 +285,20 @@ class TransactionController extends BaseController
                 throw new \RuntimeException('Refund could not be recorded.');
             }
 
+            $flash = 'success';
             $message = 'Refund of ₹' . number_format($amount, 2) . ' recorded. The invoice was ' . (Invoice::getStatuses()[$invoice->status ?? ''] ?? $invoice->status ?? '-') . ', so it is unchanged.';
             if ($canReconcile) {
                 (new PaymentProcessingService())->transactionChanged($model, false);
                 $invoice->refresh();
                 if ($close) {
-                    $paymentService->closeAsRefunded($invoice, (int) $model->id);
+                    $released = $paymentService->closeAsRefunded($invoice, (int) $model->id);
                     $message = 'Refund of ₹' . number_format($amount, 2) . ' recorded and the invoice closed: nothing more is owed.' . ($full ? '' : ' The rest of the payment is kept.');
+                    if ($released > 0) {
+                        $flash = 'warning';
+                        $message .= ' Its unpaid renewal is billed again in full on the next run' . ($full ? '' : ', with no credit for the money kept,') . ' unless the service is disabled.';
+                    }
+                } elseif ($model->isUnapplied()) {
+                    $message = 'Refund of ₹' . number_format($amount, 2) . ' recorded. This payment was not counted on the invoice, so its balance is unchanged.';
                 } elseif ($invoice->status === Invoice::STATUS_PAID) {
                     $message = 'Refund of ₹' . number_format($amount, 2) . ' recorded. Other payments still cover the invoice, so it stays Paid.';
                 } else {
@@ -299,7 +306,7 @@ class TransactionController extends BaseController
                 }
             }
             $dbTransaction->commit();
-            Yii::$app->session->setFlash('success', $message);
+            Yii::$app->session->setFlash($flash, $message);
         } catch (\Throwable $e) {
             if ($dbTransaction->isActive) {
                 $dbTransaction->rollBack();
@@ -355,8 +362,8 @@ class TransactionController extends BaseController
     }
 
     /**
-     * Moves an unapplied payment (taken after its invoice was settled or closed) onto another payable
-     * invoice of the same customer, where it counts like any payment. POST target_invoice = invoice number.
+     * Counts an unapplied payment (taken after its invoice was settled or closed) on a payable invoice of the
+     * same customer, which may be its own once that is payable again. POST target_invoice = invoice number.
      */
     public function actionApply(int $id)
     {
@@ -373,8 +380,8 @@ class TransactionController extends BaseController
             $targetId = Yii::$app->db->createCommand('SELECT id FROM {{%invoice}} WHERE invoice_number = :number AND user_id = :user FOR UPDATE')
                 ->bindValues([':number' => $number, ':user' => (int) ($from->user_id ?? 0)])->queryScalar();
             $target = $targetId !== false ? Invoice::findOne((int) $targetId) : null;
-            if ($target === null || (int) $target->id === (int) $model->invoice_id) {
-                throw new \DomainException('Choose another invoice of the same customer.');
+            if ($target === null) {
+                throw new \DomainException('Choose an invoice of the same customer.');
             }
             $paymentService = new InvoicePaymentService();
             $paymentService->assertPayable($target);
@@ -396,6 +403,16 @@ class TransactionController extends BaseController
             }
             Yii::error(['message' => 'Applying a payment failed.', 'transactionId' => $id, 'error' => $e->getMessage()], __METHOD__);
             Yii::$app->session->setFlash('error', $e instanceof \DomainException ? $e->getMessage() : 'The payment could not be applied.');
+            return $this->redirect(['view', 'id' => $id]);
+        }
+
+        // Saved: the customer was told only that staff would refund or apply it.
+        try {
+            (new PaymentConfirmationService())->send($model);
+            (new NotificationService())->create((int) $target->user_id, 'payment', 'Payment Confirmed', 'Your payment for invoice ' . $target->invoice_number . ' has been confirmed.', '/invoice/view?number=' . rawurlencode($target->invoice_number));
+        } catch (\Throwable $e) {
+            Yii::error(['message' => 'Payment was applied but the confirmation failed.', 'transactionId' => $id, 'error' => $e->getMessage()], __METHOD__);
+            Yii::$app->session->setFlash('warning', 'Payment applied to invoice ' . $target->invoice_number . ', but the confirmation email could not be sent.');
         }
 
         return $this->redirect(['view', 'id' => $id]);

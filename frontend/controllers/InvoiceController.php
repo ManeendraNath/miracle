@@ -93,7 +93,7 @@ final class InvoiceController extends Controller
     public function actionView(string $number)
     {
         $model = $this->findOwnedInvoice($number);
-        $pendingPayment = Transaction::find()->where(['invoice_id' => $model->id, 'gateway_id' => Transaction::GATEWAY_UPI_BANK, 'status' => Transaction::STATUS_PENDING])->orderBy(['id' => SORT_DESC])->one();
+        $pendingPayment = Transaction::find()->where(['invoice_id' => $model->id, 'status' => Transaction::STATUS_PENDING])->andWhere(\common\services\payment\RazorpayService::notUnpaidOrderCondition())->orderBy(['id' => SORT_DESC])->one();
         $paymentService = new InvoicePaymentService();
         return $this->render(
             'view',
@@ -252,7 +252,7 @@ final class InvoiceController extends Controller
             Yii::$app->session->setFlash('warning', 'This invoice has no outstanding balance.');
             return $this->redirect(['view', 'number' => $invoice->invoice_number]);
         }
-        $pendingExists = Transaction::find()->where(['invoice_id' => $invoice->id, 'gateway_id' => Transaction::GATEWAY_UPI_BANK, 'status' => Transaction::STATUS_PENDING])->exists();
+        $pendingExists = (new InvoicePaymentService())->hasPendingProof((int) $invoice->id);
         if ($pendingExists) {
             Yii::$app->session->setFlash('warning', 'A payment proof for this invoice is already awaiting verification.');
             return $this->redirect(['view', 'number' => $invoice->invoice_number]);
@@ -297,7 +297,7 @@ final class InvoiceController extends Controller
         try {
             // Lock the invoice so two concurrent submissions can't both pass the pending check.
             Yii::$app->db->createCommand('SELECT id FROM {{%invoice}} WHERE id = :id FOR UPDATE', [':id' => (int) $invoice->id])->queryScalar();
-            $pendingExists = Transaction::find()->where(['invoice_id' => $invoice->id, 'gateway_id' => Transaction::GATEWAY_UPI_BANK, 'status' => Transaction::STATUS_PENDING])->exists();
+            $pendingExists = (new InvoicePaymentService())->hasPendingProof((int) $invoice->id);
             if ($pendingExists) {
                 $dbTransaction->rollBack();
                 Yii::$app->session->setFlash('warning', 'A payment proof for this invoice is already awaiting verification.');

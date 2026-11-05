@@ -103,6 +103,18 @@ final class AccountingReportServiceTest extends Unit
         $this->assertSame(['UPI / Bank Transfer', 'Refunded'], [$rows[$this->_prefix . 'ref']['Method'], $rows[$this->_prefix . 'ref']['Status']]);
     }
 
+    public function testARefundOfAnEarlierPaymentAppearsInTheRefundMonth(): void
+    {
+        $invoice = $this->invoice('late', '2001-05-01 10:00:00');
+        $this->payment($invoice, 'may', Transaction::STATUS_REFUNDED, '2001-05-20 10:00:00', Transaction::GATEWAY_UPI_BANK);
+        Transaction::updateAll(['refunded_at' => strtotime('2001-06-03 10:00:00')], ['gateway_payment_id' => $this->_prefix . 'may']);
+
+        foreach ([['2001-05-01', '2001-05-31', 1], ['2001-06-01', '2001-06-30', 1], ['2001-07-01', '2001-07-31', 0]] as [$from, $to, $expected]) {
+            $rows = $this->rows((new AccountingReportService())->paymentRows(...AccountingReportService::range($from, $to)), 'Reference');
+            $this->assertCount($expected, array_intersect_key($rows, [$this->_prefix . 'may' => 1]), $from);
+        }
+    }
+
     public function testCsvHasBomAndGuardsFormulas(): void
     {
         $csv = implode('', iterator_to_array((new AccountingReportService())->csv([['Name', 'Amount'], ['@SUM(A1)', '-5.00'], ['+91 x', 'plain']]), false));

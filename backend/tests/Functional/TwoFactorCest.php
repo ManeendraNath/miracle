@@ -134,12 +134,20 @@ final class TwoFactorCest
         $I->amOnRoute('admin/account');
         $I->click('Set up two-factor sign-in');
         $secret = str_replace(' ', '', $I->grabTextFrom('code.h5'));
+        $I->fillField('#two-factor-current-password', 'wrong-password');
+        $step = intdiv(time(), 30);
+        $I->fillField('code', Totp::code($secret, $step));
+        $I->click('Confirm and turn on');
+        $I->see('Enter your current password to turn on two-factor sign-in.');
+        $I->seeRecord(Admin::class, ['id' => $id, 'totp_secret' => null]);
+
+        $I->fillField('#two-factor-current-password', self::PASSWORD);
         $I->fillField('code', '000000');
         $I->click('Confirm and turn on');
         $I->see('That code is not valid.');
         $I->seeRecord(Admin::class, ['id' => $id, 'totp_secret' => null]);
 
-        $step = intdiv(time(), 30);
+        $I->fillField('#two-factor-current-password', self::PASSWORD);
         $I->fillField('code', Totp::code($secret, $step));
         $I->click('Confirm and turn on');
         $I->see('Two-factor sign-in is on.');

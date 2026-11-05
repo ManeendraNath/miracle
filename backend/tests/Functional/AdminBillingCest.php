@@ -183,6 +183,16 @@ final class AdminBillingCest
             'Hosting[current_expiry_date]' => '2026-12-05',
         ]);
         $I->seeRecord(\common\models\Hosting::class, ['id' => $hostingId, 'current_expiry_date' => '2026-12-05']);
+
+        // The customer can't: only the one who owes the carried balance can pay it.
+        $other = (int) Invoice::findOne($this->invoice($I, Invoice::STATUS_UNPAID))->user_id;
+        $I->amOnRoute('hosting/update', ['id' => $hostingId]);
+        $I->sendAjaxPostRequest('/hosting/update?id=' . $hostingId, [
+            Yii::$app->request->csrfParam => $I->grabAttributeFrom('meta[name=csrf-token]', 'content'),
+            'Hosting[user_id]' => $other,
+        ]);
+        $I->see('It must be paid before the customer can change.');
+        $I->seeRecord(\common\models\Hosting::class, ['id' => $hostingId, 'user_id' => $userId]);
     }
 
     public function expiryCannotChangeWhileABillingRunIsInProgress(FunctionalTester $I): void

@@ -112,6 +112,12 @@ final class AdminAlertService extends AdminNotificationService
         self::send($title, $message, 'billing', '/renewal-monitoring/index', true);
     }
 
+    public static function renewalLeftOpen(string $service, string $staff, string $warning): void
+    {
+        $message = "Service: {$service}\n" . "Disabled by: {$staff}\n" . $warning;
+        self::send('Disabled Service Still Billed', $message, 'billing', '/invoice/index');
+    }
+
     public static function billingDetailsChanged(int $profileId, string $customer, string $legalName, bool $created): void
     {
         $title = $created ? 'Customer Added Billing Details' : 'Customer Updated Billing Details';

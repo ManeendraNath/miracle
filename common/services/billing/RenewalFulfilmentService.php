@@ -65,6 +65,21 @@ final class RenewalFulfilmentService
     }
 
     /**
+     * Fulfilled renewals of a service whose paying invoice was closed as refunded with no money kept: they
+     * no longer count as paid periods or towards the price.
+     *
+     * @return int[]
+     */
+    public function refundedEventIds(int $itemType, int $itemId): array
+    {
+        return array_map('intval', ServiceRenewalHistory::find()->alias('h')->select('h.billing_event_id')
+            ->innerJoin(['i' => Invoice::tableName()], 'i.id = h.invoice_id')
+            ->where(['h.item_type' => $this->historyType($itemType), 'h.item_id' => $itemId, 'i.status' => Invoice::STATUS_REFUNDED])
+            ->andWhere(['not exists', Transaction::find()->select('id')->where('invoice_id = i.id')->andWhere(['status' => Transaction::STATUS_CAPTURED, 'is_unapplied' => 0])])
+            ->column());
+    }
+
+    /**
      * The paid invoice plus every invoice whose balance was carried
      * forward into it (recursively), since their BillingEvents keep
      * pointing at the original source invoice.

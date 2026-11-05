@@ -33,6 +33,7 @@ final class RenewalPriceCalculator
 
         $fulfilled = BillingEvent::find()
             ->where(['item_type' => $itemType, 'item_id' => $itemId, 'status' => BillingEvent::STATUS_FULFILLED])
+            ->andWhere(['not in', 'id', (new RenewalFulfilmentService())->refundedEventIds($itemType, $itemId)])
             ->orderBy(['period_end' => SORT_DESC, 'id' => SORT_DESC])
             ->all();
         // Renewals in a row on the current cycle, newest first; an older cycle doesn't count.

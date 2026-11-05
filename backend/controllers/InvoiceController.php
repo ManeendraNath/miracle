@@ -64,8 +64,8 @@ class InvoiceController extends BaseController
         if ($this->request->isPost) {
             $post = $this->request->post();
             $model->load($post);
-            $items = $this->loadManualItems($post);
             try {
+                $items = $this->loadManualItems($post);
                 $invoice = (new ManualInvoiceService())->create($model, $items);
                 $client = User::findOne((int) $model->user_id);
                 if ($client !== null) {
@@ -90,9 +90,14 @@ class InvoiceController extends BaseController
     {
         $rows = $post['ManualInvoiceItemForm'] ?? [];
         $items = [];
-        foreach ($rows as $row) {
+        foreach (is_array($rows) ? $rows : [] as $row) {
             $item = new ManualInvoiceItemForm();
-            $item->load([$item->formName() => $row]);
+            try {
+                // Typed properties: a blank or non-numeric price or quantity can't be assigned.
+                $item->load([$item->formName() => is_array($row) ? $row : []]);
+            } catch (\TypeError | \ErrorException) {
+                throw new \DomainException('Each invoice item needs a valid whole-number quantity and a numeric price.');
+            }
             $items[] = $item;
         }
         return $items;
@@ -195,8 +200,8 @@ class InvoiceController extends BaseController
             foreach ($immutableAttributes as $attribute => $value) {
                 $model->$attribute = $value;
             }
-            $items = $this->loadManualItems($post);
             try {
+                $items = $this->loadManualItems($post);
                 (new ManualInvoiceService())->update($model, $items);
                 Yii::$app->session->setFlash('success', 'Invoice updated successfully.');
                 return $this->redirect(['view', 'number' => $model->invoice_number]);

@@ -11,11 +11,12 @@ use common\models\InvoiceItem;
 /**
  * A service staff disabled is not renewed (refund policy): its renewal not invoiced yet is released, and an
  * unpaid renewal invoice holding only this service is cancelled. An invoice that also bills other services,
- * or already has a payment, is left for staff (the returned warning names it).
+ * already has a payment, or now holds the renewal as a carried-forward balance is left for staff, as is every
+ * invoice when the staff member may not cancel invoices (the returned warning names them).
  */
 final class RenewalReleaseService
 {
-    public function releaseForDisabledService(int $itemType, int $itemId): ?string
+    public function releaseForDisabledService(int $itemType, int $itemId, bool $cancelInvoices = true): ?string
     {
         BillingEvent::updateAll(
             ['status' => BillingEvent::STATUS_CANCELLED, 'notes' => 'Service disabled by staff.', 'updated_at' => time()],
@@ -26,10 +27,17 @@ final class RenewalReleaseService
             ->where(['item_type' => $itemType, 'item_id' => $itemId, 'status' => BillingEvent::STATUS_INVOICED])
             ->column();
         $leftOpen = [];
-        foreach (Invoice::find()->where(['id' => $invoiceIds, 'status' => [Invoice::STATUS_UNPAID, Invoice::STATUS_PARTIALLY_PAID]])->all() as $invoice) {
+        foreach (Invoice::find()->where(['id' => $invoiceIds, 'status' => [Invoice::STATUS_UNPAID, Invoice::STATUS_PARTIALLY_PAID, Invoice::STATUS_CARRIED_FORWARD]])->all() as $invoice) {
+            if ($invoice->status === Invoice::STATUS_CARRIED_FORWARD) {
+                $newer = (new InvoicePaymentService())->openInvoiceCarrying((int) $invoice->id);
+                if ($newer !== null) {
+                    $leftOpen[] = $newer->invoice_number;
+                }
+                continue;
+            }
             $otherLines = InvoiceItem::find()->where(['invoice_id' => $invoice->id])
                 ->andWhere(['not', ['item_type' => $itemType, 'item_id' => $itemId]])->exists();
-            if ($otherLines) {
+            if ($otherLines || !$cancelInvoices) {
                 $leftOpen[] = $invoice->invoice_number;
                 continue;
             }
@@ -40,6 +48,6 @@ final class RenewalReleaseService
             }
         }
 
-        return $leftOpen === [] ? null : 'Renewal invoice ' . implode(', ', $leftOpen) . ' still bills this service (it also covers other items or has a payment). Edit, cancel or refund it if the customer should not pay for it.';
+        return $leftOpen === [] ? null : 'Renewal invoice ' . implode(', ', array_unique($leftOpen)) . ' still bills this service (it covers other items or a carried-forward balance, has a payment, or needs an Admin to cancel it). Cancel or refund what the customer should not pay.';
     }
 }

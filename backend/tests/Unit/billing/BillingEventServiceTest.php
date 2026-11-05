@@ -63,6 +63,28 @@ final class BillingEventServiceTest extends Unit
         $this->assertSame([1800.00, 0], [(float) $event->amount, (int) $event->is_manual_amount]);
     }
 
+    public function testAPeriodOverlappingARenewalAwaitingPaymentIsNotBilledAgain(): void
+    {
+        $suffix = bin2hex(random_bytes(4));
+        $user = new User(['username' => 'overlap-' . $suffix, 'email' => 'overlap-' . $suffix . '@example.test', 'status' => User::getStatusActive(), 'created_at' => time(), 'updated_at' => time()]);
+        $user->password = 'OverlapTestPassword';
+        $this->assertTrue($user->save(), json_encode($user->errors));
+        $service = new BillingEventService();
+        $itemId = random_int(100000, 999999);
+        $renewal = static fn(string $expiry): BillableRenewal => new BillableRenewal((int) $user->id, InvoiceItem::TYPE_HOSTING, $itemId, 'Hosting', $expiry, 1000.00, 12, 0.0);
+
+        $first = $service->create($this->billingRun(), $renewal('2026-12-31'));
+        $first->status = \common\models\BillingEvent::STATUS_INVOICED;
+        $this->assertTrue($first->save(false));
+
+        // Staff moved the expiry after its balance was carried forward.
+        $this->assertSame((int) $first->id, (int) $service->create($this->billingRun(), $renewal('2027-01-31'))->id);
+        $this->assertSame((int) $first->id, (int) $service->create($this->billingRun(), $renewal('2026-11-30'))->id);
+
+        // Past the end of the billed period there is no overlap.
+        $this->assertNotSame((int) $first->id, (int) $service->create($this->billingRun(), $renewal('2027-12-31'))->id);
+    }
+
     public function testPriceFollowsTheCycleAndRisesOncePerYear(): void
     {
         $prices = new \common\services\billing\RenewalPriceCalculator();

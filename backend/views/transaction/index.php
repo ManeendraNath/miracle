@@ -76,7 +76,9 @@ GridViewHelper::register($this);
                         'attribute' => 'amount',
                         'format' => 'raw',
                         'value' => static function (Transaction $model): string {
-                            return Html::tag('span', Yii::$app->formatter->asCurrency($model->amount, 'INR'), ['class' => 'fw-bold text-success']);
+                            return Html::tag('span', Yii::$app->formatter->asCurrency($model->amount, 'INR'), ['class' => 'fw-bold text-success'])
+                                . ((float) $model->refunded_amount > 0 ? Html::tag('div', 'Refunded ' . Yii::$app->formatter->asCurrency($model->refunded_amount, 'INR'), ['class' => 'small text-danger']) : '')
+                                . ($model->isUnapplied() ? Html::tag('div', 'Unapplied', ['class' => 'badge bg-warning text-dark']) : '');
                         },
                     ],
                     [

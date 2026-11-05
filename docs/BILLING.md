@@ -94,6 +94,9 @@ them, and they do not block arrears carry-forward or UPI proof upload.
 
 Domains, hosting, AMC, coupons and customers have no delete action. Use Enable/Disable
 (`toggle-status`): invoices, billing events and renewal history keep pointing at the record.
+Disabling a service cancels its unbilled renewal and its unpaid renewal-only invoice. Invoices that also cover
+other items or a carried-forward balance, or have a payment, stay open and staff are warned. Below Admin nothing
+is cancelled on an invoice: it is reported to an Admin instead.
 Disabled services are skipped by billing, reminders and renewal monitoring; suspended
 customers cannot log in.
 

@@ -17,6 +17,9 @@ use Yii;
 
 final class AutoInvoiceService
 {
+    /** Customers the last generatePendingInvoices() could not invoice. */
+    public int $failedCustomers = 0;
+
     public function __construct(
         private readonly TaxCalculator $taxCalculator = new TaxCalculator(),
         private readonly InvoiceNumberService $numberService = new InvoiceNumberService(),
@@ -42,6 +45,7 @@ final class AutoInvoiceService
             ->column();
 
         $invoices = [];
+        $this->failedCustomers = 0;
 
         foreach ($userIds as $userId) {
             // One customer's bad data (e.g. missing billing profile) must not block
@@ -50,6 +54,7 @@ final class AutoInvoiceService
             try {
                 $invoice = $this->generateForUser($runId, (int) $userId);
             } catch (\Throwable $exception) {
+                $this->failedCustomers++;
                 Yii::error(
                     [
                         'message' => 'Automatic invoice failed for user.',

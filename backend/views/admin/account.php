@@ -67,6 +67,7 @@ $this->params['breadcrumbs'][] = $this->title;
             <p class="small"><?= Html::a('Open in an authenticator app on this device', $setupUri) ?></p>
             <?= Html::beginForm(['account'], 'post', ['class' => 'form-inline']) ?>
                 <?= Html::hiddenInput('two_factor', 'enable') ?>
+                <?= Html::passwordInput('current_password', '', ['id' => 'two-factor-current-password', 'class' => 'form-control mr-2', 'placeholder' => 'Current password', 'autocomplete' => 'current-password', 'required' => true, 'aria-label' => 'Current password']) ?>
                 <?= Html::textInput('code', '', ['class' => 'form-control mr-2', 'placeholder' => '6-digit code', 'inputmode' => 'numeric', 'autocomplete' => 'one-time-code', 'maxlength' => 7, 'required' => true, 'autofocus' => true, 'aria-label' => 'Authenticator code']) ?>
                 <?= Html::submitButton('Confirm and turn on', ['class' => 'btn btn-primary mr-2']) ?>
             <?= Html::endForm() ?>

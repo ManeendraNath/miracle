@@ -40,9 +40,8 @@ trait ToggleStatusTrait
         if ($model->save(false, [$attribute, 'updated_at'])) {
             Yii::$app->session->setFlash('success', $enable ? 'Record enabled.' : 'Record disabled.');
             // A disabled service is not renewed: release its renewal (see RenewalReleaseService).
-            $warning = !$enable && $type !== null ? (new \common\services\billing\RenewalReleaseService())->releaseForDisabledService($type, (int) $model->id) : null;
-            if ($warning !== null) {
-                Yii::$app->session->setFlash('warning', $warning);
+            if (!$enable && ($model instanceof \common\models\Domains || $model instanceof \common\models\Hosting || $model instanceof \common\models\Maintenance)) {
+                $this->releaseDisabledService($model);
             }
         } else {
             Yii::$app->session->setFlash('error', 'Status could not be changed.');

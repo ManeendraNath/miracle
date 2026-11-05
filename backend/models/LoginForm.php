@@ -11,6 +11,8 @@ use yii\base\Model;
  */
 class LoginForm extends Model
 {
+    use \common\models\traits\ScalarInputTrait;
+
     public $username;
     public $password;
     public $rememberMe = true;

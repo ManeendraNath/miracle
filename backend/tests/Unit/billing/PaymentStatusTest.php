@@ -164,6 +164,85 @@ final class PaymentStatusTest extends Unit
         $this->assertSame(BillingEvent::STATUS_CANCELLED, BillingEvent::findOne($olderEvent->id)->status, 'and so is the carried-forward one');
     }
 
+    public function testDisablingAServiceReportsAndReleasesItsRenewals(): void
+    {
+        $release = new \common\services\billing\RenewalReleaseService();
+
+        // Carried onto a newer invoice: that one is named, and nothing is cancelled.
+        $older = $this->invoice(400.00);
+        $event = $this->billingEvent($older);
+        $newer = $this->invoice(1000.00);
+        $arrears = new InvoiceItem();
+        $arrears->setAttributes(['invoice_id' => $newer->id, 'item_type' => InvoiceItem::TYPE_ARREARS, 'source_invoice_id' => $older->id, 'category' => 'Previous Outstanding', 'description' => 'Arrears', 'quantity' => 1, 'unit_price' => 400, 'total_price' => 400], false);
+        $this->assertTrue($arrears->save(false));
+        $older->status = Invoice::STATUS_CARRIED_FORWARD;
+        $this->assertTrue($older->save(false));
+        $this->assertStringContainsString($newer->invoice_number, (string) $release->releaseForDisabledService((int) $event->item_type, (int) $event->item_id));
+        $this->assertSame(Invoice::STATUS_UNPAID, Invoice::findOne($newer->id)->status);
+
+        // Only the service's own renewal invoice: a Manager can't cancel it, an Admin can.
+        $invoice = $this->invoice(1000.00);
+        $own = $this->billingEvent($invoice);
+        InvoiceItem::updateAll(['item_type' => $own->item_type, 'item_id' => $own->item_id], ['invoice_id' => $invoice->id]);
+        $this->assertStringContainsString($invoice->invoice_number, (string) $release->releaseForDisabledService((int) $own->item_type, (int) $own->item_id, false));
+        $this->assertSame(Invoice::STATUS_UNPAID, Invoice::findOne($invoice->id)->status);
+        $this->assertNull($release->releaseForDisabledService((int) $own->item_type, (int) $own->item_id));
+        $this->assertSame(Invoice::STATUS_CANCELLED, Invoice::findOne($invoice->id)->status);
+    }
+
+    public function testAFullyRefundedRenewalNoLongerCountsAsPaid(): void
+    {
+        $invoice = $this->invoice(1000.00);
+        $event = $this->billingEvent($invoice);
+        $event->status = BillingEvent::STATUS_FULFILLED;
+        $this->assertTrue($event->save(false));
+        $history = new \common\models\ServiceRenewalHistory();
+        $history->setAttributes(['billing_event_id' => $event->id, 'item_type' => 'hosting', 'item_id' => $event->item_id, 'invoice_id' => $invoice->id, 'billed_amount' => 1000, 'renewal_period_months' => 12, 'start_date' => $event->period_start, 'end_date' => $event->period_end, 'logged_at' => time()], false);
+        $this->assertTrue($history->save(false));
+        $kept = $this->payment($invoice, Transaction::GATEWAY_UPI_BANK, Transaction::STATUS_CAPTURED, null, 100.00);
+        $invoice->status = Invoice::STATUS_REFUNDED;
+        $this->assertTrue($invoice->save(false));
+        $fulfilment = new \common\services\billing\RenewalFulfilmentService();
+        $prices = new \common\services\billing\RenewalPriceCalculator();
+
+        // Money kept: the customer still paid for it, and the next price builds on it.
+        $this->assertSame([], $fulfilment->refundedEventIds((int) $event->item_type, (int) $event->item_id));
+        $this->assertEquals(1100.00, $prices->calculate((int) $event->item_type, (int) $event->item_id, 500.00, 10.0)->amount);
+
+        $kept->status = Transaction::STATUS_REFUNDED;
+        $this->assertTrue($kept->save(false));
+        $this->assertSame([(int) $event->id], $fulfilment->refundedEventIds((int) $event->item_type, (int) $event->item_id));
+        $this->assertEquals(500.00, $prices->calculate((int) $event->item_type, (int) $event->item_id, 500.00, 10.0)->amount);
+    }
+
+    public function testClosingWithMoneyKeptLeavesTheCouponUsed(): void
+    {
+        $service = new InvoicePaymentService();
+        $code = 'KEPT' . strtoupper(bin2hex(random_bytes(4)));
+        $coupon = new \common\models\Coupon();
+        $coupon->setAttributes(['name' => $code, 'code' => $code, 'created_at' => time(), 'updated_at' => time()], false);
+        $this->assertTrue($coupon->save(false));
+        $redeemed = function (float $kept) use ($service, $code, $coupon): bool {
+            $invoice = $this->invoice(1000.00);
+            $invoice->coupon_code = $code;
+            $this->assertTrue($invoice->save(false));
+            $redemption = new \common\models\CouponRedemption();
+            $redemption->setAttributes(['coupon_id' => $coupon->id, 'user_id' => $this->_user->id, 'invoice_id' => $invoice->id, 'coupon_code' => $code, 'discount_amount' => 10, 'redeemed_at' => time()], false);
+            $this->assertTrue($redemption->save(false));
+            $payment = $this->payment($invoice, Transaction::GATEWAY_UPI_BANK, Transaction::STATUS_CAPTURED, null, 100.00);
+            if ($kept <= 0) {
+                $payment->status = Transaction::STATUS_REFUNDED;
+                $this->assertTrue($payment->save(false));
+            }
+            $service->closeAsRefunded(Invoice::findOne($invoice->id), (int) $payment->id);
+
+            return \common\models\CouponRedemption::find()->where(['invoice_id' => $invoice->id])->exists();
+        };
+
+        $this->assertTrue($redeemed(100.00), 'money kept: the discount was used');
+        $this->assertFalse($redeemed(0.00), 'all refunded: the use is freed');
+    }
+
     public function testOnlinePaymentThatOverpaysAPartlyPaidInvoiceAlertsAnAdmin(): void
     {
         $invoice = $this->invoice(1000.00);

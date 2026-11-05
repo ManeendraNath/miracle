@@ -40,7 +40,9 @@ class ResendVerificationEmailForm extends Model
      */
     public function sendEmail(MailerInterface $mailer, string $supportEmail, string $appName): bool
     {
-        $user = User::findOne(['email' => $this->email, 'status' => User::getStatusInactive()]);
+        // Verifying clears the token, so this only finds accounts never verified: a customer staff set
+        // Inactive must not be able to reactivate themselves here.
+        $user = User::find()->where(['email' => $this->email, 'status' => User::getStatusInactive()])->andWhere(['not', ['verification_token' => null]])->one();
 
         if ($user === null) {
             return false;

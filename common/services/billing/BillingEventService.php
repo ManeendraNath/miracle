@@ -82,7 +82,7 @@ final class BillingEventService
         $existing = $this->findExisting(
             $renewal,
             $period['start']
-        );
+        ) ?? $this->findInvoicedOverlap($renewal, $period['start'], $period['end']);
 
         if ($existing !== null) {
             if (
@@ -230,5 +230,18 @@ final class BillingEventService
                         ])
                         ->andWhere(['<>', 'status', BillingEvent::STATUS_CANCELLED])
                         ->one();
+    }
+
+    /**
+     * A renewal still awaiting payment (its balance may have been carried forward) that covers part of this
+     * period, e.g. after staff moved the expiry: billing again would charge twice for the same months.
+     */
+    private function findInvoicedOverlap(BillableRenewal $renewal, string $start, string $end): ?BillingEvent
+    {
+        return BillingEvent::find()
+            ->where(['item_type' => $renewal->itemType, 'item_id' => $renewal->itemId, 'status' => BillingEvent::STATUS_INVOICED])
+            ->andWhere(['>=', 'period_end', $start])
+            ->andWhere(['<=', 'period_start', $end])
+            ->one();
     }
 }

@@ -52,7 +52,8 @@ final class SupportTicketController extends BaseController
             Yii::$app->session->setFlash('warning', 'Closed support requests ' . 'cannot be updated.');
             return $this->redirect(['view', 'number' => $ticket->ticket_number]);
         }
-        $message = trim((string) Yii::$app->request->post('message', ''));
+        $posted = Yii::$app->request->post('message', '');
+        $message = is_string($posted) ? trim($posted) : '';
         if ($message === '' || mb_strlen($message) > 10000) {
             Yii::$app->session->setFlash('error', 'Please enter a valid reply.');
             return $this->redirect(['view', 'number' => $ticket->ticket_number]);

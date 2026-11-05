@@ -115,7 +115,7 @@ class AdminController extends BaseController
         $model = $this->findModel(Yii::$app->user->id);
         $twoFactorStep = $this->request->post('two_factor');
         if ($this->request->isPost && $twoFactorStep !== null) {
-            $this->handleTwoFactor($model, (string) $twoFactorStep, (string) $this->request->post('code', ''));
+            $this->handleTwoFactor($model, (string) $twoFactorStep, (string) $this->request->post('code', ''), (string) $this->request->post('current_password', ''));
             return $this->refresh();
         }
         if ($this->request->isPost) {
@@ -145,9 +145,10 @@ class AdminController extends BaseController
 
     /**
      * "My account" two-factor steps: setup (new secret, kept in the session only),
-     * enable (first valid code saves it), cancel, disable (needs a current code).
+     * enable (current password and first valid code save it, so a hijacked session can't enrol its own phone),
+     * cancel, disable (needs a current code).
      */
-    private function handleTwoFactor(Admin $model, string $step, string $code): void
+    private function handleTwoFactor(Admin $model, string $step, string $code, string $currentPassword): void
     {
         $session = Yii::$app->session;
         if ($step === 'setup' && !Admin::canStoreTwoFactor()) {
@@ -158,7 +159,9 @@ class AdminController extends BaseController
             $session->remove(self::TOTP_SETUP_KEY);
         } elseif ($step === 'enable') {
             $secret = $session->get(self::TOTP_SETUP_KEY);
-            if (is_string($secret) && !$model->hasTwoFactor() && $model->enableTwoFactor($secret, $code)) {
+            if ($currentPassword === '' || !$model->validatePassword($currentPassword)) {
+                $session->setFlash('error', 'Enter your current password to turn on two-factor sign-in.');
+            } elseif (is_string($secret) && !$model->hasTwoFactor() && $model->enableTwoFactor($secret, $code)) {
                 $session->remove(self::TOTP_SETUP_KEY);
                 // New auth key: keep this session signed in, drop the old remember-me cookie.
                 Yii::$app->user->switchIdentity($model, 0);
@@ -187,6 +190,9 @@ class AdminController extends BaseController
     {
         $model = $this->findModel($id);
         $model->disableTwoFactor();
+        // Signs out every session: whoever enrolled that phone may still be signed in.
+        $model->generateAuthKey();
+        $model->updateAttributes(['auth_key' => $model->auth_key]);
         Yii::info("Two-factor sign-in reset for admin #{$model->id} by admin #" . Yii::$app->user->id, 'admin-auth');
         Yii::$app->session->setFlash('success', 'Two-factor sign-in is off for ' . $model->username . '.');
         return $this->redirect(['update', 'id' => $model->id]);

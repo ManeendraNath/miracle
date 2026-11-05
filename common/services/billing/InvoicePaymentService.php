@@ -135,8 +135,10 @@ final class InvoicePaymentService
      * After refunding everything, an admin can close the invoice: nothing more is owed, so the billing
      * run doesn't carry it forward and reminders stop. (A refund alone leaves it payable, e.g. when a
      * wrong payment was returned so the customer can pay again.)
+     *
+     * @return int unpaid renewals released, which the next billing run bills again unless the service is disabled
      */
-    public function closeAsRefunded(Invoice $invoice, ?int $keptTransactionId = null): void
+    public function closeAsRefunded(Invoice $invoice, ?int $keptTransactionId = null): int
     {
         $blocker = $this->closeBlocker($invoice, $keptTransactionId);
         if ($blocker !== null) {
@@ -148,12 +150,13 @@ final class InvoicePaymentService
             throw new \RuntimeException('Unable to close the invoice as refunded.');
         }
         // As cancelling does: the coupon use shouldn't count against its limits for the re-billed invoice.
-        if (!empty($invoice->coupon_code)) {
+        // Money kept on the invoice means the customer did use the discount.
+        if (!empty($invoice->coupon_code) && $this->getCapturedAmount((int) $invoice->id) <= 0) {
             (new CouponService())->removeForInvoice((int) $invoice->id);
         }
         // Release the billed periods (this invoice's and those carried into it) so the next
         // billing run invoices them again, as cancelling does. Fulfilled renewals stay as they are.
-        BillingEvent::updateAll(
+        return BillingEvent::updateAll(
             ['status' => BillingEvent::STATUS_CANCELLED, 'notes' => 'Invoice closed as refunded.', 'updated_at' => time()],
             ['invoice_id' => $this->withCarriedInvoiceIds((int) $invoice->id), 'status' => [BillingEvent::STATUS_PENDING, BillingEvent::STATUS_INVOICED]]
         );
@@ -199,6 +202,23 @@ final class InvoicePaymentService
         }
 
         return $invoiceIds;
+    }
+
+    /** The open invoice a carried-forward invoice's balance now sits on (followed forward along arrears lines), or null. */
+    public function openInvoiceCarrying(int $invoiceId): ?Invoice
+    {
+        for ($id = $invoiceId, $hops = 0; $hops < 10; $hops++) {
+            $newer = Invoice::find()->alias('i')
+                ->innerJoin(['ii' => InvoiceItem::tableName()], 'ii.invoice_id = i.id')
+                ->where(['ii.item_type' => InvoiceItem::TYPE_ARREARS, 'ii.source_invoice_id' => $id])
+                ->one();
+            if ($newer === null || in_array($newer->status, [Invoice::STATUS_UNPAID, Invoice::STATUS_PARTIALLY_PAID], true)) {
+                return $newer;
+            }
+            $id = (int) $newer->id;
+        }
+
+        return null;
     }
 
     /** Refuses a new payment on an invoice that is already settled or closed. */

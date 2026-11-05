@@ -9,11 +9,11 @@ use yii\helpers\Html;
 
 $name = Html::encode(CustomYii::getSetting('site_name') ?: 'Miracle Web Technologies');
 
-echo $this->render('_legal', ['title' => 'Refund & Cancellation Policy', 'updated' => '04 Nov 2026', 'body' => <<<HTML
+echo $this->render('_legal', ['title' => 'Refund & Cancellation Policy', 'updated' => '05 Nov 2026', 'body' => <<<HTML
 <p>This policy explains how you can cancel a service bought from {$name} and when a refund is given.</p>
 
 <h2 class="h5 fw-bold mt-4">1. Cancelling a service</h2>
-<p>You can cancel any recurring service (domain, hosting or maintenance) by raising a support ticket in the customer portal or emailing us before its next renewal date. The service then stays active until the end of the period already paid for and is not renewed: a renewal invoice for it that has not been paid yet is cancelled.</p>
+<p>You can cancel any recurring service (domain, hosting or maintenance) by raising a support ticket in the customer portal or emailing us before its next renewal date. The service is then not renewed, and you keep what you have already paid for until the end of that period, even if the portal shows it as cancelled. A renewal invoice for it that has not been paid yet is cancelled. If that invoice also covers other services or an earlier balance, contact us and we will settle what is due for the rest.</p>
 
 <h2 class="h5 fw-bold mt-4">2. Refunds</h2>
 <ul>

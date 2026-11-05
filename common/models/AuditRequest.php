@@ -13,6 +13,7 @@ use yii\helpers\ArrayHelper;
 class AuditRequest extends base\AuditRequest
 {
     use AutoTimestampTrait;
+    use traits\ScalarInputTrait;
 
     public const STATUS_PENDING = 'Pending';
     public const STATUS_IN_REVIEW = 'In_Review';

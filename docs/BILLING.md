@@ -47,6 +47,11 @@ increases build on it) and the field clears once that renewal is paid. A renewal
 keeps its price: cancel that invoice first if the new price must apply to it. Clearing the field before
 the renewal is invoiced returns it to the calculated price.
 
+### Standard maintenance price
+
+New maintenance services start at ₹4,000 per year (`Maintenance::STANDARD_YEARLY_AMOUNT`). An Admin can change it per
+service. The global maintenance increase is 0%, so the price stays flat unless a service has its own increase.
+
 ### Asset configuration overrides global configuration
 
 NULL:

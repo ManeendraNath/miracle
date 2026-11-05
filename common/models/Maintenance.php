@@ -23,6 +23,9 @@ class Maintenance extends base\Maintenance
 {
     use AutoTimestampTrait;
 
+    /** Standard yearly price (₹), prefilled on new services; a service's own Renewal Base Amount decides what it pays. */
+    public const STANDARD_YEARLY_AMOUNT = 4000.00;
+
     public const STATUS_CANCELLED = 0;
     public const STATUS_ACTIVE = 1;
     public const STATUS_OVERDUE = 2;

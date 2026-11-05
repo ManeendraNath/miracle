@@ -41,6 +41,7 @@ final class AdminBillingCest
             $I->seeResponseCodeIs(200);
             $I->see('Next Renewal Price (one-time)');
         }
+        $I->seeInField('Maintenance[renewal_base_amount]', '4000');
     }
 
     public function arrayInASearchFilterDoesNotBreakTheList(FunctionalTester $I): void

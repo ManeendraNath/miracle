@@ -50,7 +50,8 @@ class MaintenanceController extends BaseController
      */
     public function actionCreate()
     {
-        $model = new Maintenance();
+        // Before loading: Managers can't post prices, so theirs get the standard one.
+        $model = new Maintenance(['renewal_base_amount' => Maintenance::STANDARD_YEARLY_AMOUNT]);
 
         if ($this->request->isPost) {
             if ($this->loadService($model) && $model->save()) {

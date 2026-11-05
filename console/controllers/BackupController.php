@@ -11,6 +11,8 @@ use yii\helpers\Console;
 
 class BackupController extends Controller
 {
+    use \console\traits\LogLinePrefixTrait;
+
     private const KEEP_DAYS = 14;
 
     /**

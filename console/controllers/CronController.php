@@ -18,6 +18,8 @@ use common\models\Invoice;
 
 class CronController extends Controller
 {
+    use \console\traits\LogLinePrefixTrait;
+
     /**
      * Generate automatic renewal invoices for:
      *

@@ -75,17 +75,84 @@ final class PaymentStatusTest extends Unit
         $this->assertSame(['2027-11-30', \common\models\Hosting::STATUS_ACTIVE], [(string) $hosting->current_expiry_date, (int) $hosting->status]);
     }
 
-    public function testCloseIsRefusedWhileAnInvoiceCarriedIntoItKeepsMoney(): void
+    public function testWritingOffReleasesACarriedInvoiceAndKeepsItsMoney(): void
     {
         $source = $this->invoice(1000.00);
         $this->payment($source, Transaction::GATEWAY_UPI_BANK, Transaction::STATUS_CAPTURED, null, 300.00);
         $source->updateAttributes(['status' => Invoice::STATUS_CARRIED_FORWARD]);
-        $target = $this->invoice(500.00);
-        $line = new InvoiceItem();
-        $line->setAttributes(['invoice_id' => $target->id, 'item_type' => InvoiceItem::TYPE_ARREARS, 'source_invoice_id' => $source->id, 'category' => 'Arrears', 'description' => 'Carried', 'quantity' => 1, 'unit_price' => 700, 'total_price' => 700], false);
-        $this->assertTrue($line->save(false));
+        $target = $this->carry($source);
+        $service = new InvoicePaymentService();
 
-        $this->assertStringContainsString($source->invoice_number, (string) (new InvoicePaymentService())->closeBlocker($target));
+        $this->assertNull($service->closeBlocker($target), 'money kept on the older invoice no longer strands the newer one');
+        $service->closeAsRefunded($target, null, true);
+
+        $this->assertSame(Invoice::STATUS_REFUNDED, Invoice::findOne($target->id)->status);
+        $this->assertSame(Invoice::STATUS_REFUNDED, Invoice::findOne($source->id)->status);
+        $this->assertEqualsWithDelta(300.00, $service->getCapturedAmount((int) $source->id), 0.001);
+    }
+
+    public function testAPartPaidInvoiceCanOnlyBeClosedKeepingMoneyByWritingOff(): void
+    {
+        $invoice = $this->invoice(1000.00);
+        $this->payment($invoice, Transaction::GATEWAY_UPI_BANK, Transaction::STATUS_CAPTURED, null, 300.00);
+        $service = new InvoicePaymentService();
+
+        $this->assertNotNull($service->closeBlocker($invoice));
+        $this->assertNull($service->closeBlocker($invoice, null, true));
+    }
+
+    public function testARenewalOnACarriedInvoiceStopsCountingAsPaidOnceWrittenOff(): void
+    {
+        $source = $this->invoice(1000.00);
+        $source->updateAttributes(['status' => Invoice::STATUS_CARRIED_FORWARD]);
+        $target = $this->carry($source);
+        $refunded = static fn(): array => array_map('intval', \common\services\billing\RenewalFulfilmentService::fullyRefundedInvoices()->column());
+        $this->assertNotContains((int) $source->id, $refunded());
+
+        (new InvoicePaymentService())->closeAsRefunded($target, null, true);
+
+        $this->assertContains((int) $source->id, $refunded());
+    }
+
+    public function testRenewalStateFindsTheInvoiceBillingAService(): void
+    {
+        $service = new \common\models\Domains();
+        $service->setAttributes(['user_id' => $this->_user->id, 'status' => 1, 'renewal_base_amount' => 500, 'current_expiry_date' => '2030-06-30'], false);
+        $service->id = 987654;
+        $settings = \common\models\BillingSettings::forType(InvoiceItem::TYPE_DOMAIN);
+        $state = (new InvoicePaymentService())->renewalState($service, InvoiceItem::TYPE_DOMAIN);
+        $this->assertNull($state['invoiceNumber']);
+        $this->assertSame(date('Y-m-d', strtotime('2030-06-30 -' . (int) $settings->invoice_before_days . ' days')), $state['issuedFrom']);
+        $this->assertSame((bool) $settings->is_active, $state['billable']);
+
+        $service->renewal_base_amount = 0;
+        $this->assertFalse((new InvoicePaymentService())->renewalState($service, InvoiceItem::TYPE_DOMAIN)['billable'], 'no price: no invoice will come');
+
+        $invoice = $this->invoice(500.00);
+        $line = new InvoiceItem();
+        $line->setAttributes(['invoice_id' => $invoice->id, 'item_type' => InvoiceItem::TYPE_DOMAIN, 'item_id' => 987654, 'category' => 'Domain', 'description' => 'Renewal', 'quantity' => 1, 'unit_price' => 500, 'total_price' => 500], false);
+        $this->assertTrue($line->save(false));
+        $this->assertSame($invoice->invoice_number, (new InvoicePaymentService())->renewalState($service, InvoiceItem::TYPE_DOMAIN)['invoiceNumber']);
+
+        $invoice->updateAttributes(['status' => Invoice::STATUS_CARRIED_FORWARD]);
+        $newer = $this->carry($invoice);
+        $this->assertSame($newer->invoice_number, (new InvoicePaymentService())->payableInvoiceForService((int) $this->_user->id, InvoiceItem::TYPE_DOMAIN, 987654)->invoice_number, 'followed to the invoice holding the balance');
+    }
+
+    public function testDeletedCustomersAreNotBilled(): void
+    {
+        $service = new \common\models\Domains();
+        $service->setAttributes(['user_id' => $this->_user->id, 'domain_url' => 'deleted-' . bin2hex(random_bytes(4)) . '.example.test', 'registrar' => 'Test', 'registered_date' => date('Y-m-d', strtotime('-1 year')), 'status' => 1, 'renewal_base_amount' => 500, 'current_expiry_date' => date('Y-m-d'), 'created_at' => time(), 'updated_at' => time()], false);
+        $this->assertTrue($service->save(false));
+        $collected = static fn(): array => array_map(static fn($renewal): int => $renewal->itemId, (new \common\services\billing\collector\DomainBillingCollector())->collect(new \DateTimeImmutable('today')));
+        if (!(bool) \common\models\BillingSettings::forType(InvoiceItem::TYPE_DOMAIN)->is_active) {
+            $this->markTestSkipped('Domain billing is switched off in this database.');
+        }
+        $this->assertContains((int) $service->id, $collected());
+
+        $this->_user->updateAttributes(['status' => User::getStatusDeleted()]);
+
+        $this->assertNotContains((int) $service->id, $collected());
     }
 
     public function testCancelIsRefusedWhileAPaymentAwaitsReview(): void
@@ -299,6 +366,17 @@ final class PaymentStatusTest extends Unit
         $this->assertFalse($live->isTestMode());
         $this->expectException(\DomainException::class);
         $live->createTestOrder(100); // refused before any API call: live keys would take real money
+    }
+
+    /** A newer invoice holding $source's balance on an arrears line. */
+    private function carry(Invoice $source): Invoice
+    {
+        $target = $this->invoice(500.00);
+        $line = new InvoiceItem();
+        $line->setAttributes(['invoice_id' => $target->id, 'item_type' => InvoiceItem::TYPE_ARREARS, 'source_invoice_id' => $source->id, 'category' => 'Arrears', 'description' => 'Carried', 'quantity' => 1, 'unit_price' => 700, 'total_price' => 700], false);
+        $this->assertTrue($line->save(false));
+
+        return $target;
     }
 
     private function billingEvent(Invoice $invoice): BillingEvent

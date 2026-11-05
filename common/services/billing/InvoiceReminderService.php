@@ -22,6 +22,7 @@ final class InvoiceReminderService
         $today ??= new DateTimeImmutable('today');
         $invoices = Invoice::find()
                 ->where(['status' => [Invoice::STATUS_UNPAID, Invoice::STATUS_PARTIALLY_PAID],])
+                ->andWhere(['not in', 'user_id', \common\models\User::deletedIds()])
                 ->andWhere(['not', ['due_date' => null]])
                 ->orderBy(['due_date' => SORT_ASC, 'id' => SORT_ASC])
                 ->all();

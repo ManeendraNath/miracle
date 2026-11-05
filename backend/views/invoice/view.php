@@ -17,6 +17,16 @@ $this->params['breadcrumbs'][] = ['label' => 'Invoices', 'url' => ['index']];
 $this->params['breadcrumbs'][] = $this->title;
 $this->params['subtitle'] = 'Review client billing metrics or compile print configurations';
 $this->params['actions'] = [Html::a('<i class="fas fa-arrow-left me-1"></i> Back', ['index'], ['class' => 'btn btn-light border'])];
+if ($model->status === Invoice::STATUS_PARTIALLY_PAID) {
+    $this->params['actions'][] = Html::a('<i class="fas fa-times-circle me-1"></i> Write Off Balance', ['close', 'id' => $model->id], [
+        'class' => 'btn btn-outline-danger',
+        'title' => 'Forgive what is left: money already received is kept. It shows as Refunded.',
+        'data' => [
+            'confirm' => 'Write off the remaining balance? Money already received is kept and nothing more is owed on this invoice or on balances carried into it. It shows as Refunded. Its unpaid renewals are billed again in full on the next run, with no credit for money kept, unless those services are disabled.',
+            'method' => 'post',
+        ],
+    ]);
+}
 if ($model->status === Invoice::STATUS_UNPAID) {
     $this->params['actions'][] = Html::a('<i class="fas fa-edit me-1"></i> Update', ['update', 'id' => $model->id], ['class' => 'btn btn-primary']);
     $this->params['actions'][] = Html::a('<i class="fas fa-ban me-1"></i> Cancel Invoice', ['cancel', 'id' => $model->id], [
@@ -30,7 +40,7 @@ if ($model->status === Invoice::STATUS_UNPAID) {
         'class' => 'btn btn-outline-danger',
         'title' => 'For an invoice that cannot be cancelled: nothing more is owed. It shows as Refunded.',
         'data' => [
-            'confirm' => 'Write off this invoice? Nothing more is owed on it or on balances carried into it, and it shows as Refunded. Its unpaid renewals are billed again on the next run unless those services are disabled.',
+            'confirm' => 'Write off this invoice? Nothing more is owed on it or on balances carried into it, and it shows as Refunded. Money kept on those balances stays. Its unpaid renewals are billed again in full on the next run, with no credit for money kept, unless those services are disabled.',
             'method' => 'post',
         ],
     ]);

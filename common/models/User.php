@@ -37,6 +37,12 @@ class User extends base\User implements IdentityInterface
     public const PASSWORD_PATTERN = '/^(?=.*[A-Za-z])(?=.*\d).{8,}$/';
     public const PASSWORD_MESSAGE = 'Password must contain at least 8 characters including a letter and a number.';
 
+    /** Ids of deleted customers, as a subquery: they are neither billed nor reminded. */
+    public static function deletedIds(): \yii\db\ActiveQuery
+    {
+        return self::find()->select('id')->where(['status' => self::getStatusDeleted()]);
+    }
+
     #[\Override]
     /** Only accounts awaiting verification keep a token: a live one would let a customer undo a staff Inactive. */
     public function beforeSave($insert): bool

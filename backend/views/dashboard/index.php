@@ -235,12 +235,10 @@ $assets = [
                             ]) ?>
                         </li>
                         <li class="list-group-item d-flex justify-content-between align-items-center">
-                            <div><i class="fas fa-users-cog fa-fw text-info mr-2"></i>Newsletter Subscribers</div>
-                            <span class="font-weight-bold"><?= number_format((int) $metrics['subscribersCount']) ?></span>
-                        </li>
-                        <li class="list-group-item d-flex justify-content-between align-items-center">
-                            <div><i class="fas fa-comments fa-fw text-secondary mr-2"></i>Contact Messages</div>
-                            <span class="font-weight-bold"><?= number_format((int) $metrics['supportMessagesCount']) ?></span>
+                            <div><i class="fas fa-comments fa-fw text-secondary mr-2"></i>Pending Website Enquiries</div>
+                            <?= Html::a((int) $metrics['pendingLeadsCount'] . ' Pending', ['/lead/index', 'LeadSearch' => ['status' => 'Pending']], [
+                                'class' => 'badge p-2 ' . ($metrics['pendingLeadsCount'] > 0 ? 'badge-primary' : 'badge-light'),
+                            ]) ?>
                         </li>
                     </ul>
                 </div>

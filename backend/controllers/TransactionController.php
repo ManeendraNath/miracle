@@ -251,14 +251,15 @@ class TransactionController extends BaseController
                 throw new \DomainException('This payment was refunded meanwhile (now ₹' . number_format((float) $model->refunded_amount, 2) . '). Check the amount and try again.');
             }
 
-            // Its unpaid balance already moved to a newer invoice as a fixed arrears line; refunding it here
-            // would leave that line short. An unapplied payment was never part of the arrears, so it can go back.
-            // ponytail: refused outright; raise the arrears on the newer invoice if this case gets common.
-            if (($invoice->status ?? null) === Invoice::STATUS_CARRIED_FORWARD && !$model->isUnapplied()) {
-                $target = $invoice->invoiceItem->invoice ?? null; // invoiceItem = the arrears line that carried it
-                throw new \DomainException('This invoice was carried forward' . ($target !== null ? ' into ' . $target->invoice_number : '') . ', so its payments cannot be refunded here.');
-            }
             $paymentService = new InvoicePaymentService();
+            // Its unpaid balance moved to a newer invoice as a fixed arrears line; refunding it while that is
+            // open would leave the line short. Once settled nothing is left to get wrong. An unapplied
+            // payment was never part of the arrears, so it can always go back.
+            // ponytail: refused while open; raise the arrears on the newer invoice if this case gets common.
+            $carrying = ($invoice->status ?? null) === Invoice::STATUS_CARRIED_FORWARD && !$model->isUnapplied() ? $paymentService->openInvoiceCarrying((int) $invoice->id) : null;
+            if ($carrying !== null) {
+                throw new \DomainException('This invoice was carried forward into ' . $carrying->invoice_number . ', so its payments cannot be refunded until that invoice is paid or written off.');
+            }
             $canReconcile = $invoice !== null && !in_array($invoice->status, InvoicePaymentService::CLOSED_STATUSES, true);
             // Closing after a partial refund keeps the rest by agreement (e.g. a domain fee): nothing more is owed.
             if ($close) {
@@ -391,6 +392,11 @@ class TransactionController extends BaseController
             $model = $this->findModel($id);
             if ($model->status !== Transaction::STATUS_CAPTURED || !$model->isUnapplied()) {
                 throw new \DomainException('Only an unapplied captured payment can be applied to another invoice.');
+            }
+            // A refund made in the Razorpay dashboard must not be applied as if the money were still here.
+            $razorpay = new RazorpayService();
+            if ((int) $model->gateway_id === Transaction::GATEWAY_RAZORPAY && (string) $model->gateway_payment_id !== '' && $razorpay->isEnabled()) {
+                $razorpay->assertRefundsRecorded($model);
             }
             $from = Invoice::findOne((int) $model->invoice_id);
             $number = trim(self::scalarParam($this->request->post('target_invoice', '')));

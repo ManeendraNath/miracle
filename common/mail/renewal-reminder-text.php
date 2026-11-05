@@ -12,7 +12,7 @@ Remaining:
 
 <?= $daysBefore ?> day(s)
 
-Please login to your customer portal and renew the service before expiry.
+We email your renewal invoice before the expiry date. Please pay it in time to avoid interruption or downtime.
 
 Regards,
 Miracle Web Technologies

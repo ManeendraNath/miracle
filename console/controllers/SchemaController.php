@@ -59,12 +59,13 @@ class SchemaController extends Controller
             foreach ($tables as $table) {
                 $want = $expected[$part][$table] ?? null;
                 $have = $actual[$part][$table] ?? null;
-                if ($want === null || $have === null) {
-                    if ($part === 'columns') {
-                        $problems[] = $want === null ? "Table {$table}: exists in DB but not in migrations" : "Table {$table}: MISSING";
-                    }
+                if ($part === 'columns' && ($want === null || $have === null)) {
+                    $problems[] = $want === null ? "Table {$table}: exists in DB but not in migrations" : "Table {$table}: MISSING";
                     continue;
                 }
+                // A table with no indexes or foreign keys at all has no entry on that side.
+                $want ??= [];
+                $have ??= [];
                 foreach (array_unique(array_merge(array_keys($want), array_keys($have))) as $key) {
                     if (!isset($have[$key])) {
                         $problems[] = "{$label} {$table}.{$key}: MISSING (expected {$this->describe($want[$key])})";

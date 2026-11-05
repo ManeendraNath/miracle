@@ -188,17 +188,17 @@ $refundStep = $viaRazorpay
                         <div class="d-grid gap-2">
                             <?= Html::submitButton('Refund (Still Owed)', [
                                 'class' => 'btn btn-outline-secondary',
-                                'name' => 'close_invoice',
-                                'value' => '0',
                                 'title' => 'E.g. a wrong payment was returned: the customer still has to pay this invoice.',
                                 'data-confirm' => $refundStep . "\n\n" . $stillOwedNote,
                             ]) ?>
                             <?= Html::submitButton('Refund &amp; Close Invoice', [
                                 'class' => 'btn btn-outline-danger',
-                                'name' => 'close_invoice',
-                                'value' => '1',
                                 'title' => 'Nothing more is owed: the service is cancelled, or the rest is kept by agreement (e.g. a domain fee).',
-                                'data-confirm' => $refundStep . "\n\nThe invoice is closed as Refunded: no reminders. Anything not refunded is kept. An unpaid renewal on it is billed again in full on the next run, with no credit for money kept, unless the service is disabled. Renewals already granted are NOT reversed: disable the service if needed.",
+                                // Not name/value: with a confirm, yii.js submits the form itself and a clicked button's value is not sent.
+                                'data' => [
+                                    'confirm' => $refundStep . "\n\nThe invoice is closed as Refunded: no reminders. Anything not refunded is kept. An unpaid renewal on it is billed again in full on the next run, with no credit for money kept, unless the service is disabled. Renewals already granted are NOT reversed: disable the service if needed.",
+                                    'params' => ['close_invoice' => '1'],
+                                ],
                             ]) ?>
                         </div>
                         <?= Html::endForm() ?>

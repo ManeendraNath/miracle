@@ -13,6 +13,7 @@ $isNewRecord = $model->isNewRecord;
 <div class="user-form">
 
     <?php
+    $canSetLogin = $model->isNewRecord || \backend\controllers\BaseController::canAccess(Yii::$app->user->identity, 'user', 'credentials');
     $form = ActiveForm::begin([
         'id' => 'user-form',
         'options' => [
@@ -49,6 +50,7 @@ $isNewRecord = $model->isNewRecord;
                 <div class="col-md-6">
                     <?=
                     $form->field($model, 'email')->input('email', [
+                        'readonly' => !$canSetLogin,
                         'maxlength' => true,
                         'class' => 'form-control',
                         'placeholder' => 'Enter email address',
@@ -57,7 +59,7 @@ $isNewRecord = $model->isNewRecord;
                     ?>
                 </div>
 
-                <div class="col-md-6">
+                <div class="col-md-6<?= $canSetLogin ? '' : ' d-none' ?>">
                     <?=
                             $form->field($model, 'password')
                             ->passwordInput([

@@ -67,6 +67,7 @@ final class SupportController extends Controller
             'domain' => Domains::find()
                 ->select(['domain_url', 'id'])
                 ->where(['user_id' => $userId])
+                ->andWhere(['<>', 'status', Domains::STATUS_DELETED])
                 ->orderBy(['domain_url' => SORT_ASC])
                 ->indexBy('id')
                 ->column(),

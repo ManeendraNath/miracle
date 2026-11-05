@@ -21,12 +21,6 @@ class DashboardController extends BaseController
     public function actionIndex()
     {
         // Safe Dynamic Check Helper Block to prevent missing model table crashes
-        $getAssetCount = function ($className) {
-            if (class_exists($className)) {
-                return (int) $className::find()->count();
-            }
-            return 0; // Fallback if table/model does not exist yet
-        };
         $getAssetCountWithStatus = function ($className) {
             if (class_exists($className)) {
                 return (int) $className
@@ -104,9 +98,8 @@ class DashboardController extends BaseController
             'activeDomainsCount' => $getAssetCountWithStatus('\common\models\Domains'),
             'activeHostingCount' => $getAssetCountWithStatus('\common\models\Hosting'),
             'underCareAmcCount' => $getAssetCountWithStatus('\common\models\Maintenance'),
-            // 6. NEW ADDITIONS: CRM & AUDIENCE SUBSCRIBERS PIPELINE LEDGER
-            'subscribersCount' => $getAssetCount('\common\models\Subscribers'),
-            'supportMessagesCount' => $getAssetCount('\common\models\Messages'),
+            // 6. Website enquiries (contact form), waiting for a first look.
+            'pendingLeadsCount' => (int) \common\models\Lead::find()->where(['status' => 'Pending'])->count(),
             'recentCoupon' => $recentCoupon,
         ];
 

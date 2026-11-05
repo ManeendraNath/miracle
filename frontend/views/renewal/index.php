@@ -61,7 +61,7 @@ $expiryLabel = static function (string $expiry) use ($today): array {
                             <td class="d-none d-md-table-cell"><span class="badge <?= $badge ?>"><?= $label ?></span></td>
                             <td class="text-end text-nowrap pe-3">
                                 <?= Html::a('View', ['/service/view', 'type' => strtolower($service['type']), 'id' => $service['id']], ['class' => 'btn btn-sm btn-outline-secondary me-1']) ?>
-                                <?= Html::a('Renew Now', ['/checkout/renew', 'type' => strtolower($service['type']), 'id' => $service['id']], ['class' => 'btn btn-sm btn-primary']) ?>
+                                <?= $this->render('_action', ['type' => strtolower($service['type']), 'id' => $service['id'], 'renewal' => $service['renewal']]) ?>
                             </td>
                         </tr>
                     <?php endforeach; ?>

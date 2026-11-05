@@ -7,6 +7,7 @@ namespace common\services\billing\collector;
 use common\models\BillingSettings;
 use common\models\Hosting;
 use common\models\InvoiceItem;
+use common\models\User;
 use common\services\billing\dto\BillableRenewal;
 use DateTimeImmutable;
 
@@ -42,6 +43,7 @@ final class HostingBillingCollector
                 ->where([
                     'status' => Hosting::STATUS_ACTIVE,
                 ])
+                ->andWhere(['not in', 'user_id', User::deletedIds()])
                 ->andWhere([
                     'not',
                     ['renewal_base_amount' => null],

@@ -68,7 +68,7 @@ final class AdminAlertService extends AdminNotificationService
     public static function paymentUnapplied(string $invoiceNumber, string $invoiceStatus, float $amount, string $paymentId): void
     {
         $title = 'Online Payment Needs Attention';
-        $message = "Invoice: {$invoiceNumber} ({$invoiceStatus})\n" . "Amount: ₹{$amount}\n" . "Razorpay payment: {$paymentId}\n" . 'The customer was charged but the invoice could not accept it. Refund in Razorpay or apply it manually.';
+        $message = "Invoice: {$invoiceNumber} ({$invoiceStatus})\n" . "Amount: ₹{$amount}\n" . "Razorpay payment: {$paymentId}\n" . 'The customer was charged but the invoice could not accept it. Open the payment here and use Refund or Apply.';
         self::send($title, $message, 'payment', '/transaction/index?' . http_build_query(['TransactionSearch' => ['gateway_payment_id' => $paymentId]]), true);
     }
 
@@ -87,15 +87,32 @@ final class AdminAlertService extends AdminNotificationService
     {
         $title = ($online ? 'Online' : 'Approved') . ' Payment Needs Attention';
         $message = "Invoice: {$invoiceNumber}\n" . ($online ? 'Paid online' : 'Approved proof') . ": ₹{$paid}\n" . "Overpaid by: ₹{$excess}\n" . ($online ? 'Razorpay payment' : 'Reference') . ": {$paymentId}\n"
-            . 'The invoice had already been partly paid another way. Refund the excess' . ($online ? ' in Razorpay.' : ' to the customer.');
+            . 'The invoice had already been partly paid another way. Refund the excess' . ($online ? ' using Refund on the payment here.' : ' to the customer.');
         self::send($title, $message, 'payment', '/transaction/index?' . http_build_query(['TransactionSearch' => ['gateway_payment_id' => $paymentId]]), true);
     }
 
     public static function supersededOrderPaid(string $invoiceNumber, float $paid, float $invoiceTotal, string $paymentId): void
     {
         $title = 'Online Payment Needs Attention';
-        $message = "Invoice: {$invoiceNumber}\n" . "Paid: ₹{$paid} (invoice total now ₹{$invoiceTotal})\n" . "Razorpay payment: {$paymentId}\n" . 'The customer paid an older online order after changing the coupon. Refund any excess in Razorpay; a shortfall stays on the invoice.';
+        $message = "Invoice: {$invoiceNumber}\n" . "Paid: ₹{$paid} (invoice total now ₹{$invoiceTotal})\n" . "Razorpay payment: {$paymentId}\n" . 'The customer paid an older online order after changing the coupon. Refund any excess using Refund on the payment here; a shortfall stays on the invoice.';
         self::send($title, $message, 'payment', '/transaction/index?' . http_build_query(['TransactionSearch' => ['gateway_payment_id' => $paymentId]]), true);
+    }
+
+    /** From the sync, every 30 minutes: alert once per payment and amount. */
+    public static function refundNotRecorded(string $paymentId, float $razorpayRefunded, float $recorded, int $transactionId): void
+    {
+        $title = 'Razorpay Refund Not Recorded';
+        $shown = "Razorpay shows refunded: ₹{$razorpayRefunded}";
+        if (AdminNotification::find()->where(['title' => $title])->andWhere(['like', 'message', $paymentId])->andWhere(['like', 'message', $shown])->exists()) {
+            return;
+        }
+        $message = "Razorpay payment: {$paymentId}\n" . "{$shown}\n" . "Recorded here: ₹{$recorded}\n" . 'Revenue and the invoice are wrong until this is recorded. Open the payment and use Refund with the unrecorded amount; no money is sent again.';
+        self::send($title, $message, 'payment', '/transaction/view?id=' . $transactionId, true);
+    }
+
+    public static function backupFailed(string $reason): void
+    {
+        self::send('Backup Failed', "Reason: {$reason}\n" . 'Check the server before the next scheduled run.', 'system', '/admin/cron-log');
     }
 
     public static function invoiceGenerationFailed(int $userId, string $reason): void

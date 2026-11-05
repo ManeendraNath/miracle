@@ -5,6 +5,7 @@
 .env
 .env.local
 .env.*
+!.env.example
 
 # Production/local parameter overrides are generated locally
 common/config/params-local.php

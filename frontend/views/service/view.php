@@ -50,7 +50,7 @@ $eventClass = static fn(?string $status): string => match ($status) {
         <div class="small text-uppercase text-body-secondary fw-semibold mb-1"><?= Html::encode(ucfirst($type)) ?></div>
         <h1 class="h3 fw-bold mb-1 d-flex align-items-center gap-2 flex-wrap">
             <span class="text-break"><?= Html::encode($serviceName) ?></span>
-            <span class="badge fs-6 fw-semibold <?= $statusClass ?>"><?= $isActive ? 'Active' : 'Inactive' ?></span>
+            <span class="badge fs-6 fw-semibold <?= $statusClass ?>"><?= Html::encode($model::getStatuses()[(int) $model->status] ?? 'Inactive') ?></span>
         </h1>
         <div class="text-body-secondary">Customer Service Information</div>
     </div>
@@ -128,12 +128,6 @@ $eventClass = static fn(?string $status): string => match ($status) {
                             <div class="col-6 col-md-4">
                                 <div class="small text-body-secondary">Increase</div>
                                 <div><?= $formatter->asDecimal($latestEvent->increase_percent, 2) ?>%</div>
-                            </div>
-                        <?php endif; ?>
-                        <?php if (!empty($latestEvent->notes)): ?>
-                            <div class="col-12">
-                                <div class="small text-body-secondary">Notes</div>
-                                <div class="text-break"><?= Html::encode($latestEvent->notes) ?></div>
                             </div>
                         <?php endif; ?>
                     </div>

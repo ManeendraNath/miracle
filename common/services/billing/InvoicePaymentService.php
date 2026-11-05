@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace common\services\billing;
 
 use common\models\BillingEvent;
+use common\models\BillingSettings;
 use common\models\Invoice;
 use common\models\InvoiceItem;
 use common\models\Transaction;
@@ -136,11 +137,13 @@ final class InvoicePaymentService
      * run doesn't carry it forward and reminders stop. (A refund alone leaves it payable, e.g. when a
      * wrong payment was returned so the customer can pay again.)
      *
+     * $writeOff: staff forgive the balance, so money already received stays and the close isn't refused for it.
+     *
      * @return int unpaid renewals released, which the next billing run bills again unless the service is disabled
      */
-    public function closeAsRefunded(Invoice $invoice, ?int $keptTransactionId = null): int
+    public function closeAsRefunded(Invoice $invoice, ?int $keptTransactionId = null, bool $writeOff = false): int
     {
-        $blocker = $this->closeBlocker($invoice, $keptTransactionId);
+        $blocker = $this->closeBlocker($invoice, $keptTransactionId, $writeOff);
         if ($blocker !== null) {
             throw new \DomainException($blocker);
         }
@@ -149,16 +152,22 @@ final class InvoicePaymentService
         if (!$invoice->save(false, ['status', 'updated_at'])) {
             throw new \RuntimeException('Unable to close the invoice as refunded.');
         }
+        $invoiceIds = $this->withCarriedInvoiceIds((int) $invoice->id);
+        // Nothing is owed on what was carried in either. Their renewal history points at them, so a
+        // renewal with no money kept must stop counting as paid (RenewalFulfilmentService::fullyRefundedInvoices).
+        Invoice::updateAll(['status' => Invoice::STATUS_REFUNDED, 'updated_at' => time()], ['id' => $invoiceIds, 'status' => Invoice::STATUS_CARRIED_FORWARD]);
         // As cancelling does: the coupon use shouldn't count against its limits for the re-billed invoice.
         // Money kept on the invoice means the customer did use the discount.
-        if (!empty($invoice->coupon_code) && $this->getCapturedAmount((int) $invoice->id) <= 0) {
-            (new CouponService())->removeForInvoice((int) $invoice->id);
+        foreach ($invoiceIds as $invoiceId) {
+            if ($this->getCapturedAmount($invoiceId) <= 0) {
+                (new CouponService())->removeForInvoice($invoiceId);
+            }
         }
         // Release the billed periods (this invoice's and those carried into it) so the next
         // billing run invoices them again, as cancelling does. Fulfilled renewals stay as they are.
         return BillingEvent::updateAll(
             ['status' => BillingEvent::STATUS_CANCELLED, 'notes' => 'Invoice closed as refunded.', 'updated_at' => time()],
-            ['invoice_id' => $this->withCarriedInvoiceIds((int) $invoice->id), 'status' => [BillingEvent::STATUS_PENDING, BillingEvent::STATUS_INVOICED]]
+            ['invoice_id' => $invoiceIds, 'status' => [BillingEvent::STATUS_PENDING, BillingEvent::STATUS_INVOICED]]
         );
     }
 
@@ -166,18 +175,10 @@ final class InvoicePaymentService
      * Why the invoice can't be closed as refunded, or null. $refundingTransactionId: the payment being
      * refunded now (fully, or partly with the rest kept by agreement), checked before any money is sent.
      */
-    public function closeBlocker(Invoice $invoice, ?int $refundingTransactionId = null): ?string
+    public function closeBlocker(Invoice $invoice, ?int $refundingTransactionId = null, bool $writeOff = false): ?string
     {
-        if ($this->getCapturedAmount((int) $invoice->id, $refundingTransactionId) > 0) {
-            return 'Other payments on this invoice are still kept, so it can\'t be closed as refunded.';
-        }
-        // Closing releases the periods of invoices carried into this one too; money kept on those would
-        // then be stranded while the period is billed again in full.
-        foreach ($this->withCarriedInvoiceIds((int) $invoice->id) as $sourceId) {
-            if ($sourceId !== (int) $invoice->id && $this->getCapturedAmount($sourceId) > 0) {
-                $number = Invoice::find()->select('invoice_number')->where(['id' => $sourceId])->scalar();
-                return 'Earlier invoice ' . $number . ' (carried into this one) still has payments kept on it, so this invoice can\'t be closed as refunded. Use "Refund (Still Owed)".';
-            }
+        if (!$writeOff && $this->getCapturedAmount((int) $invoice->id, $refundingTransactionId) > 0) {
+            return 'Other payments on this invoice are still kept, so it can\'t be closed as refunded. Use Write Off to forgive the balance and keep them.';
         }
 
         return $this->hasPendingProof((int) $invoice->id) ? 'A payment on this invoice is still awaiting review. Approve or reject it first.' : null;
@@ -202,6 +203,43 @@ final class InvoicePaymentService
         }
 
         return $invoiceIds;
+    }
+
+    /** The payable invoice that bills this service: its own, or the newer one its balance was carried into. */
+    public function payableInvoiceForService(int $userId, int $itemType, int $itemId): ?Invoice
+    {
+        $find = static fn(array $statuses): ?Invoice => Invoice::find()
+            ->alias('i')
+            ->innerJoin(['ii' => InvoiceItem::tableName()], 'ii.invoice_id = i.id')
+            ->where(['i.user_id' => $userId, 'ii.item_type' => $itemType, 'ii.item_id' => $itemId, 'i.status' => $statuses])
+            ->orderBy(['i.created_at' => SORT_DESC, 'i.id' => SORT_DESC])
+            ->one();
+        $invoice = $find([Invoice::STATUS_UNPAID, Invoice::STATUS_PARTIALLY_PAID]);
+        if ($invoice !== null) {
+            return $invoice;
+        }
+        $carried = $find([Invoice::STATUS_CARRIED_FORWARD]);
+
+        return $carried !== null ? $this->openInvoiceCarrying((int) $carried->id) : null;
+    }
+
+    /**
+     * What a customer can do about a service nearing expiry. Renewal invoices only exist from
+     * invoice_before_days before expiry, and only for active, priced services.
+     *
+     * @param \common\models\Domains|\common\models\Hosting|\common\models\Maintenance $service
+     * @return array{invoiceNumber: string|null, billable: bool, issuedFrom: string}
+     */
+    public function renewalState($service, int $itemType): array
+    {
+        $settings = BillingSettings::forType($itemType);
+        $days = max(0, (int) $settings->invoice_before_days);
+
+        return [
+            'invoiceNumber' => $this->payableInvoiceForService((int) $service->user_id, $itemType, (int) $service->id)->invoice_number ?? null,
+            'billable' => (bool) $settings->is_active && (int) $service->status === 1 && (float) $service->renewal_base_amount > 0,
+            'issuedFrom' => date('Y-m-d', (int) strtotime($service->current_expiry_date . " -{$days} days")),
+        ];
     }
 
     /** The open invoice a carried-forward invoice's balance now sits on (followed forward along arrears lines), or null. */

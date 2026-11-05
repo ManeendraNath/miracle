@@ -30,6 +30,8 @@ class Domains extends base\Domains
     public const STATUS_INACTIVE = 0;
     public const STATUS_ACTIVE = 1;
     public const STATUS_DELETED = 2;
+    /** Shown for renewal to the customer and in monitoring. */
+    public const RENEWABLE_STATUSES = [self::STATUS_ACTIVE];
 
     /**
      * Available Domain statuses.

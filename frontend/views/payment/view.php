@@ -25,7 +25,7 @@ $statusClass = match ($model->status) {
 $details = [
     'Invoice' => Html::a(Html::encode($model->invoice->invoice_number), ['/invoice/view', 'number' => $model->invoice->invoice_number], ['class' => 'fw-semibold text-decoration-none']),
     'Method' => Html::encode($methods[(int) $model->gateway_id] ?? '-'),
-    'Reference' => '<span class="text-break">' . Html::encode($model->gateway_payment_id ?: '-') . '</span>',
+    'Reference' => '<span class="text-break">' . Html::encode($model->customerReference() ?: '-') . '</span>',
     'Submitted' => $formatter->asDatetime($model->created_at, 'php:d M Y, h:i A'),
     'Confirmed' => $model->paid_at ? $formatter->asDatetime($model->paid_at, 'php:d M Y, h:i A') : '-',
 ];
@@ -38,7 +38,7 @@ if ((float) $model->refunded_amount > 0) {
     <div>
         <h1 class="h3 fw-bold mb-1 d-flex align-items-center gap-2 flex-wrap">
             <?= Html::encode($this->title) ?>
-            <span class="badge fs-6 fw-semibold <?= $statusClass ?>"><?= Html::encode($model->status) ?></span>
+            <span class="badge fs-6 fw-semibold <?= $statusClass ?>"><?= Html::encode($model->customerStatus()) ?></span>
         </h1>
         <div class="text-body-secondary">Details of your payment submission.</div>
     </div>
@@ -54,6 +54,12 @@ if ((float) $model->refunded_amount > 0) {
     <div class="card-body p-4">
         <div class="small text-body-secondary">Amount</div>
         <div class="display-6 fw-bold mb-4"><?= $formatter->asCurrency($model->amount, 'INR') ?></div>
+        <?php if ($model->status === Transaction::STATUS_CAPTURED && $model->isUnapplied()): ?>
+            <div class="alert alert-warning small">
+                <i class="fas fa-info-circle me-1"></i>
+                We received this payment, but its invoice was already settled or closed, so it has not been counted on the invoice. We will refund it or apply it to another invoice.
+            </div>
+        <?php endif; ?>
 
         <dl class="row mb-0">
             <?php foreach ($details as $label => $value): ?>

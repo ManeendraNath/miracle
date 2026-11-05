@@ -16,16 +16,15 @@ class BackupController extends Controller
     private const KEEP_DAYS = 14;
 
     /**
-     * Dumps the database to backups/db_backup_<timestamp>.sql.gz and prunes
-     * dumps older than KEEP_DAYS.
+     * Dumps the database to backups/db_backup_<timestamp>.sql.gz, archives customers' payment proofs to
+     * backups/receipts_<timestamp>.tar, and prunes both older than KEEP_DAYS. Failures alert admins.
      * Command execution: php yii backup/run
      */
     public function actionRun(): int
     {
         $backupDir = dirname(Yii::getAlias('@common')) . '/backups';
         if (!is_dir($backupDir) && !mkdir($backupDir, 0700, true) && !is_dir($backupDir)) {
-            $this->stderr("Cannot create {$backupDir}.\n", Console::FG_RED);
-            return ExitCode::CANTCREAT;
+            return $this->fail("Cannot create {$backupDir}.", ExitCode::CANTCREAT);
         }
 
         $file = $backupDir . '/db_backup_' . date('Ymd_His') . '.sql.gz';
@@ -34,16 +33,24 @@ class BackupController extends Controller
             $this->dump($file);
         } catch (\Throwable $e) {
             @unlink($file);
-            $this->stderr('Database dump failed: ' . $e->getMessage() . "\n", Console::FG_RED);
-            return ExitCode::UNSPECIFIED_ERROR;
+            return $this->fail('Database dump failed: ' . $e->getMessage(), ExitCode::UNSPECIFIED_ERROR);
         } finally {
             umask($oldUmask);
         }
         $this->stdout("✓ Database backup written: {$file}\n", Console::FG_GREEN);
 
-        $offsiteStatus = $this->copyOffsite($file);
+        $status = $this->copyOffsite($file);
+        try {
+            $receipts = $this->archiveReceipts($backupDir);
+            if ($receipts !== null) {
+                $this->stdout("✓ Payment proofs archived: {$receipts}\n", Console::FG_GREEN);
+                $status = $this->copyOffsite($receipts) ?: $status;
+            }
+        } catch (\Throwable $e) {
+            $status = $this->fail('Payment proof archive failed: ' . $e->getMessage(), ExitCode::UNSPECIFIED_ERROR);
+        }
 
-        foreach (glob($backupDir . '/db_backup_*.sql.gz') ?: [] as $old) {
+        foreach ([...(glob($backupDir . '/db_backup_*.sql.gz') ?: []), ...(glob($backupDir . '/receipts_*.tar') ?: [])] as $old) {
             if (filemtime($old) < time() - self::KEEP_DAYS * 86400) {
                 unlink($old);
             }
@@ -55,7 +62,46 @@ class BackupController extends Controller
             }
         }
 
-        return $offsiteStatus;
+        return $status;
+    }
+
+    private function fail(string $message, int $code): int
+    {
+        Yii::error($message, __METHOD__);
+        $this->stderr($message . "\n", Console::FG_RED);
+        try {
+            \common\services\admin\AdminAlertService::backupFailed($message);
+        } catch (\Throwable $e) {
+            Yii::error($e, __METHOD__);
+        }
+        return $code;
+    }
+
+    /**
+     * Proofs live only on disk, so a restored database would point at nothing without this.
+     * ponytail: a full copy each run, kept KEEP_DAYS; keep fewer or go incremental if the folder gets big.
+     */
+    private function archiveReceipts(string $backupDir): ?string
+    {
+        $source = dirname(Yii::getAlias('@common')) . '/storage/payment-receipts';
+        if (!is_dir($source) || (new \FilesystemIterator($source))->valid() === false) {
+            return null;
+        }
+        $file = $backupDir . '/receipts_' . date('Ymd_His') . '.tar';
+        $part = $backupDir . '/receipts_' . date('Ymd_His') . '.part.tar';
+        $oldUmask = umask(0077);
+        try {
+            (new \PharData($part))->buildFromDirectory($source);
+            if (!rename($part, $file)) {
+                throw new \RuntimeException("cannot rename {$part}");
+            }
+        } catch (\Throwable $e) {
+            @unlink($part);
+            throw $e;
+        } finally {
+            umask($oldUmask);
+        }
+        return $file;
     }
 
     /**
@@ -153,19 +199,18 @@ class BackupController extends Controller
             return ExitCode::OK;
         }
         if (!str_contains($template, '{file}')) {
-            $this->stderr("BACKUP_OFFSITE_COMMAND must contain {file}.\n", Console::FG_RED);
-            return ExitCode::CONFIG;
+            return $this->fail('BACKUP_OFFSITE_COMMAND must contain {file}.', ExitCode::CONFIG);
         }
         if (!function_exists('exec')) {
-            $this->stderr("BACKUP_OFFSITE_COMMAND is set but exec() is disabled on this server; backup is local only.\n", Console::FG_RED);
-            return ExitCode::CONFIG;
+            return $this->fail('BACKUP_OFFSITE_COMMAND is set but exec() is disabled on this server; backup is local only.', ExitCode::CONFIG);
         }
 
         exec(str_replace('{file}', escapeshellarg($file), $template) . ' 2>&1', $output, $status);
         if ($status !== 0) {
             Yii::error(['message' => 'Off-site backup copy failed.', 'file' => $file, 'exit' => $status, 'output' => implode("\n", $output)], __METHOD__);
-            $this->stderr("Off-site backup copy failed (exit {$status}): " . implode(' ', $output) . "\n", Console::FG_RED);
-            return ExitCode::UNSPECIFIED_ERROR;
+            // Exit status only in the alert: the command's output may name credentials or paths.
+            $this->stderr('Off-site copy output: ' . implode(' ', $output) . "\n");
+            return $this->fail("Off-site backup copy failed (exit {$status}).", ExitCode::UNSPECIFIED_ERROR);
         }
         $this->stdout("✓ Off-site copy done.\n", Console::FG_GREEN);
         return ExitCode::OK;

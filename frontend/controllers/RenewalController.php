@@ -7,8 +7,10 @@ namespace frontend\controllers;
 use common\models\Domains;
 use common\models\Hosting;
 use common\models\Invoice;
+use common\models\InvoiceItem;
 use common\models\Maintenance;
 use common\models\ServiceRenewalHistory;
+use common\services\billing\InvoicePaymentService;
 use Yii;
 use yii\data\ActiveDataProvider;
 use yii\filters\AccessControl;
@@ -62,17 +64,18 @@ final class RenewalController extends Controller
     {
         $until = date('Y-m-d', strtotime('+60 days'));
         $sources = [
-            ['Domain', Domains::class, 'domain_url'],
-            ['Hosting', Hosting::class, 'primary_domain'],
-            ['Maintenance', Maintenance::class, 'website_url'],
+            ['Domain', Domains::class, 'domain_url', InvoiceItem::TYPE_DOMAIN],
+            ['Hosting', Hosting::class, 'primary_domain', InvoiceItem::TYPE_HOSTING],
+            ['Maintenance', Maintenance::class, 'website_url', InvoiceItem::TYPE_MAINTENANCE],
         ];
 
+        $paymentService = new InvoicePaymentService();
         $services = [];
-        foreach ($sources as [$type, $class, $nameAttribute]) {
-            // Active only; overdue ones stay listed because they most need renewing.
+        foreach ($sources as [$type, $class, $nameAttribute, $itemType]) {
+            // Past-expiry ones stay listed because they most need renewing.
             $models = $class
                 ::find()
-                ->where(['user_id' => (int) Yii::$app->user->id, 'status' => $class::STATUS_ACTIVE])
+                ->where(['user_id' => (int) Yii::$app->user->id, 'status' => $class::RENEWABLE_STATUSES])
                 ->andWhere(['<=', 'current_expiry_date', $until])
                 ->all();
             foreach ($models as $model) {
@@ -81,6 +84,7 @@ final class RenewalController extends Controller
                     'id' => $model->id,
                     'name' => $model->$nameAttribute,
                     'expiry' => $model->current_expiry_date,
+                    'renewal' => $paymentService->renewalState($model, $itemType),
                 ];
             }
         }

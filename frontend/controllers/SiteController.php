@@ -142,6 +142,11 @@ class SiteController extends Controller
     public function actionContact()
     {
         $model = new ContactForm();
+        // A hosting plan's Enquire button fills in the subject.
+        $subject = Yii::$app->request->get('subject');
+        if (is_string($subject)) {
+            $model->subject = mb_substr($subject, 0, 255);
+        }
         if ($model->load(Yii::$app->request->post()) && $model->validate()) {
             $adminEmail = CustomYii::getSetting('email_1', 'info@miraclewebtechnologies.com');
 

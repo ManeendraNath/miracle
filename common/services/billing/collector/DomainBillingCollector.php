@@ -7,6 +7,7 @@ namespace common\services\billing\collector;
 use common\models\BillingSettings;
 use common\models\Domains;
 use common\models\InvoiceItem;
+use common\models\User;
 use common\services\billing\dto\BillableRenewal;
 use DateTimeImmutable;
 
@@ -42,6 +43,7 @@ final class DomainBillingCollector
                 ->where([
                     'status' => 1,
                 ])
+                ->andWhere(['not in', 'user_id', User::deletedIds()])
                 ->andWhere([
                     'not',
                     ['renewal_base_amount' => null],

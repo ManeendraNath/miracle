@@ -1,7 +1,7 @@
 # miracle
 
 Customer portal and admin panel for domain, hosting and maintenance billing
-(Yii 2 advanced template, PHP 8.2+, MySQL 8).
+(Yii 2 advanced template, PHP 8.4.1+, MySQL 8).
 
 - `frontend/` — customer portal (services, invoices, payments, support)
 - `backend/` — admin panel
@@ -17,7 +17,7 @@ Schema: [docs/DATABASE_DICTIONARY.md](docs/DATABASE_DICTIONARY.md).
 ```bash
 composer2 install
 php init                 # generates /yii and local config
-# create .env with the keys read in common/config/*.php
+cp .env.example .env     # then fill it in
 php yii migrate          # a fresh install needs ADMIN_INITIAL_PASSWORD in .env
 ```
 

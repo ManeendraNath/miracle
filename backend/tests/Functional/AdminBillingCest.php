@@ -7,6 +7,7 @@ namespace backend\tests\Functional;
 use backend\tests\Support\FunctionalTester;
 use common\models\Admin;
 use common\models\Invoice;
+use common\models\InvoiceItem;
 use common\models\Transaction;
 use common\models\User;
 use Yii;
@@ -69,13 +70,64 @@ final class AdminBillingCest
         $I->dontSeeRecord(Transaction::class, ['gateway_payment_id' => $utr]);
     }
 
-    public function paymentOnACarriedForwardInvoiceCannotBeRefunded(FunctionalTester $I): void
+    public function paymentOnACarriedForwardInvoiceCannotBeRefundedWhileTheBalanceIsOpen(FunctionalTester $I): void
     {
-        $payment = $this->transaction($I, $this->invoice($I, Invoice::STATUS_CARRIED_FORWARD), Transaction::GATEWAY_MANUAL, Transaction::STATUS_CAPTURED);
+        $source = $this->invoice($I, Invoice::STATUS_CARRIED_FORWARD);
+        $payment = $this->transaction($I, $source, Transaction::GATEWAY_MANUAL, Transaction::STATUS_CAPTURED);
+        $newer = $this->invoice($I, Invoice::STATUS_UNPAID);
+        $I->haveRecord(InvoiceItem::class, ['invoice_id' => $newer, 'item_type' => InvoiceItem::TYPE_ARREARS, 'source_invoice_id' => $source, 'category' => 'Arrears', 'description' => 'Carried', 'quantity' => 1, 'unit_price' => 700, 'total_price' => 700]);
+
         $this->post($I, 'refund', $payment);
         $I->seeRecord(Transaction::class, ['id' => $payment, 'status' => Transaction::STATUS_CAPTURED]);
+        $I->see('cannot be refunded until that invoice is paid or written off');
+
+        Invoice::updateAll(['status' => Invoice::STATUS_PAID], ['id' => $newer]);
+        $this->post($I, 'refund', $payment);
+        $I->seeRecord(Transaction::class, ['id' => $payment, 'status' => Transaction::STATUS_REFUNDED]);
+        $I->seeRecord(Invoice::class, ['id' => $source, 'status' => Invoice::STATUS_CARRIED_FORWARD]);
+    }
+
+    public function refundAndCloseSendsItsChoiceThroughTheConfirmDialog(FunctionalTester $I): void
+    {
+        $payment = $this->transaction($I, $this->invoice($I, Invoice::STATUS_PAID), Transaction::GATEWAY_UPI_BANK, Transaction::STATUS_CAPTURED);
         $I->amOnRoute('transaction/view', ['id' => $payment]);
-        $I->see('so its payments cannot be refunded here.');
+        // yii.js submits a confirmed form itself, which drops a clicked button's name and value.
+        $I->seeElement('button[data-params*="close_invoice"]');
+        $I->dontSeeElement('button[name="close_invoice"]');
+    }
+
+    public function aPartPaidInvoiceCanBeWrittenOffKeepingTheMoney(FunctionalTester $I): void
+    {
+        $invoice = $this->invoice($I, Invoice::STATUS_PARTIALLY_PAID);
+        $payment = $this->transaction($I, $invoice, Transaction::GATEWAY_UPI_BANK, Transaction::STATUS_CAPTURED);
+        Transaction::updateAll(['amount' => 300], ['id' => $payment]);
+        $I->amOnRoute('invoice/view', ['number' => Invoice::findOne($invoice)->invoice_number]);
+        $I->see('Write Off Balance');
+        $I->sendAjaxPostRequest('/invoice/close?id=' . $invoice, [Yii::$app->request->csrfParam => $I->grabAttributeFrom('meta[name=csrf-token]', 'content')]);
+        $I->seeRecord(Invoice::class, ['id' => $invoice, 'status' => Invoice::STATUS_REFUNDED]);
+        $I->seeRecord(Transaction::class, ['id' => $payment, 'status' => Transaction::STATUS_CAPTURED]);
+    }
+
+    public function aManagerCannotChangeACustomersLogin(FunctionalTester $I): void
+    {
+        $suffix = bin2hex(random_bytes(4));
+        $customer = $I->haveRecord(User::class, ['username' => 'login-customer-' . $suffix, 'email' => 'login-' . $suffix . '@example.test', 'auth_key' => 'x', 'password_hash' => 'original-hash', 'status' => User::getStatusActive(), 'created_at' => time(), 'updated_at' => time()]);
+        $I->haveRecord(Admin::class, ['username' => 'billing-manager', 'email' => 'billing-manager@example.test', 'auth_key' => Yii::$app->security->generateRandomString(), 'password_hash' => Yii::$app->security->generatePasswordHash(self::PASSWORD), 'role' => 'Manager', 'status' => Admin::getStatusActive(), 'created_at' => time(), 'updated_at' => time()]);
+        $I->amOnRoute('dashboard/index');
+        $I->sendAjaxPostRequest('/auth/logout', [Yii::$app->request->csrfParam => $I->grabAttributeFrom('meta[name=csrf-token]', 'content')]);
+        $I->amOnRoute('auth/login');
+        $I->submitForm('#login-form', ['LoginForm[username]' => 'billing-manager', 'LoginForm[password]' => self::PASSWORD]);
+
+        $I->amOnRoute('user/update', ['id' => $customer]);
+        $I->seeResponseCodeIs(200);
+        $I->sendAjaxPostRequest('/user/update?id=' . $customer, [
+            Yii::$app->request->csrfParam => $I->grabAttributeFrom('meta[name=csrf-token]', 'content'),
+            'User[username]' => 'login-customer-' . $suffix,
+            'User[email]' => 'attacker-' . $suffix . '@example.test',
+            'User[password]' => 'NewPassword123',
+            'User[status]' => (string) User::getStatusActive(),
+        ]);
+        $I->seeRecord(User::class, ['id' => $customer, 'email' => 'login-' . $suffix . '@example.test', 'password_hash' => 'original-hash']);
     }
 
     public function partialRefundCanCloseTheInvoiceKeepingTheRest(FunctionalTester $I): void
@@ -221,7 +273,7 @@ final class AdminBillingCest
         $I->see('Unapplied');
     }
 
-    public function anUnpaidInvoiceCanBeWrittenOffUnlessMoneyIsKept(FunctionalTester $I): void
+    public function anUnpaidInvoiceCanBeWrittenOffUnlessAProofAwaitsReview(FunctionalTester $I): void
     {
         $closeFrom = static function (int $id) use ($I): void {
             $number = Invoice::findOne($id)->invoice_number;
@@ -235,11 +287,11 @@ final class AdminBillingCest
         $I->see('nothing more is owed on it');
         $I->seeRecord(Invoice::class, ['id' => $unpaid, 'status' => Invoice::STATUS_REFUNDED]);
 
-        $kept = $this->invoice($I, Invoice::STATUS_UNPAID);
-        $this->transaction($I, $kept, Transaction::GATEWAY_UPI_BANK, Transaction::STATUS_CAPTURED);
-        $closeFrom($kept);
-        $I->see('are still kept');
-        $I->seeRecord(Invoice::class, ['id' => $kept, 'status' => Invoice::STATUS_UNPAID]);
+        $pending = $this->invoice($I, Invoice::STATUS_UNPAID);
+        $this->transaction($I, $pending, Transaction::GATEWAY_UPI_BANK, Transaction::STATUS_PENDING);
+        $closeFrom($pending);
+        $I->see('awaiting review');
+        $I->seeRecord(Invoice::class, ['id' => $pending, 'status' => Invoice::STATUS_UNPAID]);
     }
 
     public function aBlankDomainStatusIsNotADisable(FunctionalTester $I): void

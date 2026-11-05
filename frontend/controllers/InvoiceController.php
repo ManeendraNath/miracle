@@ -102,6 +102,7 @@ final class InvoiceController extends Controller
                             'capturedAmount' => $paymentService->getCapturedAmount((int) $model->id),
                             'outstandingAmount' => $paymentService->getOutstanding($model),
                             'pendingPayment' => $pendingPayment,
+                            'carriedInto' => $model->status === Invoice::STATUS_CARRIED_FORWARD ? $paymentService->openInvoiceCarrying((int) $model->id) : null,
                             'razorpayEnabled' => (new RazorpayService())->isEnabled(),
                             'canChangeCoupon' => (new InvoiceCouponService())->blockReason($model) === null,
                         ]

@@ -12,12 +12,12 @@ $baseUrl = (string) (Yii::$app->params['frontendBaseUrl'] ?? '');
 echo $this->render('_card', [
     'tone' => 'warning',
     'eyebrow' => 'Renewal reminder',
-    'title' => sprintf('Your service expires in %d day%s.', $daysBefore, $daysBefore === 1 ? '' : 's'),
+    'title' => $daysBefore === 0 ? 'Your service expires today.' : sprintf('Your service expires in %d day%s.', $daysBefore, $daysBefore === 1 ? '' : 's'),
     'intro' => 'Hello ' . $client->username . ', the following service is approaching its expiry date.',
     'rows' => [
         ['Service', $serviceName],
         ['Expiry date', Yii::$app->formatter->asDate($expiryDate, 'php:d M Y'), 'accent'],
     ],
-    'note' => ['Please renew before the expiry date to avoid interruption or downtime.'],
+    'note' => ['We email your renewal invoice before the expiry date. Please pay it in time to avoid interruption or downtime.'],
     'button' => $baseUrl !== '' ? ['Open Customer Portal', $baseUrl . '/dashboard/index'] : null,
 ]);

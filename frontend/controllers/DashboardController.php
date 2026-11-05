@@ -83,15 +83,16 @@ final class DashboardController extends Controller
         $upcomingDomains = $this->getServiceModel(Domains::class);
         $upcomingHosting = $this->getServiceModel(Hosting::class);
         $upcomingMaintenance = $this->getServiceModel(Maintenance::class);
+        $paymentService = new \common\services\billing\InvoicePaymentService();
         $upcomingServices = [];
         foreach ($upcomingDomains as $model) {
-            $upcomingServices[] = $this->fillService('domain', (int) $model->id, (string) $model->domain_url, (string) $model->current_expiry_date);
+            $upcomingServices[] = $this->fillService('domain', (int) $model->id, (string) $model->domain_url, (string) $model->current_expiry_date, $paymentService->renewalState($model, \common\models\InvoiceItem::TYPE_DOMAIN));
         }
         foreach ($upcomingHosting as $model) {
-            $upcomingServices[] = $this->fillService('hosting', (int) $model->id, (string) $model->primary_domain, (string) $model->current_expiry_date);
+            $upcomingServices[] = $this->fillService('hosting', (int) $model->id, (string) $model->primary_domain, (string) $model->current_expiry_date, $paymentService->renewalState($model, \common\models\InvoiceItem::TYPE_HOSTING));
         }
         foreach ($upcomingMaintenance as $model) {
-            $upcomingServices[] = $this->fillService('maintenance', (int) $model->id, (string) $model->website_url, (string) $model->current_expiry_date);
+            $upcomingServices[] = $this->fillService('maintenance', (int) $model->id, (string) $model->website_url, (string) $model->current_expiry_date, $paymentService->renewalState($model, \common\models\InvoiceItem::TYPE_MAINTENANCE));
         }
         usort($upcomingServices, static fn(array $a, array $b): int => strcmp($a['expiry'], $b['expiry']));
         return $upcomingServices;
@@ -100,16 +101,16 @@ final class DashboardController extends Controller
     private function getServiceModel($class)
     {
         $upcomingUntil = date('Y-m-d', strtotime('+60 days')); // same window as the Renewals page
-        // Includes already-expired active services: those most need renewing.
+        // Includes services already past expiry: those most need renewing.
         return $class::find()
-                        ->where(['user_id' => (int) Yii::$app->user->id, 'status' => $class::STATUS_ACTIVE])
+                        ->where(['user_id' => (int) Yii::$app->user->id, 'status' => $class::RENEWABLE_STATUSES])
                         ->andWhere(['<=', 'current_expiry_date', $upcomingUntil])
                         ->orderBy(['current_expiry_date' => SORT_ASC])
                         ->all();
     }
 
-    private function fillService(string $type, int $id, string $name, string $expiry)
+    private function fillService(string $type, int $id, string $name, string $expiry, array $renewal)
     {
-        return ['type' => $type, 'id' => $id, 'name' => $name, 'expiry' => $expiry];
+        return ['type' => $type, 'id' => $id, 'name' => $name, 'expiry' => $expiry, 'renewal' => $renewal];
     }
 }

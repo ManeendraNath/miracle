@@ -106,6 +106,10 @@ $labelOptions = ['class' => 'form-label fw-semibold small'];
 
                     <?php ActiveForm::end(); ?>
 
+                    <div class="text-center mt-3">
+                        New customer? <?= Html::a('Create an account', ['site/signup']) ?>
+                    </div>
+
                     <div class="text-body-secondary text-center mt-3 small">
                         <?= Html::a('Forgot password?', ['site/request-password-reset']) ?>
                         <span class="mx-1">&middot;</span>

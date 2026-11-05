@@ -39,6 +39,7 @@ class UserController extends BaseController
         }
 
         $model->save(false); // Bypasses password validation restrictions during simple status toggles
+        $this->warnAboutOpenBusiness($model);
         return $this->redirect(['index']);
     }
 
@@ -84,9 +85,16 @@ class UserController extends BaseController
     {
         $model = $this->findModel($id);
         $model->clearPlainPassword();
+        $email = $model->email;
 
-        if ($model->load(Yii::$app->request->post()) && $model->save()) {
+        $loaded = $model->load(Yii::$app->request->post());
+        if ($loaded && !self::canAccess(Yii::$app->user->identity, 'user', 'credentials')) {
+            $model->email = $email;
+            $model->clearPlainPassword();
+        }
+        if ($loaded && $model->save()) {
             Yii::$app->session->setFlash('success', 'User updated successfully.');
+            $this->warnAboutOpenBusiness($model);
             return $this->redirect(['view', 'id' => $model->id]);
         }
         $model->clearPlainPassword();
@@ -101,6 +109,27 @@ class UserController extends BaseController
      * @return \yii\web\Response
      * @throws NotFoundHttpException if the model cannot be found
      */
+
+    /** Billing doesn't stop by itself for a suspended customer, and a deleted one's invoices stay in Outstanding. */
+    private function warnAboutOpenBusiness(User $model): void
+    {
+        $status = (int) $model->status;
+        if ($status !== User::getStatusSuspended() && $status !== User::getStatusDeleted()) {
+            return;
+        }
+        $services = 0;
+        foreach ([\common\models\Domains::class, \common\models\Hosting::class, \common\models\Maintenance::class] as $class) {
+            $services += (int) $class::find()->where(['user_id' => (int) $model->id, 'status' => 1])->count();
+        }
+        $invoices = (int) \common\models\Invoice::find()->where(['user_id' => (int) $model->id, 'status' => [\common\models\Invoice::STATUS_UNPAID, \common\models\Invoice::STATUS_PARTIALLY_PAID]])->count();
+        if ($services === 0 && $invoices === 0) {
+            return;
+        }
+        $held = "{$services} active service(s) and {$invoices} open invoice(s)";
+        Yii::$app->session->addFlash('warning', $status === User::getStatusSuspended()
+            ? "This customer can't log in but has {$held}: renewals and reminders continue. Disable the services or cancel the invoices if they should stop."
+            : "This customer has {$held}. Renewals and reminders have stopped, but open invoices stay in Outstanding until cancelled or written off.");
+    }
 
     /**
      * Finds the User model based on its primary key value.

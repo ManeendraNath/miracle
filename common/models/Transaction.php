@@ -55,6 +55,22 @@ class Transaction extends base\Transaction
     }
 
     /** Captured but kept off the invoice: an admin must refund or apply it. */
+    /** The reference the customer gave: rejecting a proof prefixes it to free the unique value. */
+    public function customerReference(): string
+    {
+        return (string) preg_replace('/^REJECTED-\d+-/', '', (string) $this->gateway_payment_id);
+    }
+
+    /** The status in the customer's words. */
+    public function customerStatus(): string
+    {
+        return match (true) {
+            $this->status === self::STATUS_CAPTURED => $this->isUnapplied() ? 'Not Applied' : 'Paid',
+            $this->status === self::STATUS_FAILED && str_starts_with((string) $this->gateway_payment_id, 'REJECTED-') => 'Rejected',
+            default => (string) $this->status,
+        };
+    }
+
     public function isUnapplied(): bool
     {
         return (bool) $this->is_unapplied;

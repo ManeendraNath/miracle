@@ -33,7 +33,7 @@ final class ServiceRenewalReminderService
     private function processDomains(DateTimeImmutable $today): int
     {
         $sent = 0;
-        $domains = Domains::find()->where(['status' => Domains::STATUS_ACTIVE])->andWhere(['>=', 'current_expiry_date', $today->format('Y-m-d')])->all();
+        $domains = Domains::find()->where(['status' => Domains::STATUS_ACTIVE])->andWhere(['not in', 'user_id', \common\models\User::deletedIds()])->andWhere(['>=', 'current_expiry_date', $today->format('Y-m-d')])->all();
         foreach ($domains as $domain) {
             $serviceProcessed = $this->processService('domain', (int) $domain->id, (int) $domain->user_id, (string) $domain->domain_url, (string) $domain->current_expiry_date, $today, (int) $domain->created_at, (float) $domain->renewal_base_amount > 0);
             if ($serviceProcessed) {
@@ -46,7 +46,7 @@ final class ServiceRenewalReminderService
     private function processHosting(DateTimeImmutable $today): int
     {
         $sent = 0;
-        $hostings = Hosting::find()->where(['status' => Hosting::STATUS_ACTIVE])->andWhere(['>=', 'current_expiry_date', $today->format('Y-m-d')])->all();
+        $hostings = Hosting::find()->where(['status' => Hosting::STATUS_ACTIVE])->andWhere(['not in', 'user_id', \common\models\User::deletedIds()])->andWhere(['>=', 'current_expiry_date', $today->format('Y-m-d')])->all();
         foreach ($hostings as $hosting) {
             $serviceProcessed = $this->processService('hosting', (int) $hosting->id, (int) $hosting->user_id, (string) $hosting->primary_domain, (string) $hosting->current_expiry_date, $today, (int) $hosting->created_at, (float) $hosting->renewal_base_amount > 0);
             if ($serviceProcessed) {
@@ -59,7 +59,7 @@ final class ServiceRenewalReminderService
     private function processMaintenance(DateTimeImmutable $today): int
     {
         $sent = 0;
-        $maintenances = Maintenance::find()->where(['status' => Maintenance::STATUS_ACTIVE])->andWhere(['>=', 'current_expiry_date', $today->format('Y-m-d')])->all();
+        $maintenances = Maintenance::find()->where(['status' => Maintenance::STATUS_ACTIVE])->andWhere(['not in', 'user_id', \common\models\User::deletedIds()])->andWhere(['>=', 'current_expiry_date', $today->format('Y-m-d')])->all();
         foreach ($maintenances as $maintenance) {
             $serviceProcessed = $this->processService('maintenance', (int) $maintenance->id, (int) $maintenance->user_id, (string) $maintenance->website_url, (string) $maintenance->current_expiry_date, $today, (int) $maintenance->created_at, (float) $maintenance->renewal_base_amount > 0);
             if ($serviceProcessed) {

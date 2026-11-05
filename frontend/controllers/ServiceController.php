@@ -39,6 +39,7 @@ final class ServiceController extends Controller
         $userId = (int) Yii::$app->user->id;
         $domains = Domains::find()
             ->where(['user_id' => $userId])
+            ->andWhere(['<>', 'status', Domains::STATUS_DELETED])
             ->orderBy(['current_expiry_date' => SORT_ASC, 'id' => SORT_ASC])
             ->all();
         $hostings = Hosting::find()
@@ -77,17 +78,11 @@ final class ServiceController extends Controller
             ->where(['i.user_id' => $userId, 'ii.item_type' => $itemType, 'ii.item_id' => $id])
             ->orderBy(['i.id' => SORT_DESC])
             ->one();
-        $billingEvents = BillingEvent::find()
-            ->where(['user_id' => $userId, 'item_type' => $itemType, 'item_id' => $id])
-            ->orderBy(['id' => SORT_DESC])
-            ->limit(5)
-            ->all();
         return $this->render('view', [
             'model' => $model,
             'type' => $type,
             'latestEvent' => $latestEvent,
             'invoice' => $invoice,
-            'billingEvents' => $billingEvents,
         ]);
     }
 }

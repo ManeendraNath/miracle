@@ -44,13 +44,13 @@ class LoginForm extends Model
     public function validatePassword($attribute, $params)
     {
         if (!$this->hasErrors()) {
-            if (LoginThrottle::isLocked('backend', (string) $this->username)) {
+            if (LoginThrottle::isLocked('backend', $this->throttleName())) {
                 $this->addError($attribute, 'Too many failed attempts. Please try again in 15 minutes.');
                 return;
             }
             $user = $this->getUser();
             if (!$user || !$user->validatePassword($this->password)) {
-                LoginThrottle::fail('backend', (string) $this->username);
+                LoginThrottle::fail('backend', $this->throttleName());
                 $this->addError($attribute, 'Incorrect username or password.');
                 return;
             }
@@ -75,7 +75,7 @@ class LoginForm extends Model
             TwoFactorForm::start($this->getUser(), $duration);
             return true;
         }
-        LoginThrottle::clear('backend', (string) $this->username);
+        LoginThrottle::clear('backend', $this->throttleName());
         return Yii::$app->user->login($this->getUser(), $duration);
     }
 
@@ -90,5 +90,13 @@ class LoginForm extends Model
             $this->_user = Admin::findByUsername($this->username);
         }
         return $this->_user;
+    }
+
+    /** The stored name when the account exists: the collation matches other spellings (é, soft hyphens), each of which would otherwise get its own failure count. */
+    private function throttleName(): string
+    {
+        $user = $this->getUser();
+
+        return $user ? (string) $user->username : (string) $this->username;
     }
 }

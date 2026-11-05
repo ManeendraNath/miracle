@@ -46,17 +46,17 @@ class LoginForm extends Model
     public function validatePassword(string $attribute, array|null $params): void
     {
         if (!$this->hasErrors()) {
-            if (LoginThrottle::isLocked('frontend', (string) $this->username)) {
+            if (LoginThrottle::isLocked('frontend', $this->throttleName())) {
                 $this->addError($attribute, 'Too many failed attempts. Please try again in 15 minutes.');
                 return;
             }
             $user = $this->getUser();
             if (!$user || !$user->validatePassword($this->password)) {
-                LoginThrottle::fail('frontend', (string) $this->username);
+                LoginThrottle::fail('frontend', $this->throttleName());
                 $this->addError($attribute, 'Incorrect username or password.');
                 return;
             }
-            LoginThrottle::clear('frontend', (string) $this->username);
+            LoginThrottle::clear('frontend', $this->throttleName());
         }
     }
 
@@ -86,5 +86,13 @@ class LoginForm extends Model
         }
 
         return $this->_user;
+    }
+
+    /** The stored name when the account exists: the collation matches other spellings (é, soft hyphens), each of which would otherwise get its own failure count. */
+    private function throttleName(): string
+    {
+        $user = $this->getUser();
+
+        return $user ? (string) $user->username : (string) $this->username;
     }
 }

@@ -150,9 +150,9 @@ class CronController extends Controller
             }
             $result = $razorpay->syncPending();
             if ($result['errors'] > 0) {
-                throw new \RuntimeException(sprintf('Recorded %d missed payment(s) and %d fee(s); %d lookup(s) failed, see the app log.', $result['captured'], $result['fees'], $result['errors']));
+                throw new \RuntimeException(sprintf('Recorded %d missed payment(s) and %d fee(s), found %d unrecorded refund(s); %d lookup(s) failed, see the app log.', $result['captured'], $result['fees'], $result['unrecordedRefunds'], $result['errors']));
             }
-            return sprintf('Recorded %d missed payment(s) and %d fee(s).', $result['captured'], $result['fees']);
+            return sprintf('Recorded %d missed payment(s) and %d fee(s), found %d unrecorded refund(s).', $result['captured'], $result['fees'], $result['unrecordedRefunds']);
         });
     }
 

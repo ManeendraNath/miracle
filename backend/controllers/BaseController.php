@@ -29,6 +29,8 @@ class BaseController extends Controller
         'user-login-history' => 'Admin',
         'report' => 'Admin',
         'razorpay-test' => 'Admin',
+        // Setting a customer's password or email lets staff sign in as them and see billing hidden from Managers.
+        'user/credentials' => 'Admin',
         // Managers can see leads; changing or deleting them is Admin work.
         'lead/update' => 'Admin',
         'lead/delete' => 'Admin',

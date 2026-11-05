@@ -38,7 +38,7 @@ $formatter = Yii::$app->formatter;
             ],
             [
                 'label' => 'Reference',
-                'value' => 'gateway_payment_id',
+                'value' => static fn(Transaction $model): string => $model->customerReference(),
                 'headerOptions' => ['class' => 'd-none d-md-table-cell'],
                 'contentOptions' => ['class' => 'd-none d-md-table-cell small text-break'],
             ],
@@ -60,7 +60,10 @@ $formatter = Yii::$app->formatter;
                         Transaction::STATUS_FAILED => 'bg-danger-subtle text-danger-emphasis',
                         default => 'bg-secondary-subtle text-secondary-emphasis',
                     };
-                    return Html::tag('span', Html::encode($model->status), ['class' => 'badge ' . $class]);
+                    if ($model->isUnapplied() && $model->status === Transaction::STATUS_CAPTURED) {
+                        $class = 'bg-warning-subtle text-warning-emphasis';
+                    }
+                    return Html::tag('span', Html::encode($model->customerStatus()), ['class' => 'badge ' . $class]);
                 },
             ],
             [

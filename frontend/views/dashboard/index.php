@@ -121,7 +121,7 @@ $invoiceBadge = static fn(string $status): string => match ($status) {
                                     <td><span class="badge <?= $badge ?>"><?= $text ?></span></td>
                                     <td class="text-end text-nowrap pe-3">
                                         <?= Html::a('View', ['/service/view'] + $key, ['class' => 'btn btn-sm btn-outline-secondary me-1']) ?>
-                                        <?= Html::a('Renew', ['/checkout/renew'] + $key, ['class' => 'btn btn-sm btn-primary']) ?>
+                                        <?= $this->render('@frontend/views/renewal/_action', $key + ['renewal' => $service['renewal']]) ?>
                                     </td>
                                 </tr>
                             <?php endforeach; ?>

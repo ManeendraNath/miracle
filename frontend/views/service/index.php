@@ -12,7 +12,7 @@ $formatter = Yii::$app->formatter;
 $today = date('Y-m-d');
 $statusBadge = static fn($row): string => (int) $row->status === 1
     ? '<span class="badge bg-success-subtle text-success-emphasis">Active</span>'
-    : '<span class="badge bg-secondary-subtle text-secondary-emphasis">Inactive</span>';
+    : '<span class="badge bg-secondary-subtle text-secondary-emphasis">' . Html::encode($row::getStatuses()[(int) $row->status] ?? 'Inactive') . '</span>';
 // Past expiry on a still-active service is shown in red.
 $expiry = static function ($row) use ($formatter, $today): string {
     if (!$row->current_expiry_date) {

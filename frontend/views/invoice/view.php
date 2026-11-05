@@ -190,7 +190,7 @@ JS);
         <div class="card border-0 shadow-sm">
             <div class="card-body p-4">
                 <div class="small text-body-secondary">Amount due</div>
-                <div class="display-6 fw-bold mb-3 <?= $outstandingAmount > 0 ? '' : 'text-success' ?>"><?= $inr($outstandingAmount) ?></div>
+                <div class="display-6 fw-bold mb-3 <?= $outstandingAmount > 0 || $model->status === Invoice::STATUS_CARRIED_FORWARD ? '' : 'text-success' ?>"><?= $inr($outstandingAmount) ?></div>
                 <dl class="row small mb-0">
                     <dt class="col-6 fw-normal text-body-secondary">Invoice total</dt>
                     <dd class="col-6 text-end mb-1"><?= $inr($model->total_payable) ?></dd>
@@ -245,6 +245,15 @@ JS);
                         By paying you agree to our <?= Html::a('Terms &amp; Conditions', ['/site/terms'], ['target' => '_blank']) ?>
                         and <?= Html::a('Refund &amp; Cancellation Policy', ['/site/refund-policy'], ['target' => '_blank']) ?>.
                     </p>
+                <?php elseif ($model->status === Invoice::STATUS_CARRIED_FORWARD): ?>
+                    <div class="alert alert-info small mt-3 mb-0">
+                        <i class="fas fa-share me-1"></i>
+                        <?php if ($carriedInto !== null): ?>
+                            The unpaid balance moved to invoice <?= Html::a(Html::encode($carriedInto->invoice_number), ['view', 'number' => $carriedInto->invoice_number]) ?>. Please pay it there.
+                        <?php else: ?>
+                            The unpaid balance moved to a later invoice.
+                        <?php endif; ?>
+                    </div>
                 <?php elseif ($model->status === Invoice::STATUS_PAID): ?>
                     <div class="alert alert-success small mt-3 mb-0">
                         <i class="fas fa-check-circle me-1"></i> Paid in full. Thank you!

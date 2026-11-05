@@ -32,6 +32,11 @@ final class LoginCest
         ];
     }
 
+    public function newCustomersCanFindSignup(FunctionalTester $I): void
+    {
+        $I->seeLink('Create an account');
+    }
+
     public function postedArrayIsAValidationErrorNotA500(FunctionalTester $I): void
     {
         $I->sendAjaxPostRequest('/site/login', [

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace backend\tests\unit\billing;
 
 use Codeception\Test\Unit;
+use common\models\AdminNotification;
 use common\models\Invoice;
 use common\models\Transaction;
 use common\models\User;
@@ -71,6 +72,32 @@ final class RazorpaySyncTest extends Unit
         $this->service()->syncPending();
 
         $this->assertEqualsWithDelta(23.60, (float) Transaction::findOne($payment->id)->gateway_fee, 0.001);
+    }
+
+    public function testSyncAlertsOnceAboutARefundMadeInTheDashboard(): void
+    {
+        $payment = $this->transaction(Transaction::STATUS_CAPTURED, 'order_dash_' . bin2hex(random_bytes(4)), time(), 'pay_dash_' . bin2hex(random_bytes(4)));
+        $payment->updateAttributes(['gateway_fee' => 23.60]);
+        $alerts = static fn(): int => (int) AdminNotification::find()->where(['title' => 'Razorpay Refund Not Recorded'])->andWhere(['like', 'message', $payment->gateway_payment_id])->count();
+
+        $this->reply(['id' => $payment->gateway_payment_id, 'status' => 'captured', 'amount' => 100000, 'amount_refunded' => 40000]);
+        $this->assertSame(1, $this->service()->syncPending()['unrecordedRefunds']);
+        $this->assertSame(1, $alerts());
+
+        $this->reply(['id' => $payment->gateway_payment_id, 'status' => 'captured', 'amount' => 100000, 'amount_refunded' => 40000]);
+        $this->service()->syncPending();
+        $this->assertSame(1, $alerts(), 'not repeated every 30 minutes');
+    }
+
+    public function testADashboardRefundBlocksApplyingThePayment(): void
+    {
+        $payment = $this->transaction(Transaction::STATUS_CAPTURED, 'order_apply_' . bin2hex(random_bytes(4)), time(), 'pay_apply_' . bin2hex(random_bytes(4)));
+        $this->reply(['id' => $payment->gateway_payment_id, 'status' => 'captured', 'amount' => 100000, 'amount_refunded' => 0]);
+        $this->service()->assertRefundsRecorded($payment);
+
+        $this->reply(['id' => $payment->gateway_payment_id, 'status' => 'refunded', 'amount' => 100000, 'amount_refunded' => 100000]);
+        $this->expectExceptionMessage('Record it with Refund first');
+        $this->service()->assertRefundsRecorded($payment);
     }
 
     public function testRefundGoesThroughRazorpayUnlessTheDashboardAlreadyDidIt(): void

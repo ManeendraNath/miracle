@@ -128,11 +128,14 @@ on_fail()
 
     if [ "$STAGE" = code ]; then
         echo "Restoring the previous code..."
+        # A failed health check comes after the flag was removed: put it back before swapping code under traffic.
+        touch "$MAINTENANCE_FLAG"
         if sync_code "$SNAP" && (cd "$APP" && "${COMPOSER[@]}") && publish_public \
-            && rm -f "$MAINTENANCE_FLAG" && (cd "$APP" && php yii help >/dev/null) && health_check; then
+            && (cd "$APP" && php yii help >/dev/null) && rm -f "$MAINTENANCE_FLAG" && health_check; then
             echo "Previous code restored."
             rm -rf "${SNAP:?}"
         else
+            touch "$MAINTENANCE_FLAG"
             echo "ROLLBACK HAD ERRORS. Previous code is kept in: $SNAP"
         fi
         if [ "$MIGRATED" = 1 ]; then
@@ -144,10 +147,9 @@ on_fail()
     fi
 
     # A failed restore may have left half-copied code: stay in maintenance until someone has looked.
-    if [ "$STAGE" = code ] && [ -e "$MAINTENANCE_FLAG" ]; then
+    # Also true of a flag left by an earlier failed deploy when this one stops before touching anything.
+    if [ -e "$MAINTENANCE_FLAG" ]; then
         echo "Maintenance mode is still on. Once the site is sound: rm -f $MAINTENANCE_FLAG"
-    else
-        rm -f "$MAINTENANCE_FLAG"
     fi
     exit $(( code ? code : 1 ))
 }
@@ -181,6 +183,9 @@ grep -Eq '^[[:space:]]*(export[[:space:]]+)?FRONTEND_BASE_URL[[:space:]]*=[[:spa
 echo "Deploying commit $(git rev-parse --short HEAD)"
 TRACKED=$(git ls-files .env yii {common,frontend,backend,console}/config/params-local.php)
 [ -z "$TRACKED" ] || die "production-only files are tracked by Git: $TRACKED"
+
+# The locked Symfony packages need this; composer would otherwise fail only once the site is in maintenance.
+php -r 'exit(version_compare(PHP_VERSION, "8.4.1", ">=") ? 0 : 1);' || die "PHP 8.4.1 or newer is required (found $(php -r 'echo PHP_VERSION;'))"
 
 echo "== Checking PHP syntax"
 if ! LINT=$(find "${DIRS[@]}" -name '*.php' -not -path '*/runtime/*' -not -path '*/web/assets/*' -print0 \

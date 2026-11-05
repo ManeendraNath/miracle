@@ -253,9 +253,8 @@ class InvoiceController extends BaseController
     }
 
     /**
-     * Writes off an unpaid invoice that can't be cancelled (it carries an earlier balance, or its payment was
-     * refunded after the renewal was granted): nothing more is owed on it or on what was carried into it.
-     * Refused while money is kept on them or a payment awaits review (InvoicePaymentService::closeBlocker).
+     * Writes off an unpaid or part-paid invoice: nothing more is owed on it or on what was carried into it.
+     * Money already received is kept. Refused while a payment awaits review (InvoicePaymentService::closeBlocker).
      */
     public function actionClose(int $id)
     {
@@ -264,12 +263,12 @@ class InvoiceController extends BaseController
         try {
             Yii::$app->db->createCommand('SELECT id FROM {{%invoice}} WHERE id = :id FOR UPDATE')->bindValue(':id', (int) $model->id)->queryScalar();
             $model->refresh();
-            if ($model->status !== Invoice::STATUS_UNPAID) {
-                throw new \DomainException('Only an unpaid invoice can be closed.');
+            if (!in_array($model->status, [Invoice::STATUS_UNPAID, Invoice::STATUS_PARTIALLY_PAID], true)) {
+                throw new \DomainException('Only an unpaid or part-paid invoice can be written off.');
             }
-            $released = (new InvoicePaymentService())->closeAsRefunded($model);
+            $released = (new InvoicePaymentService())->closeAsRefunded($model, null, true);
             $dbTransaction->commit();
-            Yii::$app->session->setFlash($released > 0 ? 'warning' : 'success', 'Invoice closed: nothing more is owed on it.' . ($released > 0 ? ' Its unpaid renewals are billed again on the next run unless those services are disabled.' : ''));
+            Yii::$app->session->setFlash($released > 0 ? 'warning' : 'success', 'Invoice closed: nothing more is owed on it. Money already received is kept.' . ($released > 0 ? ' Its unpaid renewals are billed again in full on the next run, with no credit for money kept, unless those services are disabled.' : ''));
         } catch (\Throwable $e) {
             if ($dbTransaction->isActive) {
                 $dbTransaction->rollBack();

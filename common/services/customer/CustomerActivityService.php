@@ -67,9 +67,18 @@ final class CustomerActivityService
         ) {
             $activities[] = [
                 'icon' => 'fas fa-rupee-sign',
-                'badgeClass' => 'bg-success',
-                'title' => 'Payment Submitted',
-                'description' => $transaction->gateway_payment_id ?: 'Reference Uploaded',
+                'badgeClass' => match ($transaction->status) {
+                    Transaction::STATUS_CAPTURED => 'bg-success',
+                    Transaction::STATUS_FAILED => 'bg-danger',
+                    default => 'bg-secondary',
+                },
+                'title' => match ($transaction->status) {
+                    Transaction::STATUS_CAPTURED => $transaction->isUnapplied() ? 'Payment Not Applied' : 'Payment Confirmed',
+                    Transaction::STATUS_REFUNDED => 'Payment Refunded',
+                    Transaction::STATUS_FAILED => 'Payment Rejected',
+                    default => 'Payment Submitted',
+                },
+                'description' => $transaction->customerReference() ?: 'Reference Uploaded',
                 'time' => (int) $transaction->created_at,
                 'url' => '/payment/index',
             ];

@@ -256,11 +256,24 @@ miracle:auto-billing
 
 Staff changes to a service's expiry, customer or disabled status take the same lock until saved, and are refused with a "billing run in progress" message while a run holds it. The run waits up to 10 seconds for such a save.
 
-Razorpay safety net, every 30 minutes (records payments whose callback and webhook were both lost, and fills in Razorpay's fee):
+Razorpay safety net, every 30 minutes (records payments whose callback and webhook were both lost, fills in Razorpay's fee, and alerts admins about refunds made in the Razorpay dashboard so they can be recorded with Refund):
 
 ```bash
 */30 * * * * /usr/local/bin/php /home/rpocncwk/miracle/yii cron/razorpay-sync >> /home/rpocncwk/miracle/runtime/logs/billing-cron.log 2>&1
 ```
+
+Suggested full crontab (times are examples; keep each job's frequency):
+
+```bash
+0 2 * * *    /usr/local/bin/php /home/rpocncwk/miracle/yii backup/run >> /home/rpocncwk/miracle/runtime/logs/billing-cron.log 2>&1
+0 3 * * *    /usr/local/bin/php /home/rpocncwk/miracle/yii cron/run-billing >> /home/rpocncwk/miracle/runtime/logs/billing-cron.log 2>&1
+0 9 * * *    /usr/local/bin/php /home/rpocncwk/miracle/yii cron/payment-reminders >> /home/rpocncwk/miracle/runtime/logs/billing-cron.log 2>&1
+30 9 * * *   /usr/local/bin/php /home/rpocncwk/miracle/yii cron/send-reminders >> /home/rpocncwk/miracle/runtime/logs/billing-cron.log 2>&1
+0 4 * * 0    /usr/local/bin/php /home/rpocncwk/miracle/yii cron/whatsapp-cleanup >> /home/rpocncwk/miracle/runtime/logs/billing-cron.log 2>&1
+*/30 * * * * /usr/local/bin/php /home/rpocncwk/miracle/yii cron/razorpay-sync >> /home/rpocncwk/miracle/runtime/logs/billing-cron.log 2>&1
+```
+
+Deleted customers are not billed or reminded. Suspended customers still are: staff get a warning when suspending one who has active services or open invoices.
 
 Keep `CronController::actionRunBilling()` as the operational entry point. Avoid maintaining a second production billing command unless it has a distinct documented purpose.
 

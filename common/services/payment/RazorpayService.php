@@ -10,6 +10,7 @@ use common\services\admin\AdminAlertService;
 use common\services\billing\InvoicePaymentService;
 use common\services\billing\PaymentConfirmationService;
 use common\services\billing\PaymentProcessingService;
+use common\services\notification\NotificationService;
 use Yii;
 use yii\httpclient\Client;
 use yii\httpclient\StreamTransport;
@@ -213,16 +214,30 @@ final class RazorpayService
         return $refundId;
     }
 
+    /** Refuses when Razorpay's refunded total differs from the one recorded here, e.g. after a dashboard refund. */
+    public function assertRefundsRecorded(Transaction $transaction): void
+    {
+        try {
+            $refunded = (int) ($this->fetchPayment((string) $transaction->gateway_payment_id)['amount_refunded'] ?? 0);
+        } catch (\RuntimeException $e) {
+            throw new \DomainException('Could not check the payment with Razorpay: ' . $e->getMessage(), 0, $e);
+        }
+        if ($refunded !== $this->toMinor((float) $transaction->refunded_amount)) {
+            throw new \DomainException('Razorpay shows ₹' . number_format($refunded / 100, 2) . ' refunded on this payment but ₹' . number_format((float) $transaction->refunded_amount, 2) . ' is recorded here. Record it with Refund first.');
+        }
+    }
+
     /**
      * Cron safety net for payments whose browser callback and webhook were both lost:
      * asks Razorpay about orders still pending after $minAge seconds (up to $maxAge old) and records
-     * any captured payment, then fills in Razorpay's fee where it is still missing.
+     * any captured payment, then fills in Razorpay's fee where it is still missing, and alerts staff
+     * about refunds made in the Razorpay dashboard, which nothing else reports.
      *
-     * @return array{captured: int, fees: int, errors: int}
+     * @return array{captured: int, fees: int, unrecordedRefunds: int, errors: int}
      */
     public function syncPending(int $minAge = 1800, int $maxAge = 3 * 86400): array
     {
-        $result = ['captured' => 0, 'fees' => 0, 'errors' => 0];
+        $result = ['captured' => 0, 'fees' => 0, 'unrecordedRefunds' => 0, 'errors' => 0];
         $now = time();
         $orders = Transaction::find()
             ->where(['gateway_id' => Transaction::GATEWAY_RAZORPAY])
@@ -267,6 +282,27 @@ final class RazorpayService
             } catch (\Throwable $e) {
                 $result['errors']++;
                 Yii::error(['message' => 'Razorpay fee lookup failed.', 'paymentId' => $payment->gateway_payment_id, 'error' => $e->getMessage()], __METHOD__);
+            }
+        }
+
+        // ponytail: newest 200 payments of the last 180 days (Razorpay's refund window), one API call each every run; subscribe to the refund webhooks if volume outgrows this.
+        $captured = Transaction::find()
+            ->where(['gateway_id' => Transaction::GATEWAY_RAZORPAY, 'status' => Transaction::STATUS_CAPTURED])
+            ->andWhere(['not', ['gateway_payment_id' => null]])
+            ->andWhere(['>=', 'paid_at', $now - 180 * 86400])
+            ->orderBy(['id' => SORT_DESC])
+            ->limit(200)
+            ->all();
+        foreach ($captured as $payment) {
+            try {
+                $refunded = (int) ($this->fetchPayment((string) $payment->gateway_payment_id)['amount_refunded'] ?? 0);
+                if ($refunded !== $this->toMinor((float) $payment->refunded_amount)) {
+                    $result['unrecordedRefunds']++;
+                    AdminAlertService::refundNotRecorded((string) $payment->gateway_payment_id, $refunded / 100, (float) $payment->refunded_amount, (int) $payment->id);
+                }
+            } catch (\Throwable $e) {
+                $result['errors']++;
+                Yii::error(['message' => 'Razorpay refund check failed.', 'paymentId' => $payment->gateway_payment_id, 'error' => $e->getMessage()], __METHOD__);
             }
         }
 
@@ -405,18 +441,26 @@ final class RazorpayService
                 (new PaymentProcessingService())->transactionChanged($transaction, false);
             }
             $dbTransaction->commit();
-            if (!$unapplied && $invoice !== null && $invoice->refresh()) {
-                // E.g. an older full-amount order paid after a part payment by cheque.
-                $excess = (new InvoicePaymentService())->getCapturedAmount((int) $invoice->id) - (float) $invoice->total_payable;
-                if ($this->toMinor($excess) > 0) {
-                    AdminAlertService::paymentOverpaid($invoice->invoice_number, (float) $transaction->amount, round($excess, 2), $paymentId);
-                } elseif ($superseded && $this->toMinor((float) $invoice->total_payable) !== $this->toMinor((float) $transaction->amount)) {
-                    AdminAlertService::supersededOrderPaid($invoice->invoice_number, (float) $transaction->amount, (float) $invoice->total_payable, $paymentId);
+            // Committed: a failed alert must not look like a failed payment to the caller.
+            try {
+                if (!$unapplied && $invoice !== null && $invoice->refresh()) {
+                    // E.g. an older full-amount order paid after a part payment by cheque.
+                    $excess = (new InvoicePaymentService())->getCapturedAmount((int) $invoice->id) - (float) $invoice->total_payable;
+                    if ($this->toMinor($excess) > 0) {
+                        AdminAlertService::paymentOverpaid($invoice->invoice_number, (float) $transaction->amount, round($excess, 2), $paymentId);
+                    } elseif ($superseded && $this->toMinor((float) $invoice->total_payable) !== $this->toMinor((float) $transaction->amount)) {
+                        AdminAlertService::supersededOrderPaid($invoice->invoice_number, (float) $transaction->amount, (float) $invoice->total_payable, $paymentId);
+                    }
                 }
+                if ($unapplied) {
+                    Yii::warning(['message' => 'Razorpay payment captured on a non-payable invoice.', 'transactionId' => (int) $transaction->id, 'invoice' => $invoice->invoice_number, 'status' => $invoice->status], __METHOD__);
+                    AdminAlertService::paymentUnapplied($invoice->invoice_number, (string) $invoice->status, (float) $transaction->amount, $paymentId);
+                    (new NotificationService())->create((int) $invoice->user_id, 'payment', 'Payment Received: Not Yet Applied', 'We received your payment of ₹' . number_format((float) $transaction->amount, 2) . ' for invoice ' . $invoice->invoice_number . ', but that invoice was already settled or closed. We will refund it or apply it to another invoice.', '/payment/view?id=' . (int) $transaction->id);
+                }
+            } catch (\Throwable $e) {
+                Yii::error(['message' => 'Payment was captured but an alert failed.', 'transactionId' => (int) $transaction->id, 'error' => $e->getMessage()], __METHOD__);
             }
             if ($unapplied) {
-                Yii::warning(['message' => 'Razorpay payment captured on a non-payable invoice.', 'transactionId' => (int) $transaction->id, 'invoice' => $invoice->invoice_number, 'status' => $invoice->status], __METHOD__);
-                AdminAlertService::paymentUnapplied($invoice->invoice_number, (string) $invoice->status, (float) $transaction->amount, $paymentId);
                 return $transaction;
             }
         } catch (\Throwable $e) {

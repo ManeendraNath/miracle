@@ -83,7 +83,11 @@ final class RenewalFulfilmentService
     {
         return Invoice::find()->alias('fr')->select('fr.id')
             ->where(['fr.status' => Invoice::STATUS_REFUNDED])
-            ->andWhere(['not exists', Transaction::find()->alias('frt')->select('frt.id')->where('frt.invoice_id = fr.id')->andWhere(['frt.status' => Transaction::STATUS_CAPTURED, 'frt.is_unapplied' => 0])]);
+            ->andWhere(['not exists', Transaction::find()->alias('frt')->select('frt.id')->where('frt.invoice_id = fr.id')->andWhere(['frt.status' => Transaction::STATUS_CAPTURED, 'frt.is_unapplied' => 0])])
+            // Money kept on a balance carried into it counts too. ponytail: one step back; a recursive CTE if chains with money kept on older links appear.
+            ->andWhere(['not exists', Transaction::find()->alias('frs')->select('frs.id')
+                ->innerJoin(['fri' => InvoiceItem::tableName()], 'fri.source_invoice_id = frs.invoice_id')
+                ->where('fri.invoice_id = fr.id')->andWhere(['fri.item_type' => InvoiceItem::TYPE_ARREARS, 'frs.status' => Transaction::STATUS_CAPTURED, 'frs.is_unapplied' => 0])]);
     }
 
     /**
@@ -167,6 +171,12 @@ final class RenewalFulfilmentService
 
         $asset->updated_at = $now;
         $attributes = ['current_expiry_date', 'updated_at'];
+        // Staff moved the expiry since the anchor was set: later periods must follow the date just granted.
+        $endsOn = strtotime((string) $event->period_end);
+        if ($asset->renewal_anchor_day !== null && $endsOn !== false && (int) date('j', $endsOn) !== min((int) $asset->renewal_anchor_day, (int) date('t', $endsOn))) {
+            $asset->renewal_anchor_day = RenewalPeriodCalculator::anchorDayFor((string) $event->period_end);
+            $attributes[] = 'renewal_anchor_day';
+        }
         // The one-time price was used for this renewal; later ones are calculated from it again. A different
         // value was set meanwhile for the renewal after this one, so it stays.
         if ((int) $event->is_manual_amount && $asset->next_renewal_amount !== null

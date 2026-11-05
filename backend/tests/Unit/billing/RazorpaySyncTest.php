@@ -80,13 +80,88 @@ final class RazorpaySyncTest extends Unit
         $payment->updateAttributes(['gateway_fee' => 23.60]);
         $alerts = static fn(): int => (int) AdminNotification::find()->where(['title' => 'Razorpay Refund Not Recorded'])->andWhere(['like', 'message', $payment->gateway_payment_id])->count();
 
-        $this->reply(['id' => $payment->gateway_payment_id, 'status' => 'captured', 'amount' => 100000, 'amount_refunded' => 40000]);
+        // Twice each run: a difference is looked at again under the row's lock.
+        $this->repliesRefunded($payment, 40000);
         $this->assertSame(1, $this->service()->syncPending()['unrecordedRefunds']);
         $this->assertSame(1, $alerts());
 
-        $this->reply(['id' => $payment->gateway_payment_id, 'status' => 'captured', 'amount' => 100000, 'amount_refunded' => 40000]);
+        $this->repliesRefunded($payment, 40000);
         $this->service()->syncPending();
         $this->assertSame(1, $alerts(), 'not repeated every 30 minutes');
+
+        // ₹100 must not count as already alerted because ₹1000 was.
+        $this->repliesRefunded($payment, 100000);
+        $this->service()->syncPending();
+        $this->repliesRefunded($payment, 10000);
+        $this->service()->syncPending();
+        $this->assertSame(3, $alerts());
+        $alert = AdminNotification::find()->where(['title' => 'Razorpay Refund Not Recorded'])->andWhere(['like', 'message', $payment->gateway_payment_id])->one();
+        $this->assertStringContainsString('if it already shows this refund, do nothing', $alert->message);
+    }
+
+    public function testARefundFinishingDuringTheCheckIsNotReported(): void
+    {
+        $payment = $this->transaction(Transaction::STATUS_CAPTURED, 'order_race_' . bin2hex(random_bytes(4)), time(), 'pay_race_' . bin2hex(random_bytes(4)));
+        $payment->updateAttributes(['gateway_fee' => 23.60]);
+        $this->reply(['id' => $payment->gateway_payment_id, 'status' => 'captured', 'amount' => 100000, 'amount_refunded' => 40000]);
+        // By the second look the staff refund has been saved.
+        $this->reply(['id' => $payment->gateway_payment_id, 'status' => 'captured', 'amount' => 100000, 'amount_refunded' => 0]);
+
+        $this->assertSame(0, $this->service()->syncPending()['unrecordedRefunds']);
+        $this->assertFalse(AdminNotification::find()->where(['title' => 'Razorpay Refund Not Recorded'])->andWhere(['like', 'message', $payment->gateway_payment_id])->exists());
+    }
+
+    public function testAFullyRefundedPaymentRazorpayShowsLessOfIsReportedAsAProblem(): void
+    {
+        $payment = $this->transaction(Transaction::STATUS_CAPTURED, 'order_less_' . bin2hex(random_bytes(4)), time(), 'pay_less_' . bin2hex(random_bytes(4)));
+        $payment->updateAttributes(['gateway_fee' => 23.60, 'status' => Transaction::STATUS_REFUNDED, 'refunded_amount' => 1000]);
+        $this->repliesRefunded($payment, 0);
+
+        $this->assertSame(1, $this->service()->syncPending()['unrecordedRefunds']);
+        $alert = AdminNotification::find()->where(['title' => 'Razorpay Refund Not Recorded'])->andWhere(['like', 'message', $payment->gateway_payment_id])->one();
+        $this->assertStringContainsString('less refunded than recorded', $alert->message);
+    }
+
+    public function testTheRefundCheckStopsWhenRazorpayKeepsFailing(): void
+    {
+        foreach (range(1, 7) as $n) {
+            $payment = $this->transaction(Transaction::STATUS_CAPTURED, 'order_down_' . bin2hex(random_bytes(4)), time(), 'pay_down_' . bin2hex(random_bytes(4)));
+            $payment->updateAttributes(['gateway_fee' => 23.60]);
+        }
+
+        // No canned answers: every call fails. Five failures, then the stop is counted too.
+        $this->assertSame(6, $this->service()->syncPending()['errors']);
+    }
+
+    public function testARefundWithNoClearAnswerSaysItMayHaveBeenSent(): void
+    {
+        $this->reply(['id' => 'pay_x', 'status' => 'captured', 'amount' => 100000, 'amount_refunded' => 0]);
+        $this->reply(['error' => ['description' => 'Bad gateway']], 502);
+        try {
+            $this->service()->refundPayment('pay_x', 100000);
+            $this->fail('A server error is not a success.');
+        } catch (\DomainException $e) {
+            $this->assertStringContainsString('may have been sent', $e->getMessage());
+        }
+
+        // The connection itself failing: no answer queued.
+        $this->reply(['id' => 'pay_x', 'status' => 'captured', 'amount' => 100000, 'amount_refunded' => 0]);
+        $this->expectExceptionMessage('may have been sent');
+        $this->service()->refundPayment('pay_x', 100000);
+    }
+
+    public function testRazorpayUnreachableBeforeARefundSaysNothingWasRefunded(): void
+    {
+        $this->expectExceptionMessage('nothing was refunded');
+        $this->service()->refundPayment('pay_x', 100000);
+    }
+
+    public function testADashboardRefundIsRecognisedByItsExactAmount(): void
+    {
+        $this->reply(['id' => 'pay_x', 'status' => 'refunded', 'amount' => 100000, 'amount_refunded' => 100000]);
+        $this->assertTrue($this->service()->isAlreadyRefunded('pay_x', 60000, 40000));
+        $this->reply(['id' => 'pay_x', 'status' => 'refunded', 'amount' => 100000, 'amount_refunded' => 100000]);
+        $this->assertFalse($this->service()->isAlreadyRefunded('pay_x', 50000, 40000));
     }
 
     public function testADashboardRefundBlocksApplyingThePayment(): void
@@ -124,6 +199,13 @@ final class RazorpaySyncTest extends Unit
         $this->reply(['id' => 'pay_r', 'status' => 'captured', 'amount' => 100000, 'amount_refunded' => 40000]);
         $this->expectExceptionMessage('Enter ₹400.00 as the refund amount');
         $this->service()->refundPayment('pay_r', 100000);
+    }
+
+    private function repliesRefunded(Transaction $payment, int $refundedMinor): void
+    {
+        foreach ([1, 2] as $look) {
+            $this->reply(['id' => $payment->gateway_payment_id, 'status' => 'captured', 'amount' => 100000, 'amount_refunded' => $refundedMinor]);
+        }
     }
 
     private function service(): RazorpayService

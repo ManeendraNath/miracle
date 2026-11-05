@@ -121,7 +121,8 @@ final class UpcomingExpiryService
         $query = $class::find()
                 ->with('user')
                 ->andWhere(['not', ['current_expiry_date' => null]])
-                ->andWhere(['status' => $class::RENEWABLE_STATUSES]); // disabled services are not renewed
+                ->andWhere(['status' => $class::RENEWABLE_STATUSES]) // disabled services are not renewed
+                ->andWhere(['not in', 'user_id', \common\models\User::deletedIds()]);
         if ($userId !== null) {
             $query->andWhere(['user_id' => $userId]);
         }

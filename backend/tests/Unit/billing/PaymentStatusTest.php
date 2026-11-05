@@ -311,12 +311,96 @@ final class PaymentStatusTest extends Unit
     public function testAClosedInvoicePdfSaysSoAndHidesThePaymentDetails(): void
     {
         $invoice = $this->invoice(1000.00);
-        $render = static fn(): string => Yii::$app->view->renderFile(Yii::getAlias('@common/mail/invoice-pdf.php'), ['invoice' => Invoice::findOne($invoice->id), 'capturedAmount' => 0.0, 'outstandingAmount' => 1000.0]);
+        $render = static fn(): string => Yii::$app->view->renderFile(Yii::getAlias('@common/mail/invoice-pdf.php'), ['invoice' => Invoice::findOne($invoice->id), 'capturedAmount' => 0.0, 'outstandingAmount' => 1000.0, 'carriedInto' => null]);
         $this->assertStringContainsString('Payment Details', $render());
 
         Invoice::updateAll(['status' => Invoice::STATUS_CANCELLED], ['id' => $invoice->id]);
         $this->assertStringContainsString('no longer payable', $render());
         $this->assertStringNotContainsString('Payment Details', $render());
+    }
+
+    public function testAWrittenOffInvoiceIsNotCalledRefunded(): void
+    {
+        $invoice = $this->invoice(1000.00);
+        $invoice->updateAttributes(['status' => Invoice::STATUS_REFUNDED]);
+        $this->assertSame('Closed (balance written off)', $invoice->statusLabel());
+
+        $this->payment($invoice, Transaction::GATEWAY_UPI_BANK, Transaction::STATUS_REFUNDED)->updateAttributes(['refunded_amount' => 1000]);
+        $this->assertSame('Refunded', $invoice->statusLabel());
+    }
+
+    public function testACarriedBalanceIsFollowedHoweverLongTheChain(): void
+    {
+        $first = $this->invoice(100.00);
+        $link = $first;
+        foreach (range(1, 12) as $n) {
+            $link->updateAttributes(['status' => Invoice::STATUS_CARRIED_FORWARD]);
+            $link = $this->carry($link);
+        }
+
+        $service = new InvoicePaymentService();
+        $this->assertSame((int) $link->id, (int) $service->openInvoiceCarrying((int) $first->id)->id);
+        $this->assertNotNull($first->carriedTo());
+        $pdf = Yii::$app->view->renderFile(Yii::getAlias('@common/mail/invoice-pdf.php'), ['invoice' => Invoice::findOne($first->id), 'capturedAmount' => 0.0, 'outstandingAmount' => 0.0, 'carriedInto' => $link]);
+        $this->assertStringContainsString('Balance moved to invoice ' . $link->invoice_number, $pdf);
+    }
+
+    public function testMoneyKeptOnACarriedSourceIsNotAFullRefund(): void
+    {
+        $source = $this->invoice(1000.00);
+        $this->payment($source, Transaction::GATEWAY_UPI_BANK, Transaction::STATUS_CAPTURED, null, 300.00);
+        $source->updateAttributes(['status' => Invoice::STATUS_CARRIED_FORWARD]);
+        $target = $this->carry($source);
+        $target->updateAttributes(['status' => Invoice::STATUS_REFUNDED]);
+
+        $this->assertNotContains((int) $target->id, array_map('intval', \common\services\billing\RenewalFulfilmentService::fullyRefundedInvoices()->column()));
+    }
+
+    public function testAClosedInvoiceCannotBeCancelled(): void
+    {
+        $invoice = $this->invoice(1000.00);
+        $invoice->updateAttributes(['status' => Invoice::STATUS_REFUNDED]);
+
+        $this->expectExceptionMessage('already closed');
+        (new \common\services\billing\InvoiceCancellationService())->cancel($invoice);
+    }
+
+    public function testFulfilmentMovesAStaleAnchorToTheDateGranted(): void
+    {
+        $hosting = new \common\models\Hosting();
+        $hosting->setAttributes(['user_id' => $this->_user->id, 'primary_domain' => 'anchor-' . bin2hex(random_bytes(4)) . '.test', 'current_expiry_date' => '2026-11-30', 'renewal_anchor_day' => 15, 'status' => \common\models\Hosting::STATUS_ACTIVE, 'created_at' => time(), 'updated_at' => time()], false);
+        $this->assertTrue($hosting->save(false));
+        $invoice = $this->invoice(1000.00);
+        $this->billingEvent($invoice)->updateAttributes(['item_id' => $hosting->id]);
+
+        (new PaymentProcessingService())->transactionChanged($this->payment($invoice, Transaction::GATEWAY_UPI_BANK, Transaction::STATUS_CAPTURED));
+
+        $hosting->refresh();
+        $this->assertSame(31, (int) $hosting->renewal_anchor_day, '30 Nov is a month end');
+    }
+
+    public function testRemindersPromiseAnInvoiceOnlyWhenOneIsComing(): void
+    {
+        /** @var \yii\mail\BaseMailer $mailer */
+        $mailer = Yii::$app->mailer;
+        $render = fn(string $view, bool $billable, int $days = 7): string => $mailer->render('@common/mail/renewal-reminder-' . $view, ['serviceName' => 'site.test', 'expiryDate' => '2027-01-01', 'daysBefore' => $days, 'client' => $this->_user, 'billable' => $billable], false);
+        foreach (['html', 'text'] as $view) {
+            $this->assertStringContainsString('We email your renewal invoice', $render($view, true));
+            $this->assertStringNotContainsString('We email your renewal invoice', $render($view, false));
+            $this->assertStringContainsString('contact us to renew', $render($view, false));
+        }
+        $this->assertStringContainsString('Expires today', $render('text', true, 0));
+    }
+
+    public function testPaymentsCanBeFoundByInvoiceNumberNewestFirst(): void
+    {
+        $invoice = $this->invoice(1000.00);
+        $older = $this->payment($invoice, Transaction::GATEWAY_UPI_BANK, Transaction::STATUS_FAILED);
+        $newer = $this->payment($invoice, Transaction::GATEWAY_UPI_BANK, Transaction::STATUS_FAILED);
+        $this->payment($this->invoice(500.00), Transaction::GATEWAY_UPI_BANK, Transaction::STATUS_FAILED);
+
+        $found = (new \backend\models\searches\TransactionSearch())->search(['TransactionSearch' => ['invoice_number' => $invoice->invoice_number]])->getModels();
+        $this->assertSame([(int) $newer->id, (int) $older->id], array_map(static fn(Transaction $t): int => (int) $t->id, $found));
     }
 
     public function testClosingWithMoneyKeptLeavesTheCouponUsed(): void

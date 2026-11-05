@@ -17,7 +17,7 @@ $methods = [
     Transaction::GATEWAY_UPI_BANK => 'UPI / Bank Transfer',
 ];
 $statusClass = match ($model->status) {
-    Transaction::STATUS_CAPTURED => 'bg-success-subtle text-success-emphasis',
+    Transaction::STATUS_CAPTURED => $model->isUnapplied() ? 'bg-warning-subtle text-warning-emphasis' : 'bg-success-subtle text-success-emphasis',
     Transaction::STATUS_PENDING => 'bg-warning-subtle text-warning-emphasis',
     Transaction::STATUS_FAILED => 'bg-danger-subtle text-danger-emphasis',
     default => 'bg-secondary-subtle text-secondary-emphasis',

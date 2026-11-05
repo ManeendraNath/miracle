@@ -79,18 +79,6 @@ $this->params['breadcrumbs'][] = $user->username;
 
                     </div>
 
-                    <div class="border rounded p-3 mb-3">
-
-                        <?= $form->field($model, 'service_expiry_notifications')->checkbox([
-                            'label' => 'Service expiry notifications',
-                        ]) ?>
-
-                        <div class="text-muted small">
-                            Receive notifications for
-                            upcoming service expiries.
-                        </div>
-
-                    </div>
 
                     <div class="border rounded p-3 mb-4">
 

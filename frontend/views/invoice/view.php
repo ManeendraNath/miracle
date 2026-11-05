@@ -87,7 +87,7 @@ JS);
     <div>
         <h1 class="h3 fw-bold mb-0 d-flex align-items-center gap-2 flex-wrap">
             <?= Html::encode($model->invoice_number) ?>
-            <span class="badge fs-6 fw-semibold <?= $statusClass ?>"><?= Html::encode(Invoice::getStatuses()[$model->status] ?? $model->status) ?></span>
+            <span class="badge fs-6 fw-semibold <?= $statusClass ?>"><?= Html::encode($model->statusLabel()) ?></span>
             <?php if ($isOverdue): ?>
                 <span class="badge fs-6 fw-semibold bg-danger">Overdue</span>
             <?php endif; ?>
@@ -251,7 +251,8 @@ JS);
                         <?php if ($carriedInto !== null): ?>
                             The unpaid balance moved to invoice <?= Html::a(Html::encode($carriedInto->invoice_number), ['view', 'number' => $carriedInto->invoice_number]) ?>. Please pay it there.
                         <?php else: ?>
-                            The unpaid balance moved to a later invoice.
+                            <?php $next = $model->carriedTo(); ?>
+                            The unpaid balance moved to <?= $next !== null ? 'invoice ' . Html::a(Html::encode($next->invoice_number), ['view', 'number' => $next->invoice_number]) . ', which is settled' : 'a later invoice' ?>. Nothing more is owed here.
                         <?php endif; ?>
                     </div>
                 <?php elseif ($model->status === Invoice::STATUS_PAID): ?>

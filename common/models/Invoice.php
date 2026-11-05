@@ -78,7 +78,28 @@ class Invoice extends base\Invoice
 
         return $arn !== ''
             ? "Export of services: supply meant for export under LUT without payment of IGST (LUT ARN {$arn})."
-            : 'Export of services: zero-rated supply, no GST charged.';
+            : 'Export of services: no GST charged.';
+    }
+
+    /** The invoice this one's balance was carried into (the next link only; see InvoicePaymentService::openInvoiceCarrying()). */
+    public function carriedTo(): ?self
+    {
+        $item = InvoiceItem::findOne(['source_invoice_id' => (int) $this->id, 'item_type' => InvoiceItem::TYPE_ARREARS]);
+
+        return $item !== null ? self::findOne((int) $item->invoice_id) : null;
+    }
+
+    /**
+     * The status to show people: a written-off invoice is stored as Refunded, but saying so when no money
+     * went back would make a customer look for a refund that never existed.
+     */
+    public function statusLabel(): string
+    {
+        if ($this->status === self::STATUS_REFUNDED && !Transaction::find()->where(['invoice_id' => (int) $this->id])->andWhere(['>', 'refunded_amount', 0])->exists()) {
+            return 'Closed (balance written off)';
+        }
+
+        return self::getStatuses()[$this->status] ?? (string) $this->status;
     }
 
     public static function getStatuses(): array

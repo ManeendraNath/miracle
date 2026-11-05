@@ -44,6 +44,8 @@ if ($model->status === Invoice::STATUS_UNPAID) {
             'method' => 'post',
         ],
     ]);
+}
+if (in_array($model->status, [Invoice::STATUS_UNPAID, Invoice::STATUS_PARTIALLY_PAID], true)) {
     $this->params['actions'][] = Html::a('Resend Invoice', ['resend-invoice', 'id' => $model->id], [
         'class' => 'btn btn-outline-primary',
         'data' => [
@@ -58,6 +60,10 @@ $this->params['actions'][] = Html::button('<i class="fas fa-print me-1"></i> Pri
 <div class="container-fluid py-4">
     <?php if ($model->emailed_at === null && in_array($model->status, [Invoice::STATUS_UNPAID, Invoice::STATUS_PARTIALLY_PAID], true)): ?>
         <div class="alert alert-warning">No email is recorded for this invoice, so the customer may not have received it. Check their email address, then use Resend Invoice.</div>
+    <?php endif; ?>
+    <?php $carriedTo = $model->status === Invoice::STATUS_CARRIED_FORWARD ? $model->carriedTo() : null; ?>
+    <?php if ($carriedTo !== null): ?>
+        <div class="alert alert-info">The balance moved to invoice <?= Html::a(Html::encode($carriedTo->invoice_number), ['view', 'number' => $carriedTo->invoice_number], ['class' => 'alert-link']) ?> (<?= Html::encode($carriedTo->statusLabel()) ?>).</div>
     <?php endif; ?>
     <?= $this->render('_invoice_content', ['model' => $model, 'capturedAmount' => $capturedAmount, 'outstandingAmount' => $outstandingAmount]) ?>
 

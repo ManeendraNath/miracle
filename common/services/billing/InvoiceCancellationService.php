@@ -36,6 +36,10 @@ final class InvoiceCancellationService
                 throw new \DomainException('A carried-forward invoice cannot be cancelled.');
             }
 
+            if ($lockedInvoice->status === Invoice::STATUS_REFUNDED) {
+                throw new \DomainException('This invoice is already closed, so it cannot be cancelled.');
+            }
+
             $capturedAmount = $this->paymentService->getCapturedAmount((int) $lockedInvoice->id);
 
             if ($capturedAmount > 0) {

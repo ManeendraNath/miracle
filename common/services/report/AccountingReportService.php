@@ -88,7 +88,7 @@ final class AccountingReportService
                 self::money($invoice->igst_percent),
                 self::money($tax['igstAmount']),
                 self::money($invoice->total_payable),
-                Invoice::getStatuses()[$invoice->status] ?? $invoice->status,
+                $invoice->statusLabel(),
                 (string) $invoice->coupon_code,
                 self::money(round((float) $invoice->total_payable - $tax['total'], 2)),
                 self::money($tax['total']),

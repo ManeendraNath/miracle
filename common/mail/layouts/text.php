@@ -23,9 +23,12 @@ https://miraclewebtechnologies.com
 
 ==================================================
 
+<?php if (empty($this->params['replyAllowed'])): ?>
 This is an automated system generated email.
 
 Please do not reply directly to this message.
+<?php endif; ?>
+<?php unset($this->params['replyAllowed']); ?>
 <?php $this->endBody() ?>
 <?php
 $this->endPage();

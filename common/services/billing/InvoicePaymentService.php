@@ -245,7 +245,8 @@ final class InvoicePaymentService
     /** The open invoice a carried-forward invoice's balance now sits on (followed forward along arrears lines), or null. */
     public function openInvoiceCarrying(int $invoiceId): ?Invoice
     {
-        for ($id = $invoiceId, $hops = 0; $hops < 10; $hops++) {
+        // Each step goes to a newer invoice, so the chain can't loop.
+        for ($id = $invoiceId;;) {
             $newer = Invoice::find()->alias('i')
                 ->innerJoin(['ii' => InvoiceItem::tableName()], 'ii.invoice_id = i.id')
                 ->where(['ii.item_type' => InvoiceItem::TYPE_ARREARS, 'ii.source_invoice_id' => $id])
@@ -255,8 +256,6 @@ final class InvoicePaymentService
             }
             $id = (int) $newer->id;
         }
-
-        return null;
     }
 
     /** Refuses a new payment on an invoice that is already settled or closed. */

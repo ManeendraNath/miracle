@@ -97,7 +97,7 @@ $money = static fn(int|float|string|null $amount): string => 'INR ' . number_for
     </tr>
     <tr>
         <td>Remaining Invoice Balance</td>
-        <td><?= Html::encode($money($outstandingAmount)) ?></td>
+        <td><?= $carriedInto !== null ? 'Balance moved to invoice ' . Html::encode($carriedInto->invoice_number) : Html::encode($money($outstandingAmount)) ?></td>
     </tr>
 </table>
 

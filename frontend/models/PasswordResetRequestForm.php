@@ -54,9 +54,8 @@ class PasswordResetRequestForm extends Model
 
         if (!User::isPasswordResetTokenValid($user->password_reset_token)) {
             $user->generatePasswordResetToken();
-            if (!$user->save()) {
-                return false;
-            }
+            // Only this column: an older record failing today's rules must not stop a password reset.
+            $user->updateAttributes(['password_reset_token' => $user->password_reset_token]);
         }
 
         return $mailer

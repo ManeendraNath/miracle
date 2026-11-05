@@ -206,8 +206,9 @@ class TransactionController extends BaseController
         }
 
         try {
-            (new PaymentConfirmationService())->send($paymentTransaction);
+            // Notification first: a mail failure must not cost the customer both.
             (new NotificationService())->create((int) $paymentTransaction->invoice->user_id, 'payment', 'Payment Confirmed', 'Your payment for invoice ' . $paymentTransaction->invoice->invoice_number . ' has been confirmed.', '/invoice/view?number=' . rawurlencode($paymentTransaction->invoice->invoice_number));
+            (new PaymentConfirmationService())->send($paymentTransaction);
             Yii::$app->session->setFlash('success', 'Payment approved and confirmation email sent.');
         } catch (\Throwable $e) {
             Yii::error(['message' => 'Payment was approved but confirmation email failed.', 'transactionId' => (int) $paymentTransaction->id, 'error' => $e->getMessage()], __METHOD__);
@@ -240,13 +241,14 @@ class TransactionController extends BaseController
             $remaining = round((float) $model->amount - (float) $model->refunded_amount, 2);
             $input = trim(self::scalarParam($this->request->post('refund_amount', '')));
             $amount = $input === '' ? $remaining : round((float) $input, 2);
-            if (($input !== '' && !is_numeric($input)) || $amount <= 0 || $amount > $remaining) {
+            $expected = $this->request->post('refunded_before');
+            // A confirm submits the form by script, past the field's "required": a cleared box must not mean "refund everything".
+            if (($input === '' && $expected !== null) || ($input !== '' && !is_numeric($input)) || $amount <= 0 || $amount > $remaining) {
                 throw new \DomainException('Enter a refund amount between ₹0.01 and ₹' . number_format($remaining, 2) . '.');
             }
             $full = abs($amount - $remaining) < 0.005;
             // The form carries what was refunded when it was shown: a second tab or a double click with the
             // same partial amount would otherwise pass every check again and send it twice.
-            $expected = $this->request->post('refunded_before');
             if ($expected !== null && abs((float) $expected - (float) $model->refunded_amount) >= 0.005) {
                 throw new \DomainException('This payment was refunded meanwhile (now ₹' . number_format((float) $model->refunded_amount, 2) . '). Check the amount and try again.');
             }
@@ -255,9 +257,12 @@ class TransactionController extends BaseController
             // Its unpaid balance moved to a newer invoice as a fixed arrears line; refunding it while that is
             // open would leave the line short. Once settled nothing is left to get wrong. An unapplied
             // payment was never part of the arrears, so it can always go back.
+            // A refund already made in the Razorpay dashboard can still be recorded: that money has gone either way.
             // ponytail: refused while open; raise the arrears on the newer invoice if this case gets common.
             $carrying = ($invoice->status ?? null) === Invoice::STATUS_CARRIED_FORWARD && !$model->isUnapplied() ? $paymentService->openInvoiceCarrying((int) $invoice->id) : null;
-            if ($carrying !== null) {
+            $razorpay = new RazorpayService();
+            $viaRazorpay = (int) $model->gateway_id === Transaction::GATEWAY_RAZORPAY && (string) $model->gateway_payment_id !== '' && $razorpay->isEnabled();
+            if ($carrying !== null && !($viaRazorpay && $razorpay->isAlreadyRefunded((string) $model->gateway_payment_id, (int) round($amount * 100), (int) round((float) $model->refunded_amount * 100)))) {
                 throw new \DomainException('This invoice was carried forward into ' . $carrying->invoice_number . ', so its payments cannot be refunded until that invoice is paid or written off.');
             }
             $canReconcile = $invoice !== null && !in_array($invoice->status, InvoicePaymentService::CLOSED_STATUSES, true);
@@ -270,8 +275,7 @@ class TransactionController extends BaseController
             }
 
             $note = 'Refunded ₹' . number_format($amount, 2) . ' on ' . date('d M Y') . '.';
-            $razorpay = new RazorpayService();
-            if ((int) $model->gateway_id === Transaction::GATEWAY_RAZORPAY && (string) $model->gateway_payment_id !== '' && $razorpay->isEnabled()) {
+            if ($viaRazorpay) {
                 $refundId = $razorpay->refundPayment((string) $model->gateway_payment_id, (int) round($amount * 100), (int) round((float) $model->refunded_amount * 100));
                 // Kept even if the save below fails: the money has gone.
                 Yii::warning(['message' => 'Razorpay refund sent.', 'transactionId' => $id, 'refundId' => $refundId, 'amount' => $amount], __METHOD__);
@@ -291,7 +295,11 @@ class TransactionController extends BaseController
             if (($invoice->status ?? null) === Invoice::STATUS_REFUNDED && !empty($invoice->coupon_code) && $paymentService->getCapturedAmount((int) $invoice->id) <= 0) {
                 (new \common\services\billing\CouponService())->removeForInvoice((int) $invoice->id);
             }
-            $message = 'Refund of ₹' . number_format($amount, 2) . ' recorded. The invoice was ' . (Invoice::getStatuses()[$invoice->status ?? ''] ?? $invoice->status ?? '-') . ', so it is unchanged.';
+            $message = 'Refund of ₹' . number_format($amount, 2) . ' recorded. The invoice was ' . (Invoice::getStatuses()[$invoice->status ?? ''] ?? $invoice->status ?? '-') . ', so it is unchanged and nothing more is owed on it.' . ($model->isUnapplied() ? '' : ' Renewals already granted are not reversed: disable the service if needed.');
+            if ($carrying !== null) {
+                $flash = 'warning';
+                $message = 'Refund of ₹' . number_format($amount, 2) . ' recorded. Invoice ' . $carrying->invoice_number . ' carries the old balance, which does not include this amount: bill it separately if it is still owed.';
+            }
             if ($canReconcile) {
                 (new PaymentProcessingService())->transactionChanged($model, false);
                 $invoice->refresh();
@@ -300,7 +308,7 @@ class TransactionController extends BaseController
                     $message = 'Refund of ₹' . number_format($amount, 2) . ' recorded and the invoice closed: nothing more is owed.' . ($full ? '' : ' The rest of the payment is kept.');
                     if ($released > 0) {
                         $flash = 'warning';
-                        $message .= ' Its unpaid renewal is billed again in full on the next run' . ($full ? '' : ', with no credit for the money kept,') . ' unless the service is disabled.';
+                        $message .= ' Its unpaid renewal is billed again in full on the next run' . ($full ? '' : ', with no credit for the money kept,') . ' if the service is Active; a suspended or overdue service is not billed until it is set Active.';
                     }
                 } elseif ($model->isUnapplied()) {
                     $message = 'Refund of ₹' . number_format($amount, 2) . ' recorded. This payment was not counted on the invoice, so its balance is unchanged.';
@@ -431,8 +439,8 @@ class TransactionController extends BaseController
 
         // Saved: the customer was told only that staff would refund or apply it.
         try {
-            (new PaymentConfirmationService())->send($model);
             (new NotificationService())->create((int) $target->user_id, 'payment', 'Payment Confirmed', 'Your payment for invoice ' . $target->invoice_number . ' has been confirmed.', '/invoice/view?number=' . rawurlencode($target->invoice_number));
+            (new PaymentConfirmationService())->send($model);
         } catch (\Throwable $e) {
             Yii::error(['message' => 'Payment was applied but the confirmation failed.', 'transactionId' => $id, 'error' => $e->getMessage()], __METHOD__);
             Yii::$app->session->addFlash('warning', 'Payment applied to invoice ' . $target->invoice_number . ', but the confirmation email could not be sent.');

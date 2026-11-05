@@ -51,7 +51,7 @@ class LoginForm extends Model
                 return;
             }
             $user = $this->getUser();
-            if (!$user || !$user->validatePassword($this->password)) {
+            if (!($user ? $user->validatePassword($this->password) : LoginThrottle::checkAgainstNobody((string) $this->password))) {
                 LoginThrottle::fail('frontend', $this->throttleName());
                 $this->addError($attribute, 'Incorrect username or password.');
                 return;

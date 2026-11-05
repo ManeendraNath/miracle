@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace common\services\billing;
 
+use common\models\BillingSettings;
 use common\models\CustomerPreference;
 use common\models\Domains;
 use common\models\Hosting;
+use common\models\InvoiceItem;
 use common\models\Maintenance;
 use common\models\ServiceReminderLog;
 use common\models\User;
@@ -19,6 +21,9 @@ use Yii;
 final class ServiceRenewalReminderService
 {
     private const REMINDER_DAYS = [60, 30, 15, 7, 3, 1];
+
+    /** Reminders and staff alerts that failed in the last run. */
+    public int $failures = 0;
 
     public function sendReminders(?DateTimeImmutable $today = null): int
     {
@@ -86,7 +91,11 @@ final class ServiceRenewalReminderService
         if (!(bool) $preferences->renewal_reminders) {
             return false;
         }
-        return $this->sendReminder($type, $serviceId, $userId, $serviceName, $expiryDate, $daysUntilExpiry, $threshold);
+        // As InvoicePaymentService::renewalState(): no invoice is coming for these, so don't promise one.
+        $itemType = ['domain' => InvoiceItem::TYPE_DOMAIN, 'hosting' => InvoiceItem::TYPE_HOSTING, 'maintenance' => InvoiceItem::TYPE_MAINTENANCE][$type];
+        $billable = $hasPrice && (bool) BillingSettings::forType($itemType)->is_active;
+
+        return $this->sendReminder($type, $serviceId, $userId, $serviceName, $expiryDate, $daysUntilExpiry, $threshold, $billable);
     }
 
     /**
@@ -139,11 +148,12 @@ final class ServiceRenewalReminderService
                 $this->log($type, $serviceId, $userId, $key, $daysBefore);
             }
         } catch (\Throwable $e) {
+            $this->failures++;
             Yii::error(['message' => 'Staff expiry alert failed.', 'serviceType' => $type, 'serviceId' => $serviceId, 'error' => $e->getMessage()], __METHOD__);
         }
     }
 
-    private function sendReminder(string $type, int $serviceId, int $userId, string $serviceName, string $expiryDate, int $daysBefore, int $threshold): bool
+    private function sendReminder(string $type, int $serviceId, int $userId, string $serviceName, string $expiryDate, int $daysBefore, int $threshold, bool $billable): bool
     {
         try {
             // Expiry date in the key so each renewal cycle gets its own reminders.
@@ -166,6 +176,7 @@ final class ServiceRenewalReminderService
                                 'expiryDate' => $expiryDate,
                                 'daysBefore' => $daysBefore,
                                 'client' => $client,
+                                'billable' => $billable,
                             ]
                     )
                     ->setFrom([Yii::$app->params['senderEmail'] => Yii::$app->params['senderName']])
@@ -174,15 +185,17 @@ final class ServiceRenewalReminderService
             AdminMailHelper::addBillingBcc($message);
             $emailSent = $message->send();
             if (!$emailSent) {
+                $this->failures++;
                 Yii::warning(['serviceType' => $type, 'serviceId' => $serviceId, 'userId' => $userId, 'email' => $client->email], __METHOD__);
                 return false;
             }
 
             $this->log($type, $serviceId, $userId, $key, $daysBefore);
             // After the log row, so a failed send doesn't re-create these on every cron run.
-            (new NotificationService())->create($userId, 'renewal', 'Renewal Reminder', sprintf('%s expires in %d day(s).', $serviceName, $daysBefore), '/renewal/index');
+            (new NotificationService())->create($userId, 'renewal', 'Renewal Reminder', $daysBefore === 0 ? $serviceName . ' expires today.' : sprintf('%s expires in %d day(s).', $serviceName, $daysBefore), '/renewal/index');
             return true;
         } catch (\Throwable $e) {
+            $this->failures++;
             Yii::error(['serviceType' => $type, 'serviceId' => $serviceId, 'error' => $e->getMessage()], __METHOD__);
             return false;
         }

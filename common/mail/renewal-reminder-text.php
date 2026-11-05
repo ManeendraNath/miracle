@@ -10,9 +10,10 @@ will expire on:
 
 Remaining:
 
-<?= $daysBefore ?> day(s)
+<?= $daysBefore === 0 ? 'Expires today' : $daysBefore . ' day(s)' ?>
 
-We email your renewal invoice before the expiry date. Please pay it in time to avoid interruption or downtime.
+
+<?= $billable ? 'We email your renewal invoice before the expiry date. Please pay it in time to avoid interruption or downtime.' : 'Please contact us to renew this service and avoid interruption or downtime.' ?>
 
 Regards,
 Miracle Web Technologies

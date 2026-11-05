@@ -29,6 +29,7 @@ class User extends base\User implements IdentityInterface
     use BaseIdentityTrait;
     use AutoTimestampTrait;
     use PasswordManagementTrait;
+    use traits\ScalarInputTrait;
 
     /**
      * {@inheritdoc}
@@ -41,6 +42,18 @@ class User extends base\User implements IdentityInterface
     public static function deletedIds(): \yii\db\ActiveQuery
     {
         return self::find()->select('id')->where(['status' => self::getStatusDeleted()]);
+    }
+
+    /** Set by the app only, never from a form: still validated, but not mass-assigned ("!"). */
+    #[\Override]
+    public function scenarios(): array
+    {
+        $internal = ['password_hash', 'auth_key', 'password_reset_token', 'verification_token', 'created_at', 'updated_at'];
+
+        return array_map(
+            static fn(array $attributes): array => array_map(static fn(string $name): string => in_array($name, $internal, true) ? '!' . $name : $name, $attributes),
+            parent::scenarios(),
+        );
     }
 
     #[\Override]
@@ -57,6 +70,8 @@ class User extends base\User implements IdentityInterface
     public function rules(): array
     {
         $rules = [
+            ['email', 'trim'],
+            ['email', 'email'],
             ['mobile', 'match', 'pattern' => '/^[0-9]{10,15}$/', 'message' => 'Enter a valid mobile number.'],
             ['whatsapp', 'match', 'pattern' => '/^[0-9]{10,15}$/', 'message' => 'Enter a valid whatsapp number.'],
         ];

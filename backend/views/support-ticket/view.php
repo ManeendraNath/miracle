@@ -34,6 +34,8 @@ if ($model->status === SupportTicket::STATUS_RESOLVED || $model->status === Supp
     $this->params['actions'][] = Html::a('Reopen', ['reopen', 'number' => $model->ticket_number], ['class' => 'btn btn-outline-primary', 'data' => ['method' => 'post', 'confirm' => 'Reopen this support request?']]);
 } else {
     $this->params['actions'][] = Html::a('Resolve', ['resolve', 'number' => $model->ticket_number], ['class' => 'btn btn-success', 'data' => ['method' => 'post', 'confirm' => 'Mark this support request as resolved?']]);
+}
+if ($model->status !== SupportTicket::STATUS_CLOSED) {
     $this->params['actions'][] = Html::a('Close', ['close', 'number' => $model->ticket_number], ['class' => 'btn btn-outline-danger', 'data' => ['method' => 'post', 'confirm' => 'Close this support request?']]);
 }
 ?>

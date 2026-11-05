@@ -59,7 +59,7 @@ return [
     // Empty = <app root>/runtime/logs/billing-cron.log.
     'cronLogPath' => $_ENV['CRON_LOG_PATH'] ?? '',
     // Shell command that copies each DB backup off the server; {file} = dump path.
-    // e.g. rclone copy {file} gdrive:miracle-backups   |   scp -q {file} backup@host:/backups/
+    // Quote it in .env, e.g. BACKUP_OFFSITE_COMMAND="rclone copy {file} gdrive:miracle-backups"
     'backupOffsiteCommand' => $_ENV['BACKUP_OFFSITE_COMMAND'] ?? '',
     // Online payments. Set RAZORPAY_ENABLED=true plus the keys in .env to go live.
     'razorpay' => [

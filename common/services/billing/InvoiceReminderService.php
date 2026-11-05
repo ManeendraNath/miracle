@@ -17,6 +17,9 @@ final class InvoiceReminderService
 {
     private const REMINDER_DAYS = [30, 15, 7, 5, 4, 3, 2, 1, 0, -1, -3, -7, -15, -30];
 
+    /** Reminders that failed in the last run. */
+    public int $failures = 0;
+
     public function sendDueReminders(?DateTimeImmutable $today = null): int
     {
         $today ??= new DateTimeImmutable('today');
@@ -54,6 +57,7 @@ final class InvoiceReminderService
                     $sentCount++;
                 }
             } catch (\Throwable $e) {
+                $this->failures++;
                 Yii::error(['message' => 'Invoice reminder failed.', 'invoiceId' => (int) $invoice->id, 'error' => $e->getMessage()], __METHOD__);
             }
         }

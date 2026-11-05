@@ -123,6 +123,17 @@ final class SupportTicketController extends BaseController
     {
         $ticket = $this->findModelByNumber($number);
         $this->changeStatus($ticket, SupportTicket::STATUS_OPEN);
+        try {
+            (new NotificationService())->create(
+                (int) $ticket->user_id,
+                'support',
+                'Support Request Reopened',
+                'Support request ' . $ticket->ticket_number . ' has been reopened.',
+                '/support/view?number=' . rawurlencode($ticket->ticket_number)
+            );
+        } catch (\Throwable $e) {
+            Yii::error($e, __METHOD__);
+        }
         Yii::$app->session->setFlash('success', 'Support request reopened.');
         return $this->redirect(['view', 'number' => $ticket->ticket_number]);
     }

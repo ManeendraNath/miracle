@@ -70,6 +70,7 @@ final class ServiceController extends Controller
 
         $latestEvent = BillingEvent::find()
             ->where(['user_id' => $userId, 'item_type' => $itemType, 'item_id' => $id])
+            ->andWhere(['not in', 'id', (new \common\services\billing\RenewalFulfilmentService())->refundedEventIds($itemType, $id)])
             ->orderBy(['id' => SORT_DESC])
             ->one();
         $invoice = Invoice::find()

@@ -1,5 +1,10 @@
 RewriteEngine On
 
+# PHP's error log sits next to the entry point and can name paths and customers.
+<Files "error_log">
+    Require all denied
+</Files>
+
 # Production only: secure cookies don't work over http. SSL renewal must stay reachable.
 RewriteCond %{HTTP_HOST} ^admin\.miraclewebtechnologies\.com$ [NC]
 RewriteCond %{HTTPS} !=on

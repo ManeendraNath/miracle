@@ -45,7 +45,8 @@ final class SupportTicketSearch extends SupportTicket
 
         $query->andFilterWhere([
             'priority' => $this->priority,
-            'status' => $this->status,
+            // "active" = the dashboard's open cards: everything still needing work.
+            'status' => $this->status === 'active' ? [SupportTicket::STATUS_OPEN, SupportTicket::STATUS_IN_PROGRESS] : $this->status,
         ]);
 
         $query->andFilterWhere(['like', 'ticket_number', $this->ticket_number]);

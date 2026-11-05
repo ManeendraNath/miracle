@@ -600,6 +600,51 @@ final class ManualInvoiceServiceTest extends Unit
         $coupons->calculate('VIP', (int) $this->user->id + 100000, 100.00);
     }
 
+    public function testRemovingACouponTakesItsDiscountAwayUnlessStaffTypedANewOne(): void
+    {
+        $service = new ManualInvoiceService();
+        $coupon = $this->coupon('GONE10', []);
+        $invoice = $this->newInvoice();
+        $invoice->coupon_code = 'GONE10';
+        $invoice = $service->create($invoice, [$this->item('Hosting', 'Line', 1, 1000.00)]);
+        $this->assertEquals(100.00, (float) $invoice->discount_amount);
+
+        // The form posts the coupon's discount back unchanged.
+        $invoice->coupon_code = '';
+        $invoice = $service->update($invoice, [$this->item('Hosting', 'Line', 1, 1000.00)]);
+        $this->assertEquals(0.00, (float) $invoice->discount_amount);
+
+        $invoice->coupon_code = 'GONE10';
+        $invoice = $service->update($invoice, [$this->item('Hosting', 'Line', 1, 1000.00)]);
+        $invoice->coupon_code = '';
+        $invoice->discount_amount = 50.00;
+        $invoice = $service->update($invoice, [$this->item('Hosting', 'Line', 1, 1000.00)]);
+        $this->assertEquals(50.00, (float) $invoice->discount_amount);
+        $coupon->delete();
+    }
+
+    public function testAUsedCouponKeepsItsCode(): void
+    {
+        $coupon = $this->coupon('KEEPME', []);
+        $coupon->code = 'RENAMED';
+        $this->assertTrue($coupon->validate(['code']), 'unused: free to rename');
+        $coupon->code = 'KEEPME';
+
+        $invoice = $this->newInvoice();
+        $invoice->coupon_code = 'KEEPME';
+        (new ManualInvoiceService())->create($invoice, [$this->item('Hosting', 'Line', 1, 1000.00)]);
+
+        $used = \common\models\Coupon::findOne($coupon->id);
+        $used->code = 'RENAMED';
+        $this->assertFalse($used->validate(['code']));
+    }
+
+    public function testACouponNeedsAnAmount(): void
+    {
+        $coupon = new \common\models\Coupon(['name' => 'No amount', 'code' => 'NOAMOUNT', 'type' => \common\models\Coupon::TYPE_P, 'is_active' => \common\models\Coupon::IS_ACTIVE_Y]);
+        $this->assertFalse($coupon->validate(['amount']));
+    }
+
     private function coupon(string $code, array $restrictions): \common\models\Coupon
     {
         $coupon = new \common\models\Coupon();

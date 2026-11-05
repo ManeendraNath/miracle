@@ -26,7 +26,7 @@ class Maintenance extends base\Maintenance
     public const STATUS_CANCELLED = 0;
     public const STATUS_ACTIVE = 1;
     public const STATUS_OVERDUE = 2;
-    /** Shown for renewal to the customer and in monitoring: overdue is about non-payment, the renewal is still owed. */
+    /** Shown for renewal to the customer and in monitoring: overdue is about non-payment, the renewal is still owed. Billing itself only runs on Active: staff set it Active to bill it. */
     public const RENEWABLE_STATUSES = [self::STATUS_ACTIVE, self::STATUS_OVERDUE];
 
     public static function getStatuses(): array

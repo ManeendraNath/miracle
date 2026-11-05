@@ -66,7 +66,7 @@ class Transaction extends base\Transaction
     {
         return match (true) {
             $this->status === self::STATUS_CAPTURED => $this->isUnapplied() ? 'Not Applied' : 'Paid',
-            $this->status === self::STATUS_FAILED && str_starts_with((string) $this->gateway_payment_id, 'REJECTED-') => 'Rejected',
+            $this->status === self::STATUS_FAILED && (int) $this->gateway_id !== self::GATEWAY_RAZORPAY => 'Rejected',
             default => (string) $this->status,
         };
     }

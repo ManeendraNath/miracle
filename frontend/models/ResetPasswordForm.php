@@ -60,7 +60,12 @@ class ResetPasswordForm extends Model
         $user->setPassword($this->password);
         $user->removePasswordResetToken();
         $user->generateAuthKey();
+        if (!$user->save(false)) {
+            return false;
+        }
+        // Proved by the emailed link: a lock from forgotten-password attempts must not block the new password.
+        \common\components\LoginThrottle::clear('frontend', (string) $user->username);
 
-        return $user->save(false);
+        return true;
     }
 }

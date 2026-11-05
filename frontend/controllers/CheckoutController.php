@@ -42,9 +42,12 @@ final class CheckoutController extends Controller
         $invoice = (new InvoicePaymentService())->payableInvoiceForService($userId, $itemType, $id);
 
         if ($invoice === null) {
+            $asset = ['domain' => Domains::class, 'hosting' => Hosting::class, 'maintenance' => Maintenance::class][$type]::findOne($id);
             Yii::$app->session->setFlash(
                 'warning',
-                'The renewal invoice for this service has not been issued yet. We email it to you before the expiry date.',
+                (new InvoicePaymentService())->renewalState($asset, $itemType)['billable']
+                    ? 'The renewal invoice for this service has not been issued yet. We email it to you before the expiry date.'
+                    : 'This service is not renewed automatically. Please contact us to renew it.',
             );
 
             return $this->redirect(['/dashboard/index']);

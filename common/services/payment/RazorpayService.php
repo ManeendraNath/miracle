@@ -166,7 +166,11 @@ final class RazorpayService
     /** The payment as Razorpay reports it (status, method, amount...). */
     public function fetchPayment(string $paymentId): array
     {
-        $response = $this->api()->get('payments/' . rawurlencode($paymentId))->send();
+        try {
+            $response = $this->api()->get('payments/' . rawurlencode($paymentId))->send();
+        } catch (\yii\httpclient\Exception $e) {
+            throw new \RuntimeException('Razorpay could not be reached: ' . $e->getMessage(), 0, $e);
+        }
         if (!$response->isOk || !is_array($response->data)) {
             throw new \RuntimeException('Razorpay did not return payment ' . $paymentId . ' (HTTP ' . $response->statusCode . ').');
         }
@@ -201,10 +205,20 @@ final class RazorpayService
             throw new \DomainException('Razorpay shows this payment as "' . ($payment['status'] ?? 'unknown') . '", so it cannot be refunded.');
         }
 
-        $response = $this->api()
-            ->post('payments/' . rawurlencode($paymentId) . '/refund', ['amount' => $amountMinor, 'speed' => 'normal'])
-            ->setFormat(Client::FORMAT_JSON)
-            ->send();
+        $unknown = 'No clear answer from Razorpay, so the refund may have been sent. Check this payment in the Razorpay dashboard before trying again.';
+        try {
+            $response = $this->api()
+                ->post('payments/' . rawurlencode($paymentId) . '/refund', ['amount' => $amountMinor, 'speed' => 'normal'])
+                ->setFormat(Client::FORMAT_JSON)
+                ->send();
+        } catch (\yii\httpclient\Exception $e) {
+            Yii::error(['message' => 'Razorpay refund request failed.', 'paymentId' => $paymentId, 'error' => $e->getMessage()], __METHOD__);
+            throw new \DomainException($unknown, 0, $e);
+        }
+        if ((int) $response->statusCode >= 500) {
+            Yii::error(['message' => 'Razorpay refund answered with a server error.', 'paymentId' => $paymentId, 'status' => $response->statusCode, 'body' => $response->content], __METHOD__);
+            throw new \DomainException($unknown);
+        }
         $refundId = $response->isOk ? ($response->data['id'] ?? null) : null;
         if (!is_string($refundId) || $refundId === '') {
             Yii::error(['message' => 'Razorpay refund failed.', 'paymentId' => $paymentId, 'status' => $response->statusCode, 'body' => $response->content], __METHOD__);
@@ -212,6 +226,16 @@ final class RazorpayService
         }
 
         return $refundId;
+    }
+
+    /** Whether Razorpay already shows exactly this amount refunded beyond the record: refunding it only writes the record. */
+    public function isAlreadyRefunded(string $paymentId, int $amountMinor, int $recordedRefundMinor): bool
+    {
+        try {
+            return (int) ($this->fetchPayment($paymentId)['amount_refunded'] ?? 0) - $recordedRefundMinor === $amountMinor;
+        } catch (\RuntimeException $e) {
+            throw new \DomainException('Could not check the payment with Razorpay: ' . $e->getMessage(), 0, $e);
+        }
     }
 
     /** Refuses when Razorpay's refunded total differs from the one recorded here, e.g. after a dashboard refund. */
@@ -285,28 +309,52 @@ final class RazorpayService
             }
         }
 
+        // Fully refunded rows too: Razorpay showing less than recorded means a refund failed or was reversed.
         // ponytail: newest 200 payments of the last 180 days (Razorpay's refund window), one API call each every run; subscribe to the refund webhooks if volume outgrows this.
-        $captured = Transaction::find()
-            ->where(['gateway_id' => Transaction::GATEWAY_RAZORPAY, 'status' => Transaction::STATUS_CAPTURED])
+        $failures = 0;
+        $paid = Transaction::find()
+            ->where(['gateway_id' => Transaction::GATEWAY_RAZORPAY, 'status' => [Transaction::STATUS_CAPTURED, Transaction::STATUS_REFUNDED]])
             ->andWhere(['not', ['gateway_payment_id' => null]])
             ->andWhere(['>=', 'paid_at', $now - 180 * 86400])
             ->orderBy(['id' => SORT_DESC])
             ->limit(200)
             ->all();
-        foreach ($captured as $payment) {
+        foreach ($paid as $payment) {
+            // A slow or unreachable Razorpay must not hold the run for hours (20 s per call); the next run checks again.
+            if ($failures >= 5 || time() - $now > 1200) {
+                $result['errors']++;
+                Yii::warning('Razorpay refund check stopped early.', __METHOD__);
+                break;
+            }
             try {
-                $refunded = (int) ($this->fetchPayment((string) $payment->gateway_payment_id)['amount_refunded'] ?? 0);
+                $refunded = $this->refundedMinor($payment);
+                if ($refunded !== $this->toMinor((float) $payment->refunded_amount)) {
+                    // A staff refund may be half way: Razorpay already shows it, its row isn't saved yet. Wait for that row, then look again.
+                    $refunded = Yii::$app->db->transaction(function () use ($payment): int {
+                        Yii::$app->db->createCommand('SELECT id FROM {{%transaction}} WHERE id = :id FOR UPDATE')->bindValue(':id', (int) $payment->id)->queryScalar();
+                        $payment->refresh();
+
+                        return $this->refundedMinor($payment);
+                    });
+                }
                 if ($refunded !== $this->toMinor((float) $payment->refunded_amount)) {
                     $result['unrecordedRefunds']++;
                     AdminAlertService::refundNotRecorded((string) $payment->gateway_payment_id, $refunded / 100, (float) $payment->refunded_amount, (int) $payment->id);
                 }
+                $failures = 0;
             } catch (\Throwable $e) {
+                $failures++;
                 $result['errors']++;
                 Yii::error(['message' => 'Razorpay refund check failed.', 'paymentId' => $payment->gateway_payment_id, 'error' => $e->getMessage()], __METHOD__);
             }
         }
 
         return $result;
+    }
+
+    private function refundedMinor(Transaction $payment): int
+    {
+        return (int) ($this->fetchPayment((string) $payment->gateway_payment_id)['amount_refunded'] ?? 0);
     }
 
     /** Razorpay's fee for the payment, GST included (what Razorpay keeps from the settlement). */
@@ -344,7 +392,8 @@ final class RazorpayService
             'transport' => $this->_transport ?? StreamTransport::class,
             'requestConfig' => [
                 'headers' => ['Authorization' => 'Basic ' . base64_encode($this->_config['keyId'] . ':' . $this->_config['keySecret'])],
-                'options' => ['timeout' => 20],
+                // StreamTransport doesn't verify certificates unless told to.
+                'options' => ['timeout' => 20, 'sslVerifyPeer' => true],
             ],
         ]);
     }

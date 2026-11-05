@@ -102,17 +102,21 @@ final class AdminAlertService extends AdminNotificationService
     public static function refundNotRecorded(string $paymentId, float $razorpayRefunded, float $recorded, int $transactionId): void
     {
         $title = 'Razorpay Refund Not Recorded';
-        $shown = "Razorpay shows refunded: ₹{$razorpayRefunded}";
+        // With the line end, so ₹100 doesn't count as already alerted when ₹1000 was.
+        $shown = "Razorpay shows refunded: ₹{$razorpayRefunded}\n";
         if (AdminNotification::find()->where(['title' => $title])->andWhere(['like', 'message', $paymentId])->andWhere(['like', 'message', $shown])->exists()) {
             return;
         }
-        $message = "Razorpay payment: {$paymentId}\n" . "{$shown}\n" . "Recorded here: ₹{$recorded}\n" . 'Revenue and the invoice are wrong until this is recorded. Open the payment and use Refund with the unrecorded amount; no money is sent again.';
+        $unrecorded = round($razorpayRefunded - $recorded, 2);
+        $message = "Razorpay payment: {$paymentId}\n" . $shown . "Recorded here: ₹{$recorded}\n" . ($unrecorded < 0
+            ? 'Razorpay shows less refunded than recorded here: a refund may have failed or been reversed, so the customer may not have this money. Check it in the Razorpay dashboard.'
+            : "Revenue and the invoice are wrong until this is recorded. Open the payment first: if it already shows this refund, do nothing, because pressing Refund would send new money. Otherwise use Refund with exactly ₹{$unrecorded}: that only writes the record.");
         self::send($title, $message, 'payment', '/transaction/view?id=' . $transactionId, true);
     }
 
     public static function backupFailed(string $reason): void
     {
-        self::send('Backup Failed', "Reason: {$reason}\n" . 'Check the server before the next scheduled run.', 'system', '/admin/cron-log');
+        self::send('Backup Failed', "Reason: {$reason}\n" . 'Check the server before the next scheduled run.', 'billing', '/admin/cron-log');
     }
 
     public static function invoiceGenerationFailed(int $userId, string $reason): void
@@ -159,7 +163,12 @@ final class AdminAlertService extends AdminNotificationService
      */
     private static function send(string $title, string $message, string $type = 'system', ?string $route = null, bool $whatsappNotification = false): void
     {
-        (new AdminNotificationService())->create($type, $title, $message, $route);
+        // One channel failing (e.g. the database is why this alert exists) must not silence the others.
+        try {
+            (new AdminNotificationService())->create($type, $title, $message, $route);
+        } catch (\Throwable $e) {
+            Yii::error(['message' => 'Admin notification could not be saved.', 'title' => $title, 'error' => $e->getMessage()], __METHOD__);
+        }
         self::sendEmail($title, $message);
         if ($whatsappNotification) {
             self::sendWhatsApp($title, $message);

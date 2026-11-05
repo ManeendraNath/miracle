@@ -43,7 +43,7 @@ final class ManualInvoiceService
         try {
             $client = User::findOne((int) $invoice->user_id);
 
-            if ($client === null) {
+            if ($client === null || (int) $client->status === User::getStatusDeleted()) {
                 throw new \DomainException('Selected client does not exist.');
             }
 
@@ -125,13 +125,18 @@ final class ManualInvoiceService
                 $this->couponService->record($invoice);
             }
             $transaction->commit();
-            (new NotificationService())->create(
-                (int) $invoice->user_id,
-                'invoice',
-                'New Invoice Generated',
-                'Invoice ' . $invoice->invoice_number . ' has been generated.',
-                '/invoice/view?number=' . rawurlencode($invoice->invoice_number),
-            );
+            // Committed: a failed notification must not look like a failed invoice (staff would create another).
+            try {
+                (new NotificationService())->create(
+                    (int) $invoice->user_id,
+                    'invoice',
+                    'New Invoice Generated',
+                    'Invoice ' . $invoice->invoice_number . ' has been generated.',
+                    '/invoice/view?number=' . rawurlencode($invoice->invoice_number),
+                );
+            } catch (\Throwable $e) {
+                Yii::error(['message' => 'New invoice notification failed.', 'invoiceId' => (int) $invoice->id, 'error' => $e->getMessage()], __METHOD__);
+            }
             return $invoice;
         } catch (\Throwable $e) {
             if ($transaction->isActive) {
@@ -257,6 +262,10 @@ final class ManualInvoiceService
                 );
             } else {
                 $discount = max(0, round((float) $invoice->discount_amount, 2));
+                // The coupon was removed: its discount goes with it, unless staff typed a new figure.
+                if ((string) $lockedInvoice->coupon_code !== '' && abs($discount - (float) $lockedInvoice->discount_amount) < 0.005) {
+                    $discount = 0.0;
+                }
             }
 
             if ($discount > $subtotal) {

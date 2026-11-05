@@ -152,26 +152,6 @@ GridView::widget([
         ],
         [
             'attribute' =>
-            'service_expiry_notifications',
-            'label' =>
-            'Service Expiry',
-            'format' => 'raw',
-            'value' =>
-            static fn(
-            CustomerPreference $model
-            ): string =>
-            $badge(
-                $model
-                    ->service_expiry_notifications
-            ),
-            'filter' => GridFilterHelper::select2($searchModel, 'service_expiry_notifications', $booleanFilter, 'All'),
-            'contentOptions' => [
-                'class' =>
-                'text-center',
-            ],
-        ],
-        [
-            'attribute' =>
             'support_notifications',
             'label' =>
             'Support Updates',

@@ -15,6 +15,14 @@ class BackupController extends Controller
 
     private const KEEP_DAYS = 14;
 
+    /** Only write the database dump (deploy.sh, before migrating): no proofs, off-site copy or pruning. */
+    public bool $dbOnly = false;
+
+    public function options($actionID): array
+    {
+        return array_merge(parent::options($actionID), ['dbOnly']);
+    }
+
     /**
      * Dumps the database to backups/db_backup_<timestamp>.sql.gz, archives customers' payment proofs to
      * backups/receipts_<timestamp>.tar, and prunes both older than KEEP_DAYS. Failures alert admins.
@@ -38,25 +46,31 @@ class BackupController extends Controller
             umask($oldUmask);
         }
         $this->stdout("✓ Database backup written: {$file}\n", Console::FG_GREEN);
+        if ($this->dbOnly) {
+            return ExitCode::OK;
+        }
 
         $status = $this->copyOffsite($file);
+        $receiptsSafe = false;
         try {
             $receipts = $this->archiveReceipts($backupDir);
             if ($receipts !== null) {
                 $this->stdout("✓ Payment proofs archived: {$receipts}\n", Console::FG_GREEN);
                 $status = $this->copyOffsite($receipts) ?: $status;
             }
+            $receiptsSafe = true;
         } catch (\Throwable $e) {
             $status = $this->fail('Payment proof archive failed: ' . $e->getMessage(), ExitCode::UNSPECIFIED_ERROR);
         }
 
-        foreach ([...(glob($backupDir . '/db_backup_*.sql.gz') ?: []), ...(glob($backupDir . '/receipts_*.tar') ?: [])] as $old) {
+        // Old proofs stay while new archives fail: otherwise two weeks of failures would leave none.
+        foreach ([...(glob($backupDir . '/db_backup_*.sql.gz') ?: []), ...($receiptsSafe ? glob($backupDir . '/receipts_*.tar') ?: [] : [])] as $old) {
             if (filemtime($old) < time() - self::KEEP_DAYS * 86400) {
                 unlink($old);
             }
         }
         // Leftovers of dumps killed by a fatal error (e.g. out of memory) can't delete themselves.
-        foreach (glob($backupDir . '/db_backup_*.sql.gz.part') ?: [] as $stale) {
+        foreach ([...(glob($backupDir . '/db_backup_*.sql.gz.part') ?: []), ...(glob($backupDir . '/receipts_*.part.tar') ?: [])] as $stale) {
             if (filemtime($stale) < time() - 86400) {
                 unlink($stale);
             }
@@ -163,6 +177,12 @@ class BackupController extends Controller
             $db->createCommand('COMMIT')->execute();
             $write("SET FOREIGN_KEY_CHECKS=1;\n");
         } catch (\Throwable $e) {
+            // Left open, the failure alert written next would sit in this transaction and vanish.
+            try {
+                $db->createCommand('ROLLBACK')->execute();
+            } catch (\Throwable) {
+                // The connection itself may be what failed.
+            }
             gzclose($gz);
             @unlink($part);
             throw $e;
@@ -187,7 +207,7 @@ class BackupController extends Controller
 
     /**
      * Runs BACKUP_OFFSITE_COMMAND from .env with {file} replaced by the dump path,
-     * e.g. `rclone copy {file} gdrive:miracle-backups` or `scp -q {file} backup@host:/backups/`.
+     * e.g. `rclone copy {file} gdrive:miracle-backups` or `scp -q {file} backup@host:/backups/` (quote it in .env).
      * Not set = local copy only. A failed upload exits non-zero so cron reports it;
      * the local dump is kept either way.
      */
@@ -208,8 +228,7 @@ class BackupController extends Controller
         exec(str_replace('{file}', escapeshellarg($file), $template) . ' 2>&1', $output, $status);
         if ($status !== 0) {
             Yii::error(['message' => 'Off-site backup copy failed.', 'file' => $file, 'exit' => $status, 'output' => implode("\n", $output)], __METHOD__);
-            // Exit status only in the alert: the command's output may name credentials or paths.
-            $this->stderr('Off-site copy output: ' . implode(' ', $output) . "\n");
+            // Exit status only outside the app log: the command's output may name credentials or paths.
             return $this->fail("Off-site backup copy failed (exit {$status}).", ExitCode::UNSPECIFIED_ERROR);
         }
         $this->stdout("✓ Off-site copy done.\n", Console::FG_GREEN);

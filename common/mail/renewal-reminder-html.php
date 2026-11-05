@@ -7,6 +7,7 @@ declare(strict_types=1);
 /** @var string $expiryDate */
 /** @var int $daysBefore */
 /** @var common\models\User $client */
+/** @var bool $billable */
 $baseUrl = (string) (Yii::$app->params['frontendBaseUrl'] ?? '');
 
 echo $this->render('_card', [
@@ -18,6 +19,6 @@ echo $this->render('_card', [
         ['Service', $serviceName],
         ['Expiry date', Yii::$app->formatter->asDate($expiryDate, 'php:d M Y'), 'accent'],
     ],
-    'note' => ['We email your renewal invoice before the expiry date. Please pay it in time to avoid interruption or downtime.'],
+    'note' => [$billable ? 'We email your renewal invoice before the expiry date. Please pay it in time to avoid interruption or downtime.' : 'Please contact us to renew this service and avoid interruption or downtime.'],
     'button' => $baseUrl !== '' ? ['Open Customer Portal', $baseUrl . '/dashboard/index'] : null,
 ]);

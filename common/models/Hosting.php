@@ -15,7 +15,7 @@ class Hosting extends base\Hosting
     public const STATUS_INACTIVE = 0;
     public const STATUS_ACTIVE = 1;
     public const STATUS_SUSPENDED = 2;
-    /** Shown for renewal to the customer and in monitoring: suspension is about non-payment, the renewal is still owed. */
+    /** Shown for renewal to the customer and in monitoring: suspension is about non-payment, the renewal is still owed. Billing itself only runs on Active: staff set it Active to bill it. */
     public const RENEWABLE_STATUSES = [self::STATUS_ACTIVE, self::STATUS_SUSPENDED];
 
     /** Form field: a new cPanel password to store; blank keeps the saved one. */

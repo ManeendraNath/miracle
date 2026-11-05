@@ -42,7 +42,7 @@ GridViewHelper::register($this);
                         'headerOptions' => ['style' => 'width: 80px;'],
                     ],
                     [
-                        'attribute' => 'invoice_id',
+                        'attribute' => 'invoice_number',
                         'label' => 'Invoice',
                         'format' => 'raw',
                         'value' => static function (Transaction $model): string {
@@ -78,7 +78,7 @@ GridViewHelper::register($this);
                         'value' => static function (Transaction $model): string {
                             return Html::tag('span', Yii::$app->formatter->asCurrency($model->amount, 'INR'), ['class' => 'fw-bold text-success'])
                                 . ((float) $model->refunded_amount > 0 ? Html::tag('div', 'Refunded ' . Yii::$app->formatter->asCurrency($model->refunded_amount, 'INR'), ['class' => 'small text-danger']) : '')
-                                . ($model->isUnapplied() ? Html::tag('div', 'Unapplied', ['class' => 'badge bg-warning text-dark']) : '');
+                                . ($model->isUnapplied() && $model->status === Transaction::STATUS_CAPTURED ? Html::tag('div', 'Unapplied', ['class' => 'badge bg-warning text-dark']) : '');
                         },
                     ],
                     [

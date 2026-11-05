@@ -122,12 +122,15 @@ final class AdminBillingCest
         $I->seeResponseCodeIs(200);
         $I->sendAjaxPostRequest('/user/update?id=' . $customer, [
             Yii::$app->request->csrfParam => $I->grabAttributeFrom('meta[name=csrf-token]', 'content'),
-            'User[username]' => 'login-customer-' . $suffix,
+            'User[username]' => 'attacker-' . $suffix,
             'User[email]' => 'attacker-' . $suffix . '@example.test',
             'User[password]' => 'NewPassword123',
-            'User[status]' => (string) User::getStatusActive(),
+            'User[password_hash]' => 'attacker-hash',
+            'User[auth_key]' => 'attacker-key',
+            'User[password_reset_token]' => 'attacker-token_' . time(),
+            'User[status]' => (string) User::getStatusSuspended(),
         ]);
-        $I->seeRecord(User::class, ['id' => $customer, 'email' => 'login-' . $suffix . '@example.test', 'password_hash' => 'original-hash']);
+        $I->seeRecord(User::class, ['id' => $customer, 'username' => 'login-customer-' . $suffix, 'email' => 'login-' . $suffix . '@example.test', 'password_hash' => 'original-hash', 'auth_key' => 'x', 'password_reset_token' => null, 'status' => User::getStatusSuspended()]);
     }
 
     public function partialRefundCanCloseTheInvoiceKeepingTheRest(FunctionalTester $I): void
@@ -141,6 +144,24 @@ final class AdminBillingCest
         $this->post($I, 'refund', $payment, ['refund_amount' => '100', 'refunded_before' => '0.00']);
         $I->see('This payment was refunded meanwhile');
         $I->seeRecord(Transaction::class, ['id' => $payment, 'refunded_amount' => 800]);
+    }
+
+    public function aClearedRefundAmountIsNotAFullRefund(FunctionalTester $I): void
+    {
+        $payment = $this->transaction($I, $this->invoice($I, Invoice::STATUS_PAID), Transaction::GATEWAY_UPI_BANK, Transaction::STATUS_CAPTURED);
+        $this->post($I, 'refund', $payment, ['refund_amount' => '', 'refunded_before' => '0.00']);
+        $I->see('Enter a refund amount');
+        $I->seeRecord(Transaction::class, ['id' => $payment, 'status' => Transaction::STATUS_CAPTURED, 'refunded_amount' => 0]);
+    }
+
+    public function aPaymentOnAClosedInvoiceOffersOneRefundWithTheRightWords(FunctionalTester $I): void
+    {
+        $payment = $this->transaction($I, $this->invoice($I, Invoice::STATUS_CANCELLED), Transaction::GATEWAY_UPI_BANK, Transaction::STATUS_CAPTURED);
+        $I->amOnRoute('transaction/view', ['id' => $payment]);
+        $I->dontSee('Refund & Close Invoice');
+        $I->dontSee('Refund (Still Owed)');
+        $this->post($I, 'refund', $payment, ['refund_amount' => '100', 'refunded_before' => '0.00']);
+        $I->see('nothing more is owed on it');
     }
 
     public function customerTypedUnappliedTextStillCountsAsPaid(FunctionalTester $I): void

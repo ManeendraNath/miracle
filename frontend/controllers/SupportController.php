@@ -108,21 +108,20 @@ final class SupportController extends Controller
                 $model->updated_at = $now;
                 if ($model->save()) {
                     // Committed: a notification failure must not 500 (the customer would resubmit a duplicate).
-                    $this->notifySafely(function () use ($model, $userId): void {
-                        (new NotificationService())->create(
-                            $userId,
-                            'support',
-                            'Support Ticket Created',
-                            sprintf('Ticket %s has been created.', $model->ticket_number),
-                            '/support/view?number=' . $model->ticket_number,
-                        );
-                        SupportTicketMailer::ticketCreated($model);
-                        AdminAlertService::supportTicketCreated(
-                            $model->ticket_number,
-                            Yii::$app->user->identity->username,
-                            $model->subject,
-                        );
-                    });
+                    // Separately: one failing must not stop the staff hearing about the ticket.
+                    $this->notifySafely(fn() => (new NotificationService())->create(
+                        $userId,
+                        'support',
+                        'Support Ticket Created',
+                        sprintf('Ticket %s has been created.', $model->ticket_number),
+                        '/support/view?number=' . $model->ticket_number,
+                    ));
+                    $this->notifySafely(fn() => SupportTicketMailer::ticketCreated($model));
+                    $this->notifySafely(fn() => AdminAlertService::supportTicketCreated(
+                        $model->ticket_number,
+                        Yii::$app->user->identity->username,
+                        $model->subject,
+                    ));
                     Yii::$app->session->setFlash('success', 'Support request submitted successfully.');
                     return $this->redirect(['view', 'number' => $model->ticket_number]);
                 }

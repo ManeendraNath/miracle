@@ -39,6 +39,7 @@ $isNewRecord = $model->isNewRecord;
                 <div class="col-md-6">
                     <?=
                     $form->field($model, 'username')->textInput([
+                        'readonly' => !$canSetLogin,
                         'maxlength' => true,
                         'class' => 'form-control',
                         'placeholder' => 'Enter username',

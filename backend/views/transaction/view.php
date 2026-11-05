@@ -173,7 +173,7 @@ $refundStep = $viaRazorpay
         <?php if ($model->status === Transaction::STATUS_CAPTURED && $refundable > 0): ?>
             <?php
             $invoiceClosed = in_array($model->invoice->status ?? null, \common\services\billing\InvoicePaymentService::CLOSED_STATUSES, true);
-            $stillOwedNote = $invoiceClosed ? 'The invoice is closed and stays as it is.' : 'The refunded amount becomes due again on the invoice.';
+            $stillOwedNote = $invoiceClosed ? 'The invoice is closed and stays as it is: nothing more is owed on it. Renewals already granted are NOT reversed: disable the service if needed.' : 'The refunded amount becomes due again on the invoice.';
             $stillOwedNote = $model->isUnapplied() ? 'This payment was not counted on the invoice, so its balance does not change.' : $stillOwedNote;
             ?>
             <div class="col-lg-4">
@@ -186,12 +186,15 @@ $refundStep = $viaRazorpay
                         <input type="number" id="refund-amount" name="refund_amount" class="form-control mb-1" step="0.01" min="0.01" max="<?= $refundable ?>" value="<?= $refundable ?>" required>
                         <p class="small text-body-secondary"><?= Html::encode($refundStep) ?> A smaller amount is a partial refund, e.g. keeping a domain fee.</p>
                         <div class="d-grid gap-2">
-                            <?= Html::submitButton('Refund (Still Owed)', [
+                            <?php if ($invoiceClosed): ?>
+                                <?= Html::submitButton('Refund', ['class' => 'btn btn-outline-danger', 'data-confirm' => $refundStep . "\n\n" . $stillOwedNote]) ?>
+                            <?php else: ?>
+                                <?= Html::submitButton('Refund (Still Owed)', [
                                 'class' => 'btn btn-outline-secondary',
                                 'title' => 'E.g. a wrong payment was returned: the customer still has to pay this invoice.',
                                 'data-confirm' => $refundStep . "\n\n" . $stillOwedNote,
                             ]) ?>
-                            <?= Html::submitButton('Refund &amp; Close Invoice', [
+                                <?= Html::submitButton('Refund &amp; Close Invoice', [
                                 'class' => 'btn btn-outline-danger',
                                 'title' => 'Nothing more is owed: the service is cancelled, or the rest is kept by agreement (e.g. a domain fee).',
                                 // Not name/value: with a confirm, yii.js submits the form itself and a clicked button's value is not sent.
@@ -200,6 +203,7 @@ $refundStep = $viaRazorpay
                                     'params' => ['close_invoice' => '1'],
                                 ],
                             ]) ?>
+                            <?php endif; ?>
                         </div>
                         <?= Html::endForm() ?>
                     </div>

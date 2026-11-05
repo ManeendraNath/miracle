@@ -25,6 +25,15 @@ class AuditRequest extends base\AuditRequest
     /** Captcha answer on the public form; not stored. */
     public $verifyCode;
 
+    /** The public form sets only its own fields: status, IP and timestamps come from the code. */
+    #[\Override]
+    public function scenarios(): array
+    {
+        return array_merge(parent::scenarios(), [
+            self::SCENARIO_PUBLIC => ['name', 'email', 'phone', 'company_url', 'current_framework', 'hosting_environment', 'message', 'verifyCode', '!status', '!user_ip', '!created_at', '!updated_at'],
+        ]);
+    }
+
     #[\Override]
     public function rules(): array
     {

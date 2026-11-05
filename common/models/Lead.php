@@ -34,7 +34,7 @@ class Lead extends base\Lead
 
     public function scenarios(): array
     {
-        return parent::scenarios() + [self::SCENARIO_STATUS => ['status']];
+        return array_merge(parent::scenarios(), [self::SCENARIO_STATUS => ['status']]);
     }
 
     public function rules(): array

@@ -36,13 +36,15 @@ class CronController extends Controller
         /** @var \yii\mutex\Mutex $mutex */
         $mutex = Yii::$app->get('mutex');
         $lockName = AutoBillingService::LOCK_NAME;
-        // A few seconds' wait: a staff member may be saving a service change under the same lock.
-        if (!$mutex->acquire($lockName, 10)) {
-            $this->stdout("Billing cron already running.\n", Console::FG_YELLOW);
-            return ExitCode::OK;
-        }
         $problems = null;
+        $locked = false;
         try {
+            // A few seconds' wait: a staff member may be saving a service change under the same lock.
+            $locked = $mutex->acquire($lockName, 10);
+            if (!$locked) {
+                $this->stdout("Billing cron already running.\n", Console::FG_YELLOW);
+                return ExitCode::OK;
+            }
             Yii::info('Automatic billing cron started.', __METHOD__);
             $billing = new AutoBillingService();
             $invoices = $billing->run();
@@ -62,7 +64,9 @@ class CronController extends Controller
             }
             return ExitCode::UNSPECIFIED_ERROR;
         } finally {
-            $mutex->release($lockName);
+            if ($locked) {
+                $mutex->release($lockName);
+            }
         }
         if ($problems !== null) {
             $this->stderr("Billing finished with failures: {$problems}. Admins were alerted; they are retried on the next run.\n", Console::FG_RED);
@@ -71,11 +75,13 @@ class CronController extends Controller
         // Not under the billing lock: a slow mail server must not block staff saving service changes.
         // Its own lock stops an overlapping cron sending the same invoices twice.
         $emailLock = 'miracle:invoice-email';
-        if (!$mutex->acquire($emailLock)) {
-            $this->stdout("Invoice emails are already being sent; the rest go on the next run.\n", Console::FG_YELLOW);
-            return $problems === null ? ExitCode::OK : ExitCode::UNSPECIFIED_ERROR;
-        }
+        $locked = false;
         try {
+            $locked = $mutex->acquire($emailLock);
+            if (!$locked) {
+                $this->stdout("Invoice emails are already being sent; the rest go on the next run.\n", Console::FG_YELLOW);
+                return $problems === null ? ExitCode::OK : ExitCode::UNSPECIFIED_ERROR;
+            }
             // Email this run's invoices plus any recent ones whose earlier send failed.
             $failed = 0;
             $deliveryService = new InvoiceDeliveryService();
@@ -102,7 +108,9 @@ class CronController extends Controller
             $this->stderr('Billing failed: ' . $e->getMessage() . PHP_EOL, Console::FG_RED);
             return ExitCode::UNSPECIFIED_ERROR;
         } finally {
-            $mutex->release($emailLock);
+            if ($locked) {
+                $mutex->release($emailLock);
+            }
         }
     }
 
@@ -116,6 +124,7 @@ class CronController extends Controller
     {
         return Invoice::find()
             ->where(['emailed_at' => null, 'status' => [Invoice::STATUS_UNPAID, Invoice::STATUS_PARTIALLY_PAID]])
+            ->andWhere(['not in', 'user_id', \common\models\User::deletedIds()])
             ->andWhere(['>=', 'created_at', strtotime('-7 days')])
             ->orderBy(['id' => SORT_ASC])
             ->all();
@@ -124,17 +133,26 @@ class CronController extends Controller
     public function actionPaymentReminders(): int
     {
         return $this->runLocked('miracle:payment-reminders', 'Payment reminders', function (): string {
-            $count = (new InvoiceReminderService())->sendDueReminders();
-            return sprintf('Sent %d reminder(s).', $count);
+            $service = new InvoiceReminderService();
+            return $this->reminderResult($service->sendDueReminders(), $service->failures);
         });
     }
 
     public function actionSendReminders(): int
     {
         return $this->runLocked('miracle:renewal-reminders', 'Renewal reminders', function (): string {
-            $count = (new ServiceRenewalReminderService())->sendReminders();
-            return sprintf('Sent %d reminder(s).', $count);
+            $service = new ServiceRenewalReminderService();
+            return $this->reminderResult($service->sendReminders(), $service->failures);
         });
+    }
+
+    /** Failures must reach the cron exit code: each is only logged where it happens, so the rest still go out. */
+    private function reminderResult(int $sent, int $failures): string
+    {
+        if ($failures > 0) {
+            throw new \RuntimeException(sprintf('Sent %d reminder(s); %d failed, see the app log.', $sent, $failures));
+        }
+        return sprintf('Sent %d reminder(s).', $sent);
     }
 
     /**
@@ -185,11 +203,13 @@ class CronController extends Controller
     {
         /** @var \yii\mutex\Mutex $mutex */
         $mutex = Yii::$app->get('mutex');
-        if (!$mutex->acquire($lockName, 0)) {
-            $this->stdout("{$label} already running.\n", Console::FG_YELLOW);
-            return ExitCode::OK;
-        }
+        $locked = false;
         try {
+            $locked = $mutex->acquire($lockName, 0);
+            if (!$locked) {
+                $this->stdout("{$label} already running.\n", Console::FG_YELLOW);
+                return ExitCode::OK;
+            }
             $this->stdout("{$label} completed. " . $job() . PHP_EOL);
             return ExitCode::OK;
         } catch (\Throwable $e) {
@@ -197,7 +217,9 @@ class CronController extends Controller
             $this->stderr("{$label} failed: " . $e->getMessage() . PHP_EOL, Console::FG_RED);
             return ExitCode::UNSPECIFIED_ERROR;
         } finally {
-            $mutex->release($lockName);
+            if ($locked) {
+                $mutex->release($lockName);
+            }
         }
     }
 }

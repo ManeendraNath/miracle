@@ -79,7 +79,13 @@ final class CustomerActivityService
                     default => 'Payment Submitted',
                 },
                 'description' => $transaction->customerReference() ?: 'Reference Uploaded',
-                'time' => (int) $transaction->created_at,
+                // When it happened, not when the row was created: a refund comes long after the payment.
+                'time' => (int) (match ($transaction->status) {
+                    Transaction::STATUS_CAPTURED => $transaction->paid_at,
+                    Transaction::STATUS_REFUNDED => $transaction->refunded_at,
+                    Transaction::STATUS_FAILED => $transaction->updated_at,
+                    default => null,
+                } ?: $transaction->created_at),
                 'url' => '/payment/index',
             ];
         }

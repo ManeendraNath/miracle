@@ -20,6 +20,8 @@ class TransactionSearch extends Transaction
     // Transient placeholder to handle the composite range string text
     public $date_range;
     public ?string $created_at_range = null;
+    /** The grid's Invoice filter: staff type the number, not the row id. */
+    public ?string $invoice_number = null;
 
     /**
      * {@inheritdoc}
@@ -28,7 +30,7 @@ class TransactionSearch extends Transaction
     {
         return [
             [['id', 'invoice_id', 'gateway_id', 'is_unapplied'], 'integer'],
-            [['gateway_payment_id', 'gateway_order_id', 'status', 'user_payment_notes', 'payment_receipt_file', 'raw_payload', 'date_range', 'created_at_range'], 'safe'],
+            [['gateway_payment_id', 'gateway_order_id', 'status', 'user_payment_notes', 'payment_receipt_file', 'raw_payload', 'date_range', 'created_at_range', 'invoice_number'], 'safe'],
             [['amount', 'gateway_fee'], 'number'],
         ];
     }
@@ -58,6 +60,7 @@ class TransactionSearch extends Transaction
 
         $dataProvider = new ActiveDataProvider([
             'query' => $query,
+            'sort' => ['defaultOrder' => ['id' => SORT_DESC]],
             'pagination' => [
                 'pageSize' => GridPaginationHelper::getPageSize(),
             ],
@@ -72,6 +75,9 @@ class TransactionSearch extends Transaction
         }
 
         // grid filtering conditions
+        if ((string) $this->invoice_number !== '') {
+            $query->andWhere(['invoice_id' => \common\models\Invoice::find()->select('id')->where(['like', 'invoice_number', $this->invoice_number])]);
+        }
         $query->andFilterWhere(['is_unapplied' => $this->is_unapplied]);
         $gatewayId = $this->gateway_id;
         if ((string) $gatewayId === (string) Transaction::GATEWAY_MANUAL) {

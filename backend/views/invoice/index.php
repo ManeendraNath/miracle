@@ -127,7 +127,7 @@ GridViewHelper::register($this);
                                 Invoice::STATUS_REFUNDED => 'bg-info text-dark',
                                 default => 'bg-secondary',
                             };
-                            $label = Invoice::getStatuses()[$model->status] ?? $model->status;
+                            $label = $model->statusLabel();
                             return Html::tag(
                                 'span',
                                 Html::encode($label),

@@ -102,6 +102,10 @@ is cancelled on an invoice: it is reported to an Admin instead.
 Disabled services are skipped by billing, reminders and renewal monitoring; suspended
 customers cannot log in.
 
+Only Active services are billed. A suspended hosting or overdue maintenance service is still listed for
+renewal, but no renewal invoice is created until staff set it Active. If a service has no price, or billing is
+off for its type, reminders ask the customer to contact us instead of promising an invoice.
+
 ## Coupons
 
 Coupons are applied by an admin on manual invoices (coupon code field).
@@ -143,7 +147,7 @@ A billing profile whose **Country** is not India is billed as an export of servi
 
 | Role | Access |
 |---|---|
-| Manager | Dashboard (without money figures), customers, domains, hosting, maintenance, renewals, support, leads, audit requests, notifications |
+| Manager | Dashboard (without money figures), customers (status only, not their login details), domains, hosting, maintenance, renewals, support, leads and audit requests (view only), notifications |
 | Admin | Manager + invoices, payments, coupons, billing profiles, login history, cron log |
 | Superadmin | Admin + administrator accounts, site settings |
 

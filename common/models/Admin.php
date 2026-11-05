@@ -34,6 +34,7 @@ class Admin extends base\Admin implements IdentityInterface
     use BaseIdentityTrait;
     use AutoTimestampTrait;
     use PasswordManagementTrait;
+    use traits\ScalarInputTrait;
 
     /**
      * {@inheritdoc}

@@ -35,6 +35,7 @@ class BaseController extends Controller
         'lead/update' => 'Admin',
         'lead/delete' => 'Admin',
         // Same for audit requests (customer-submitted enquiries).
+        'audit-request/create' => 'Admin',
         'audit-request/update' => 'Admin',
         'audit-request/delete' => 'Admin',
         'hosting/cpanel-password' => 'Admin',

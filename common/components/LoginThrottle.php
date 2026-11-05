@@ -19,6 +19,16 @@ final class LoginThrottle
 {
     private const MAX_FAILURES = 5;
     private const LOCK_SECONDS = 900;
+    /** Hash of a random value nobody knows, same bcrypt cost as real passwords. */
+    private const NOBODY_HASH = '$2y$13$uazifTpQx.6hhBxafktGD.8o6XxERVEQNmKS6KUy2I/JCGly/VvfW';
+
+    /** Always false, but takes as long as a real password check: response time must not reveal which usernames exist. */
+    public static function checkAgainstNobody(string $password): bool
+    {
+        password_verify($password, self::NOBODY_HASH);
+
+        return false;
+    }
 
     public static function isLocked(string $scope, string $username): bool
     {

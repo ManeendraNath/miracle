@@ -23,7 +23,7 @@ HEALTH_URLS=(https://miraclewebtechnologies.com/ https://admin.miraclewebtechnol
 MAINTENANCE_FLAG=$APP/runtime/maintenance.flag
 DIRS=(common frontend backend console)
 # Excluded from copy and from --delete: these live only on the server.
-KEEP=(--exclude=/runtime/ --exclude=/web/assets/ --exclude=/config/params-local.php --exclude=error_log)
+KEEP=(--exclude=/runtime/ --exclude=/web/assets/ --exclude=/config/params-local.php --exclude=error_log --exclude=.user.ini --exclude=php.ini)
 COMPOSER=(composer install --prefer-dist --no-dev --no-interaction --optimize-autoloader)
 
 STAGE=prep          # prep: nothing changed yet; code: $APP is being changed
@@ -38,9 +38,9 @@ sync_code()
 {
     local d
     for d in "${DIRS[@]}"; do
-        rsync -a --delete "${KEEP[@]}" "$1/$d/" "$APP/$d/"
+        rsync -a --delete "${KEEP[@]}" "$1/$d/" "$APP/$d/" || return 1
     done
-    cp -a "$1/composer.json" "$1/composer.lock" "$APP/"
+    cp -a "$1/composer.json" "$1/composer.lock" "$APP/" || return 1
 }
 
 # Copies frontend/web into public_html. The entry point, .htaccess and the
@@ -49,18 +49,18 @@ sync_code()
 # public_html; remove it by hand (nested files are cleaned by --delete).
 publish_public()
 {
-    local item
+    local item cpanel
     for item in "$APP/frontend/web"/*; do
         case "${item##*/}" in index.php|assets|favicon.ico|error_log) continue ;; esac
-        rsync -a --delete "$item" "$PUBLIC/"
+        rsync -a --delete "$item" "$PUBLIC/" || return 1
     done
 
     [ -L "$PUBLIC/assets" ] || rm -rf "${PUBLIC:?}/assets"
     [ -L "$PUBLIC/favicon.ico" ] || rm -f "$PUBLIC/favicon.ico"
-    ln -sfn ../miracle/frontend/web/assets "$PUBLIC/assets"
-    ln -sfn ../miracle/frontend/web/favicon.ico "$PUBLIC/favicon.ico"
+    ln -sfn ../miracle/frontend/web/assets "$PUBLIC/assets" || return 1
+    ln -sfn ../miracle/frontend/web/favicon.ico "$PUBLIC/favicon.ico" || return 1
 
-    cat > "$PUBLIC/index.php" <<'PHP'
+    cat > "$PUBLIC/index.php" <<'PHP' || return 1
 <?php
 
 // Deploy in progress (deploy.sh creates this flag): answer 503 instead of
@@ -90,8 +90,16 @@ $config = yii\helpers\ArrayHelper::merge(
 (new yii\web\Application($config))->run();
 PHP
 
-    cat > "$PUBLIC/.htaccess" <<'HTACCESS'
+    # cPanel writes the site's PHP version and settings into this file: they must survive it being rewritten.
+    cpanel=$(sed -n -e '/^# php -- BEGIN cPanel-generated/,/^# php -- END cPanel-generated/p' -e '/^# BEGIN cPanel-generated/,/^# END cPanel-generated/p' "$PUBLIC/.htaccess" 2>/dev/null || true)
+
+    cat > "$PUBLIC/.htaccess" <<'HTACCESS' || return 1
 RewriteEngine On
+
+# PHP's error log sits next to the entry point and can name paths and customers.
+<Files "error_log">
+    Require all denied
+</Files>
 
 # Secure cookies don't work over http, so every form would fail there. SSL renewal must stay reachable.
 RewriteCond %{HTTPS} !=on
@@ -104,6 +112,9 @@ RewriteCond %{REQUEST_FILENAME} !-d
 
 RewriteRule . index.php [L]
 HTACCESS
+    if [ -n "$cpanel" ]; then
+        printf '\n%s\n' "$cpanel" >> "$PUBLIC/.htaccess" || return 1
+    fi
     php -l "$PUBLIC/index.php" >/dev/null
 }
 
@@ -133,6 +144,8 @@ on_fail()
         if sync_code "$SNAP" && (cd "$APP" && "${COMPOSER[@]}") && publish_public \
             && (cd "$APP" && php yii help >/dev/null) && rm -f "$MAINTENANCE_FLAG" && health_check; then
             echo "Previous code restored."
+            # The schema is newer than the restored code: keep customers out until someone has looked.
+            if [ "$MIGRATED" = 1 ]; then touch "$MAINTENANCE_FLAG"; fi
             rm -rf "${SNAP:?}"
         else
             touch "$MAINTENANCE_FLAG"
@@ -164,6 +177,8 @@ exec 9>/home/rpocncwk/.miracle-deploy.lock
 flock -n 9 || die "another deployment is running"
 [ -r "$APP/.env" ] || die "$APP/.env is missing"
 [ -r "$APP/yii" ] || die "$APP/yii is missing"
+# Backups archive the payment proofs with it; better to learn now than from a failed nightly run.
+php -r 'exit(class_exists("PharData") ? 0 : 1);' || die "the PHP phar extension is required"
 
 cd "$REPO"
 if [ -z "${DEPLOY_RESTARTED:-}" ]; then
@@ -226,12 +241,13 @@ echo "== Migrations"
 if php yii migrate/new --interactive=0 | grep -q "No new migrations found"; then
     echo "No pending migrations."
 else
-    php yii backup/run
+    # Database only: a slow or failing off-site copy must not stop the deploy.
+    php yii backup/run --dbOnly=1
     BACKUP=$(ls -1t "$APP"/backups/db_backup_*.sql.gz | head -n 1)
     echo "Pre-migration backup: $BACKUP"
+    MIGRATED=1
+    php yii migrate/up --interactive=0
 fi
-MIGRATED=1
-php yii migrate/up --interactive=0
 
 # Logs and customers' payment proofs: not readable by other accounts on the server.
 for d in runtime frontend/runtime backend/runtime console/runtime common/runtime storage/payment-receipts; do

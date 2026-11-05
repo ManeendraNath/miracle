@@ -38,10 +38,13 @@ final class SupportTicketMailer
     /** Customer-bound updates honour the "Support request updates" preference. */
     private static function sendToCustomer(SupportTicket $ticket, string $view, string $subject): void
     {
-        if (!(bool) CustomerPreference::forUser((int) $ticket->user_id)->support_notifications) {
-            return;
+        try {
+            if ((bool) CustomerPreference::forUser((int) $ticket->user_id)->support_notifications) {
+                self::send($ticket, $view, (string) $ticket->user->email, $subject);
+            }
+        } catch (\Throwable $e) {
+            Yii::error(['message' => 'Support email failed.', 'ticketId' => (int) $ticket->id, 'error' => $e->getMessage()], __METHOD__);
         }
-        self::send($ticket, $view, (string) $ticket->user->email, $subject);
     }
 
     /**

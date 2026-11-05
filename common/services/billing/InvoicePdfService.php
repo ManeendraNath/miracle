@@ -23,6 +23,7 @@ final class InvoicePdfService
             'invoice' => $invoice,
             'capturedAmount' => $paymentService->getCapturedAmount((int) $invoice->id),
             'outstandingAmount' => $paymentService->getOutstanding($invoice),
+            'carriedInto' => $invoice->status === Invoice::STATUS_CARRIED_FORWARD ? $paymentService->openInvoiceCarrying((int) $invoice->id) : null,
         ]);
 
         $mpdf = new Mpdf([
@@ -32,6 +33,8 @@ final class InvoicePdfService
             'margin_right' => 12,
             'margin_bottom' => 12,
             'margin_left' => 12,
+            // The default is inside vendor/, which deploys may leave unwritable.
+            'tempDir' => Yii::getAlias('@runtime/mpdf'),
         ]);
 
         $mpdf->WriteHTML($html);

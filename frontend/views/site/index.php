@@ -16,7 +16,7 @@ $this->title = 'Miracle Web Technologies | Web Hosting, Domains & Website Mainte
                 Hosting · Domains · Website Maintenance
             </span>
             <h1 class="display-3 fw-bold mb-3 tracking-tight" style="color: #ffffff;">
-                Modern Systems. <span style="color: #00a3e0;">Absolute Stability.</span>
+                Reliable hosting, <span style="color: #00a3e0;">looked after for you.</span>
             </h1>
             <p class="lead mx-auto mb-4 text-slate-300" style="max-width: 800px; color: #cbd5e1; font-weight: 300; font-size: 1.25rem;">
                 We modernise older web applications and look after your hosting, domains and website maintenance.

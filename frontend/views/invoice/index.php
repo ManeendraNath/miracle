@@ -111,7 +111,7 @@ $tabs = ['all' => 'All', 'due' => 'Due', 'paid' => 'Paid'];
                         Invoice::STATUS_UNPAID => 'bg-danger-subtle text-danger-emphasis',
                         default => 'bg-secondary-subtle text-secondary-emphasis',
                     };
-                    return Html::tag('span', Html::encode(Invoice::getStatuses()[$model->status] ?? $model->status), ['class' => 'badge ' . $class]);
+                    return Html::tag('span', Html::encode($model->statusLabel()), ['class' => 'badge ' . $class]);
                 },
             ],
             [

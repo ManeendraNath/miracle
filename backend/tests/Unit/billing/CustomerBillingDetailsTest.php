@@ -151,7 +151,7 @@ final class CustomerBillingDetailsTest extends Unit
         $this->assertSame('London, SW1A 1AA, United Kingdom', $invoice->getClientCityLine());
         $params = Yii::$app->params;
         Yii::$app->params['billing']['lutArn'] = '';
-        $this->assertSame('Export of services: zero-rated supply, no GST charged.', $invoice->getExportNote());
+        $this->assertSame('Export of services: no GST charged.', $invoice->getExportNote());
         Yii::$app->params['billing']['lutArn'] = 'AD0704260012345';
         $this->assertStringContainsString('under LUT without payment of IGST (LUT ARN AD0704260012345)', $invoice->getExportNote());
         Yii::$app->params = $params;

@@ -25,6 +25,14 @@ namespace common\models;
  */
 class SiteSetting extends base\SiteSetting
 {
+    public function rules(): array
+    {
+        return array_merge(parent::rules(), [
+            [['email_1', 'email_2', 'email_3'], 'trim'],
+            [['email_1', 'email_2', 'email_3'], 'email'],
+        ]);
+    }
+
     public function attributeLabels(): array
     {
         $labels = [

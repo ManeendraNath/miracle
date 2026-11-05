@@ -34,8 +34,8 @@ $this->title = 'Miracle Corporate Control Center';
 
 <?php
 $kpis = [
-    ['bg-info', (int) $openSupportTickets, 'Open Support Requests', 'fas fa-headset', 'Review Support', ['/support-ticket/index']],
-    ['bg-danger', (int) $highPrioritySupportTickets, 'High Priority Support', 'fas fa-exclamation-triangle', 'Review Priority Tickets', ['/support-ticket/index', 'SupportTicketSearch' => ['priority' => SupportTicket::PRIORITY_HIGH]]],
+    ['bg-info', (int) $openSupportTickets, 'Open Support Requests', 'fas fa-headset', 'Review Support', ['/support-ticket/index', 'SupportTicketSearch' => ['status' => 'active']]],
+    ['bg-danger', (int) $highPrioritySupportTickets, 'High Priority Support', 'fas fa-exclamation-triangle', 'Review Priority Tickets', ['/support-ticket/index', 'SupportTicketSearch' => ['priority' => SupportTicket::PRIORITY_HIGH, 'status' => 'active']]],
     ['bg-primary', (int) $metrics['totalClients'], 'Customer Accounts', 'fas fa-users', 'Manage Clients', ['/user/index']],
     ['bg-success', Yii::$app->formatter->asCurrency((float) $metrics['totalRevenueCollected'], 'INR'), 'Total Revenue Settled', 'fas fa-cash-register', 'Review Paid Invoices', ['/invoice/index']],
     ['bg-warning', Yii::$app->formatter->asCurrency((float) $metrics['unpaidBalance'], 'INR'), 'Outstanding Due Balance', 'fas fa-comments-dollar', 'Track Accounts Due', ['/invoice/index']],
@@ -200,7 +200,7 @@ $assets = [
                         <div class="alert alert-warning py-2">
                             <i class="fas fa-exclamation-triangle mr-1"></i>
                             <?= Yii::$app->formatter->asCurrency((float) $metrics['unappliedHeld'], 'INR') ?> received but unapplied: refund it or apply it to an invoice.
-                            <?= Html::a('Review', ['/transaction/index', 'TransactionSearch' => ['is_unapplied' => 1]], ['class' => 'alert-link']) ?>
+                            <?= Html::a('Review', ['/transaction/index', 'TransactionSearch' => ['is_unapplied' => 1, 'status' => \common\models\Transaction::STATUS_CAPTURED]], ['class' => 'alert-link']) ?>
                         </div>
                     <?php endif; ?>
                     <div class="d-flex justify-content-between align-items-center border-bottom pb-3 mb-3">

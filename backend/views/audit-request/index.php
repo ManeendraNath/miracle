@@ -21,7 +21,9 @@ GridViewHelper::register($this);
 
 <div class="audit-request-index">
     <div class="card card-outline card-primary shadow-sm">
-        <?= AdminIndexHelper::pageHeader('Track and process website technical audit and optimisation requests.', 'create', 'Add Audit Request') ?>
+        <?= \backend\controllers\BaseController::canAccess(Yii::$app->user->identity, 'audit-request', 'create')
+            ? AdminIndexHelper::pageHeader('Track and process website technical audit and optimisation requests.', 'create', 'Add Audit Request')
+            : AdminIndexHelper::pageHeader('Track and process website technical audit and optimisation requests.') ?>
         <div class="card-body p-0">
             <?=
             GridView::widget([

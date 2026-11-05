@@ -155,7 +155,7 @@ $invoiceBadge = static fn(string $status): string => match ($status) {
                                     <td class="text-nowrap"><?= $invoice->due_date ? $formatter->asDate($invoice->due_date, 'php:d M Y') : '-' ?></td>
                                     <td class="text-end text-nowrap"><?= $formatter->asCurrency($invoice->total_payable, 'INR') ?></td>
                                     <td class="pe-3">
-                                        <span class="badge <?= $invoiceBadge((string) $invoice->status) ?>"><?= Html::encode(Invoice::getStatuses()[$invoice->status] ?? $invoice->status) ?></span>
+                                        <span class="badge <?= $invoiceBadge((string) $invoice->status) ?>"><?= Html::encode($invoice->statusLabel()) ?></span>
                                     </td>
                                 </tr>
                             <?php endforeach; ?>

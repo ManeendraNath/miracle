@@ -36,6 +36,8 @@ class Coupon extends base\Coupon
     {
         $rules = [
             [['name', 'code'], 'trim'],
+            ['amount', 'required'],
+            ['code', 'validateCodeUnchanged'],
             ['type', 'in', 'range' => array_keys(self::getTypes())],
             ['is_active', 'in', 'range' => array_keys(self::getStatuses())],
             [['amount', 'minimum_order'], 'number', 'min' => 0],
@@ -110,6 +112,14 @@ class Coupon extends base\Coupon
             if ($rows) {
                 self::getDb()->createCommand()->batchInsert(CouponAssignedUser::tableName(), ['coupon_id', 'user_id', 'assigned_at', 'created_at', 'updated_at'], $rows)->execute();
             }
+        }
+    }
+
+    /** Used invoices print the code they were given: renaming it would leave them pointing at nothing. */
+    public function validateCodeUnchanged(string $attribute): void
+    {
+        if (!$this->isNewRecord && $this->isAttributeChanged($attribute) && CouponRedemption::find()->where(['coupon_id' => (int) $this->id])->exists()) {
+            $this->addError($attribute, 'This coupon has been used, so its code cannot change. Create a new coupon instead.');
         }
     }
 

@@ -85,12 +85,16 @@ class UserController extends BaseController
     {
         $model = $this->findModel($id);
         $model->clearPlainPassword();
-        $email = $model->email;
 
-        $loaded = $model->load(Yii::$app->request->post());
-        if ($loaded && !self::canAccess(Yii::$app->user->identity, 'user', 'credentials')) {
-            $model->email = $email;
-            $model->clearPlainPassword();
+        // Below Admin only the status can change: username, email or password would take over the customer's login.
+        if (self::canAccess(Yii::$app->user->identity, 'user', 'credentials')) {
+            $loaded = $model->load(Yii::$app->request->post());
+        } else {
+            $posted = Yii::$app->request->post($model->formName());
+            $loaded = is_array($posted);
+            if ($loaded) {
+                $model->setAttributes(array_intersect_key($posted, ['status' => true]));
+            }
         }
         if ($loaded && $model->save()) {
             Yii::$app->session->setFlash('success', 'User updated successfully.');
@@ -110,11 +114,11 @@ class UserController extends BaseController
      * @throws NotFoundHttpException if the model cannot be found
      */
 
-    /** Billing doesn't stop by itself for a suspended customer, and a deleted one's invoices stay in Outstanding. */
+    /** Billing doesn't stop by itself for a suspended or inactive customer, and a deleted one's invoices stay in Outstanding. */
     private function warnAboutOpenBusiness(User $model): void
     {
         $status = (int) $model->status;
-        if ($status !== User::getStatusSuspended() && $status !== User::getStatusDeleted()) {
+        if ($status === User::getStatusActive()) {
             return;
         }
         $services = 0;
@@ -126,9 +130,9 @@ class UserController extends BaseController
             return;
         }
         $held = "{$services} active service(s) and {$invoices} open invoice(s)";
-        Yii::$app->session->addFlash('warning', $status === User::getStatusSuspended()
-            ? "This customer can't log in but has {$held}: renewals and reminders continue. Disable the services or cancel the invoices if they should stop."
-            : "This customer has {$held}. Renewals and reminders have stopped, but open invoices stay in Outstanding until cancelled or written off.");
+        Yii::$app->session->addFlash('warning', $status === User::getStatusDeleted()
+            ? "This customer has {$held}. Renewals and reminders have stopped, but open invoices stay in Outstanding until cancelled or written off."
+            : "This customer can't log in but has {$held}: renewals and reminders continue. Disable the services or cancel the invoices if they should stop.");
     }
 
     /**

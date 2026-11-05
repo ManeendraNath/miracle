@@ -36,7 +36,7 @@ $money = static function (int|float|string|null $amount): string {
         };
         ?>
         <span class="badge <?= $statusClass ?> p-2">
-            <?= Html::encode(Invoice::getStatuses()[$model->status] ?? $model->status) ?>
+            <?= Html::encode($model->statusLabel()) ?>
         </span>
     </div>
 

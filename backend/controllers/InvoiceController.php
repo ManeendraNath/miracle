@@ -204,6 +204,16 @@ class InvoiceController extends BaseController
                 $items = $this->loadManualItems($post);
                 (new ManualInvoiceService())->update($model, $items);
                 Yii::$app->session->setFlash('success', 'Invoice updated successfully.');
+                // The customer holds the old figures: send the new ones. Saved either way.
+                if ($model->emailed_at !== null) {
+                    try {
+                        (new InvoiceDeliveryService())->send($model, true);
+                        Yii::$app->session->setFlash('success', 'Invoice updated and emailed to the customer again.');
+                    } catch (\Throwable $e) {
+                        Yii::error(['message' => 'Updated invoice could not be emailed.', 'invoiceId' => (int) $model->id, 'error' => $e->getMessage()], __METHOD__);
+                        Yii::$app->session->addFlash('warning', 'The customer still has the old invoice: the email failed. Use Resend Invoice.');
+                    }
+                }
                 return $this->redirect(['view', 'number' => $model->invoice_number]);
             } catch (\Throwable $e) {
                 Yii::error($e, __METHOD__);
@@ -268,7 +278,7 @@ class InvoiceController extends BaseController
             }
             $released = (new InvoicePaymentService())->closeAsRefunded($model, null, true);
             $dbTransaction->commit();
-            Yii::$app->session->setFlash($released > 0 ? 'warning' : 'success', 'Invoice closed: nothing more is owed on it. Money already received is kept.' . ($released > 0 ? ' Its unpaid renewals are billed again in full on the next run, with no credit for money kept, unless those services are disabled.' : ''));
+            Yii::$app->session->setFlash($released > 0 ? 'warning' : 'success', 'Invoice closed: nothing more is owed on it. Money already received is kept.' . ($released > 0 ? ' Its unpaid renewals are billed again in full on the next run, with no credit for money kept, if those services are Active; a suspended or overdue service is not billed until it is set Active.' : ''));
         } catch (\Throwable $e) {
             if ($dbTransaction->isActive) {
                 $dbTransaction->rollBack();
@@ -310,7 +320,7 @@ class InvoiceController extends BaseController
     private function getUsersList(): array
     {
         return ArrayHelper::map(
-            User::find()->orderBy(['username' => SORT_ASC])->asArray()->all(),
+            User::find()->where(['<>', 'status', User::getStatusDeleted()])->orderBy(['username' => SORT_ASC])->asArray()->all(),
             'id',
             static function (array $user): string {
                             return sprintf('%s (%s)', $user['username'], $user['email']);

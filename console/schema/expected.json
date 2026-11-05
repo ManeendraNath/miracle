@@ -1,5 +1,5 @@
 {
-    "migrations": 55,
+    "migrations": 56,
     "columns": {
         "admin": {
             "auth_key": {
@@ -1536,6 +1536,12 @@
                 "default": null,
                 "extra": ""
             },
+            "email": {
+                "type": "varchar(255)",
+                "null": true,
+                "default": null,
+                "extra": ""
+            },
             "id": {
                 "type": "int",
                 "null": false,
@@ -1545,6 +1551,12 @@
             "lead_name": {
                 "type": "varchar(150)",
                 "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "message": {
+                "type": "text",
+                "null": true,
                 "default": null,
                 "extra": ""
             },
@@ -1563,6 +1575,12 @@
             "status": {
                 "type": "varchar(50)",
                 "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "subject": {
+                "type": "varchar(255)",
+                "null": true,
                 "default": null,
                 "extra": ""
             },

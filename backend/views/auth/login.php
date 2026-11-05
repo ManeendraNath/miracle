@@ -28,5 +28,7 @@ $this->title = 'Login';
             </div>
 
         <?php ActiveForm::end(); ?>
+
+        <p class="mt-3"><?= Html::a('Forgot password?', ['auth/request-password-reset']) ?></p>
     </div>
 </div>

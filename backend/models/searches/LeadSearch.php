@@ -26,7 +26,7 @@ class LeadSearch extends Lead
     {
         return [
             [['id', 'created_at', 'updated_at'], 'integer'],
-            [['lead_name', 'phone_number', 'source', 'status', 'created_at_range', 'search_keyword'], 'safe'],
+            [['lead_name', 'phone_number', 'email', 'source', 'status', 'created_at_range', 'search_keyword'], 'safe'],
         ];
     }
 
@@ -79,6 +79,7 @@ class LeadSearch extends Lead
             $query->andFilterWhere(['or',
                 ['like', 'lead_name', $this->search_keyword],
                 ['like', 'phone_number', $this->search_keyword],
+                ['like', 'email', $this->search_keyword],
                 ['like', 'source', $this->search_keyword]
             ]);
         }
@@ -86,6 +87,7 @@ class LeadSearch extends Lead
         // 3. COLUMN BY COLUMN DATA GRID FIELDS FILTERS
         $query->andFilterWhere(['like', 'lead_name', $this->lead_name])
                 ->andFilterWhere(['like', 'phone_number', $this->phone_number])
+                ->andFilterWhere(['like', 'email', $this->email])
                 ->andFilterWhere(['like', 'status', $this->status])
                 ->andFilterWhere(['like', 'source', $this->source]);
 

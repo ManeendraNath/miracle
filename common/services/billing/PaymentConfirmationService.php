@@ -69,6 +69,28 @@ final class PaymentConfirmationService
         }
     }
 
+    /** Tells the customer their UPI/bank proof was rejected. $reference: as they submitted it. */
+    public function sendProofRejected(Transaction $transaction, string $reference): void
+    {
+        $invoice = Invoice::findOne((int) $transaction->invoice_id);
+        $client = $invoice === null ? null : User::findOne((int) $invoice->user_id);
+        if ($client === null || empty($client->email)) {
+            throw new \DomainException('Customer email address is unavailable.');
+        }
+        $sent = Yii::$app->mailer
+            ->compose(
+                ['html' => '@common/mail/payment-proof-rejected-html', 'text' => '@common/mail/payment-proof-rejected-text'],
+                ['invoice' => $invoice, 'reference' => $reference, 'invoiceUrl' => $this->getInvoiceUrl($invoice)],
+            )
+            ->setFrom([Yii::$app->params['senderEmail'] => Yii::$app->params['senderName']])
+            ->setTo($client->email)
+            ->setSubject('Payment proof not accepted - ' . $invoice->invoice_number)
+            ->send();
+        if (!$sent) {
+            throw new \RuntimeException('Rejected proof email could not be sent.');
+        }
+    }
+
     private function getInvoiceUrl(Invoice $invoice): string
     {
         $baseUrl = rtrim((string) (Yii::$app->params['frontendBaseUrl'] ?? ''), '/');

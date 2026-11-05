@@ -97,6 +97,16 @@ GridViewHelper::register($this);
                         'contentOptions' => ['class' => 'text-nowrap'],
                     ],
                     /*
+                     * Email
+                     */
+                    [
+                        'attribute' => 'email',
+                        'label' => 'Email',
+                        'value' => static function (Lead $model): string {
+                            return $model->email ?: '-';
+                        },
+                    ],
+                    /*
                      * Lead Source
                      */
                     [

@@ -344,6 +344,7 @@ class TransactionController extends BaseController
             if ((int) $model->gateway_id === Transaction::GATEWAY_RAZORPAY) {
                 throw new \DomainException('Razorpay orders are settled automatically and cannot be rejected manually.');
             }
+            $reference = (string) $model->gateway_payment_id;
             $model->status = Transaction::STATUS_FAILED;
             // Frees the reference (unique) so the customer can resubmit the genuine one; still readable here.
             if ((string) $model->gateway_payment_id !== '') {
@@ -361,8 +362,10 @@ class TransactionController extends BaseController
                     $number = (string) Invoice::find()->select('invoice_number')->where(['id' => (int) $model->invoice_id])->scalar();
                     $userId = (int) Invoice::find()->select('user_id')->where(['id' => (int) $model->invoice_id])->scalar();
                     (new NotificationService())->create($userId, 'payment', 'Payment Proof Not Accepted', 'We could not verify your payment proof for invoice ' . $number . '. Please check the reference and submit it again, or contact support.', '/invoice/view?number=' . rawurlencode($number));
+                    (new PaymentConfirmationService())->sendProofRejected($model, $reference);
                 } catch (\Throwable $e) {
                     Yii::error(['message' => 'Could not notify the customer of a rejected proof.', 'transactionId' => $id, 'error' => $e->getMessage()], __METHOD__);
+                    Yii::$app->session->addFlash('warning', 'The customer could not be emailed about this rejection. Please tell them directly.');
                 }
             }
         } catch (\Throwable $e) {

@@ -90,6 +90,10 @@ class DashboardController extends BaseController
                 ->andWhere(['gateway_id' => Transaction::GATEWAY_UPI_BANK, 'status' => 'Pending'])
                 ->count(),
             'capturedRevenueToday' => $canBilling ? $received(strtotime('today'), strtotime('tomorrow') - 1) : 0.0,
+            // Taken but counted on no invoice and in no figure above, until staff refund or apply it.
+            'unappliedHeld' => !$canBilling ? 0.0 : (float) Transaction::find()
+                ->where(['status' => Transaction::STATUS_CAPTURED, 'is_unapplied' => 1])
+                ->sum('amount - refunded_amount'),
             // 3. Inbound Agency Pipeline Tracks
             'newInboundLeadsCount' => AuditRequest::find()
                 ->andWhere(['status' => 'Pending'])

@@ -195,6 +195,32 @@ final class AdminBillingCest
         $I->seeRecord(\common\models\Hosting::class, ['id' => $hostingId, 'user_id' => $userId]);
     }
 
+    public function aRejectedProofEmailsTheCustomer(FunctionalTester $I): void
+    {
+        $invoiceId = $this->invoice($I, Invoice::STATUS_UNPAID);
+        $proof = $this->transaction($I, $invoiceId, Transaction::GATEWAY_UPI_BANK, Transaction::STATUS_PENDING);
+        Transaction::updateAll(['gateway_payment_id' => 'UTR-REJECT-' . $proof, 'payment_receipt_file' => 'proof.png'], ['id' => $proof]);
+
+        $this->post($I, 'reject', $proof);
+
+        $I->seeEmailIsSent(1);
+        $mail = quoted_printable_decode((string) $I->grabLastSentEmail()->toString());
+        $I->assertStringContainsString('UTR-REJECT-' . $proof, $mail, 'the reference as they submitted it');
+        $I->assertStringNotContainsString('REJECTED-', $mail);
+    }
+
+    public function dashboardShowsUnappliedMoney(FunctionalTester $I): void
+    {
+        $invoiceId = $this->invoice($I, Invoice::STATUS_PAID);
+        $payment = $this->transaction($I, $invoiceId, Transaction::GATEWAY_RAZORPAY, Transaction::STATUS_CAPTURED);
+        Transaction::updateAll(['is_unapplied' => 1, 'refunded_amount' => 400], ['id' => $payment]);
+
+        $I->amOnRoute('dashboard/index');
+        $I->see('received but unapplied');
+        $I->amOnRoute('transaction/index', ['TransactionSearch' => ['is_unapplied' => 1]]);
+        $I->see('Unapplied');
+    }
+
     public function anUnpaidInvoiceCanBeWrittenOffUnlessMoneyIsKept(FunctionalTester $I): void
     {
         $closeFrom = static function (int $id) use ($I): void {

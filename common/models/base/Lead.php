@@ -10,7 +10,10 @@ use Yii;
  * @property int $id
  * @property string $lead_name
  * @property string|null $phone_number
+ * @property string|null $email
  * @property string|null $source
+ * @property string|null $subject
+ * @property string|null $message
  * @property string $status
  * @property int $created_at
  * @property int $updated_at
@@ -31,12 +34,14 @@ class Lead extends \yii\db\ActiveRecord
     public function rules()
     {
         return [
-            [['phone_number', 'source'], 'default', 'value' => null],
+            [['phone_number', 'email', 'source', 'subject', 'message'], 'default', 'value' => null],
             [['lead_name', 'status', 'created_at', 'updated_at'], 'required'],
             [['created_at', 'updated_at'], 'integer'],
             [['lead_name'], 'string', 'max' => 150],
             [['phone_number'], 'string', 'max' => 30],
             [['source'], 'string', 'max' => 100],
+            [['email', 'subject'], 'string', 'max' => 255],
+            [['message'], 'string'],
             [['status'], 'string', 'max' => 50],
         ];
     }
@@ -50,7 +55,10 @@ class Lead extends \yii\db\ActiveRecord
             'id' => 'ID',
             'lead_name' => 'Lead Name',
             'phone_number' => 'Phone Number',
+            'email' => 'Email',
             'source' => 'Source',
+            'subject' => 'Subject',
+            'message' => 'Message',
             'status' => 'Status',
             'created_at' => 'Created At',
             'updated_at' => 'Updated At',

@@ -8,7 +8,10 @@ namespace common\models;
  * @property int $id
  * @property string $lead_name
  * @property string|null $phone_number
+ * @property string|null $email
  * @property string|null $source
+ * @property string|null $subject
+ * @property string|null $message
  * @property string $status
  * @property int $created_at
  * @property int $updated_at
@@ -17,6 +20,7 @@ class Lead extends base\Lead
 {
     /** The admin "Update Status" form: only the status comes from the form. */
     public const SCENARIO_STATUS = 'status';
+    public const SOURCE_CONTACT_FORM = 'Contact Form';
 
     public static function getStatuses(): array
     {
@@ -48,6 +52,7 @@ class Lead extends base\Lead
             'Social Media' => 'Social Media Referral',
             'Direct Client' => 'Direct / Inbound Call',
             'Frontend Request' => 'Website Audit Form',
+            self::SOURCE_CONTACT_FORM => 'Website Contact Form',
         ];
     }
 }

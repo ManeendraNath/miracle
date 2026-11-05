@@ -62,5 +62,6 @@ final class ContactCest
         );
         $I->seeEmailIsSent();
         $I->see('Thank you for contacting us. We will respond shortly.');
+        $I->seeRecord(\common\models\Lead::class, ['email' => 'tester@example.com', 'subject' => 'test subject', 'message' => 'test content', 'source' => \common\models\Lead::SOURCE_CONTACT_FORM, 'status' => 'Pending']);
     }
 }

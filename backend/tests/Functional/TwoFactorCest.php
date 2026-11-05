@@ -164,4 +164,43 @@ final class TwoFactorCest
         $I->see('Two-factor sign-in is off.');
         $I->seeRecord(Admin::class, ['id' => $id, 'totp_secret' => null]);
     }
+
+    public function forgottenPasswordIsResetByEmailLink(FunctionalTester $I): void
+    {
+        $id = $this->haveAdmin($I, 'tf-forgot', Admin::getRoleAdmin(), null);
+        $request = static function () use ($I): void {
+            $I->amOnRoute('auth/request-password-reset');
+            $I->submitForm('#admin-password-reset-form', ['AdminPasswordResetRequestForm[email]' => 'tf-forgot@example.test', 'AdminPasswordResetRequestForm[verifyCode]' => 'testme']);
+        };
+
+        // An unknown address gets the same answer and no email.
+        $I->amOnRoute('auth/request-password-reset');
+        $I->submitForm('#admin-password-reset-form', ['AdminPasswordResetRequestForm[email]' => 'nobody@example.test', 'AdminPasswordResetRequestForm[verifyCode]' => 'testme']);
+        $I->see('a reset link is on its way');
+        $I->dontSeeEmailIsSent();
+
+        $request();
+        $I->see('a reset link is on its way');
+        $I->seeEmailIsSent(1);
+        /** @var Admin $admin */
+        $admin = $I->grabRecord(Admin::class, ['id' => $id]);
+        $token = (string) $admin->password_reset_token;
+        $I->assertStringContainsString('/auth/reset-password?token=' . rawurlencode($token), quoted_printable_decode((string) $I->grabLastSentEmail()->toString()));
+
+        $I->amOnRoute('auth/reset-password', ['token' => 'wrong_' . time()]);
+        $I->see('invalid or has expired');
+
+        $I->amOnRoute('auth/reset-password', ['token' => $token]);
+        $I->submitForm('#admin-reset-password-form', ['AdminResetPasswordForm[password]' => 'NewAdminPassword2']);
+        $I->see('Your password has been changed.');
+        /** @var Admin $changed */
+        $changed = $I->grabRecord(Admin::class, ['id' => $id]);
+        $I->assertNull($changed->password_reset_token);
+        $I->assertNotSame((string) $admin->auth_key, (string) $changed->auth_key, 'other sessions are signed out');
+        $I->assertTrue($changed->validatePassword('NewAdminPassword2'));
+
+        // The link works once.
+        $I->amOnRoute('auth/reset-password', ['token' => $token]);
+        $I->see('invalid or has expired');
+    }
 }

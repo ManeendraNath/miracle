@@ -148,6 +148,12 @@ A billing profile whose **Country** is not India is billed as an export of servi
 The table lives in `BaseController::MIN_ROLE`; `RoleAccessTest` pins it. Every role can
 change its own email and password under **My account** (user icon in the top bar).
 
+### Forgotten admin password
+
+*Forgot password?* on the admin login emails a one-hour link to an active admin's address (built from
+`BACKEND_BASE_URL`). Using it signs out other sessions, clears the login lock and alerts admins; two-factor
+stays on. Mail not working: another Superadmin can set a new password on the admin's edit page.
+
 ### Two-factor sign-in (optional, per admin)
 
 - **Turn on:** My account → *Set up two-factor sign-in* → scan the QR code (or type the key)

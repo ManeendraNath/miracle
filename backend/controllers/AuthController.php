@@ -2,9 +2,12 @@
 
 namespace backend\controllers;
 
+use backend\models\AdminPasswordResetRequestForm;
+use backend\models\AdminResetPasswordForm;
 use backend\models\LoginForm;
 use backend\models\TwoFactorForm;
 use Yii;
+use yii\base\InvalidArgumentException;
 use yii\filters\VerbFilter;
 use yii\filters\AccessControl;
 use yii\helpers\Url;
@@ -37,7 +40,7 @@ class AuthController extends Controller
                 },
                 'rules' => [
                     [
-                        'actions' => ['login', 'two-factor', 'error'],
+                        'actions' => ['login', 'two-factor', 'error', 'captcha', 'request-password-reset', 'reset-password'],
                         'allow' => true,
                     ],
                     [
@@ -73,6 +76,10 @@ class AuthController extends Controller
         return [
             'error' => [
                 'class' => ErrorAction::class,
+            ],
+            'captcha' => [
+                'class' => \yii\captcha\CaptchaAction::class,
+                'fixedVerifyCode' => YII_ENV_TEST ? 'testme' : null,
             ],
         ];
     }
@@ -132,6 +139,58 @@ class AuthController extends Controller
         $model->code = '';
 
         return $this->render('two-factor', ['model' => $model]);
+    }
+
+    /**
+     * "Forgot password": the same answer whether or not the address exists, so accounts can't be discovered.
+     *
+     * @return string|Response
+     */
+    public function actionRequestPasswordReset()
+    {
+        if (!Yii::$app->user->isGuest) {
+            return $this->redirect(['dashboard/index']);
+        }
+        $this->layout = 'blank';
+        $model = new AdminPasswordResetRequestForm();
+        if ($model->load(Yii::$app->request->post()) && $model->validate()) {
+            try {
+                $model->sendEmail();
+            } catch (\Throwable $e) {
+                Yii::error(['message' => 'Admin password reset email failed.', 'error' => $e->getMessage()], __METHOD__);
+            }
+            Yii::$app->session->setFlash('success', 'If that address belongs to an active admin, a reset link is on its way. It expires in one hour.');
+            return $this->redirect(['auth/login']);
+        }
+
+        return $this->render('request-password-reset', ['model' => $model]);
+    }
+
+    /**
+     * Sets a new password from the emailed link.
+     *
+     * @return string|Response
+     */
+    public function actionResetPassword(string $token)
+    {
+        if (!Yii::$app->user->isGuest) {
+            return $this->redirect(['dashboard/index']);
+        }
+        try {
+            $model = new AdminResetPasswordForm($token);
+        } catch (InvalidArgumentException) {
+            Yii::$app->session->setFlash('error', 'This reset link is invalid or has expired. Please request a new one.');
+            return $this->redirect(['auth/request-password-reset']);
+        }
+        $this->layout = 'blank';
+        if ($model->load(Yii::$app->request->post()) && $model->validate()) {
+            $model->resetPassword();
+            Yii::$app->session->setFlash('success', 'Your password has been changed. Please log in.');
+            return $this->redirect(['auth/login']);
+        }
+        $model->password = '';
+
+        return $this->render('reset-password', ['model' => $model]);
     }
 
     /**

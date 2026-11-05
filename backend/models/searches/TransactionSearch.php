@@ -27,7 +27,7 @@ class TransactionSearch extends Transaction
     public function rules(): array
     {
         return [
-            [['id', 'invoice_id', 'gateway_id'], 'integer'],
+            [['id', 'invoice_id', 'gateway_id', 'is_unapplied'], 'integer'],
             [['gateway_payment_id', 'gateway_order_id', 'status', 'user_payment_notes', 'payment_receipt_file', 'raw_payload', 'date_range', 'created_at_range'], 'safe'],
             [['amount', 'gateway_fee'], 'number'],
         ];
@@ -72,6 +72,7 @@ class TransactionSearch extends Transaction
         }
 
         // grid filtering conditions
+        $query->andFilterWhere(['is_unapplied' => $this->is_unapplied]);
         $gatewayId = $this->gateway_id;
         if ((string) $gatewayId === (string) Transaction::GATEWAY_MANUAL) {
             // Manual entries are stored as 0 or NULL.

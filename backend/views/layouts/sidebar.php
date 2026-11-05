@@ -81,6 +81,12 @@ use yii\helpers\Html;
                         'url' => ['/audit-request/index'],
                         'active' => Yii::$app->controller->id === 'audit-request'
                     ],
+                    [
+                        'label' => 'Leads CRM',
+                        'icon' => 'envelope-open-text',
+                        'url' => ['/lead/index'],
+                        'active' => Yii::$app->controller->id === 'lead'
+                    ],
                     // =====================================================================
                     // 🚀 1.1. CUSTOMER SUPPORT
                     // =====================================================================

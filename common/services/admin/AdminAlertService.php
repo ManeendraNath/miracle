@@ -112,6 +112,11 @@ final class AdminAlertService extends AdminNotificationService
         self::send($title, $message, 'billing', '/renewal-monitoring/index', true);
     }
 
+    public static function adminPasswordReset(string $username): void
+    {
+        self::send('Admin Password Reset', "Admin: {$username}\n" . 'The password was changed through a "Forgot password" email link. If this was not expected, check the account now.', 'system', null, true);
+    }
+
     public static function billingRunFailed(string $reason): void
     {
         $message = "Reason: {$reason}\n" . 'No renewal invoices were created by this run. It runs again at the next scheduled time; fix the cause before then.';

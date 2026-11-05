@@ -146,6 +146,12 @@ class SiteController extends Controller
             $adminEmail = CustomYii::getSetting('email_1', 'info@miraclewebtechnologies.com');
 
             // Sent from our own address (visitor addresses fail SPF/DMARC); Reply-To reaches the visitor.
+            $saved = false;
+            try {
+                $saved = $model->saveAsLead();
+            } catch (\Throwable $e) {
+                Yii::error(['message' => 'Contact enquiry could not be saved.', 'error' => $e->getMessage()], __METHOD__);
+            }
             $sent = false;
             try {
                 $sent = $model->sendEmail(Yii::$app->mailer, $adminEmail, Yii::$app->params['senderEmail'], Yii::$app->params['senderName']);
@@ -153,8 +159,16 @@ class SiteController extends Controller
                 Yii::error(['message' => 'Contact form email failed.', 'error' => $e->getMessage()], __METHOD__);
             }
 
-            // Enquiries are only delivered by email: on failure keep what they typed, it exists nowhere else.
-            if ($sent) {
+            if ($saved) {
+                try {
+                    AdminAlertService::leadCreated($model->name, $model->email);
+                } catch (\Throwable $e) {
+                    Yii::error(['message' => 'Contact enquiry admin alert failed.', 'error' => $e->getMessage()], __METHOD__);
+                }
+            }
+
+            // Lost only if both failed: then keep what they typed, it exists nowhere else.
+            if ($saved || $sent) {
                 Yii::$app->session->setFlash('success', 'Thank you for contacting us. We will respond shortly.');
                 return $this->refresh();
             }

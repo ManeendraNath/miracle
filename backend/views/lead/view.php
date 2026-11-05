@@ -27,7 +27,10 @@ if (BaseController::canAccess(Yii::$app->user->identity, 'lead', 'update')) {
                 'attributes' => [
                     'lead_name',
                     'phone_number',
+                    'email:email',
                     'source',
+                    'subject',
+                    'message:ntext',
                     [
                         'attribute' => 'status',
                         'format' => 'raw',

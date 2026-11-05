@@ -48,6 +48,24 @@ class ContactForm extends Model
         ];
     }
 
+    /** Keeps the enquiry in the admin panel (Leads), whatever happens to the email. */
+    public function saveAsLead(): bool
+    {
+        $lead = new \common\models\Lead();
+        $lead->setAttributes([
+            'lead_name' => mb_substr($this->name, 0, 150),
+            'email' => mb_substr($this->email, 0, 255),
+            'source' => \common\models\Lead::SOURCE_CONTACT_FORM,
+            'subject' => mb_substr($this->subject, 0, 255),
+            'message' => $this->body,
+            'status' => 'Pending',
+            'created_at' => time(),
+            'updated_at' => time(),
+        ], false);
+
+        return $lead->save();
+    }
+
     /**
      * Sends an email to the specified email address using the information collected by this model.
      *

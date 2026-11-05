@@ -254,6 +254,8 @@ The command is protected by the configured Yii MySQL mutex using lock name:
 miracle:auto-billing
 ```
 
+Staff changes to a service's expiry, customer or disabled status take the same lock until saved, and are refused with a "billing run in progress" message while a run holds it. The run waits up to 10 seconds for such a save.
+
 Razorpay safety net, every 30 minutes (records payments whose callback and webhook were both lost, and fills in Razorpay's fee):
 
 ```bash

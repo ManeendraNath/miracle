@@ -33,8 +33,9 @@ class CronController extends Controller
     {
         /** @var \yii\mutex\Mutex $mutex */
         $mutex = Yii::$app->get('mutex');
-        $lockName = 'miracle:auto-billing';
-        if (!$mutex->acquire($lockName, 0)) {
+        $lockName = AutoBillingService::LOCK_NAME;
+        // A few seconds' wait: a staff member may be saving a service change under the same lock.
+        if (!$mutex->acquire($lockName, 10)) {
             $this->stdout("Billing cron already running.\n", Console::FG_YELLOW);
             return ExitCode::OK;
         }

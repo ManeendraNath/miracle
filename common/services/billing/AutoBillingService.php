@@ -10,6 +10,9 @@ use Yii;
 
 final class AutoBillingService
 {
+    /** Held for a whole run. Staff changes to a service's expiry, customer or status take it too. */
+    public const LOCK_NAME = 'miracle:auto-billing';
+
     public function __construct(
         private readonly BillingCollectorService $collector = new BillingCollectorService(),
         private readonly AutoInvoiceService $invoiceService = new AutoInvoiceService()

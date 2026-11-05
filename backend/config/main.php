@@ -16,6 +16,10 @@ return [
     'bootstrap' => ['log'],
     'modules' => [],
     'components' => [
+        // Same lock as the billing cron (DATABASE()-scoped GET_LOCK): see BaseController::lockBillingRun().
+        'mutex' => [
+            'class' => yii\mutex\MysqlMutex::class,
+        ],
         'request' => [
             'csrfParam' => '_csrf-backend',
             'csrfCookie' => [

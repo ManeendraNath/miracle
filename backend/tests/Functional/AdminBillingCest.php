@@ -185,6 +185,37 @@ final class AdminBillingCest
         $I->seeRecord(\common\models\Hosting::class, ['id' => $hostingId, 'current_expiry_date' => '2026-12-05']);
     }
 
+    public function expiryCannotChangeWhileABillingRunIsInProgress(FunctionalTester $I): void
+    {
+        $userId = (int) Invoice::findOne($this->invoice($I, Invoice::STATUS_UNPAID))->user_id;
+        $hostingId = (int) $I->haveRecord(\common\models\Hosting::class, ['user_id' => $userId, 'primary_domain' => 'run-' . $userId . '.test', 'current_expiry_date' => '2026-12-01', 'status' => 1, 'created_at' => time(), 'updated_at' => time()]);
+        $save = static function () use ($I, $hostingId): void {
+            $I->amOnRoute('hosting/update', ['id' => $hostingId]);
+            $I->sendAjaxPostRequest('/hosting/update?id=' . $hostingId, [
+                Yii::$app->request->csrfParam => $I->grabAttributeFrom('meta[name=csrf-token]', 'content'),
+                'Hosting[current_expiry_date]' => '2026-12-05',
+            ]);
+        };
+
+        // The cron's own database connection holds the lock.
+        $db = Yii::$app->db;
+        $cron = new \yii\mutex\MysqlMutex(['db' => new \yii\db\Connection(['dsn' => $db->dsn, 'username' => $db->username, 'password' => $db->password]), 'autoRelease' => false]);
+        $I->assertTrue($cron->acquire(\common\services\billing\AutoBillingService::LOCK_NAME));
+        try {
+            $save();
+            $I->see('The billing run is in progress.');
+            $I->seeRecord(\common\models\Hosting::class, ['id' => $hostingId, 'current_expiry_date' => '2026-12-01']);
+        } finally {
+            $cron->release(\common\services\billing\AutoBillingService::LOCK_NAME);
+        }
+
+        // Saved once the run has finished, and the lock is given back for the next run.
+        $save();
+        $I->seeRecord(\common\models\Hosting::class, ['id' => $hostingId, 'current_expiry_date' => '2026-12-05']);
+        $I->assertTrue($cron->acquire(\common\services\billing\AutoBillingService::LOCK_NAME));
+        $cron->release(\common\services\billing\AutoBillingService::LOCK_NAME);
+    }
+
     public function disablingAServiceCancelsItsUnpaidRenewalInvoice(FunctionalTester $I): void
     {
         $invoiceId = $this->invoice($I, Invoice::STATUS_UNPAID);

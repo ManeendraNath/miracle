@@ -66,14 +66,25 @@ class BaseController extends Controller
             $model->setAttributes($kept, false);
         }
         $expiryChanged = $model->isAttributeChanged('current_expiry_date', false);
-        if (!$model->getIsNewRecord() && ($expiryChanged || $model->isAttributeChanged('user_id', false)) && !$this->guardOpenRenewal($model, $expiryChanged)) {
-            return false;
-        }
-        // Disabled from the edit form (as with the toggle): the service is not renewed.
+        $customerChanged = $model->isAttributeChanged('user_id', false);
         // 0 = Inactive / Cancelled for all three; a domain can also be marked Deleted. Suspended (hosting) and
         // Overdue (maintenance) are about non-payment: the renewal is still owed.
         $disabled = (int) $model->status === 0 || ($model instanceof \common\models\Domains && (int) $model->status === \common\models\Domains::STATUS_DELETED);
-        if (!$model->getIsNewRecord() && $model->isAttributeChanged('status', false) && $disabled) {
+        $disabling = $disabled && $model->isAttributeChanged('status', false);
+        $locked = false;
+        if (!$model->getIsNewRecord() && ($expiryChanged || $customerChanged || $disabling)) {
+            if (!$this->lockBillingRun()) {
+                $model->addError($expiryChanged ? 'current_expiry_date' : ($customerChanged ? 'user_id' : 'status'), 'The billing run is in progress. Save again in a minute.');
+                return false;
+            }
+            $locked = true;
+            if (($expiryChanged || $customerChanged) && !$this->guardOpenRenewal($model, $expiryChanged)) {
+                $this->unlockBillingRun();
+                return false;
+            }
+        }
+        // Disabled from the edit form (as with the toggle): the service is not renewed.
+        if (!$model->getIsNewRecord() && $disabling) {
             $model->on(\yii\db\ActiveRecord::EVENT_AFTER_UPDATE, static function () use ($model): void {
                 $type = match (true) {
                     $model instanceof \common\models\Domains => \common\models\InvoiceItem::TYPE_DOMAIN,
@@ -90,7 +101,28 @@ class BaseController extends Controller
         if ($expiryChanged && (string) $model->current_expiry_date !== '') {
             $model->renewal_anchor_day = \common\services\billing\RenewalPeriodCalculator::anchorDayFor((string) $model->current_expiry_date);
         }
+        // Handlers run in order, so this comes after the ones above. A save that fails validation
+        // releases at the end of the request (Mutex::$autoRelease).
+        if ($locked) {
+            $model->on(\yii\db\ActiveRecord::EVENT_AFTER_UPDATE, function (): void {
+                $this->unlockBillingRun();
+            });
+        }
         return true;
+    }
+
+    /**
+     * Held from checking a service until its change is saved, so a billing run can't invoice the old
+     * expiry or customer in between, and can't read them halfway. False while a run is in progress.
+     */
+    protected function lockBillingRun(): bool
+    {
+        return Yii::$app->get('mutex')->acquire(\common\services\billing\AutoBillingService::LOCK_NAME, 0);
+    }
+
+    protected function unlockBillingRun(): void
+    {
+        Yii::$app->get('mutex')->release(\common\services\billing\AutoBillingService::LOCK_NAME);
     }
 
     /**

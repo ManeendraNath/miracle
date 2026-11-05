@@ -85,7 +85,7 @@ final class BillingEventServiceTest extends Unit
         $this->assertNotSame((int) $first->id, (int) $service->create($this->billingRun(), $renewal('2027-12-31'))->id);
     }
 
-    public function testPriceFollowsTheCycleAndRisesOncePerYear(): void
+    public function testHostingPriceFollowsTheCycleAndRisesEveryTwoYears(): void
     {
         $prices = new \common\services\billing\RenewalPriceCalculator();
         $itemId = random_int(100000, 999999);
@@ -93,27 +93,37 @@ final class BillingEventServiceTest extends Unit
         $user = new User(['username' => 'price-' . $suffix, 'email' => 'price-' . $suffix . '@example.test', 'status' => User::getStatusActive(), 'created_at' => time(), 'updated_at' => time()]);
         $user->password = 'PriceTestPassword';
         $this->assertTrue($user->save(), json_encode($user->errors));
-        $fulfil = function (string $start, string $end, float $amount) use ($itemId, $user): void {
+        $fulfil = function (string $start, string $end, float $amount, int $type = InvoiceItem::TYPE_HOSTING) use ($itemId, $user): void {
             $event = new \common\models\BillingEvent();
-            $event->setAttributes(['billing_run_id' => $this->billingRun(), 'user_id' => (int) $user->id, 'item_type' => InvoiceItem::TYPE_HOSTING, 'item_id' => $itemId, 'description' => 'Hosting', 'period_start' => $start, 'period_end' => $end, 'previous_amount' => 0, 'increase_percent' => 0, 'calculated_amount' => $amount, 'amount' => $amount, 'is_manual_amount' => 0, 'due_date' => $start, 'status' => \common\models\BillingEvent::STATUS_FULFILLED, 'created_at' => time(), 'updated_at' => time()], false);
+            $event->setAttributes(['billing_run_id' => $this->billingRun(), 'user_id' => (int) $user->id, 'item_type' => $type, 'item_id' => $itemId, 'description' => 'Renewal', 'period_start' => $start, 'period_end' => $end, 'previous_amount' => 0, 'increase_percent' => 0, 'calculated_amount' => $amount, 'amount' => $amount, 'is_manual_amount' => 0, 'due_date' => $start, 'status' => \common\models\BillingEvent::STATUS_FULFILLED, 'created_at' => time(), 'updated_at' => time()], false);
             $this->assertTrue($event->save(false));
         };
+        $hosting = static fn(float $base, int $cycle): float => $prices->calculate(InvoiceItem::TYPE_HOSTING, $itemId, $base, 10.0, $cycle)->amount;
 
         $fulfil('2025-01-01', '2025-12-31', 6000.00);
-        $this->assertEquals(6600.00, $prices->calculate(InvoiceItem::TYPE_HOSTING, $itemId, 6000.00, 10.0, 12)->amount, 'yearly: +10%');
-        $this->assertEquals(600.00, $prices->calculate(InvoiceItem::TYPE_HOSTING, $itemId, 600.00, 10.0, 1)->amount, 'switched to monthly: the base for the new cycle, not ₹6000');
+        $this->assertEquals(6000.00, $hosting(6000.00, 12), 'yearly: no rise after one year');
+        $fulfil('2026-01-01', '2026-12-31', 6000.00);
+        $this->assertEquals(6600.00, $hosting(6000.00, 12), 'yearly: +10% after two years');
+        $this->assertEquals(600.00, $hosting(600.00, 1), 'switched to monthly: the base for the new cycle, not ₹6000');
 
-        $fulfil('2026-01-01', '2026-01-31', 600.00);
-        $this->assertEquals(600.00, $prices->calculate(InvoiceItem::TYPE_HOSTING, $itemId, 600.00, 10.0, 1)->amount, 'monthly: no rise after one month');
-
-        // The yearly renewal before the switch doesn't count: the rise comes after 12 monthly renewals.
-        for ($month = 2; $month <= 11; $month++) {
-            $start = sprintf('2026-%02d-01', $month);
+        // The yearly renewals before the switch don't count: the rise comes after 24 monthly renewals.
+        for ($month = 1; $month <= 23; $month++) {
+            $start = date('Y-m-d', strtotime('2027-01-01 +' . ($month - 1) . ' months'));
             $fulfil($start, date('Y-m-t', strtotime($start)), 600.00);
         }
-        $this->assertEquals(600.00, $prices->calculate(InvoiceItem::TYPE_HOSTING, $itemId, 600.00, 10.0, 1)->amount, 'after 11 months');
-        $fulfil('2026-12-01', '2026-12-31', 600.00);
-        $this->assertEquals(660.00, $prices->calculate(InvoiceItem::TYPE_HOSTING, $itemId, 600.00, 10.0, 1)->amount, 'the 13th monthly renewal');
+        $this->assertEquals(600.00, $hosting(600.00, 1), 'after 23 months');
+        $fulfil('2028-12-01', '2028-12-31', 600.00);
+        $this->assertEquals(660.00, $hosting(600.00, 1), 'monthly: +10% after 24 months');
+
+        // Multi-year: every renewal is at least two years.
+        $fulfil('2029-01-01', '2030-12-31', 12000.00);
+        $this->assertEquals(13200.00, $hosting(12000.00, 24), 'two-year cycle: +10% each renewal');
+        $fulfil('2031-01-01', '2033-12-31', 18000.00);
+        $this->assertEquals(19800.00, $hosting(18000.00, 36), 'three-year cycle: +10% each renewal');
+
+        // Domains stay yearly.
+        $fulfil('2025-01-01', '2025-12-31', 1000.00, InvoiceItem::TYPE_DOMAIN);
+        $this->assertEquals(1100.00, $prices->calculate(InvoiceItem::TYPE_DOMAIN, $itemId, 1000.00, 10.0, 12)->amount);
     }
 
     public function testAnchorDayFromTheServiceIsUsedForThePeriod(): void

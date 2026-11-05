@@ -274,7 +274,7 @@ final class PaymentStatusTest extends Unit
 
         // Money kept: the customer still paid for it, and the next price builds on it.
         $this->assertSame([], $fulfilment->refundedEventIds((int) $event->item_type, (int) $event->item_id));
-        $this->assertEquals(1100.00, $prices->calculate((int) $event->item_type, (int) $event->item_id, 500.00, 10.0)->amount);
+        $this->assertEquals(1000.00, $prices->calculate((int) $event->item_type, (int) $event->item_id, 500.00, 10.0)->amount);
 
         $kept->status = Transaction::STATUS_REFUNDED;
         $this->assertTrue($kept->save(false));

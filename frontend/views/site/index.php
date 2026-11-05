@@ -38,7 +38,7 @@ $this->title = 'Miracle Web Technologies | Web Hosting, Domains & Website Mainte
         <div class="text-center mb-5">
             <h2 class="fw-bold text-dark h1 mb-2">Managed Hosting Plans</h2>
             <p class="text-muted fs-5 mx-auto" style="max-width: 600px;">
-                Plans for business websites, custom applications and web agencies.
+                Plans for business websites, custom applications and web agencies. Pay monthly, yearly or for several years; renewal prices may rise every two years.
             </p>
         </div>
 

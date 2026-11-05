@@ -10,8 +10,8 @@ use common\services\billing\dto\RenewalPriceResult;
 
 /**
  * Renewal price = the previous final billed amount, raised by the increase each time the service passes a
- * year (maintenance: a 3-year block) of renewals on its current cycle: every yearly or longer renewal,
- * every 12th monthly one, the 2nd and 3rd of a 24-month maintenance (at 48 and 72 months), and so on.
+ * block of renewals on its current cycle: a year for domains, two years for hosting, three for maintenance.
+ * So hosting rises every 24th monthly renewal, every 2nd yearly one and every renewal of two years or longer.
  * When the cycle length changed since the previous renewal (e.g. yearly -> monthly), that amount no longer
  * fits, so the service's renewal base amount for the new cycle is used and the count starts again.
  */
@@ -48,7 +48,11 @@ final class RenewalPriceCalculator
             return new RenewalPriceResult(round($baseAmount, 2), 0.0, round($baseAmount, 2));
         }
 
-        $span = $itemType === InvoiceItem::TYPE_MAINTENANCE ? 36 : 12;
+        $span = match ($itemType) {
+            InvoiceItem::TYPE_MAINTENANCE => 36,
+            InvoiceItem::TYPE_HOSTING => 24,
+            default => 12,
+        };
         $previousAmount = (float) $fulfilled[0]->amount;
         $passesBoundary = intdiv($sameCycle * $cycleMonths, $span) > intdiv(($sameCycle - 1) * $cycleMonths, $span);
         $amount = $passesBoundary ? $previousAmount * (1 + ($increasePercent / 100)) : $previousAmount;

@@ -41,6 +41,7 @@ final class RenewalController extends Controller
             ->where([
                 'i.user_id' => (int) Yii::$app->user->id,
             ])
+            ->andWhere(['not in', 'rh.invoice_id', \common\services\billing\RenewalFulfilmentService::fullyRefundedInvoices()])
             ->orderBy([
                 'rh.logged_at' => SORT_DESC,
                 'rh.id' => SORT_DESC,

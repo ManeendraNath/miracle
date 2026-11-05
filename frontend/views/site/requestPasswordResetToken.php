@@ -27,9 +27,9 @@ $labelOptions = ['class' => 'form-label fw-semibold small'];
                 <div class="d-flex flex-column justify-content-between p-4 p-lg-5 w-100">
                     <div>
                         <?= Html::img(
-                            Yii::getAlias('@web/images/yii3_full_white_for_dark.svg'),
+                            Yii::getAlias('@web/images/logo.png'),
                             [
-                                'alt' => 'Yii Framework',
+                                'alt' => 'Miracle Web Technologies',
                                 'class' => 'mb-4',
                                 'height' => 40,
                             ],
@@ -52,9 +52,9 @@ $labelOptions = ['class' => 'form-label fw-semibold small'];
                     <div class="text-center mb-4">
                         <div class="d-md-none mb-3">
                             <?= Html::img(
-                                Yii::getAlias('@web/images/yii3_full_black_for_light.svg'),
+                                Yii::getAlias('@web/images/logo.png'),
                                 [
-                                    'alt' => 'Yii Framework',
+                                    'alt' => 'Miracle Web Technologies',
                                     'class' => 'login-mobile-logo',
                                     'height' => 36,
                                 ],

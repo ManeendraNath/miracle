@@ -330,6 +330,10 @@ $igstAmount = $tax['igstAmount'];
     <p><?= Html::encode($invoice->getExportNote()) ?></p>
 <?php endif; ?>
 
+<?php $invoiceClosed = in_array($invoice->status, \common\services\billing\InvoicePaymentService::CLOSED_STATUSES, true); ?>
+<?php if ($invoiceClosed): ?>
+    <p><strong>Status: <?= Html::encode(Invoice::getStatuses()[$invoice->status] ?? $invoice->status) ?>. This invoice is no longer payable.</strong></p>
+<?php else: ?>
 <!-- MANUAL PAYMENT DETAIL -->
 <div class="payment-box">
 
@@ -435,3 +439,4 @@ $igstAmount = $tax['igstAmount'];
     </div>
 
 </div>
+<?php endif; ?>

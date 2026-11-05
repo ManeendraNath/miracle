@@ -93,6 +93,12 @@ PHP
     cat > "$PUBLIC/.htaccess" <<'HTACCESS'
 RewriteEngine On
 
+# Secure cookies don't work over http, so every form would fail there. SSL renewal must stay reachable.
+RewriteCond %{HTTPS} !=on
+RewriteCond %{HTTP:X-Forwarded-Proto} !=https
+RewriteCond %{REQUEST_URI} !^/\.well-known/
+RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
 
@@ -137,7 +143,12 @@ on_fail()
         rm -rf "${SNAP:?}"
     fi
 
-    rm -f "$MAINTENANCE_FLAG"
+    # A failed restore may have left half-copied code: stay in maintenance until someone has looked.
+    if [ "$STAGE" = code ] && [ -e "$MAINTENANCE_FLAG" ]; then
+        echo "Maintenance mode is still on. Once the site is sound: rm -f $MAINTENANCE_FLAG"
+    else
+        rm -f "$MAINTENANCE_FLAG"
+    fi
     exit $(( code ? code : 1 ))
 }
 trap 'on_fail $LINENO' ERR INT TERM HUP
@@ -218,10 +229,11 @@ MIGRATED=1
 php yii migrate/up --interactive=0
 
 # Logs and customers' payment proofs: not readable by other accounts on the server.
-for d in frontend/runtime backend/runtime console/runtime common/runtime storage/payment-receipts; do
+for d in runtime frontend/runtime backend/runtime console/runtime common/runtime storage/payment-receipts; do
     mkdir -p "$APP/$d"
     chmod -R u=rwX,g=rwX,o= "$APP/$d"
 done
+chmod 640 "$APP/.env"
 # Served by the web server.
 for d in frontend/web/assets backend/web/assets; do
     mkdir -p "$APP/$d"

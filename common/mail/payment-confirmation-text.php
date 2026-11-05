@@ -9,7 +9,7 @@ Invoice:
 
 
 Amount Received:
-INR <?= number_format((float) $transaction->amount, 2)
+INR <?= number_format((float) $transaction->amount - (float) $transaction->refunded_amount, 2)
 ?>
 
 

@@ -59,7 +59,7 @@ $this->params['breadcrumbs'][] = $this->title;
                     if (stripos($line, 'Skipping') !== false) {
                         $color = '#f1c40f'; // Warn gold text
                     }
-                    if (stripos($line, 'error') !== false || stripos($line, 'failed') !== false) {
+                    if (stripos($line, 'error') !== false || stripos($line, 'failed') !== false || stripos($line, 'failure') !== false) {
                         $color = '#e74c3c'; // Fire red
                     }
                     ?>

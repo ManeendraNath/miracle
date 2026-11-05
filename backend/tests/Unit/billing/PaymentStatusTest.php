@@ -215,6 +215,43 @@ final class PaymentStatusTest extends Unit
         $this->assertEquals(500.00, $prices->calculate((int) $event->item_type, (int) $event->item_id, 500.00, 10.0)->amount);
     }
 
+    public function testAFullRefundReplayIsIdempotent(): void
+    {
+        $invoice = $this->invoice(1000.00);
+        $order = $this->payment($invoice, Transaction::GATEWAY_RAZORPAY, Transaction::STATUS_PENDING, 'order_test_' . bin2hex(random_bytes(4)));
+        $paymentId = 'pay_test_' . bin2hex(random_bytes(4));
+        (new RazorpayService([]))->capture($order->gateway_order_id, $paymentId, 100000);
+        Transaction::updateAll(['status' => Transaction::STATUS_REFUNDED, 'refunded_amount' => 1000], ['id' => $order->id]);
+
+        $this->assertSame(Transaction::STATUS_REFUNDED, (new RazorpayService([]))->capture($order->gateway_order_id, $paymentId, 100000)->status);
+    }
+
+    public function testReminderWaitsWhileAProofIsUnderReview(): void
+    {
+        $invoice = $this->invoice(1000.00);
+        $invoice->updateAttributes(['due_date' => date('Y-m-d')]);
+        $reminders = static fn(): int => (int) \common\models\InvoiceReminderLog::find()->where(['invoice_id' => $invoice->id])->count();
+        $proof = $this->payment($invoice, Transaction::GATEWAY_UPI_BANK, Transaction::STATUS_PENDING);
+        (new \common\services\billing\InvoiceReminderService())->sendDueReminders();
+        $this->assertSame(0, $reminders());
+
+        $proof->status = Transaction::STATUS_FAILED;
+        $this->assertTrue($proof->save(false));
+        (new \common\services\billing\InvoiceReminderService())->sendDueReminders();
+        $this->assertSame(1, $reminders());
+    }
+
+    public function testAClosedInvoicePdfSaysSoAndHidesThePaymentDetails(): void
+    {
+        $invoice = $this->invoice(1000.00);
+        $render = static fn(): string => Yii::$app->view->renderFile(Yii::getAlias('@common/mail/invoice-pdf.php'), ['invoice' => Invoice::findOne($invoice->id), 'capturedAmount' => 0.0, 'outstandingAmount' => 1000.0]);
+        $this->assertStringContainsString('Payment Details', $render());
+
+        Invoice::updateAll(['status' => Invoice::STATUS_CANCELLED], ['id' => $invoice->id]);
+        $this->assertStringContainsString('no longer payable', $render());
+        $this->assertStringNotContainsString('Payment Details', $render());
+    }
+
     public function testClosingWithMoneyKeptLeavesTheCouponUsed(): void
     {
         $service = new InvoicePaymentService();

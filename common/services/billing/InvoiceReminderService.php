@@ -30,7 +30,8 @@ final class InvoiceReminderService
         foreach ($invoices as $invoice) {
             try {
                 $outstanding = $paymentService->getOutstanding($invoice);
-                if ($outstanding <= 0) {
+                // Under review: if the proof is rejected, the 2-day catch-up sends this reminder then.
+                if ($outstanding <= 0 || $paymentService->hasPendingProof((int) $invoice->id)) {
                     continue;
                 }
                 $dueDate = DateTimeImmutable::createFromFormat('!Y-m-d', (string) $invoice->due_date);

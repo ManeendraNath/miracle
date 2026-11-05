@@ -19,7 +19,7 @@ $this->title = 'Miracle Web Technologies | Enterprise Infrastructure & Premium C
                 Modern Systems. <span style="color: #00a3e0;">Absolute Stability.</span>
             </h1>
             <p class="lead mx-auto mb-4 text-slate-300" style="max-width: 800px; color: #cbd5e1; font-weight: 300; font-size: 1.25rem;">
-                We migrate legacy architectures to high-performance local container networks and provide premium web hosting packages backed by a 99.9% uptime SLA matrix.
+                We migrate legacy architectures to high-performance local container networks and provide premium web hosting packages.
             </p>
             <div class="d-flex justify-content-center gap-3 flex-wrap pt-2">
                 <!-- 💡 FIXED BUTTON CONTRAST: Forced crisp white text over your brand cyan background -->
@@ -114,7 +114,7 @@ $this->title = 'Miracle Web Technologies | Enterprise Infrastructure & Premium C
                             <li class="mb-2">⚡ <strong>150 GB</strong> Unrestricted NVMe Drives</li>
                             <li class="mb-2">🌐 <strong>Unlimited</strong> External Top-Tier Domain Links</li>
                             <li class="mb-2">🛡️ Full Injection Firewall Shields Engaged</li>
-                            <li class="mb-2">📞 24/7 Priority Architectural Support SLA</li>
+                            <li class="mb-2">📞 Priority Architectural Support</li>
                         </ul>
                     </div>
                     <?= Html::a('Deploy Corporate Cloud', ['site/contact'], [

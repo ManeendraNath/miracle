@@ -61,6 +61,9 @@ class UserController extends BaseController
     public function actionCreate()
     {
         $model = new User();
+        if (!$this->request->isPost) {
+            $model->status = User::getStatusActive(); // staff-created customers verify nothing, so they start usable
+        }
         if ($model->load(Yii::$app->request->post()) && $model->save()) {
             Yii::$app->session->setFlash('success', 'User created successfully.');
             return $this->redirect(['view', 'id' => $model->id]);

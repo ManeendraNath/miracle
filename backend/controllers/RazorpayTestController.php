@@ -43,10 +43,10 @@ final class RazorpayTestController extends BaseController
     public function actionVerify(): string
     {
         $razorpay = new RazorpayService();
-        $orderId = (string) $this->request->post('razorpay_order_id', '');
-        $paymentId = (string) $this->request->post('razorpay_payment_id', '');
+        $orderId = self::scalarParam($this->request->post('razorpay_order_id', ''));
+        $paymentId = self::scalarParam($this->request->post('razorpay_payment_id', ''));
         $signatureValid = $razorpay->isTestMode() && $orderId !== '' && $paymentId !== ''
-            && $razorpay->verifyCheckoutSignature($orderId, $paymentId, (string) $this->request->post('razorpay_signature', ''));
+            && $razorpay->verifyCheckoutSignature($orderId, $paymentId, self::scalarParam($this->request->post('razorpay_signature', '')));
         $payment = null;
         $error = null;
         if ($signatureValid) {

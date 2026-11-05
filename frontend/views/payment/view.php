@@ -60,7 +60,7 @@ if ((float) $model->refunded_amount > 0) {
                 <dt class="col-sm-4 col-lg-3 fw-normal text-body-secondary"><?= $label ?></dt>
                 <dd class="col-sm-8 col-lg-9"><?= $value ?></dd>
             <?php endforeach; ?>
-            <?php if ((int) $model->gateway_id === Transaction::GATEWAY_UPI_BANK): // Only proofs carry the customer's own notes; other rows hold staff notes. ?>
+            <?php if ((int) $model->gateway_id === Transaction::GATEWAY_UPI_BANK && (string) $model->payment_receipt_file !== ''): // Only proofs carry the customer's own notes; other rows hold staff notes. ?>
             <dt class="col-sm-4 col-lg-3 fw-normal text-body-secondary">Your Notes</dt>
             <dd class="col-sm-8 col-lg-9 mb-0 text-break"><?= $model->user_payment_notes ? nl2br(Html::encode($model->user_payment_notes)) : '-' ?></dd>
             <?php endif; ?>

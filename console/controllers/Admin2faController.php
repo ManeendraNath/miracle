@@ -28,6 +28,9 @@ class Admin2faController extends Controller
             return ExitCode::OK;
         }
         $admin->disableTwoFactor();
+        // Signs out every session: whoever enrolled that phone may still be signed in.
+        $admin->generateAuthKey();
+        $admin->updateAttributes(['auth_key' => $admin->auth_key]);
         $this->stdout("Two-factor sign-in is now off for {$admin->username}.\n");
         return ExitCode::OK;
     }

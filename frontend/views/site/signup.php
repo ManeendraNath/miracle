@@ -11,7 +11,7 @@ use yii\bootstrap5\Html;
 
 $this->title = 'Create a new account';
 $this->params['breadcrumbs'][] = $this->title;
-$this->params['meta_description'] = 'Create a new account to start building with Yii2.';
+$this->params['meta_description'] = 'Create a Miracle Web Technologies customer account.';
 $this->params['meta_keywords'] = 'yii, yii2, signup, register, create account';
 $htmlIcon = <<<HTML
 {label}<div class="input-group"><span class="input-group-text" aria-hidden="true">%s</span>{input}</div>{error}{hint}
@@ -27,9 +27,9 @@ $labelOptions = ['class' => 'form-label fw-semibold small'];
                 <div class="d-flex flex-column justify-content-between p-4 p-lg-5 w-100">
                     <div>
                         <?= Html::img(
-                            Yii::getAlias('@web/images/yii3_full_white_for_dark.svg'),
+                            Yii::getAlias('@web/images/logo.png'),
                             [
-                                'alt' => 'Yii Framework',
+                                'alt' => 'Miracle Web Technologies',
                                 'class' => 'mb-4',
                                 'height' => 40,
                             ],
@@ -40,7 +40,7 @@ $labelOptions = ['class' => 'form-label fw-semibold small'];
                             Create Your<br>Account
                         </h2>
                         <p class="opacity-75 mb-0 login-brand-text">
-                            Join us and start building amazing applications with Yii2.
+                            Create an account to manage your services, invoices and support requests.
                         </p>
                     </div>
                 </div>
@@ -52,9 +52,9 @@ $labelOptions = ['class' => 'form-label fw-semibold small'];
                     <div class="text-center mb-4">
                         <div class="d-md-none mb-3">
                             <?= Html::img(
-                                Yii::getAlias('@web/images/yii3_full_black_for_light.svg'),
+                                Yii::getAlias('@web/images/logo.png'),
                                 [
-                                    'alt' => 'Yii Framework',
+                                    'alt' => 'Miracle Web Technologies',
                                     'class' => 'login-mobile-logo',
                                     'height' => 36,
                                 ],

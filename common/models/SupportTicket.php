@@ -29,6 +29,8 @@ use yii\helpers\ArrayHelper;
  */
 class SupportTicket extends base\SupportTicket
 {
+    use traits\ScalarInputTrait;
+
     public const STATUS_OPEN = 'Open';
     public const STATUS_IN_PROGRESS = 'In Progress';
     public const STATUS_RESOLVED = 'Resolved';

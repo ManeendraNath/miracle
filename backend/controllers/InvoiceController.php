@@ -253,6 +253,34 @@ class InvoiceController extends BaseController
     }
 
     /**
+     * Writes off an unpaid invoice that can't be cancelled (it carries an earlier balance, or its payment was
+     * refunded after the renewal was granted): nothing more is owed on it or on what was carried into it.
+     * Refused while money is kept on them or a payment awaits review (InvoicePaymentService::closeBlocker).
+     */
+    public function actionClose(int $id)
+    {
+        $model = $this->findModel($id);
+        $dbTransaction = Yii::$app->db->beginTransaction();
+        try {
+            Yii::$app->db->createCommand('SELECT id FROM {{%invoice}} WHERE id = :id FOR UPDATE')->bindValue(':id', (int) $model->id)->queryScalar();
+            $model->refresh();
+            if ($model->status !== Invoice::STATUS_UNPAID) {
+                throw new \DomainException('Only an unpaid invoice can be closed.');
+            }
+            $released = (new InvoicePaymentService())->closeAsRefunded($model);
+            $dbTransaction->commit();
+            Yii::$app->session->setFlash($released > 0 ? 'warning' : 'success', 'Invoice closed: nothing more is owed on it.' . ($released > 0 ? ' Its unpaid renewals are billed again on the next run unless those services are disabled.' : ''));
+        } catch (\Throwable $e) {
+            if ($dbTransaction->isActive) {
+                $dbTransaction->rollBack();
+            }
+            Yii::error($e, __METHOD__);
+            Yii::$app->session->setFlash('error', $e instanceof \DomainException ? $e->getMessage() : 'The invoice could not be closed.');
+        }
+        return $this->redirect(['view', 'number' => $model->invoice_number]);
+    }
+
+    /**
      * Never physically delete an invoice.
      */
     public function actionDelete(int $id)

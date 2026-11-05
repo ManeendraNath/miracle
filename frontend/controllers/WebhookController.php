@@ -48,6 +48,10 @@ final class WebhookController extends Controller
         if (!is_array($payment)) {
             throw new BadRequestHttpException('Payment information is missing.');
         }
+        // A payment with no order (payment page, other integration on the account) is none of our business.
+        if (array_key_exists('order_id', $payment) && $payment['order_id'] === null) {
+            return ['status' => 'ignored'];
+        }
         $orderId = $payment['order_id'] ?? null;
         $paymentId = $payment['id'] ?? null;
         $amountMinor = $payment['amount'] ?? null;

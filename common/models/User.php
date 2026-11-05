@@ -38,6 +38,16 @@ class User extends base\User implements IdentityInterface
     public const PASSWORD_MESSAGE = 'Password must contain at least 8 characters including a letter and a number.';
 
     #[\Override]
+    /** Only accounts awaiting verification keep a token: a live one would let a customer undo a staff Inactive. */
+    public function beforeSave($insert): bool
+    {
+        if ((int) $this->status !== self::getStatusInactive()) {
+            $this->verification_token = null;
+        }
+
+        return parent::beforeSave($insert);
+    }
+
     public function rules(): array
     {
         $rules = [

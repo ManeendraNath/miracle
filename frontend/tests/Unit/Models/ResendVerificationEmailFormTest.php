@@ -70,6 +70,14 @@ final class ResendVerificationEmailFormTest extends Unit
         $this->tester->dontSeeEmailIsSent();
     }
 
+    public function testActivatingAnAccountClearsItsVerificationToken(): void
+    {
+        $user = \common\models\User::findOne(['email' => 'test@mail.com']);
+        $user->status = \common\models\User::getStatusActive();
+        $this->assertTrue($user->save(false));
+        $this->assertNull(\common\models\User::findOne($user->id)->verification_token);
+    }
+
     public function testAccountStaffSetInactiveCannotReactivateItself(): void
     {
         \common\models\User::updateAll(['verification_token' => null], ['email' => 'test@mail.com']);

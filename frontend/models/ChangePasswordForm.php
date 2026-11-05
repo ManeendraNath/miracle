@@ -33,7 +33,14 @@ final class ChangePasswordForm extends Model
 
     public function validateCurrentPassword(string $attribute): void
     {
-        if (!$this->hasErrors() && !$this->user->validatePassword($this->$attribute)) {
+        if ($this->hasErrors()) {
+            return;
+        }
+        // Wrong guesses count toward the login lock: a hijacked session must not get unlimited tries.
+        if (\common\components\LoginThrottle::isLocked('frontend', (string) $this->user->username)) {
+            $this->addError($attribute, 'Too many failed attempts. Please try again in 15 minutes.');
+        } elseif (!$this->user->validatePassword($this->$attribute)) {
+            \common\components\LoginThrottle::fail('frontend', (string) $this->user->username);
             $this->addError($attribute, 'The current password is incorrect.');
         }
     }

@@ -99,11 +99,12 @@ final class AccountingReportService
     /**
      * Header row, then one row per payment captured (paid_at) or refunded (refunded_at) in [$start, $end), so a
      * refund of an earlier month's payment still shows up: that payment then appears in both months' files, with
-     * its original Paid Date. The Refunded column shows how much went back (status Refunded when all of it did).
+     * its original Paid Date. Refunded To Date is the running total at download time and Last Refund Date the latest
+     * one (status Refunded when all of it went back), so don't add that column up across months.
      */
     public function paymentRows(int $start, int $end): \Generator
     {
-        yield ['Paid Date', 'Invoice Number', 'Customer', 'Method', 'Reference', 'Amount', 'Gateway Fee', 'Refunded', 'Refund Date', 'Status'];
+        yield ['Paid Date', 'Invoice Number', 'Customer', 'Method', 'Reference', 'Amount', 'Gateway Fee', 'Refunded To Date', 'Last Refund Date', 'Status'];
         $query = Transaction::find()
             ->with('invoice')
             ->where(['status' => [Transaction::STATUS_CAPTURED, Transaction::STATUS_REFUNDED]])

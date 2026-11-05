@@ -14,6 +14,8 @@ use yii\base\Model;
  */
 final class TwoFactorForm extends Model
 {
+    use \common\models\traits\ScalarInputTrait;
+
     private const SESSION_KEY = 'admin2faPending';
     private const TTL = 300;
 

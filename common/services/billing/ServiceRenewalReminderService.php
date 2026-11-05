@@ -35,7 +35,7 @@ final class ServiceRenewalReminderService
         $sent = 0;
         $domains = Domains::find()->where(['status' => Domains::STATUS_ACTIVE])->andWhere(['>=', 'current_expiry_date', $today->format('Y-m-d')])->all();
         foreach ($domains as $domain) {
-            $serviceProcessed = $this->processService('domain', (int) $domain->id, (int) $domain->user_id, (string) $domain->domain_url, (string) $domain->current_expiry_date, $today, (int) $domain->created_at);
+            $serviceProcessed = $this->processService('domain', (int) $domain->id, (int) $domain->user_id, (string) $domain->domain_url, (string) $domain->current_expiry_date, $today, (int) $domain->created_at, (float) $domain->renewal_base_amount > 0);
             if ($serviceProcessed) {
                 $sent++;
             }
@@ -48,7 +48,7 @@ final class ServiceRenewalReminderService
         $sent = 0;
         $hostings = Hosting::find()->where(['status' => Hosting::STATUS_ACTIVE])->andWhere(['>=', 'current_expiry_date', $today->format('Y-m-d')])->all();
         foreach ($hostings as $hosting) {
-            $serviceProcessed = $this->processService('hosting', (int) $hosting->id, (int) $hosting->user_id, (string) $hosting->primary_domain, (string) $hosting->current_expiry_date, $today, (int) $hosting->created_at);
+            $serviceProcessed = $this->processService('hosting', (int) $hosting->id, (int) $hosting->user_id, (string) $hosting->primary_domain, (string) $hosting->current_expiry_date, $today, (int) $hosting->created_at, (float) $hosting->renewal_base_amount > 0);
             if ($serviceProcessed) {
                 $sent++;
             }
@@ -61,7 +61,7 @@ final class ServiceRenewalReminderService
         $sent = 0;
         $maintenances = Maintenance::find()->where(['status' => Maintenance::STATUS_ACTIVE])->andWhere(['>=', 'current_expiry_date', $today->format('Y-m-d')])->all();
         foreach ($maintenances as $maintenance) {
-            $serviceProcessed = $this->processService('maintenance', (int) $maintenance->id, (int) $maintenance->user_id, (string) $maintenance->website_url, (string) $maintenance->current_expiry_date, $today, (int) $maintenance->created_at);
+            $serviceProcessed = $this->processService('maintenance', (int) $maintenance->id, (int) $maintenance->user_id, (string) $maintenance->website_url, (string) $maintenance->current_expiry_date, $today, (int) $maintenance->created_at, (float) $maintenance->renewal_base_amount > 0);
             if ($serviceProcessed) {
                 $sent++;
             }
@@ -69,7 +69,7 @@ final class ServiceRenewalReminderService
         return $sent;
     }
 
-    private function processService(string $type, int $serviceId, int $userId, string $serviceName, string $expiryDate, DateTimeImmutable $today, int $createdAt = 0): bool
+    private function processService(string $type, int $serviceId, int $userId, string $serviceName, string $expiryDate, DateTimeImmutable $today, int $createdAt = 0, bool $hasPrice = true): bool
     {
         $expiry = DateTimeImmutable::createFromFormat('!Y-m-d', $expiryDate);
         if (!$expiry) {
@@ -81,7 +81,7 @@ final class ServiceRenewalReminderService
             return false;
         }
         // Staff hear about it whatever the customer's email preference.
-        $this->alertStaff($type, $serviceId, $userId, $serviceName, $expiryDate, $threshold, $daysUntilExpiry);
+        $this->alertStaff($type, $serviceId, $userId, $serviceName, $expiryDate, $threshold, $daysUntilExpiry, $hasPrice);
         $preferences = CustomerPreference::forUser($userId);
         if (!(bool) $preferences->renewal_reminders) {
             return false;
@@ -130,12 +130,12 @@ final class ServiceRenewalReminderService
         $log->save(false);
     }
 
-    private function alertStaff(string $type, int $serviceId, int $userId, string $serviceName, string $expiryDate, int $threshold, int $daysBefore): void
+    private function alertStaff(string $type, int $serviceId, int $userId, string $serviceName, string $expiryDate, int $threshold, int $daysBefore, bool $hasPrice): void
     {
         $key = 'staff_' . $threshold . '@' . $expiryDate;
         try {
             if (!$this->logged($type, $serviceId, $key)) {
-                AdminAlertService::serviceExpiring($serviceName, $expiryDate);
+                AdminAlertService::serviceExpiring($serviceName, $expiryDate, $hasPrice);
                 $this->log($type, $serviceId, $userId, $key, $daysBefore);
             }
         } catch (\Throwable $e) {

@@ -130,7 +130,7 @@ final class InvoiceController extends Controller
             if (!$razorpay->isEnabled() || !$payable || $proofPending) {
                 $dbTransaction->rollBack();
                 Yii::$app->response->statusCode = 422;
-                return ['error' => $proofPending ? 'A payment proof for this invoice is already awaiting verification.' : 'Online payment is not available for this invoice.'];
+                return ['error' => $proofPending ? 'A payment for this invoice is already awaiting verification.' : 'Online payment is not available for this invoice.'];
             }
             $transaction = $razorpay->createOrder($invoice, $outstanding);
             $dbTransaction->commit();
@@ -167,9 +167,11 @@ final class InvoiceController extends Controller
     {
         $invoice = $this->findOwnedInvoice($number);
         $request = Yii::$app->request;
-        $orderId = (string) $request->post('razorpay_order_id', '');
-        $paymentId = (string) $request->post('razorpay_payment_id', '');
-        $signature = (string) $request->post('razorpay_signature', '');
+        // A crafted array reads as empty and fails the checks below.
+        $field = static fn(string $name): string => is_string($request->post($name)) ? $request->post($name) : '';
+        $orderId = $field('razorpay_order_id');
+        $paymentId = $field('razorpay_payment_id');
+        $signature = $field('razorpay_signature');
         $razorpay = new RazorpayService();
 
         $ownsOrder = $orderId !== '' && Transaction::find()->where(['gateway_order_id' => $orderId, 'invoice_id' => $invoice->id])->exists();
@@ -180,7 +182,10 @@ final class InvoiceController extends Controller
         }
         try {
             // Unapplied: the invoice was already settled or closed (e.g. paid by UPI in the meantime).
-            if ($razorpay->capture($orderId, $paymentId)->isUnapplied()) {
+            $captured = $razorpay->capture($orderId, $paymentId);
+            if ($captured->status === Transaction::STATUS_REFUNDED) {
+                Yii::$app->session->setFlash('warning', 'This payment has already been refunded. Reference: ' . $paymentId);
+            } elseif ($captured->isUnapplied()) {
                 Yii::$app->session->setFlash('warning', 'Payment received, but this invoice no longer needed it. Our team will refund it or apply it to your account. Reference: ' . $paymentId);
             } else {
                 Yii::$app->session->setFlash('success', 'Payment received. Thank you!');
@@ -254,7 +259,7 @@ final class InvoiceController extends Controller
         }
         $pendingExists = (new InvoicePaymentService())->hasPendingProof((int) $invoice->id);
         if ($pendingExists) {
-            Yii::$app->session->setFlash('warning', 'A payment proof for this invoice is already awaiting verification.');
+            Yii::$app->session->setFlash('warning', 'A payment for this invoice is already awaiting verification.');
             return $this->redirect(['view', 'number' => $invoice->invoice_number]);
         }
         $model = new PaymentProofForm();
@@ -300,7 +305,7 @@ final class InvoiceController extends Controller
             $pendingExists = (new InvoicePaymentService())->hasPendingProof((int) $invoice->id);
             if ($pendingExists) {
                 $dbTransaction->rollBack();
-                Yii::$app->session->setFlash('warning', 'A payment proof for this invoice is already awaiting verification.');
+                Yii::$app->session->setFlash('warning', 'A payment for this invoice is already awaiting verification.');
                 return $this->redirect(['view', 'number' => $invoice->invoice_number]);
             }
             // Re-read under the lock: an online payment may have settled it since the form was checked.

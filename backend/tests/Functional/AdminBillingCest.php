@@ -195,6 +195,43 @@ final class AdminBillingCest
         $I->seeRecord(\common\models\Hosting::class, ['id' => $hostingId, 'user_id' => $userId]);
     }
 
+    public function anUnpaidInvoiceCanBeWrittenOffUnlessMoneyIsKept(FunctionalTester $I): void
+    {
+        $closeFrom = static function (int $id) use ($I): void {
+            $number = Invoice::findOne($id)->invoice_number;
+            $I->amOnRoute('invoice/view', ['number' => $number]);
+            $I->sendAjaxPostRequest('/invoice/close?id=' . $id, [Yii::$app->request->csrfParam => $I->grabAttributeFrom('meta[name=csrf-token]', 'content')]);
+            $I->amOnRoute('invoice/view', ['number' => $number]);
+        };
+
+        $unpaid = $this->invoice($I, Invoice::STATUS_UNPAID);
+        $closeFrom($unpaid);
+        $I->see('nothing more is owed on it');
+        $I->seeRecord(Invoice::class, ['id' => $unpaid, 'status' => Invoice::STATUS_REFUNDED]);
+
+        $kept = $this->invoice($I, Invoice::STATUS_UNPAID);
+        $this->transaction($I, $kept, Transaction::GATEWAY_UPI_BANK, Transaction::STATUS_CAPTURED);
+        $closeFrom($kept);
+        $I->see('are still kept');
+        $I->seeRecord(Invoice::class, ['id' => $kept, 'status' => Invoice::STATUS_UNPAID]);
+    }
+
+    public function aBlankDomainStatusIsNotADisable(FunctionalTester $I): void
+    {
+        $invoiceId = $this->invoice($I, Invoice::STATUS_UNPAID);
+        $userId = (int) Invoice::findOne($invoiceId)->user_id;
+        $domainId = (int) $I->haveRecord(\common\models\Domains::class, ['user_id' => $userId, 'domain_url' => 'blank-' . $invoiceId . '.test', 'registrar' => 'x', 'registered_date' => '2020-01-01', 'current_expiry_date' => '2026-12-01', 'status' => 1, 'created_at' => time(), 'updated_at' => time()]);
+        $runId = (int) $I->haveRecord(\common\models\BillingRun::class, ['run_number' => 'TEST-' . bin2hex(random_bytes(4)), 'status' => 'Completed', 'started_at' => time(), 'created_at' => time(), 'updated_at' => time()]);
+        $eventId = (int) $I->haveRecord(\common\models\BillingEvent::class, ['billing_run_id' => $runId, 'user_id' => $userId, 'item_type' => \common\models\InvoiceItem::TYPE_DOMAIN, 'item_id' => $domainId, 'description' => 'Domain', 'period_start' => '2026-12-02', 'period_end' => '2027-12-01', 'previous_amount' => 0, 'increase_percent' => 0, 'calculated_amount' => 1000, 'amount' => 1000, 'is_manual_amount' => 0, 'due_date' => '2026-12-01', 'status' => \common\models\BillingEvent::STATUS_PENDING, 'created_at' => time(), 'updated_at' => time()]);
+
+        $I->amOnRoute('domains/update', ['id' => $domainId]);
+        $I->sendAjaxPostRequest('/domains/update?id=' . $domainId, [
+            Yii::$app->request->csrfParam => $I->grabAttributeFrom('meta[name=csrf-token]', 'content'),
+            'Domains[status]' => '',
+        ]);
+        $I->seeRecord(\common\models\BillingEvent::class, ['id' => $eventId, 'status' => \common\models\BillingEvent::STATUS_PENDING]);
+    }
+
     public function expiryCannotChangeWhileABillingRunIsInProgress(FunctionalTester $I): void
     {
         $userId = (int) Invoice::findOne($this->invoice($I, Invoice::STATUS_UNPAID))->user_id;

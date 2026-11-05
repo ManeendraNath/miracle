@@ -211,7 +211,7 @@ class TransactionController extends BaseController
             Yii::$app->session->setFlash('success', 'Payment approved and confirmation email sent.');
         } catch (\Throwable $e) {
             Yii::error(['message' => 'Payment was approved but confirmation email failed.', 'transactionId' => (int) $paymentTransaction->id, 'error' => $e->getMessage()], __METHOD__);
-            Yii::$app->session->setFlash('warning', 'Payment approved successfully, but the confirmation email could not be sent.');
+            Yii::$app->session->addFlash('warning', 'Payment approved successfully, but the confirmation email could not be sent.');
         }
         return $this->redirect(['view', 'id' => $paymentTransaction->id]);
     }
@@ -238,7 +238,7 @@ class TransactionController extends BaseController
             $invoice = Invoice::findOne((int) $model->invoice_id);
 
             $remaining = round((float) $model->amount - (float) $model->refunded_amount, 2);
-            $input = trim((string) $this->request->post('refund_amount', ''));
+            $input = trim(self::scalarParam($this->request->post('refund_amount', '')));
             $amount = $input === '' ? $remaining : round((float) $input, 2);
             if (($input !== '' && !is_numeric($input)) || $amount <= 0 || $amount > $remaining) {
                 throw new \DomainException('Enter a refund amount between ₹0.01 and ₹' . number_format($remaining, 2) . '.');
@@ -286,6 +286,10 @@ class TransactionController extends BaseController
             }
 
             $flash = 'success';
+            // The money kept when the invoice was closed went back too: the discount is no longer used.
+            if (($invoice->status ?? null) === Invoice::STATUS_REFUNDED && !empty($invoice->coupon_code) && $paymentService->getCapturedAmount((int) $invoice->id) <= 0) {
+                (new \common\services\billing\CouponService())->removeForInvoice((int) $invoice->id);
+            }
             $message = 'Refund of ₹' . number_format($amount, 2) . ' recorded. The invoice was ' . (Invoice::getStatuses()[$invoice->status ?? ''] ?? $invoice->status ?? '-') . ', so it is unchanged.';
             if ($canReconcile) {
                 (new PaymentProcessingService())->transactionChanged($model, false);
@@ -351,6 +355,16 @@ class TransactionController extends BaseController
             }
             $dbTransaction->commit();
             Yii::$app->session->setFlash('success', 'Payment proof rejected.');
+            // Only proofs: staff-entered payments were never submitted by the customer.
+            if ((string) $model->payment_receipt_file !== '') {
+                try {
+                    $number = (string) Invoice::find()->select('invoice_number')->where(['id' => (int) $model->invoice_id])->scalar();
+                    $userId = (int) Invoice::find()->select('user_id')->where(['id' => (int) $model->invoice_id])->scalar();
+                    (new NotificationService())->create($userId, 'payment', 'Payment Proof Not Accepted', 'We could not verify your payment proof for invoice ' . $number . '. Please check the reference and submit it again, or contact support.', '/invoice/view?number=' . rawurlencode($number));
+                } catch (\Throwable $e) {
+                    Yii::error(['message' => 'Could not notify the customer of a rejected proof.', 'transactionId' => $id, 'error' => $e->getMessage()], __METHOD__);
+                }
+            }
         } catch (\Throwable $e) {
             if ($dbTransaction->isActive) {
                 $dbTransaction->rollBack();
@@ -376,7 +390,7 @@ class TransactionController extends BaseController
                 throw new \DomainException('Only an unapplied captured payment can be applied to another invoice.');
             }
             $from = Invoice::findOne((int) $model->invoice_id);
-            $number = trim((string) $this->request->post('target_invoice', ''));
+            $number = trim(self::scalarParam($this->request->post('target_invoice', '')));
             $targetId = Yii::$app->db->createCommand('SELECT id FROM {{%invoice}} WHERE invoice_number = :number AND user_id = :user FOR UPDATE')
                 ->bindValues([':number' => $number, ':user' => (int) ($from->user_id ?? 0)])->queryScalar();
             $target = $targetId !== false ? Invoice::findOne((int) $targetId) : null;
@@ -412,7 +426,7 @@ class TransactionController extends BaseController
             (new NotificationService())->create((int) $target->user_id, 'payment', 'Payment Confirmed', 'Your payment for invoice ' . $target->invoice_number . ' has been confirmed.', '/invoice/view?number=' . rawurlencode($target->invoice_number));
         } catch (\Throwable $e) {
             Yii::error(['message' => 'Payment was applied but the confirmation failed.', 'transactionId' => $id, 'error' => $e->getMessage()], __METHOD__);
-            Yii::$app->session->setFlash('warning', 'Payment applied to invoice ' . $target->invoice_number . ', but the confirmation email could not be sent.');
+            Yii::$app->session->addFlash('warning', 'Payment applied to invoice ' . $target->invoice_number . ', but the confirmation email could not be sent.');
         }
 
         return $this->redirect(['view', 'id' => $id]);

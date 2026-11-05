@@ -51,10 +51,10 @@ final class AdminAlertService extends AdminNotificationService
         self::send($title, $message, 'lead', '/audit-request/index', true);
     }
 
-    public static function serviceExpiring(string $service, string $expiryDate): void
+    public static function serviceExpiring(string $service, string $expiryDate, bool $hasPrice = true): void
     {
         $title = 'Service Expiring';
-        $message = "Service: {$service}\n" . "Expiry Date: {$expiryDate}";
+        $message = "Service: {$service}\n" . "Expiry Date: {$expiryDate}" . ($hasPrice ? '' : "\nNo renewal price is set: no invoice will be generated. Set the Renewal Base Amount.");
         self::send($title, $message, 'renewal', '/renewal-monitoring/index');
     }
 
@@ -110,6 +110,12 @@ final class AdminAlertService extends AdminNotificationService
         $title = 'Renewal Not Billed';
         $message = "Service: {$service}\n" . "Reason: {$reason}\n" . 'The rest of the billing run went ahead. Fix the service (expiry date, cycle, price) and it is billed on the next run.';
         self::send($title, $message, 'billing', '/renewal-monitoring/index', true);
+    }
+
+    public static function billingRunFailed(string $reason): void
+    {
+        $message = "Reason: {$reason}\n" . 'No renewal invoices were created by this run. It runs again at the next scheduled time; fix the cause before then.';
+        self::send('Billing Run Failed', $message, 'billing', '/admin/cron-log', true);
     }
 
     public static function renewalLeftOpen(string $service, string $staff, string $warning): void

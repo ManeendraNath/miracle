@@ -146,14 +146,20 @@ class SiteController extends Controller
             $adminEmail = CustomYii::getSetting('email_1', 'info@miraclewebtechnologies.com');
 
             // Sent from our own address (visitor addresses fail SPF/DMARC); Reply-To reaches the visitor.
+            $sent = false;
             try {
-                $model->sendEmail(Yii::$app->mailer, $adminEmail, Yii::$app->params['senderEmail'], Yii::$app->params['senderName']);
+                $sent = $model->sendEmail(Yii::$app->mailer, $adminEmail, Yii::$app->params['senderEmail'], Yii::$app->params['senderName']);
             } catch (\Throwable $e) {
                 Yii::error(['message' => 'Contact form email failed.', 'error' => $e->getMessage()], __METHOD__);
             }
 
-            Yii::$app->session->setFlash('success', 'Thank you for contacting us. We will respond shortly.');
-            return $this->refresh();
+            // Enquiries are only delivered by email: on failure keep what they typed, it exists nowhere else.
+            if ($sent) {
+                Yii::$app->session->setFlash('success', 'Thank you for contacting us. We will respond shortly.');
+                return $this->refresh();
+            }
+            $model->verifyCode = '';
+            Yii::$app->session->setFlash('error', 'Your message could not be sent. Please try again, or call or email us using the details on this page.');
         }
 
         return $this->render('contact', [

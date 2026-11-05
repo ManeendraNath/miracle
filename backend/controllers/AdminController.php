@@ -115,15 +115,18 @@ class AdminController extends BaseController
         $model = $this->findModel(Yii::$app->user->id);
         $twoFactorStep = $this->request->post('two_factor');
         if ($this->request->isPost && $twoFactorStep !== null) {
-            $this->handleTwoFactor($model, (string) $twoFactorStep, (string) $this->request->post('code', ''), (string) $this->request->post('current_password', ''));
+            $this->handleTwoFactor($model, self::scalarParam($twoFactorStep), self::scalarParam($this->request->post('code', '')), self::scalarParam($this->request->post('current_password', '')));
             return $this->refresh();
         }
         if ($this->request->isPost) {
             $posted = $this->request->post($model->formName(), []);
-            $currentPassword = (string) $this->request->post('current_password', '');
+            $posted = is_array($posted) ? array_filter($posted, 'is_scalar') : [];
+            $currentPassword = self::scalarParam($this->request->post('current_password', ''));
             $model->setAttributes(array_intersect_key($posted, array_flip(['email', 'password'])));
             // A hijacked or unattended session must not be able to take the account over.
-            if ($currentPassword === '' || !$model->validatePassword($currentPassword)) {
+            if (LoginThrottle::isLocked('backend', $model->username)) {
+                $model->addError('email', 'Too many failed attempts. Please try again in 15 minutes.');
+            } elseif (!$this->currentPasswordIsValid($model, $currentPassword)) {
                 $model->addError('email', 'Enter your current password to save changes.');
             } elseif ($model->save()) {
                 // A new password rotates the auth key, which signs out every other session; keep this one.
@@ -143,6 +146,20 @@ class AdminController extends BaseController
         ]);
     }
 
+    /** Wrong guesses count toward the login lock: a hijacked session must not get unlimited tries. */
+    private function currentPasswordIsValid(Admin $model, string $password): bool
+    {
+        if ($password === '') {
+            return false;
+        }
+        if ($model->validatePassword($password)) {
+            return true;
+        }
+        LoginThrottle::fail('backend', $model->username);
+
+        return false;
+    }
+
     /**
      * "My account" two-factor steps: setup (new secret, kept in the session only),
      * enable (current password and first valid code save it, so a hijacked session can't enrol its own phone),
@@ -159,7 +176,9 @@ class AdminController extends BaseController
             $session->remove(self::TOTP_SETUP_KEY);
         } elseif ($step === 'enable') {
             $secret = $session->get(self::TOTP_SETUP_KEY);
-            if ($currentPassword === '' || !$model->validatePassword($currentPassword)) {
+            if (LoginThrottle::isLocked('backend', $model->username)) {
+                $session->setFlash('error', 'Too many failed attempts. Please try again in 15 minutes.');
+            } elseif (!$this->currentPasswordIsValid($model, $currentPassword)) {
                 $session->setFlash('error', 'Enter your current password to turn on two-factor sign-in.');
             } elseif (is_string($secret) && !$model->hasTwoFactor() && $model->enableTwoFactor($secret, $code)) {
                 $session->remove(self::TOTP_SETUP_KEY);
@@ -193,7 +212,7 @@ class AdminController extends BaseController
         // Signs out every session: whoever enrolled that phone may still be signed in.
         $model->generateAuthKey();
         $model->updateAttributes(['auth_key' => $model->auth_key]);
-        Yii::info("Two-factor sign-in reset for admin #{$model->id} by admin #" . Yii::$app->user->id, 'admin-auth');
+        Yii::warning("Two-factor sign-in reset for admin #{$model->id} by admin #" . Yii::$app->user->id, 'admin-auth');
         Yii::$app->session->setFlash('success', 'Two-factor sign-in is off for ' . $model->username . '.');
         return $this->redirect(['update', 'id' => $model->id]);
     }

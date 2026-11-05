@@ -45,7 +45,7 @@ final class RenewalPriceCalculator
             $sameCycle++;
         }
         if ($sameCycle === 0) {
-            return new RenewalPriceResult(round($baseAmount, 2), $fulfilled === [] ? round($increasePercent, 2) : 0.0, round($baseAmount, 2));
+            return new RenewalPriceResult(round($baseAmount, 2), 0.0, round($baseAmount, 2));
         }
 
         $span = $itemType === InvoiceItem::TYPE_MAINTENANCE ? 36 : 12;
@@ -53,6 +53,7 @@ final class RenewalPriceCalculator
         $passesBoundary = intdiv($sameCycle * $cycleMonths, $span) > intdiv(($sameCycle - 1) * $cycleMonths, $span);
         $amount = $passesBoundary ? $previousAmount * (1 + ($increasePercent / 100)) : $previousAmount;
 
-        return new RenewalPriceResult(round($previousAmount, 2), round($increasePercent, 2), round($amount, 2));
+        // The percent actually applied: customers see it on the renewal.
+        return new RenewalPriceResult(round($previousAmount, 2), $passesBoundary ? round($increasePercent, 2) : 0.0, round($amount, 2));
     }
 }

@@ -225,7 +225,7 @@ JS);
                     <div class="alert alert-warning small mt-3 mb-0">
                         <i class="fas fa-hourglass-half me-1"></i>
                         <strong>Payment under review.</strong>
-                        We'll confirm it shortly. Reference: <?= Html::encode($pendingPayment->gateway_payment_id) ?>
+                        We'll confirm it shortly.<?= (string) $pendingPayment->gateway_payment_id !== '' ? ' Reference: ' . Html::encode($pendingPayment->gateway_payment_id) : '' ?>
                     </div>
                 <?php elseif ($isPayable): ?>
                     <div class="d-grid gap-2 mt-3">

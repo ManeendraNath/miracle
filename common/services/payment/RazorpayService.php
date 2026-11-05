@@ -354,7 +354,8 @@ final class RazorpayService
             if ($transaction === null) {
                 throw new \DomainException('Payment transaction does not exist.');
             }
-            if ($transaction->status === Transaction::STATUS_CAPTURED) {
+            // Refunded: recorded earlier and since returned, e.g. a webhook retried after a full refund.
+            if (in_array($transaction->status, [Transaction::STATUS_CAPTURED, Transaction::STATUS_REFUNDED], true)) {
                 if ($transaction->gateway_payment_id !== $paymentId) {
                     throw new \DomainException('Captured payment reference does not match.');
                 }

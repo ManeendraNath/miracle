@@ -17,7 +17,7 @@ echo $this->render('_card', [
     'intro' => 'We have verified and recorded your payment. Thank you for your payment.',
     'rows' => [
         ['Invoice', $invoice->invoice_number],
-        ['Amount received', $formatter->asCurrency($transaction->amount, 'INR'), 'accent'],
+        ['Amount received', $formatter->asCurrency((float) $transaction->amount - (float) $transaction->refunded_amount, 'INR'), 'accent'],
         ['Payment reference', $transaction->gateway_payment_id ?: 'Recorded payment'],
         ['Remaining balance', $formatter->asCurrency($outstandingAmount, 'INR')],
     ],

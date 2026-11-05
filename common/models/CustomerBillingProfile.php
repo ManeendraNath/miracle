@@ -29,6 +29,7 @@ use yii\helpers\ArrayHelper;
  */
 class CustomerBillingProfile extends base\CustomerBillingProfile
 {
+    use traits\ScalarInputTrait;
     use AutoTimestampTrait;
 
     /** Customer portal: only address/identity fields are safe; GST applicability and discount stay admin-only. */

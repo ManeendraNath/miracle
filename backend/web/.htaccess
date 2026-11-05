@@ -1,5 +1,12 @@
 RewriteEngine On
 
+# Production only: secure cookies don't work over http. SSL renewal must stay reachable.
+RewriteCond %{HTTP_HOST} ^admin\.miraclewebtechnologies\.com$ [NC]
+RewriteCond %{HTTPS} !=on
+RewriteCond %{HTTP:X-Forwarded-Proto} !=https
+RewriteCond %{REQUEST_URI} !^/\.well-known/
+RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
 # Serve existing files and directories directly.
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d

@@ -53,6 +53,11 @@ class CronController extends Controller
         } catch (\Throwable $e) {
             Yii::error($e, __METHOD__);
             $this->stderr('Billing failed: ' . $e->getMessage() . PHP_EOL, Console::FG_RED);
+            try {
+                \common\services\admin\AdminAlertService::billingRunFailed($e->getMessage());
+            } catch (\Throwable $alertError) {
+                Yii::error($alertError, __METHOD__);
+            }
             return ExitCode::UNSPECIFIED_ERROR;
         } finally {
             $mutex->release($lockName);
@@ -74,6 +79,10 @@ class CronController extends Controller
             $deliveryService = new InvoiceDeliveryService();
             foreach ($this->invoicesAwaitingEmail() as $invoice) {
                 try {
+                    // Staff may have cancelled, paid or resent it while earlier emails went out.
+                    if (!$invoice->refresh() || $invoice->emailed_at !== null || !in_array($invoice->status, [Invoice::STATUS_UNPAID, Invoice::STATUS_PARTIALLY_PAID], true)) {
+                        continue;
+                    }
                     $deliveryService->send($invoice);
                 } catch (\Throwable $e) {
                     $failed++;

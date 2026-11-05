@@ -18,10 +18,7 @@ final class RenewalMonitoringController extends BaseController
         $request = Yii::$app->request;
 
         $type = trim(
-            (string) $request->get(
-                'type',
-                ''
-            )
+            self::scalarParam($request->get('type', ''))
         );
 
         $userId = (int) $request->get(
@@ -30,10 +27,7 @@ final class RenewalMonitoringController extends BaseController
         );
 
         $window = trim(
-            (string) $request->get(
-                'window',
-                UpcomingExpiryService::WINDOW_60
-            )
+            self::scalarParam($request->get('window', UpcomingExpiryService::WINDOW_60))
         );
 
         if (

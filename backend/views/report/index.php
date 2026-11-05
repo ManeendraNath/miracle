@@ -19,8 +19,9 @@ $this->params['breadcrumbs'][] = $this->title;
     <?= Html::beginForm(['download'], 'get') ?>
     <div class="card-body">
         <p class="text-muted">
-            Invoices are selected by issue date (cancelled ones included), payments by the date they were captured
-            (refunded ones included with their status). Up to <?= AccountingReportService::MAX_RANGE_DAYS ?> days per export.
+            Invoices are selected by issue date (cancelled ones included), payments by the date they were captured or last
+            refunded, so a refund of an earlier payment shows that payment again with its original paid date.
+            Refunded To Date is a running total: don't add it up across months. Up to <?= AccountingReportService::MAX_RANGE_DAYS ?> days per export.
         </p>
         <div class="row">
             <div class="col-sm-6 col-lg-3 form-group">

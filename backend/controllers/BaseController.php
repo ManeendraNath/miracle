@@ -43,6 +43,12 @@ class BaseController extends Controller
     /** Service fields that set what renewal invoices charge: Admin and up only. */
     public const RENEWAL_PRICING_ATTRIBUTES = ['renewal_base_amount', 'next_renewal_amount', 'renewal_increase_percent', 'renewal_cycle_months'];
 
+    /** A request value as text: a crafted array (x[]=1) reads as empty instead of a 500. */
+    protected static function scalarParam(mixed $value): string
+    {
+        return is_scalar($value) ? (string) $value : '';
+    }
+
     /** Whether the signed-in staff member may set renewal pricing on services. */
     public static function canEditRenewalPricing(): bool
     {
@@ -69,7 +75,9 @@ class BaseController extends Controller
         $customerChanged = $model->isAttributeChanged('user_id', false);
         // 0 = Inactive / Cancelled for all three; a domain can also be marked Deleted. Suspended (hosting) and
         // Overdue (maintenance) are about non-payment: the renewal is still owed.
-        $disabled = (int) $model->status === 0 || ($model instanceof \common\models\Domains && (int) $model->status === \common\models\Domains::STATUS_DELETED);
+        // A blank status ("Select Status") is not a disable: it saves as the default, Active.
+        $status = $model->getAttribute('status');
+        $disabled = ($status !== '' && (int) $status === 0) || ($model instanceof \common\models\Domains && (int) $model->status === \common\models\Domains::STATUS_DELETED);
         $disabling = $disabled && $model->isAttributeChanged('status', false);
         $locked = false;
         if (!$model->getIsNewRecord() && ($expiryChanged || $customerChanged || $disabling)) {
@@ -185,7 +193,8 @@ class BaseController extends Controller
                 $model->addError($attribute, 'A paid renewal runs until ' . Yii::$app->formatter->asDate($paidUntil, 'php:d M Y') . '. The expiry date cannot be earlier.');
                 return false;
             }
-            $carriedEnd = $carried === null ? null : \common\models\BillingEvent::find()->select('MAX(period_end)')->where($where + ['invoice_id' => (int) $carried->id, 'status' => \common\models\BillingEvent::STATUS_INVOICED])->scalar();
+            // Every renewal still Invoiced here is a carried one: open invoices were refused above.
+            $carriedEnd = \common\models\BillingEvent::find()->select('MAX(period_end)')->where($where + ['status' => \common\models\BillingEvent::STATUS_INVOICED])->scalar();
             // Only once the change is saved: an edit that fails validation must not release anything.
             $model->on(\yii\db\ActiveRecord::EVENT_AFTER_UPDATE, static function () use ($where, $model, $refunded, $carriedEnd): void {
                 \common\models\BillingEvent::updateAll(
@@ -247,6 +256,7 @@ class BaseController extends Controller
                     'refund' => ['POST'],
                     'apply' => ['POST'],
                     'cancel' => ['POST'],
+                    'close' => ['POST'],
                     'resend-invoice' => ['POST'],
                     'toggle-status' => ['POST'],
                     'cpanel-password' => ['POST'],

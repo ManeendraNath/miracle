@@ -24,7 +24,8 @@ final class RenewalReleaseService
         );
 
         $invoiceIds = BillingEvent::find()->select('invoice_id')->distinct()
-            ->where(['item_type' => $itemType, 'item_id' => $itemId, 'status' => BillingEvent::STATUS_INVOICED])
+            // Fulfilled too: a payment refunded as "still owed" leaves the invoice unpaid with its renewal granted.
+            ->where(['item_type' => $itemType, 'item_id' => $itemId, 'status' => [BillingEvent::STATUS_INVOICED, BillingEvent::STATUS_FULFILLED]])
             ->column();
         $leftOpen = [];
         foreach (Invoice::find()->where(['id' => $invoiceIds, 'status' => [Invoice::STATUS_UNPAID, Invoice::STATUS_PARTIALLY_PAID, Invoice::STATUS_CARRIED_FORWARD]])->all() as $invoice) {
@@ -48,6 +49,6 @@ final class RenewalReleaseService
             }
         }
 
-        return $leftOpen === [] ? null : 'Renewal invoice ' . implode(', ', array_unique($leftOpen)) . ' still bills this service (it covers other items or a carried-forward balance, has a payment, or needs an Admin to cancel it). Cancel or refund what the customer should not pay.';
+        return $leftOpen === [] ? null : 'Renewal invoice ' . implode(', ', array_unique($leftOpen)) . ' still bills this service (it covers other items or a carried-forward balance, has a payment, or needs an Admin to cancel it). Cancel, refund or write off what the customer should not pay.';
     }
 }

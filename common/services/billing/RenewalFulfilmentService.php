@@ -73,10 +73,17 @@ final class RenewalFulfilmentService
     public function refundedEventIds(int $itemType, int $itemId): array
     {
         return array_map('intval', ServiceRenewalHistory::find()->alias('h')->select('h.billing_event_id')
-            ->innerJoin(['i' => Invoice::tableName()], 'i.id = h.invoice_id')
-            ->where(['h.item_type' => $this->historyType($itemType), 'h.item_id' => $itemId, 'i.status' => Invoice::STATUS_REFUNDED])
-            ->andWhere(['not exists', Transaction::find()->select('id')->where('invoice_id = i.id')->andWhere(['status' => Transaction::STATUS_CAPTURED, 'is_unapplied' => 0])])
+            ->where(['h.item_type' => $this->historyType($itemType), 'h.item_id' => $itemId])
+            ->andWhere(['h.invoice_id' => self::fullyRefundedInvoices()])
             ->column());
+    }
+
+    /** Ids of invoices closed as refunded with no money kept, as a subquery. */
+    public static function fullyRefundedInvoices(): \yii\db\ActiveQuery
+    {
+        return Invoice::find()->alias('fr')->select('fr.id')
+            ->where(['fr.status' => Invoice::STATUS_REFUNDED])
+            ->andWhere(['not exists', Transaction::find()->alias('frt')->select('frt.id')->where('frt.invoice_id = fr.id')->andWhere(['frt.status' => Transaction::STATUS_CAPTURED, 'frt.is_unapplied' => 0])]);
     }
 
     /**

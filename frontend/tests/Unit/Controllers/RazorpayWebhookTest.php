@@ -68,6 +68,13 @@ final class RazorpayWebhookTest extends Unit
         }
     }
 
+    public function testAPaymentWithNoOrderIsIgnored(): void
+    {
+        $body = json_encode(['event' => 'payment.captured', 'payload' => ['payment' => ['entity' => ['id' => 'pay_no_order', 'order_id' => null, 'amount' => 100, 'currency' => 'INR']]]]);
+
+        $this->assertSame(['status' => 'ignored'], $this->deliver($body));
+    }
+
     public function testOtherEventsAreIgnored(): void
     {
         $this->assertSame(['status' => 'ignored'], $this->deliver($this->event('payment.authorized', 'pay_wh_auth', 100000)));

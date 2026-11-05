@@ -54,6 +54,12 @@ final class CustomerActivityService
             Transaction::find()
                 ->innerJoinWith('invoice', false)
                 ->where(['invoice.user_id' => $userId])
+                // Pending/failed Razorpay rows are unpaid or abandoned checkout orders, not payments.
+                ->andWhere(['or',
+                    ['not', ['transaction.gateway_id' => Transaction::GATEWAY_RAZORPAY]],
+                    ['transaction.gateway_id' => null],
+                    ['transaction.status' => [Transaction::STATUS_CAPTURED, Transaction::STATUS_REFUNDED]],
+                ])
                 ->orderBy(['transaction.created_at' => SORT_DESC])
                 ->limit($limit)
                 ->all()
@@ -91,6 +97,7 @@ final class CustomerActivityService
             ServiceRenewalHistory::find()
                 ->innerJoinWith('invoice', false)
                 ->where(['invoice.user_id' => $userId])
+                ->andWhere(['not in', 'service_renewal_history.invoice_id', \common\services\billing\RenewalFulfilmentService::fullyRefundedInvoices()])
                 ->orderBy(['service_renewal_history.logged_at' => SORT_DESC])
                 ->limit($limit)
                 ->all()

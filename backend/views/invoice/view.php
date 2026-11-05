@@ -26,6 +26,14 @@ if ($model->status === Invoice::STATUS_UNPAID) {
             'method' => 'post',
         ],
     ]);
+    $this->params['actions'][] = Html::a('<i class="fas fa-times-circle me-1"></i> Write Off', ['close', 'id' => $model->id], [
+        'class' => 'btn btn-outline-danger',
+        'title' => 'For an invoice that cannot be cancelled: nothing more is owed. It shows as Refunded.',
+        'data' => [
+            'confirm' => 'Write off this invoice? Nothing more is owed on it or on balances carried into it, and it shows as Refunded. Its unpaid renewals are billed again on the next run unless those services are disabled.',
+            'method' => 'post',
+        ],
+    ]);
     $this->params['actions'][] = Html::a('Resend Invoice', ['resend-invoice', 'id' => $model->id], [
         'class' => 'btn btn-outline-primary',
         'data' => [
@@ -38,6 +46,9 @@ $this->params['actions'][] = Html::button('<i class="fas fa-print me-1"></i> Pri
 ?>
 
 <div class="container-fluid py-4">
+    <?php if ($model->emailed_at === null && in_array($model->status, [Invoice::STATUS_UNPAID, Invoice::STATUS_PARTIALLY_PAID], true)): ?>
+        <div class="alert alert-warning">No email is recorded for this invoice, so the customer may not have received it. Check their email address, then use Resend Invoice.</div>
+    <?php endif; ?>
     <?= $this->render('_invoice_content', ['model' => $model, 'capturedAmount' => $capturedAmount, 'outstandingAmount' => $outstandingAmount]) ?>
 
     <?php

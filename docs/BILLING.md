@@ -50,7 +50,7 @@ the renewal is invoiced returns it to the calculated price.
 ### Standard maintenance price
 
 New maintenance services start at ₹4,000 per year (`Maintenance::STANDARD_YEARLY_AMOUNT`). An Admin can change it per
-service. The global maintenance increase is 0%, so the price stays flat unless a service has its own increase.
+service. The global maintenance increase is 10% every three years; a service with its own increase uses that instead.
 
 ### Asset configuration overrides global configuration
 

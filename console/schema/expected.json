@@ -1,5 +1,5 @@
 {
-    "migrations": 58,
+    "migrations": 59,
     "columns": {
         "admin": {
             "auth_key": {

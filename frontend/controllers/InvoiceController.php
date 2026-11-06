@@ -209,7 +209,7 @@ final class InvoiceController extends Controller
             }
         } catch (\Throwable $e) {
             Yii::error(['message' => 'Razorpay checkout capture failed.', 'invoice' => $invoice->invoice_number, 'orderId' => $orderId, 'paymentId' => $paymentId, 'error' => $e->getMessage()], __METHOD__);
-            Yii::$app->session->setFlash('warning', 'Your payment was received but could not be applied automatically. It will be confirmed shortly, so please do not pay again.' . $paymentId);
+            Yii::$app->session->setFlash('warning', 'Your payment was received but could not be applied automatically. It will be confirmed shortly, so please do not pay again. Reference: ' . $paymentId);
             // Only a refusal: a lock timeout says nothing about the payment, and the webhook, sync or next Pay Online records it.
             if (!$e instanceof \DomainException) {
                 return $this->redirect(['view', 'number' => $invoice->invoice_number]);

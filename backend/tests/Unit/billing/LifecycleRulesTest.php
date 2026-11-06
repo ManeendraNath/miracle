@@ -291,6 +291,63 @@ final class LifecycleRulesTest extends Unit
         $user->status = User::getStatusActive();
         $user->save(false);
         $this->assertNotNull(User::findOne($user->id)->reactivated_at);
+
+        // Staff-set Inactive counts too; a customer verifying their email doesn't.
+        User::updateAll(['reactivated_at' => null, 'status' => User::getStatusInactive()], ['id' => $user->id]);
+        $staffSet = User::findOne($user->id);
+        $staffSet->status = User::getStatusActive();
+        $staffSet->save(false);
+        $this->assertNotNull(User::findOne($user->id)->reactivated_at);
+
+        User::updateAll(['reactivated_at' => null, 'status' => User::getStatusInactive(), 'verification_token' => 'token_' . time()], ['id' => $user->id]);
+        $verifying = User::findOne($user->id);
+        $verifying->status = User::getStatusActive();
+        $verifying->save(false);
+        $this->assertNull(User::findOne($user->id)->reactivated_at);
+    }
+
+    public function testARenewalBilledFromTheBasePriceDoesNotRestoreABaseStaffBlanked(): void
+    {
+        $hosting = $this->hosting('2026-11-30', null);
+        $hosting->updateAttributes(['renewal_base_amount' => 0]);
+        $invoice = $this->invoice(1000.00);
+        $this->event($invoice, $hosting, '2026-12-01', '2027-11-30', 12);
+        (new PaymentProcessingService())->transactionChanged($this->payment($invoice));
+        $this->assertEqualsWithDelta(0.0, (float) Hosting::findOne($hosting->id)->renewal_base_amount, 0.001);
+    }
+
+    public function testACouponOnACarriedInvoiceIsFreedOnceTheKeptMoneyGoesBack(): void
+    {
+        $source = $this->invoice(1000.00, Invoice::STATUS_REFUNDED);
+        $target = $this->carried($source, Invoice::STATUS_REFUNDED);
+        $coupon = new \common\models\Coupon();
+        $coupon->setAttributes(['name' => 'Life', 'code' => 'LIFE' . strtoupper(bin2hex(random_bytes(3))), 'type' => \common\models\Coupon::TYPE_F, 'amount' => 10, 'is_active' => \common\models\Coupon::IS_ACTIVE_Y, 'created_at' => time(), 'updated_at' => time()], false);
+        $this->assertTrue($coupon->save(false));
+        $redemption = new \common\models\CouponRedemption();
+        $redemption->setAttributes(['coupon_code' => $coupon->code, 'coupon_id' => $coupon->id, 'user_id' => $this->_user->id, 'invoice_id' => $source->id, 'discount_amount' => 10, 'redeemed_at' => time(), 'created_at' => time()], false);
+        $this->assertTrue($redemption->save(false));
+
+        $kept = $this->payment($target, ['amount' => 500.00]);
+        (new InvoicePaymentService())->releaseCoupons($target);
+        $this->assertNotNull(\common\models\CouponRedemption::findOne(['invoice_id' => $source->id]));
+
+        $kept->updateAttributes(['status' => Transaction::STATUS_REFUNDED]);
+        (new InvoicePaymentService())->releaseCoupons($target);
+        $this->assertNull(\common\models\CouponRedemption::findOne(['invoice_id' => $source->id]));
+    }
+
+    public function testAnOldHistoryRowWithNoRenewalGoesByItsInvoice(): void
+    {
+        $hosting = $this->hosting('2026-01-01', null);
+        $invoice = $this->invoice(1000.00, Invoice::STATUS_REFUNDED);
+        $history = new ServiceRenewalHistory();
+        $history->setAttributes(['billing_event_id' => null, 'item_type' => 'hosting', 'item_id' => $hosting->id, 'invoice_id' => $invoice->id, 'billed_amount' => 1000, 'renewal_period_months' => 12, 'start_date' => '2025-01-01', 'end_date' => '2026-01-01', 'logged_at' => time()], false);
+        $this->assertTrue($history->save(false));
+        $shown = fn(): bool => ServiceRenewalHistory::find()->alias('rh')->where(['rh.id' => $history->id])->andWhere((new RenewalFulfilmentService())->historyNotRefunded('rh', (int) $this->_user->id))->exists();
+
+        $this->assertFalse($shown());
+        $this->payment($invoice, ['amount' => 100.00]);
+        $this->assertTrue($shown());
     }
 
     public function testAnOldAccountReactivatedLongAgoCanBeDisabledButEditingDetailsDoesNotDelayIt(): void

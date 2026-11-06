@@ -114,8 +114,7 @@ final class CustomerActivityService
             ServiceRenewalHistory::find()
                 ->innerJoinWith('invoice', false)
                 ->where(['invoice.user_id' => $userId])
-                // 0: so a list with nothing in it still builds a condition. Older rows have no renewal to look up.
-                ->andWhere(['or', ['service_renewal_history.billing_event_id' => null], ['not in', 'service_renewal_history.billing_event_id', [0, ...(new \common\services\billing\RenewalFulfilmentService())->refundedEventIdsOfCustomer($userId)]]])
+                ->andWhere((new \common\services\billing\RenewalFulfilmentService())->historyNotRefunded('service_renewal_history', $userId))
                 ->orderBy(['service_renewal_history.logged_at' => SORT_DESC])
                 ->limit($limit)
                 ->all()

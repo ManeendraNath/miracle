@@ -69,8 +69,10 @@ class User extends base\User implements IdentityInterface
             if ($this->isAttributeChanged('status', false) && (int) $this->getOldAttribute('status') === self::getStatusActive()) {
                 $this->generateAuthKey();
             }
-            // Staff bringing an account back: another month before it can be disabled again. Not a customer verifying their email.
-            if ((int) $this->status === self::getStatusActive() && in_array((int) $this->getOldAttribute('status'), [self::getStatusSuspended(), self::getStatusDeleted()], true)) {
+            // Staff bringing an account back: another month before it can be disabled again. Not a customer verifying their
+            // email, which is Inactive with a token waiting.
+            $oldStatus = (int) $this->getOldAttribute('status');
+            if ((int) $this->status === self::getStatusActive() && $oldStatus !== self::getStatusActive() && ($oldStatus !== self::getStatusInactive() || (string) $this->getOldAttribute('verification_token') === '')) {
                 $this->reactivated_at = time();
             }
         }

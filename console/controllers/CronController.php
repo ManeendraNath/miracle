@@ -215,7 +215,7 @@ class CronController extends Controller
             $this->stdout("Turned off in the admin panel: skipping {$action->id}.\n", Console::FG_YELLOW);
             return false;
         }
-        AdminAlertService::retryUnsent();
+        $this->retryAlerts();
         return parent::beforeAction($action);
     }
 
@@ -226,6 +226,24 @@ class CronController extends Controller
             AdminAlertService::cronJobFailed($job, $reason);
         } catch (\Throwable $e) {
             Yii::error($e, __METHOD__);
+        }
+    }
+
+    /** Jobs start in the same minute: only one of them, or admins get each alert twice. */
+    private function retryAlerts(): void
+    {
+        try {
+            /** @var \yii\mutex\Mutex $mutex */
+            $mutex = Yii::$app->get('mutex');
+            if ($mutex->acquire('miracle:alert-retry', 0)) {
+                try {
+                    AdminAlertService::retryUnsent();
+                } finally {
+                    $this->releaseLock($mutex, 'miracle:alert-retry');
+                }
+            }
+        } catch (\Throwable $e) {
+            Yii::error($e, __METHOD__); // must not stop the job itself
         }
     }
 

@@ -157,20 +157,27 @@ final class InvoicePaymentService
         // Nothing is owed on what was carried in either. Their renewal history points at them, so a
         // renewal with no money kept must stop counting as paid (RenewalFulfilmentService::fullyRefundedInvoices).
         Invoice::updateAll(['status' => Invoice::STATUS_REFUNDED, 'updated_at' => time(), 'written_off_at' => $writeOff ? time() : null], ['id' => $invoiceIds, 'status' => Invoice::STATUS_CARRIED_FORWARD]);
-        // As cancelling does: the coupon use shouldn't count against its limits for the re-billed invoice.
-        // Money kept on the invoice, or on one its balance was carried to, means the customer did use the discount.
-        $fulfilment = new RenewalFulfilmentService();
-        foreach ($invoiceIds as $invoiceId) {
-            if (!$fulfilment->moneyKeptOnTheWay($invoiceId, (int) $invoice->id)) {
-                (new CouponService())->removeForInvoice($invoiceId);
-            }
-        }
+        $this->releaseCoupons($invoice);
         // Release the billed periods (this invoice's and those carried into it) so the next
         // billing run invoices them again, as cancelling does. Fulfilled renewals stay as they are.
         return BillingEvent::updateAll(
             ['status' => BillingEvent::STATUS_CANCELLED, 'notes' => 'Invoice closed as refunded.', 'updated_at' => time()],
             ['invoice_id' => $invoiceIds, 'status' => [BillingEvent::STATUS_PENDING, BillingEvent::STATUS_INVOICED]]
         );
+    }
+
+    /**
+     * As cancelling does: on a closed invoice the coupon use shouldn't count against its limits for the re-billed one.
+     * Money kept on the invoice, or on one its balance was carried to, means the customer did use the discount.
+     */
+    public function releaseCoupons(Invoice $invoice): void
+    {
+        $fulfilment = new RenewalFulfilmentService();
+        foreach ($this->withCarriedInvoiceIds((int) $invoice->id) as $invoiceId) {
+            if (!$fulfilment->moneyKeptOnTheWay($invoiceId, (int) $invoice->id)) {
+                (new CouponService())->removeForInvoice($invoiceId);
+            }
+        }
     }
 
     /**

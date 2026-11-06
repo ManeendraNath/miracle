@@ -38,6 +38,7 @@ class UserController extends BaseController
             Yii::$app->session->setFlash('success', "Account for profile '{$model->username}' has been activated and unlocked successfully!");
         }
 
+        $model->updated_at = time(); // save(false) skips the validation step that refreshes it
         $model->save(false); // Bypasses password validation restrictions during simple status toggles
         $this->warnAboutOpenBusiness($model);
         return $this->redirect(['index']);

@@ -319,8 +319,8 @@ class TransactionController extends BaseController
 
             $flash = 'success';
             // The money kept when the invoice was closed went back too: the discount is no longer used.
-            if (($invoice->status ?? null) === Invoice::STATUS_REFUNDED && !empty($invoice->coupon_code) && $paymentService->getCapturedAmount((int) $invoice->id) <= 0) {
-                (new \common\services\billing\CouponService())->removeForInvoice((int) $invoice->id);
+            if (($invoice->status ?? null) === Invoice::STATUS_REFUNDED) {
+                $paymentService->releaseCoupons($invoice);
             }
             $message = 'Refund of ₹' . number_format($amount, 2) . ' recorded. The invoice was ' . ($invoice !== null ? $invoice->statusLabel() : '-') . ', so it is unchanged and nothing more is owed on it.' . ($model->isUnapplied() ? '' : ' Renewals already granted are not reversed: disable the service if needed.');
             if ($carrying !== null) {

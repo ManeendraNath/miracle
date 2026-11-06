@@ -19,22 +19,21 @@ final class m261119_100000_add_profile_warning_and_refund_history extends Migrat
     {
         $this->addColumnIfMissing('{{%user}}', 'profile_warned_at');
         $this->addColumnIfMissing('{{%user}}', 'reactivated_at');
-        if ($this->addColumnIfMissing('{{%admin_notification}}', 'emailed_at')) {
-            // Older alerts count as delivered: nothing should be re-sent because of this column.
-            $this->execute('UPDATE {{%admin_notification}} SET emailed_at = created_at');
-        }
-        if ($this->addColumnIfMissing('{{%invoice}}', 'written_off_at')) {
-            // Until now a closed invoice with no refund on it was how a write-off was recognised. One carried into an
-            // invoice closed with a refund was closed along with that refund, not written off.
-            // ponytail: one step of the chain; older links of a long chain may read as written off.
-            $this->execute(
-                "UPDATE {{%invoice}} i SET i.written_off_at = i.updated_at
-                 WHERE i.status = 'Refunded'
-                 AND NOT EXISTS (SELECT 1 FROM {{%transaction}} t WHERE t.invoice_id = i.id AND t.refunded_amount > 0 AND t.is_unapplied = 0)
-                 AND NOT EXISTS (SELECT 1 FROM {{%invoice_item}} ii JOIN {{%transaction}} c ON c.invoice_id = ii.invoice_id
-                     WHERE ii.source_invoice_id = i.id AND ii.item_type = 5 AND c.refunded_amount > 0 AND c.is_unapplied = 0)"
-            );
-        }
+        // The site is in maintenance throughout, so the updates below can't catch anything new when run again.
+        $this->addColumnIfMissing('{{%admin_notification}}', 'emailed_at');
+        // Older alerts count as delivered: nothing should be re-sent because of this column.
+        $this->execute('UPDATE {{%admin_notification}} SET emailed_at = created_at WHERE emailed_at IS NULL');
+        $this->addColumnIfMissing('{{%invoice}}', 'written_off_at');
+        // Until now a closed invoice with no refund on it was how a write-off was recognised. One carried into an
+        // invoice closed with a refund was closed along with that refund, not written off.
+        // ponytail: one step of the chain; older links of a long chain may read as written off.
+        $this->execute(
+            "UPDATE {{%invoice}} i SET i.written_off_at = i.updated_at
+             WHERE i.status = 'Refunded' AND i.written_off_at IS NULL
+             AND NOT EXISTS (SELECT 1 FROM {{%transaction}} t WHERE t.invoice_id = i.id AND t.refunded_amount > 0 AND t.is_unapplied = 0)
+             AND NOT EXISTS (SELECT 1 FROM {{%invoice_item}} ii JOIN {{%transaction}} c ON c.invoice_id = ii.invoice_id
+                 WHERE ii.source_invoice_id = i.id AND ii.item_type = 5 AND c.refunded_amount > 0 AND c.is_unapplied = 0)"
+        );
 
         if ($this->db->getTableSchema('{{%transaction_refund}}', true) === null) {
             // One statement, so it can't stop with the table there and its keys missing.

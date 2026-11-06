@@ -175,6 +175,31 @@ final class AdminBillingCest
         $I->seeRecord(\common\models\Hosting::class, ['id' => $hostingId, 'user_id' => $other]);
     }
 
+    public function aClosedInvoiceIsNotResent(FunctionalTester $I): void
+    {
+        $invoice = $this->invoice($I, Invoice::STATUS_PAID);
+        $I->amOnRoute('invoice/view', ['number' => Invoice::findOne($invoice)->invoice_number]);
+        $I->sendAjaxPostRequest('/invoice/resend-invoice?id=' . $invoice, [Yii::$app->request->csrfParam => $I->grabAttributeFrom('meta[name=csrf-token]', 'content')]);
+        $I->seeResponseCodeIs(302); // back to the invoice, which needs its number
+        $I->amOnRoute('invoice/view', ['number' => Invoice::findOne($invoice)->invoice_number]);
+        $I->see('so it was not sent');
+        $I->dontSeeEmailIsSent();
+    }
+
+    public function aCouponChangedMeanwhileSendsStaffToAFreshForm(FunctionalTester $I): void
+    {
+        $invoice = $this->invoice($I, Invoice::STATUS_UNPAID);
+        $I->amOnRoute('invoice/update', ['id' => $invoice]);
+        $I->seeResponseCodeIs(200);
+        $I->sendAjaxPostRequest('/invoice/update?id=' . $invoice, [
+            Yii::$app->request->csrfParam => $I->grabAttributeFrom('meta[name=csrf-token]', 'content'),
+            'loaded_coupon_code' => 'SOMETHINGELSE',
+            'Invoice[coupon_code]' => '',
+        ]);
+        $I->amOnRoute('invoice/update', ['id' => $invoice]);
+        $I->see('The coupon on this invoice changed while you were editing.');
+    }
+
     public function creatingACustomerOpensTheirBillingForm(FunctionalTester $I): void
     {
         $suffix = bin2hex(random_bytes(4));

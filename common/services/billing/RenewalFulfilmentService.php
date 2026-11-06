@@ -89,6 +89,22 @@ final class RenewalFulfilmentService
         return $this->refundedEvents(['i.user_id' => $userId]);
     }
 
+    /**
+     * For a customer's renewal history: leaves out renewals that were refunded. Rows too old to name their renewal go by
+     * their invoice: closed as refunded with no money kept.
+     */
+    public function historyNotRefunded(string $alias, int $userId): array
+    {
+        $noMoneyKept = Invoice::find()->alias('fr')->select('fr.id')->where(['fr.status' => Invoice::STATUS_REFUNDED])
+            ->andWhere(['not exists', Transaction::find()->alias('frt')->select('frt.id')->where('frt.invoice_id = fr.id')->andWhere(['frt.status' => Transaction::STATUS_CAPTURED, 'frt.is_unapplied' => 0])]);
+
+        return ['or',
+            ['and', ["{$alias}.billing_event_id" => null], ['not in', "{$alias}.invoice_id", $noMoneyKept]],
+            // 0: so a list with nothing in it still builds a condition.
+            ['not in', "{$alias}.billing_event_id", [0, ...$this->refundedEventIdsOfCustomer($userId)]],
+        ];
+    }
+
     /** @return int[] */
     private function refundedEvents(array $where): array
     {
@@ -221,7 +237,7 @@ final class RenewalFulfilmentService
             $attributes[] = 'next_renewal_amount';
         }
         // A one-time price on a service with no base price: later renewals are calculated from it, so it is the base now.
-        if ((float) $asset->renewal_base_amount <= 0) {
+        if ((int) $event->is_manual_amount && (float) $asset->renewal_base_amount <= 0) {
             $asset->renewal_base_amount = $event->amount;
             $attributes[] = 'renewal_base_amount';
         }

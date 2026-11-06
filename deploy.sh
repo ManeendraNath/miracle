@@ -280,7 +280,8 @@ else
     php yii backup/run --dbOnly=1
     BACKUP=$(ls -1t "$APP"/backups/db_backup_*.sql.gz | head -n 1)
     # A retry after a migration died partway: this dump is of the half-migrated database, so keep pointing at the clean one.
-    if [ -s "$BACKUP_NOTE" ]; then
+    # Only a recent note: an older one belongs to some earlier deploy, and restoring it would lose everything since.
+    if [ -s "$BACKUP_NOTE" ] && [ -n "$(find "$BACKUP_NOTE" -mmin -1440)" ]; then
         BACKUP=$(cat "$BACKUP_NOTE")
     else
         echo "$BACKUP" > "$BACKUP_NOTE"
@@ -288,6 +289,7 @@ else
     echo "Pre-migration backup: $BACKUP"
     MIGRATED=1
     php yii migrate/up --interactive=0
+    rm -f "$BACKUP_NOTE"
 fi
 
 # Logs and customers' payment proofs: not readable by other accounts on the server.
@@ -307,7 +309,6 @@ health_check
 
 trap - ERR INT TERM HUP
 rm -rf "${SNAP:?}"
-rm -f "$BACKUP_NOTE"
 # A job that never starts can't report itself, and a new job needs its line added by hand. Razorpay sync is optional.
 for job in cron/run-billing cron/payment-reminders cron/send-reminders cron/profile-reminders cron/whatsapp-cleanup backup/run; do
     crontab -l 2>/dev/null | grep -q "$job" || echo "WARNING: no crontab line for $job. See docs/BILLING_MODULE.md section 14."

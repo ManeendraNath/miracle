@@ -196,15 +196,18 @@ class InvoiceController extends BaseController
                 'subtotal_amount' => $model->subtotal_amount,
                 'total_payable' => $model->total_payable,
             ];
+            // The customer can apply or remove a coupon while this form is open. A fresh form, not this one re-rendered:
+            // its visible fields would still hold the old coupon, and a second save would wipe the customer's.
+            if (isset($post['loaded_coupon_code']) && strtoupper(trim((string) $post['loaded_coupon_code'])) !== strtoupper(trim((string) $model->coupon_code))) {
+                Yii::$app->session->setFlash('error', 'The coupon on this invoice changed while you were editing. Check the figures and save again.');
+
+                return $this->redirect(['update', 'id' => $model->id]);
+            }
             $model->load($post);
             foreach ($immutableAttributes as $attribute => $value) {
                 $model->$attribute = $value;
             }
             try {
-                // The customer can apply or remove a coupon while this form is open.
-                if (isset($post['loaded_coupon_code']) && strtoupper(trim((string) $post['loaded_coupon_code'])) !== strtoupper(trim((string) $model->getOldAttribute('coupon_code')))) {
-                    throw new \DomainException('The coupon on this invoice changed while you were editing. Reload the page and check the figures.');
-                }
                 $items = $this->loadManualItems($post);
                 $service = new ManualInvoiceService();
                 $service->update($model, $items);
@@ -238,7 +241,7 @@ class InvoiceController extends BaseController
         if (!in_array($invoice->status, [Invoice::STATUS_UNPAID, Invoice::STATUS_PARTIALLY_PAID], true)) {
             Yii::$app->session->setFlash('error', 'This invoice is ' . $invoice->statusLabel() . ', so it was not sent.');
 
-            return $this->redirect(['view', 'id' => $id]);
+            return $this->redirect(['view', 'number' => $invoice->invoice_number]);
         }
         try {
             (new InvoiceDeliveryService())->send($invoice, true);

@@ -168,6 +168,12 @@ final class AdminAlertService extends AdminNotificationService
         }
     }
 
+    /** @param string[] $customers one line each */
+    public static function accountsDisabled(array $customers): void
+    {
+        self::send('Inactive Accounts Disabled', count($customers) . " account(s) were suspended: billing details incomplete after a month, no active service and no open invoice.\n" . implode("\n", $customers) . "\nSet an account to Active on its customer page to give it another month.", 'billing', '/user/index');
+    }
+
     private static function alertedToday(string $title): bool
     {
         try {

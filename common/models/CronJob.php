@@ -22,7 +22,7 @@ final class CronJob extends ActiveRecord
         'cron/run-billing' => ['Billing and invoices', 'Daily', 'No renewal invoices are created or emailed.'],
         'cron/payment-reminders' => ['Payment reminders', 'Daily', 'Customers get no reminders about unpaid invoices.'],
         'cron/send-reminders' => ['Renewal reminders', 'Daily', 'Customers and staff get no expiry reminders.'],
-        'cron/profile-reminders' => ['Incomplete profile reminders', 'Daily', 'Nobody is told about incomplete billing profiles.'],
+        'cron/profile-reminders' => ['Incomplete profiles', 'Daily', 'Nobody is told about incomplete billing profiles, and inactive accounts are not disabled.'],
         'cron/razorpay-sync' => ['Razorpay sync', 'Every 30 minutes', 'A payment whose browser callback and webhook were both lost stays unrecorded, Razorpay fees are not filled in, and refunds made in the Razorpay dashboard are not noticed.'],
         'cron/whatsapp-cleanup' => ['WhatsApp log cleanup', 'Weekly', 'Old WhatsApp log rows stay.'],
         'backup/run' => ['Daily backup', 'Daily', 'No scheduled database or payment proof backups. The backup before a deploy still runs.'],

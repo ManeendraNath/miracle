@@ -156,7 +156,7 @@ class CronController extends Controller
     {
         return $this->runLocked('miracle:profile-reminders', 'Incomplete profile reminders', function (): string {
             $service = new IncompleteProfileReminderService();
-            return $this->reminderResult($service->sendReminders(), $service->failures);
+            return $this->reminderResult($service->sendReminders(), $service->failures) . " Disabled {$service->disabled} account(s).";
         });
     }
 

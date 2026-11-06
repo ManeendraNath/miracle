@@ -76,6 +76,45 @@ final class CronAlertsTest extends Unit
         $this->assertSame(1, $this->bell($customer));
     }
 
+    public function testAnUnfinishedAccountWithNothingLiveIsDisabledAfterAMonth(): void
+    {
+        $old = strtotime('-1 month -1 day');
+        $idle = $this->customer($old);
+        $tooNew = $this->customer(strtotime('-20 days'));
+        $complete = $this->customer($old);
+        $this->profile($complete, 'Flat 1');
+        $withService = $this->customer($old);
+        $hosting = new \common\models\Hosting();
+        $hosting->setAttributes(['user_id' => $withService->id, 'primary_domain' => 'live-' . bin2hex(random_bytes(4)) . '.test', 'start_date' => '2026-01-01', 'current_expiry_date' => '2027-11-30', 'status' => \common\models\Hosting::STATUS_SUSPENDED, 'created_at' => time(), 'updated_at' => time()], false);
+        $this->assertTrue($hosting->save(false));
+        $owing = $this->customer($old);
+        $invoice = new \common\models\Invoice();
+        $invoice->setAttributes(['user_id' => $owing->id, 'invoice_number' => 'TEST-IDLE-' . bin2hex(random_bytes(4)), 'client_name' => 'Idle', 'subtotal_amount' => 100, 'total_payable' => 100, 'status' => \common\models\Invoice::STATUS_UNPAID, 'created_at' => time(), 'updated_at' => time()], false);
+        $this->assertTrue($invoice->save(false));
+
+        $service = new IncompleteProfileReminderService();
+        $service->sendReminders();
+
+        $status = static fn(User $user): int => (int) User::findOne($user->id)->status;
+        $this->assertSame(User::getStatusSuspended(), $status($idle));
+        foreach ([$tooNew, $complete, $withService, $owing] as $kept) {
+            $this->assertSame(User::getStatusActive(), $status($kept));
+        }
+        $this->assertGreaterThanOrEqual(1, $service->disabled);
+        $this->assertCount(1, $this->mailsTo($idle));
+        $this->assertSame('Your account has been disabled', $this->mailsTo($idle)[0]->getSubject());
+        $this->assertStringContainsString($idle->username, AdminNotification::find()->where(['title' => 'Inactive Accounts Disabled'])->one()->message);
+        $this->assertStringNotContainsString($owing->username, AdminNotification::find()->where(['title' => 'Inactive Accounts Disabled'])->one()->message);
+
+        // Staff set it Active again: a month's grace, reminded meanwhile.
+        $reactivated = User::findOne($idle->id);
+        $reactivated->status = User::getStatusActive();
+        $this->assertTrue($reactivated->save(false));
+        (new IncompleteProfileReminderService())->sendReminders();
+        $this->assertSame(User::getStatusActive(), $status($idle));
+        $this->assertSame(1, $this->bell($idle));
+    }
+
     public function testAFailedCronJobIsAlertedOnceADay(): void
     {
         AdminAlertService::cronJobFailed('Unit Job', 'first');
@@ -117,7 +156,7 @@ final class CronAlertsTest extends Unit
         $user = new User(['username' => 'cron-' . $suffix, 'email' => 'cron-' . $suffix . '@example.test', 'status' => User::getStatusActive()]);
         $user->password = 'CronTestPassword1';
         $this->assertTrue($user->save(), json_encode($user->errors));
-        $user->updateAttributes(['created_at' => $createdAt]);
+        $user->updateAttributes(['created_at' => $createdAt, 'updated_at' => $createdAt]);
 
         return $user;
     }

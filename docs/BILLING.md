@@ -142,6 +142,10 @@ state or postal code blank, gets an email and a portal notification, starting th
 and repeating daily until complete. Admins get one daily email and bell notification listing them all. Reminder
 preferences don't apply: without a profile no renewal invoice can be created.
 
+The same job suspends an account a month after signup if it is still incomplete and has no live service (active,
+suspended or overdue) and no open invoice. The customer is emailed and admins get a list. Setting it Active again
+gives it another month, counted from that save.
+
 ## Foreign clients (export of services)
 
 A billing profile whose **Country** is not India is billed as an export of services:

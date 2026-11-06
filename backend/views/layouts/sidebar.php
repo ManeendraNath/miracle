@@ -203,7 +203,7 @@ use yii\helpers\Html;
                         'active' => Yii::$app->controller->id === 'admin' && Yii::$app->controller->action->id !== 'cron-log'
                     ],
                     [
-                        'label' => 'Cron Logs',
+                        'label' => 'Cron Jobs & Logs',
                         'icon' => 'terminal',
                         'url' => ['/admin/cron-log'],
                         'active' => Yii::$app->controller->id === 'admin' && Yii::$app->controller->action->id === 'cron-log'

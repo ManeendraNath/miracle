@@ -21,6 +21,7 @@ class AdminController extends BaseController
     {
         $behaviors = parent::behaviors();
         $behaviors['verbs']['actions']['reset-two-factor'] = ['POST'];
+        $behaviors['verbs']['actions']['cron-switch'] = ['POST'];
         return $behaviors;
     }
 
@@ -257,8 +258,29 @@ class AdminController extends BaseController
         return $this->render('cron-log', [
                     'logLines' => array_reverse($logLines), // Newest log activities appear at the top
                     'metrics' => $metrics,
-                    'logPath' => $logPath
+                    'logPath' => $logPath,
+                    'cronJobs' => \common\models\CronJob::find()->indexBy('job')->all(),
         ]);
+    }
+
+    /** Turns a cron job on or off (POST job, enabled). Superadmin: billing stopping is a business decision. */
+    public function actionCronSwitch()
+    {
+        $job = self::scalarParam($this->request->post('job', ''));
+        if (!isset(\common\models\CronJob::JOBS[$job])) {
+            throw new \yii\web\BadRequestHttpException('Unknown cron job.');
+        }
+        $enabled = (bool) $this->request->post('enabled');
+        $name = \common\models\CronJob::JOBS[$job][0];
+        \common\models\CronJob::set($job, $enabled, (string) Yii::$app->user->identity->username);
+        Yii::$app->session->setFlash($enabled ? 'success' : 'warning', $name . ($enabled ? ' is on.' : ' is off. Admins have been emailed.'));
+        try {
+            \common\services\admin\AdminAlertService::cronJobSwitched($name, $enabled, (string) Yii::$app->user->identity->username);
+        } catch (\Throwable $e) {
+            Yii::error($e, __METHOD__);
+        }
+
+        return $this->redirect(['cron-log']);
     }
 
     /**

@@ -18,6 +18,16 @@ class BackupController extends Controller
     /** Only write the database dump (deploy.sh, before migrating): no proofs, off-site copy or pruning. */
     public bool $dbOnly = false;
 
+    /** Off in the admin panel stops the scheduled backup only: deploy.sh must still get its dump before migrating. */
+    public function beforeAction($action): bool
+    {
+        if (!$this->dbOnly && !\common\models\CronJob::isEnabled($action->getUniqueId())) {
+            $this->stdout("Turned off in the admin panel: skipping {$action->id}.\n", Console::FG_YELLOW);
+            return false;
+        }
+        return parent::beforeAction($action);
+    }
+
     public function options($actionID): array
     {
         return array_merge(parent::options($actionID), ['dbOnly']);

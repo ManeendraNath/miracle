@@ -22,6 +22,7 @@ final class RoleAccessTest extends Unit
             'transaction/approve' => [false, true, true],
             'coupon/create' => [false, true, true],
             'admin/cron-log' => [false, true, true],
+            'admin/cron-switch' => [false, false, true],
             'admin/index' => [false, false, true],
             'admin/update' => [false, false, true],
             'site-setting/index' => [false, false, true],

@@ -13,7 +13,10 @@ use common\services\billing\InvoiceDeliveryService;
 use common\services\billing\InvoiceReminderService;
 use common\services\billing\ServiceRenewalReminderService;
 use common\services\payment\RazorpayService;
+use common\models\CronJob;
 use common\models\WhatsappLog;
+use common\services\admin\AdminAlertService;
+use common\services\customer\IncompleteProfileReminderService;
 use common\models\Invoice;
 
 class CronController extends Controller
@@ -101,11 +104,13 @@ class CronController extends Controller
             Yii::info(['message' => 'Automatic billing completed.', 'invoiceCount' => $count, 'emailFailures' => $failed], __METHOD__);
             if ($failed > 0) {
                 $this->stderr("Billing finished with {$failed} invoice email failure(s); they will be retried on the next run.\n", Console::FG_RED);
+                $this->alertFailure('Invoice emails', "{$failed} invoice email(s) could not be sent. They are retried on the next run; the app log has the details.");
             }
             return $failed > 0 || $problems !== null ? ExitCode::UNSPECIFIED_ERROR : ExitCode::OK;
         } catch (\Throwable $e) {
             Yii::error($e, __METHOD__);
             $this->stderr('Billing failed: ' . $e->getMessage() . PHP_EOL, Console::FG_RED);
+            $this->alertFailure('Invoice emails', $e->getMessage());
             return ExitCode::UNSPECIFIED_ERROR;
         } finally {
             if ($locked) {
@@ -142,6 +147,15 @@ class CronController extends Controller
     {
         return $this->runLocked('miracle:renewal-reminders', 'Renewal reminders', function (): string {
             $service = new ServiceRenewalReminderService();
+            return $this->reminderResult($service->sendReminders(), $service->failures);
+        });
+    }
+
+    /** Every day until complete: php yii cron/profile-reminders */
+    public function actionProfileReminders(): int
+    {
+        return $this->runLocked('miracle:profile-reminders', 'Incomplete profile reminders', function (): string {
+            $service = new IncompleteProfileReminderService();
             return $this->reminderResult($service->sendReminders(), $service->failures);
         });
     }
@@ -196,7 +210,21 @@ class CronController extends Controller
             $this->stdout("Maintenance mode (deploy in progress): skipping {$action->id}.\n", Console::FG_YELLOW);
             return false;
         }
+        if (!CronJob::isEnabled($action->getUniqueId())) {
+            $this->stdout("Turned off in the admin panel: skipping {$action->id}.\n", Console::FG_YELLOW);
+            return false;
+        }
         return parent::beforeAction($action);
+    }
+
+    /** Nobody reads the cron log daily, so failures are emailed; a failed alert must not change the job's result. */
+    private function alertFailure(string $job, string $reason): void
+    {
+        try {
+            AdminAlertService::cronJobFailed($job, $reason);
+        } catch (\Throwable $e) {
+            Yii::error($e, __METHOD__);
+        }
     }
 
     private function runLocked(string $lockName, string $label, callable $job): int
@@ -215,6 +243,7 @@ class CronController extends Controller
         } catch (\Throwable $e) {
             Yii::error($e, __METHOD__);
             $this->stderr("{$label} failed: " . $e->getMessage() . PHP_EOL, Console::FG_RED);
+            $this->alertFailure($label, $e->getMessage());
             return ExitCode::UNSPECIFIED_ERROR;
         } finally {
             if ($locked) {

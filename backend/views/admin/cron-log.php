@@ -6,11 +6,50 @@ use yii\helpers\Html;
 /** @var array $logLines */
 /** @var array $metrics */
 /** @var string $logPath */
+/** @var array<string, common\models\CronJob> $cronJobs */
+$canSwitch = \backend\controllers\BaseController::canAccess(Yii::$app->user->identity, 'admin', 'cron-switch');
 
-$this->title = 'Automation Run Logs';
+$this->title = 'Cron Jobs & Logs';
 $this->params['breadcrumbs'][] = $this->title;
 ?>
 <div class="cron-log-viewer container-fluid">
+    <div class="card shadow-sm mb-4">
+        <div class="card-header"><h3 class="card-title m-0">Cron Jobs</h3></div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-sm align-middle mb-0">
+                    <thead><tr><th class="ps-3">Job</th><th>Runs</th><th>Status</th><th>Last changed</th><?= $canSwitch ? '<th></th>' : '' ?></tr></thead>
+                    <tbody>
+                        <?php foreach (\common\models\CronJob::JOBS as $job => [$name, $runs, $whenOff]): ?>
+                            <?php
+                            $row = $cronJobs[$job] ?? null;
+                            $on = $row === null || (bool) $row->is_enabled;
+                            ?>
+                            <tr>
+                                <td class="ps-3"><?= Html::encode($name) ?></td>
+                                <td><?= Html::encode($runs) ?></td>
+                                <td><span class="badge <?= $on ? 'bg-success' : 'bg-secondary' ?>"><?= $on ? 'On' : 'Off' ?></span></td>
+                                <td class="small text-muted"><?= $row !== null ? Html::encode($row->updated_by . ', ' . Yii::$app->formatter->asDatetime($row->updated_at, 'php:d M Y, h:i A')) : '-' ?></td>
+                                <?php if ($canSwitch): ?>
+                                    <td class="text-end pe-3">
+                                        <?= Html::a($on ? 'Turn Off' : 'Turn On', ['cron-switch'], [
+                                            'class' => 'btn btn-sm ' . ($on ? 'btn-outline-danger' : 'btn-outline-success'),
+                                            'data' => [
+                                                'method' => 'post',
+                                                'confirm' => $on ? "Turn off {$name}?\n\n{$whenOff}" : "Turn on {$name}?",
+                                                'params' => ['job' => $job, 'enabled' => $on ? '0' : '1'],
+                                            ],
+                                        ]) ?>
+                                    </td>
+                                <?php endif; ?>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
     <!-- Row 1: High Visibility Status Badges Row -->
     <div class="row mb-4">
         <div class="col-md-4">

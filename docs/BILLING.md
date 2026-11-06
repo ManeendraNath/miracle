@@ -135,6 +135,13 @@ Renewal invoices from the billing run also get, automatically, the newest active
 has assigned to that customer ("Only For These Customers"), if it passes the same checks. A coupon
 that doesn't fit is skipped; coupons assigned to nobody are never applied automatically.
 
+## Incomplete billing profiles
+
+`cron/profile-reminders` runs daily. Every active customer with no billing profile, or with legal name, address, city,
+state or postal code blank, gets an email and a portal notification, starting the day after their account was created
+and repeating daily until complete. Admins get one daily email and bell notification listing them all. Reminder
+preferences don't apply: without a profile no renewal invoice can be created.
+
 ## Foreign clients (export of services)
 
 A billing profile whose **Country** is not India is billed as an export of services:

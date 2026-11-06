@@ -144,6 +144,42 @@ final class AdminAlertService extends AdminNotificationService
         self::send('Billing Run Failed', $message, 'billing', '/admin/cron-log', true);
     }
 
+    /** At most one a day for each job: a job running every 30 minutes must not flood the inbox. */
+    public static function cronJobFailed(string $job, string $reason): void
+    {
+        $title = 'Cron Job Failed: ' . $job;
+        if (!self::alertedToday($title)) {
+            self::send($title, "Reason: {$reason}\n" . 'Further failures of this job today are not emailed. It runs again at its next scheduled time.', 'billing', '/admin/cron-log');
+        }
+    }
+
+    public static function cronJobSwitched(string $job, bool $enabled, string $by): void
+    {
+        $state = $enabled ? 'on' : 'off';
+        self::send("Cron Job Turned " . ucfirst($state) . ': ' . $job, "{$by} turned this job {$state} in the admin panel.", 'billing', '/admin/cron-log');
+    }
+
+    /** @param string[] $customers one line each */
+    public static function profilesIncomplete(array $customers): void
+    {
+        $title = 'Incomplete Customer Profiles';
+        if (!self::alertedToday($title)) {
+            self::send($title, count($customers) . " customer(s) have incomplete billing details and were reminded:\n" . implode("\n", $customers), 'billing', '/customer-billing-profile/index');
+        }
+    }
+
+    private static function alertedToday(string $title): bool
+    {
+        try {
+            return AdminNotification::find()->where(['title' => $title])->andWhere(['>=', 'created_at', strtotime('today')])->exists();
+        } catch (\Throwable $e) {
+            // Better a repeated alert than none, e.g. when the database is why this one is being sent.
+            Yii::error($e, __METHOD__);
+
+            return false;
+        }
+    }
+
     public static function renewalLeftOpen(string $service, string $staff, string $warning): void
     {
         $message = "Service: {$service}\n" . "Disabled by: {$staff}\n" . $warning;
@@ -178,12 +214,15 @@ final class AdminAlertService extends AdminNotificationService
     private static function sendEmail(string $title, string $message): void
     {
         try {
-            Yii::$app->mailer
+            $sent = Yii::$app->mailer
                     ->compose('admin-alert-html', ['title' => $title, 'message' => $message])
                     ->setFrom(Yii::$app->params['senderEmail'])
                     ->setTo(Yii::$app->params['adminEmail'])
                     ->setSubject("[ADMIN] {$title}")
                     ->send();
+            if (!$sent) {
+                Yii::error(['message' => 'Admin alert email was not sent.', 'title' => $title], __METHOD__);
+            }
         } catch (\Throwable $e) {
             Yii::error($e, __METHOD__);
         }

@@ -147,6 +147,32 @@ final class AdminBillingCest
         $I->seeRecord(Transaction::class, ['id' => $payment, 'refunded_amount' => 800]);
     }
 
+    public function onlyASuperadminCanSwitchACronJob(FunctionalTester $I): void
+    {
+        $I->amOnRoute('admin/cron-log');
+        $I->see('Razorpay sync');
+        $I->dontSee('Turn Off');
+        $I->sendAjaxPostRequest('/admin/cron-switch', [Yii::$app->request->csrfParam => $I->grabAttributeFrom('meta[name=csrf-token]', 'content'), 'job' => 'cron/razorpay-sync', 'enabled' => '0']);
+        $I->seeResponseCodeIs(403);
+        $I->dontSeeRecord(\common\models\CronJob::class, ['job' => 'cron/razorpay-sync']);
+
+        $I->haveRecord(Admin::class, ['username' => 'billing-super', 'email' => 'billing-super@example.test', 'auth_key' => Yii::$app->security->generateRandomString(), 'password_hash' => Yii::$app->security->generatePasswordHash(self::PASSWORD), 'role' => 'Superadmin', 'status' => Admin::getStatusActive(), 'created_at' => time(), 'updated_at' => time()]);
+        $I->amOnRoute('dashboard/index');
+        $I->sendAjaxPostRequest('/auth/logout', [Yii::$app->request->csrfParam => $I->grabAttributeFrom('meta[name=csrf-token]', 'content')]);
+        $I->amOnRoute('auth/login');
+        $I->submitForm('#login-form', ['LoginForm[username]' => 'billing-super', 'LoginForm[password]' => self::PASSWORD]);
+
+        $I->amOnRoute('admin/cron-log');
+        $I->see('Turn Off');
+        $I->sendAjaxPostRequest('/admin/cron-switch', [Yii::$app->request->csrfParam => $I->grabAttributeFrom('meta[name=csrf-token]', 'content'), 'job' => 'cron/razorpay-sync', 'enabled' => '0']);
+        $I->seeRecord(\common\models\CronJob::class, ['job' => 'cron/razorpay-sync', 'is_enabled' => 0, 'updated_by' => 'billing-super']);
+        $I->seeRecord(\common\models\AdminNotification::class, ['title' => 'Cron Job Turned Off: Razorpay sync']);
+        $I->amOnRoute('admin/cron-log');
+        $I->see('Turn On');
+        $I->sendAjaxPostRequest('/admin/cron-switch', [Yii::$app->request->csrfParam => $I->grabAttributeFrom('meta[name=csrf-token]', 'content'), 'job' => 'no/such-job', 'enabled' => '0']);
+        $I->seeResponseCodeIs(400);
+    }
+
     public function aClearedRefundAmountIsNotAFullRefund(FunctionalTester $I): void
     {
         $payment = $this->transaction($I, $this->invoice($I, Invoice::STATUS_PAID), Transaction::GATEWAY_UPI_BANK, Transaction::STATUS_CAPTURED);

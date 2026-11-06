@@ -270,8 +270,13 @@ Suggested full crontab (times are examples; keep each job's frequency):
 0 9 * * *    /usr/local/bin/php /home/rpocncwk/miracle/yii cron/payment-reminders >> /home/rpocncwk/miracle/runtime/logs/billing-cron.log 2>&1
 30 9 * * *   /usr/local/bin/php /home/rpocncwk/miracle/yii cron/send-reminders >> /home/rpocncwk/miracle/runtime/logs/billing-cron.log 2>&1
 0 4 * * 0    /usr/local/bin/php /home/rpocncwk/miracle/yii cron/whatsapp-cleanup >> /home/rpocncwk/miracle/runtime/logs/billing-cron.log 2>&1
+0 10 * * *   /usr/local/bin/php /home/rpocncwk/miracle/yii cron/profile-reminders >> /home/rpocncwk/miracle/runtime/logs/billing-cron.log 2>&1
 */30 * * * * /usr/local/bin/php /home/rpocncwk/miracle/yii cron/razorpay-sync >> /home/rpocncwk/miracle/runtime/logs/billing-cron.log 2>&1
 ```
+
+A Superadmin can turn any job on or off under **Cron Jobs & Logs** (the crontab line stays; a job that is off stops at once and logs one line). Admins are emailed about every change. The backup `deploy.sh` takes before migrating runs regardless.
+
+Failures are emailed to `ADMIN_EMAIL` and shown on the admin bell, at most once a day per job. A job that never starts (broken crontab) or a PHP crash mid-run can't report itself.
 
 Deleted customers are not billed or reminded. Suspended customers still are: staff get a warning when suspending one who has active services or open invoices.
 

@@ -1,5 +1,5 @@
 {
-    "migrations": 59,
+    "migrations": 60,
     "columns": {
         "admin": {
             "auth_key": {
@@ -847,6 +847,32 @@
             "user_id": {
                 "type": "int",
                 "null": false,
+                "default": null,
+                "extra": ""
+            }
+        },
+        "cron_job": {
+            "is_enabled": {
+                "type": "tinyint",
+                "null": false,
+                "default": "1",
+                "extra": ""
+            },
+            "job": {
+                "type": "varchar(64)",
+                "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "updated_at": {
+                "type": "int",
+                "null": true,
+                "default": null,
+                "extra": ""
+            },
+            "updated_by": {
+                "type": "varchar(255)",
+                "null": true,
                 "default": null,
                 "extra": ""
             }
@@ -2423,6 +2449,9 @@
             "id": "primary",
             "invoice_id": "unique",
             "user_id": "index"
+        },
+        "cron_job": {
+            "job": "primary"
         },
         "customer_billing_profile": {
             "id": "primary",

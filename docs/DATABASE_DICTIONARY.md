@@ -113,5 +113,6 @@ These tables handle secondary operational features. They are currently active bu
 
 ### Added columns
 *   `user.profile_warned_at`: when the customer was first warned, with nothing live, that the account can be disabled. Disabling needs at least 7 days since then.
+*   `user.reactivated_at`: staff set a suspended account Active; the month before it can be disabled again counts from here.
 *   `admin_notification.emailed_at`: when the alert's email actually went out.
 *   `invoice.written_off_at`: set when staff forgave the balance; the status stays Refunded but it shows as "Closed (balance written off)".

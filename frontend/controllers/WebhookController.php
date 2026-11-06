@@ -73,7 +73,7 @@ final class WebhookController extends Controller
         }
 
         try {
-            $razorpay->capture($orderId, $paymentId, $amountMinor, is_int($payment['fee'] ?? null) ? $payment['fee'] : null);
+            $razorpay->capture($orderId, $paymentId, $amountMinor, is_int($payment['fee'] ?? null) ? $payment['fee'] : null, is_int($payment['created_at'] ?? null) ? $payment['created_at'] : null);
             return ['status' => 'success'];
         } catch (\DomainException $e) {
             // Razorpay says the customer paid for one of our orders but it can't be recorded (second

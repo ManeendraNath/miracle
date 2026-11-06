@@ -33,6 +33,9 @@ final class RazorpayService
     /** Marks an unpaid order replaced after a coupon changed the invoice total (InvoiceCouponService). */
     public const SUPERSEDED_NOTE = 'SUPERSEDED: invoice total changed by a coupon before this order was paid.';
 
+    /** Set by recoverPaidOrders(). */
+    public bool $paidButNotRecorded = false;
+
     private array $_config;
 
     /** @param Transport|null $transport tests pass a MockTransport; null = real HTTP */
@@ -208,12 +211,16 @@ final class RazorpayService
         $unknown = 'No clear answer from Razorpay, so the refund may have been sent. Check this payment in the Razorpay dashboard before trying again.';
         try {
             $response = $this->api()
-                ->post('payments/' . rawurlencode($paymentId) . '/refund', ['amount' => $amountMinor, 'speed' => 'normal'])
+                // Same key for a retry of this refund, new key once it is recorded: a timed-out request that did get through isn't sent twice.
+                ->post('payments/' . rawurlencode($paymentId) . '/refund', ['amount' => $amountMinor, 'speed' => 'normal'], ['X-Refund-Idempotency' => "refund-{$paymentId}-{$recordedRefundMinor}-{$amountMinor}"])
                 ->setFormat(Client::FORMAT_JSON)
                 ->send();
         } catch (\yii\httpclient\Exception $e) {
             Yii::error(['message' => 'Razorpay refund request failed.', 'paymentId' => $paymentId, 'error' => $e->getMessage()], __METHOD__);
             throw new \DomainException($unknown, 0, $e);
+        }
+        if ((int) $response->statusCode === 409) {
+            throw new \DomainException('Razorpay is still working on this refund. Wait a few minutes, then check this payment in the Razorpay dashboard before trying again.');
         }
         if ((int) $response->statusCode >= 500) {
             Yii::error(['message' => 'Razorpay refund answered with a server error.', 'paymentId' => $paymentId, 'status' => $response->statusCode, 'body' => $response->content], __METHOD__);
@@ -279,13 +286,17 @@ final class RazorpayService
                 Yii::warning('Razorpay order check stopped early.', __METHOD__);
                 break;
             }
+            $payment = null;
             try {
-                if ($this->captureIfPaid((string) $order->gateway_order_id)) {
+                $payment = $this->capturedPayment((string) $order->gateway_order_id);
+                if ($payment !== null) {
+                    $this->recordFound((string) $order->gateway_order_id, $payment);
                     $result['captured']++;
                 }
             } catch (\Throwable $e) {
                 $result['errors']++;
                 Yii::error(['message' => 'Razorpay sync failed for an order.', 'orderId' => $order->gateway_order_id, 'error' => $e->getMessage()], __METHOD__);
+                $this->alertIfRefused($e, (string) $order->gateway_order_id, $payment);
             }
         }
 
@@ -355,6 +366,8 @@ final class RazorpayService
 
     /**
      * Before starting a new payment: was an earlier order of this invoice paid without us hearing?
+     * Razorpay not answering stops the checks and doesn't stop the customer; Razorpay saying "paid" when we can't
+     * record it sets $paidButNotRecorded, and then they must not be offered another checkout.
      *
      * @return int payments recorded
      */
@@ -369,18 +382,31 @@ final class RazorpayService
             ->all();
         $recorded = 0;
         foreach ($orders as $order) {
+            $orderId = (string) $order->gateway_order_id;
             try {
-                $recorded += $this->captureIfPaid((string) $order->gateway_order_id) ? 1 : 0;
+                $payment = $this->capturedPayment($orderId);
             } catch (\Throwable $e) {
-                Yii::error(['message' => 'Could not check an earlier Razorpay order.', 'orderId' => $order->gateway_order_id, 'error' => $e->getMessage()], __METHOD__);
+                Yii::error(['message' => 'Could not check an earlier Razorpay order.', 'orderId' => $orderId, 'error' => $e->getMessage()], __METHOD__);
+                break;
+            }
+            if ($payment === null) {
+                continue;
+            }
+            try {
+                $this->recordFound($orderId, $payment);
+                $recorded++;
+            } catch (\Throwable $e) {
+                $this->paidButNotRecorded = true;
+                Yii::error(['message' => 'An earlier Razorpay payment could not be recorded.', 'orderId' => $orderId, 'error' => $e->getMessage()], __METHOD__);
+                $this->alertIfRefused($e, $orderId, $payment);
             }
         }
 
         return $recorded;
     }
 
-    /** Asks Razorpay about the order and records a captured payment. */
-    private function captureIfPaid(string $orderId): bool
+    /** The order's captured payment as Razorpay reports it, or null. */
+    private function capturedPayment(string $orderId): ?array
     {
         $response = $this->api()->get('orders/' . rawurlencode($orderId) . '/payments')->send();
         if (!$response->isOk) {
@@ -388,13 +414,25 @@ final class RazorpayService
         }
         foreach ($response->data['items'] ?? [] as $payment) {
             if (($payment['status'] ?? null) === 'captured') {
-                $this->capture($orderId, (string) $payment['id'], (int) $payment['amount'], isset($payment['fee']) ? (int) $payment['fee'] : null);
-
-                return true;
+                return $payment;
             }
         }
 
-        return false;
+        return null;
+    }
+
+    /** Found long after the fact: dated when the customer paid, so it lands in the right month. */
+    private function recordFound(string $orderId, array $payment): void
+    {
+        $this->capture($orderId, (string) $payment['id'], (int) $payment['amount'], isset($payment['fee']) ? (int) $payment['fee'] : null, isset($payment['created_at']) ? (int) $payment['created_at'] : null);
+    }
+
+    /** A refusal (amount mismatch, order closed) won't change on its own, so staff need the reference. A lock timeout will: it retries. */
+    private function alertIfRefused(\Throwable $e, string $orderId, ?array $payment): void
+    {
+        if ($e instanceof \DomainException && $payment !== null) {
+            AdminAlertService::paymentNotRecorded($orderId, (string) ($payment['id'] ?? ''), (int) ($payment['amount'] ?? 0) / 100, $e->getMessage());
+        }
     }
 
     private function refundedMinor(Transaction $payment): int
@@ -470,9 +508,10 @@ final class RazorpayService
      *                              the caller only has a verified checkout signature
      *                              (the order itself fixes the amount)
      * @param int|null $feeMinor    Razorpay's fee incl. GST in paise, when known (webhook, sync)
+     * @param int|null $paidAt      when Razorpay says it was paid, when known; default now
      * @throws \DomainException when the payment does not match a pending order
      */
-    public function capture(string $orderId, string $paymentId, ?int $amountMinor = null, ?int $feeMinor = null): Transaction
+    public function capture(string $orderId, string $paymentId, ?int $amountMinor = null, ?int $feeMinor = null, ?int $paidAt = null): Transaction
     {
         $db = Yii::$app->db;
         $dbTransaction = $db->beginTransaction();
@@ -514,7 +553,7 @@ final class RazorpayService
             $now = time();
             $transaction->gateway_payment_id = $paymentId;
             $transaction->status = Transaction::STATUS_CAPTURED;
-            $transaction->paid_at = $now;
+            $transaction->paid_at = $paidAt !== null && $paidAt > 0 && $paidAt <= $now ? $paidAt : $now;
             $transaction->updated_at = $now;
             if ($feeMinor !== null) {
                 $transaction->gateway_fee = $feeMinor / 100;
@@ -530,7 +569,7 @@ final class RazorpayService
             $unapplied = $invoice !== null && in_array($invoice->status, [Invoice::STATUS_CANCELLED, Invoice::STATUS_CARRIED_FORWARD, Invoice::STATUS_PAID, Invoice::STATUS_REFUNDED], true);
             if ($unapplied) {
                 $transaction->is_unapplied = 1;
-                $transaction->user_payment_notes = trim($transaction->user_payment_notes . "\n" . Transaction::UNAPPLIED_NOTE_PREFIX . " invoice was {$invoice->status} when paid. Refund it, or apply it to another invoice of this customer.");
+                $transaction->user_payment_notes = trim($transaction->user_payment_notes . "\n" . Transaction::UNAPPLIED_NOTE_PREFIX . ' invoice was ' . $invoice->statusLabel() . ' when this was recorded.');
             }
             if (!$transaction->save()) {
                 throw new \RuntimeException('Captured payment could not be saved.');
@@ -554,6 +593,7 @@ final class RazorpayService
                     Yii::warning(['message' => 'Razorpay payment captured on a non-payable invoice.', 'transactionId' => (int) $transaction->id, 'invoice' => $invoice->invoice_number, 'status' => $invoice->status], __METHOD__);
                     AdminAlertService::paymentUnapplied($invoice->invoice_number, (string) $invoice->status, (float) $transaction->amount, $paymentId);
                     (new NotificationService())->create((int) $invoice->user_id, 'payment', 'Payment Received: Not Yet Applied', 'We received your payment of ₹' . number_format((float) $transaction->amount, 2) . ' for invoice ' . $invoice->invoice_number . ', but that invoice was already settled or closed. We will refund it or apply it to another invoice.', '/payment/view?id=' . (int) $transaction->id);
+                    (new PaymentConfirmationService())->sendHeld($invoice, (float) $transaction->amount);
                 }
             } catch (\Throwable $e) {
                 Yii::error(['message' => 'Payment was captured but an alert failed.', 'transactionId' => (int) $transaction->id, 'error' => $e->getMessage()], __METHOD__);

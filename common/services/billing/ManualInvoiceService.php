@@ -260,7 +260,8 @@ final class ManualInvoiceService
             }
             ksort($newTotals);
             ksort($storedTotals);
-            if ($couponCode !== '' && $couponCode === $storedCode && $newTotals == $storedTotals) {
+            $keepingCoupon = $couponCode !== '' && $couponCode === $storedCode && $newTotals == $storedTotals;
+            if ($keepingCoupon) {
                 // Same coupon, same lines: the discount the customer was given stands, whatever became of the coupon since.
                 $discount = round((float) $lockedInvoice->discount_amount, 2);
             } elseif ($couponCode !== '') {
@@ -343,7 +344,7 @@ final class ManualInvoiceService
             }
 
             if ($couponCode !== '') {
-                $this->couponService->record($lockedInvoice);
+                $this->couponService->record($lockedInvoice, $keepingCoupon);
             } else {
                 $this->couponService->removeForInvoice((int) $lockedInvoice->id);
             }

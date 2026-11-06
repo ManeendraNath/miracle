@@ -184,6 +184,12 @@ $refundStep = $viaRazorpay
                     <div class="card-body">
                         <?= Html::beginForm(['refund', 'id' => $model->id], 'post') ?>
                         <?= Html::hiddenInput('refunded_before', (string) $model->refunded_amount) ?>
+                        <?php if ((int) $model->gateway_id === Transaction::GATEWAY_RAZORPAY && (string) $model->gateway_payment_id !== '' && !(new \common\services\payment\RazorpayService())->isEnabled()): ?>
+                            <div class="form-check mb-2">
+                                <?= Html::checkbox('manual_return', false, ['class' => 'form-check-input', 'id' => 'manual-return', 'value' => '1']) ?>
+                                <label class="form-check-label small" for="manual-return">Razorpay is off: I have returned this money myself</label>
+                            </div>
+                        <?php endif; ?>
                         <label class="form-label small" for="refund-amount">Amount to refund (₹)</label>
                         <input type="number" id="refund-amount" name="refund_amount" class="form-control mb-1" step="0.01" min="0.01" max="<?= $refundable ?>" value="<?= $refundable ?>" required>
                         <p class="small text-body-secondary"><?= Html::encode($refundStep) ?> A smaller amount is a partial refund, e.g. keeping a domain fee.</p>

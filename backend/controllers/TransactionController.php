@@ -185,7 +185,7 @@ class TransactionController extends BaseController
             $paymentTransaction->updated_at = $now;
             if ($unapplied) {
                 $paymentTransaction->is_unapplied = 1;
-                $paymentTransaction->user_payment_notes = trim($paymentTransaction->user_payment_notes . "\n" . Transaction::UNAPPLIED_NOTE_PREFIX . " invoice was {$invoice->status} when approved. Refund it, or apply it to another invoice of this customer.");
+                $paymentTransaction->user_payment_notes = trim($paymentTransaction->user_payment_notes . "\n" . Transaction::UNAPPLIED_NOTE_PREFIX . ' invoice was ' . $invoice->statusLabel() . ' when approved.');
             }
             if (!$paymentTransaction->save(false, ['status', 'paid_at', 'updated_at', 'is_unapplied', 'user_payment_notes'])) {
                 throw new \RuntimeException('Payment could not be approved.');
@@ -200,6 +200,7 @@ class TransactionController extends BaseController
                 try {
                     AdminAlertService::paymentApprovedOnClosedInvoice($invoice->invoice_number, $invoice->statusLabel(), (float) $paymentTransaction->amount, (int) $paymentTransaction->id);
                     (new NotificationService())->create((int) $invoice->user_id, 'payment', 'Payment Received: Not Yet Applied', 'We received your payment of ₹' . number_format((float) $paymentTransaction->amount, 2) . ' for invoice ' . $invoice->invoice_number . ', which can no longer take payments. We will refund it or apply it to another invoice.', '/invoice/view?number=' . rawurlencode((string) $invoice->invoice_number));
+                    (new PaymentConfirmationService())->sendHeld($invoice, (float) $paymentTransaction->amount);
                 } catch (\Throwable $alertError) {
                     Yii::error(['message' => 'Unapplied approval alert failed.', 'transactionId' => $id, 'error' => $alertError->getMessage()], __METHOD__);
                 }
@@ -272,6 +273,8 @@ class TransactionController extends BaseController
                 throw new \DomainException('This payment was refunded meanwhile (now ₹' . number_format((float) $model->refunded_amount, 2) . '). Check the amount and try again.');
             }
 
+            // ponytail: the Razorpay checks below run under these row locks (up to 60 s if it is slow). Refunds are rare and
+            // staff-driven; moved out of the lock, two tabs could both see "nothing refunded yet".
             $paymentService = new InvoicePaymentService();
             // Its unpaid balance moved to a newer invoice as a fixed arrears line; refunding it while that is
             // open would leave the line short. Once settled nothing is left to get wrong. An unapplied
@@ -291,6 +294,10 @@ class TransactionController extends BaseController
                 if ($blocker !== null) {
                     throw new \DomainException($blocker);
                 }
+            }
+
+            if ((int) $model->gateway_id === Transaction::GATEWAY_RAZORPAY && (string) $model->gateway_payment_id !== '' && !$razorpay->isEnabled() && !$this->request->post('manual_return')) {
+                throw new \DomainException('Razorpay is turned off here, so this would only write the record and send nothing. Return the money yourself first, then tick the box to confirm.');
             }
 
             $note = 'Refunded ₹' . number_format($amount, 2) . ' on ' . date('d M Y') . '.';
@@ -344,7 +351,7 @@ class TransactionController extends BaseController
                 // Recorded: a failed message must not look like a failed refund.
                 try {
                     (new NotificationService())->create((int) $invoice->user_id, 'payment', 'Payment Refunded', '₹' . number_format($amount, 2) . ' for invoice ' . $invoice->invoice_number . ' has been refunded.', '/invoice/view?number=' . rawurlencode((string) $invoice->invoice_number));
-                    (new PaymentConfirmationService())->sendRefund($invoice, $amount, $viaRazorpay);
+                    (new PaymentConfirmationService())->sendRefund(Invoice::findOne((int) $invoice->id), $amount, $viaRazorpay);
                 } catch (\Throwable $e) {
                     Yii::error(['message' => 'Refund was recorded but the customer could not be told.', 'transactionId' => $id, 'error' => $e->getMessage()], __METHOD__);
                     Yii::$app->session->addFlash('warning', 'The refund is recorded, but the email to the customer could not be sent.');
@@ -541,6 +548,10 @@ class TransactionController extends BaseController
                 if ($status !== Transaction::STATUS_PENDING) {
                     throw new \DomainException('This payment was ' . strtolower((string) $status) . ' meanwhile and can no longer be edited.');
                 }
+            }
+            // Before the insert: its foreign key takes a shared lock on the invoice, which two saves can't both upgrade.
+            if ($model->getIsNewRecord()) {
+                Yii::$app->db->createCommand('SELECT id FROM {{%invoice}} WHERE id = :id FOR UPDATE')->bindValue(':id', (int) $model->invoice_id)->queryScalar();
             }
             if (!$model->save()) {
                 throw new \RuntimeException('Transaction could not be saved: ' . json_encode($model->errors, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));

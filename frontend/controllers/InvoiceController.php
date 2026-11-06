@@ -125,9 +125,13 @@ final class InvoiceController extends Controller
             Yii::$app->response->statusCode = 422;
             return ['error' => 'We have just found your earlier payment and recorded it. Please reload this page to see your balance.'];
         }
+        if ($razorpay->paidButNotRecorded) {
+            Yii::$app->response->statusCode = 422;
+            return ['error' => 'We can see an earlier payment for this invoice that has not been recorded yet. Please do not pay again: try this page in a few minutes, or contact support.'];
+        }
         // Lock the invoice so a coupon applied in another tab (InvoiceCouponService locks the same row)
         // can't change the total between reading the amount and creating the order.
-        // ponytail: the row stays locked during the Razorpay API call (a few seconds at most).
+        // ponytail: the row stays locked during the Razorpay API call (up to 20 s if it is slow).
         $dbTransaction = Yii::$app->db->beginTransaction();
         try {
             Yii::$app->db->createCommand('SELECT id FROM {{%invoice}} WHERE id = :id FOR UPDATE')->bindValue(':id', $invoice->id)->execute();
@@ -205,7 +209,11 @@ final class InvoiceController extends Controller
             }
         } catch (\Throwable $e) {
             Yii::error(['message' => 'Razorpay checkout capture failed.', 'invoice' => $invoice->invoice_number, 'orderId' => $orderId, 'paymentId' => $paymentId, 'error' => $e->getMessage()], __METHOD__);
-            Yii::$app->session->setFlash('warning', 'Your payment was received but could not be applied automatically. Our team has been notified and will confirm it shortly. Reference: ' . $paymentId);
+            Yii::$app->session->setFlash('warning', 'Your payment was received but could not be applied automatically. It will be confirmed shortly, so please do not pay again.' . $paymentId);
+            // Only a refusal: a lock timeout says nothing about the payment, and the webhook, sync or next Pay Online records it.
+            if (!$e instanceof \DomainException) {
+                return $this->redirect(['view', 'number' => $invoice->invoice_number]);
+            }
             try {
                 $amount = (float) Transaction::find()->select('amount')->where(['gateway_order_id' => $orderId])->scalar();
                 AdminAlertService::paymentNotRecorded($orderId, $paymentId, $amount, $e->getMessage());
@@ -221,6 +229,7 @@ final class InvoiceController extends Controller
         $invoice = $this->findOwnedInvoice($number);
         $code = Yii::$app->request->post('coupon_code');
         // Five wrong codes and a wait, so codes can't be guessed; the same answer whether a code exists or is someone else's.
+        // A code that works doesn't reset it: apply, remove and guess again would never lock.
         $throttleName = 'user#' . (int) Yii::$app->user->id;
         if (LoginThrottle::isLocked('coupon', $throttleName)) {
             Yii::$app->session->setFlash('error', 'Too many attempts. Please try again in 15 minutes.');
@@ -228,7 +237,6 @@ final class InvoiceController extends Controller
         }
         try {
             (new InvoiceCouponService())->apply($invoice, is_string($code) ? $code : '');
-            LoginThrottle::clear('coupon', $throttleName);
             Yii::$app->session->setFlash('success', 'Coupon applied.');
         } catch (\DomainException $e) {
             $unknown = in_array($e->getMessage(), ['Coupon code is invalid.', 'This coupon is not assigned to your account.'], true);

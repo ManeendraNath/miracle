@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use yii\db\Migration;
+use yii\db\Query;
 
 /**
  * Invoices written off before closing reached their carried sources still say Carried Forward, pointing at a
@@ -22,12 +23,28 @@ final class m261115_100000_close_sources_of_closed_invoices extends Migration
                 [':now' => time()],
             )->execute();
         } while ($changed > 0);
-        // As closing does now: a coupon on a closed invoice with no money kept is free to be used again.
-        $this->execute(
-            "DELETE r FROM {{%coupon_redemption}} r
-             JOIN {{%invoice}} i ON i.id = r.invoice_id
-             WHERE i.status = 'Refunded' AND NOT EXISTS (SELECT 1 FROM {{%transaction}} t WHERE t.invoice_id = i.id AND t.status = 'Captured' AND t.is_unapplied = 0)"
-        );
+        // As closing does now: a coupon on a closed invoice is free to be used again, unless money was kept on that
+        // invoice or on one its balance was carried to.
+        $redemptions = (new Query())->select(['r.id', 'r.invoice_id'])->from(['r' => '{{%coupon_redemption}}'])
+            ->innerJoin(['i' => '{{%invoice}}'], 'i.id = r.invoice_id')->where(['i.status' => 'Refunded'])->all($this->db);
+        foreach ($redemptions as $redemption) {
+            if (!$this->moneyKeptFrom((int) $redemption['invoice_id'])) {
+                $this->delete('{{%coupon_redemption}}', ['id' => $redemption['id']]);
+            }
+        }
+    }
+
+    private function moneyKeptFrom(int $invoiceId): bool
+    {
+        // Each step goes to a newer invoice, so this can't loop.
+        for ($id = $invoiceId; $id !== 0;) {
+            if ((new Query())->from('{{%transaction}}')->where(['invoice_id' => $id, 'status' => 'Captured', 'is_unapplied' => 0])->exists($this->db)) {
+                return true;
+            }
+            $id = (int) (new Query())->select('invoice_id')->from('{{%invoice_item}}')->where(['source_invoice_id' => $id, 'item_type' => 5])->orderBy(['id' => SORT_DESC])->scalar($this->db);
+        }
+
+        return false;
     }
 
     /** Data only, and which rows changed isn't recorded. */

@@ -62,10 +62,10 @@ final class IncompleteProfileReminderService
                 if (!$canBeDisabled && $warnedAt !== null) {
                     $customer->updateAttributes(['profile_warned_at' => null]);
                 }
-                // updated_at too: staff setting an account Active again saves it, and must not see it suspended the next morning.
+                // reactivated_at too: staff setting an account Active again must not see it suspended the next morning.
                 if (
                     $canBeDisabled && $warnedAt !== null && $warnedAt <= time() - self::NOTICE_DAYS * 86400
-                    && (int) $customer->created_at <= $disableBefore && (int) $customer->updated_at <= $disableBefore
+                    && max((int) $customer->created_at, (int) $customer->reactivated_at) <= $disableBefore
                 ) {
                     $this->disable($customer);
                     $suspended[] = $line;
@@ -87,7 +87,7 @@ final class IncompleteProfileReminderService
             AdminAlertService::profilesIncomplete(self::capped($incomplete));
         }
         if ($suspended !== []) {
-            AdminAlertService::accountsDisabled(self::capped($suspended));
+            AdminAlertService::accountsDisabled(self::capped($suspended), count($suspended));
         }
 
         return $sent;
@@ -103,9 +103,10 @@ final class IncompleteProfileReminderService
         return array_values(array_filter(self::REQUIRED, static fn(string $label, string $attribute): bool => trim((string) $profile->$attribute) === '', ARRAY_FILTER_USE_BOTH));
     }
 
-    public static function isInUse(int $userId): bool
+    /** @param bool $countTickets false for the portal gate: opening a ticket must not unlock the portal */
+    public static function isInUse(int $userId, bool $countTickets = true): bool
     {
-        return self::customersInUse($userId) !== [];
+        return self::customersInUse($userId, $countTickets) !== [];
     }
 
     /** One bell row per customer: read once the details are complete, however they got there. */
@@ -121,15 +122,17 @@ final class IncompleteProfileReminderService
      *
      * @return array<int, true>
      */
-    private static function customersInUse(?int $userId = null): array
+    private static function customersInUse(?int $userId = null, bool $countTickets = true): array
     {
         $ids = Invoice::find()->select('user_id')->where(['status' => [Invoice::STATUS_UNPAID, Invoice::STATUS_PARTIALLY_PAID]])->andFilterWhere(['user_id' => $userId])->column();
         foreach ([Domains::class, Hosting::class, Maintenance::class] as $service) {
             $ids = array_merge($ids, $service::find()->select('user_id')->where(['status' => $service::RENEWABLE_STATUSES])->andFilterWhere(['user_id' => $userId])->column());
         }
+        if ($countTickets) {
+            $ids = array_merge($ids, SupportTicket::find()->select('user_id')->where(['status' => [SupportTicket::STATUS_OPEN, SupportTicket::STATUS_IN_PROGRESS]])->andFilterWhere(['user_id' => $userId])->column());
+        }
         $ids = array_merge(
             $ids,
-            SupportTicket::find()->select('user_id')->where(['status' => [SupportTicket::STATUS_OPEN, SupportTicket::STATUS_IN_PROGRESS]])->andFilterWhere(['user_id' => $userId])->column(),
             Invoice::find()->alias('i')->select('i.user_id')->innerJoin(['t' => Transaction::tableName()], 't.invoice_id = i.id')
                 ->where(['t.status' => Transaction::STATUS_CAPTURED, 't.is_unapplied' => 1])->andFilterWhere(['i.user_id' => $userId])->column(),
         );
@@ -191,7 +194,7 @@ final class IncompleteProfileReminderService
         if ($notification !== null && !(bool) $notification->is_read) {
             $notification->updateAttributes(['created_at' => time()]);
         } else {
-            (new NotificationService())->create((int) $customer->id, 'account', self::TITLE, 'We need your complete billing details to issue your invoices.', '/account/profile');
+            (new NotificationService())->create((int) $customer->id, 'account', self::TITLE, 'Your invoices need your complete billing details.', '/account/profile');
         }
 
         return true;

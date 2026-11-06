@@ -158,9 +158,10 @@ final class InvoicePaymentService
         // renewal with no money kept must stop counting as paid (RenewalFulfilmentService::fullyRefundedInvoices).
         Invoice::updateAll(['status' => Invoice::STATUS_REFUNDED, 'updated_at' => time(), 'written_off_at' => $writeOff ? time() : null], ['id' => $invoiceIds, 'status' => Invoice::STATUS_CARRIED_FORWARD]);
         // As cancelling does: the coupon use shouldn't count against its limits for the re-billed invoice.
-        // Money kept on the invoice means the customer did use the discount.
+        // Money kept on the invoice, or on one its balance was carried to, means the customer did use the discount.
+        $fulfilment = new RenewalFulfilmentService();
         foreach ($invoiceIds as $invoiceId) {
-            if ($this->getCapturedAmount($invoiceId) <= 0) {
+            if (!$fulfilment->moneyKeptOnTheWay($invoiceId, (int) $invoice->id)) {
                 (new CouponService())->removeForInvoice($invoiceId);
             }
         }
@@ -241,7 +242,8 @@ final class InvoicePaymentService
         return [
             'invoiceNumber' => $this->payableInvoiceForService((int) $service->user_id, $itemType, (int) $service->id)->invoice_number ?? null,
             'billable' => (bool) $settings->is_active && (int) $service->status === 1 && ((float) $service->renewal_base_amount > 0 || (float) $service->next_renewal_amount > 0)
-                && \common\models\CustomerBillingProfile::find()->where(['user_id' => (int) $service->user_id])->exists(),
+                && \common\models\CustomerBillingProfile::find()->where(['user_id' => (int) $service->user_id])->exists()
+                && \common\models\CronJob::isEnabled('cron/run-billing'),
             'issuedFrom' => date('Y-m-d', (int) strtotime($service->current_expiry_date . " -{$days} days")),
         ];
     }
@@ -266,7 +268,7 @@ final class InvoicePaymentService
     public function assertPayable(Invoice $invoice): void
     {
         if ($invoice->status === Invoice::STATUS_PAID || in_array($invoice->status, self::CLOSED_STATUSES, true)) {
-            throw new \DomainException('Invoice ' . $invoice->invoice_number . ' is already ' . (Invoice::getStatuses()[$invoice->status] ?? $invoice->status) . '. Reject this payment, or refund it if the money was received.');
+            throw new \DomainException('Invoice ' . $invoice->invoice_number . ' is already ' . Invoice::labelOf($invoice) . '. Reject this payment, or refund it if the money was received.');
         }
     }
 }

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace common\services\billing;
 
+use common\components\AfterCommit;
 use common\models\BillingEvent;
 use common\models\Domains;
 use common\models\Hosting;
@@ -17,7 +18,8 @@ use Yii;
 
 final class RenewalFulfilmentService
 {
-    public function fulfilInvoice(Invoice $invoice, bool $useTransaction = true): void
+    /** @param bool $justPaid false when the invoice was already Paid before this change, e.g. a partial refund others still cover */
+    public function fulfilInvoice(Invoice $invoice, bool $useTransaction = true, bool $justPaid = true): void
     {
         if ($invoice->status !== Invoice::STATUS_PAID) {
             return;
@@ -39,9 +41,10 @@ final class RenewalFulfilmentService
         }
 
         try {
+            $covered = self::coveredInvoiceIds((int) $invoice->id);
             $events = BillingEvent::find()
                 ->where([
-                    'invoice_id' => self::coveredInvoiceIds((int) $invoice->id),
+                    'invoice_id' => $covered,
                     'status' => BillingEvent::STATUS_INVOICED,
                 ])
                 ->orderBy(['id' => SORT_ASC])
@@ -49,6 +52,9 @@ final class RenewalFulfilmentService
 
             foreach ($events as $event) {
                 $this->fulfilEvent($event, (int) $invoice->id, $transactionId ? (int) $transactionId : null);
+            }
+            if ($justPaid) {
+                $this->reactivateGranted($covered, (int) $invoice->id);
             }
 
             if ($dbTransaction !== null && $dbTransaction->isActive) {
@@ -74,11 +80,23 @@ final class RenewalFulfilmentService
      */
     public function refundedEventIds(int $itemType, int $itemId): array
     {
+        return $this->refundedEvents(['h.item_type' => $this->historyType($itemType), 'h.item_id' => $itemId]);
+    }
+
+    /** @return int[] the same for all of a customer's services, for their renewal history */
+    public function refundedEventIdsOfCustomer(int $userId): array
+    {
+        return $this->refundedEvents(['i.user_id' => $userId]);
+    }
+
+    /** @return int[] */
+    private function refundedEvents(array $where): array
+    {
         $rows = ServiceRenewalHistory::find()->alias('h')
             ->innerJoin(['i' => Invoice::tableName()], 'i.id = h.invoice_id')
             ->innerJoin(['e' => BillingEvent::tableName()], 'e.id = h.billing_event_id')
             ->select(['h.billing_event_id', 'e.invoice_id', 'paid' => 'h.invoice_id'])
-            ->where(['h.item_type' => $this->historyType($itemType), 'h.item_id' => $itemId, 'i.status' => Invoice::STATUS_REFUNDED])
+            ->where($where + ['i.status' => Invoice::STATUS_REFUNDED])
             ->asArray()->all();
         $refunded = [];
         foreach ($rows as $row) {
@@ -90,46 +108,21 @@ final class RenewalFulfilmentService
         return $refunded;
     }
 
-    /** From the renewal's invoice forward along arrears lines to the invoice it was finally paid on. */
-    private function moneyKeptOnTheWay(int $fromInvoiceId, int $paidInvoiceId): bool
+    /** From an invoice forward along arrears lines to a later one in its chain: was money kept on any of them? */
+    public function moneyKeptOnTheWay(int $fromInvoiceId, int $toInvoiceId): bool
     {
         // Each step goes to a newer invoice, so this can't loop.
         for ($id = $fromInvoiceId; $id !== 0;) {
-            if (self::moneyKept([$id])) {
+            if (Transaction::find()->where(['invoice_id' => $id, 'status' => Transaction::STATUS_CAPTURED, 'is_unapplied' => 0])->exists()) {
                 return true;
             }
-            if ($id === $paidInvoiceId) {
+            if ($id === $toInvoiceId) {
                 return false;
             }
             $id = (int) InvoiceItem::find()->select('invoice_id')->where(['source_invoice_id' => $id, 'item_type' => InvoiceItem::TYPE_ARREARS])->orderBy(['id' => SORT_DESC])->scalar();
         }
 
         return false;
-    }
-
-    /** @param int[] $invoiceIds */
-    private static function moneyKept(array $invoiceIds): bool
-    {
-        return Transaction::find()->where(['invoice_id' => $invoiceIds, 'status' => Transaction::STATUS_CAPTURED, 'is_unapplied' => 0])->exists();
-    }
-
-    /**
-     * Ids of invoices closed as refunded with no money kept anywhere on them or on what was carried into them.
-     *
-     * ponytail: walks each refunded invoice's chain in PHP; refunded invoices are few. Cache it if that changes.
-     *
-     * @return int[]
-     */
-    public static function fullyRefundedInvoices(): array
-    {
-        $ids = [];
-        foreach (Invoice::find()->select('id')->where(['status' => Invoice::STATUS_REFUNDED])->column() as $id) {
-            if (!self::moneyKept(self::coveredInvoiceIds((int) $id))) {
-                $ids[] = (int) $id;
-            }
-        }
-
-        return $ids;
     }
 
     /**
@@ -212,9 +205,9 @@ final class RenewalFulfilmentService
         if ((string) $asset->current_expiry_date < (string) $event->period_end) {
             $asset->current_expiry_date = $event->period_end;
             // Staff moved the expiry since the anchor was set: later periods must follow the date just granted.
-            // Not a whole-year period ending in February: 28 or 29 there says nothing about the anchor.
+            // Not a whole-year period ending on the last of February: 28 or 29 there says nothing about the anchor.
             $endsOn = strtotime((string) $event->period_end);
-            $februaryYear = $months % 12 === 0 && $endsOn !== false && (int) date('n', $endsOn) === 2;
+            $februaryYear = $months % 12 === 0 && $endsOn !== false && date('m-d', $endsOn) === date('m-t', $endsOn) && (int) date('n', $endsOn) === 2;
             if ($asset->renewal_anchor_day !== null && $endsOn !== false && !$februaryYear && (int) date('j', $endsOn) !== min((int) $asset->renewal_anchor_day, (int) date('t', $endsOn))) {
                 $asset->renewal_anchor_day = RenewalPeriodCalculator::anchorDayFor((string) $event->period_end);
                 $attributes[] = 'renewal_anchor_day';
@@ -227,13 +220,13 @@ final class RenewalFulfilmentService
             $asset->next_renewal_amount = null;
             $attributes[] = 'next_renewal_amount';
         }
-        // Paid up again: a service staff suspended for non-payment goes back into billing and reminders.
-        // Inactive / cancelled services are disabled on purpose and stay as they are.
-        if (($asset instanceof Hosting && (int) $asset->status === Hosting::STATUS_SUSPENDED)
-            || ($asset instanceof Maintenance && (int) $asset->status === Maintenance::STATUS_OVERDUE)) {
-            $asset->status = $asset instanceof Hosting ? Hosting::STATUS_ACTIVE : Maintenance::STATUS_ACTIVE;
+        // A one-time price on a service with no base price: later renewals are calculated from it, so it is the base now.
+        if ((float) $asset->renewal_base_amount <= 0) {
+            $asset->renewal_base_amount = $event->amount;
+            $attributes[] = 'renewal_base_amount';
+        }
+        if ($this->reactivate($asset, $paidInvoiceId)) {
             $attributes[] = 'status';
-            AdminAlertService::serviceReactivatedByPayment($asset instanceof Hosting ? (string) $asset->primary_domain : (string) $asset->website_url, (string) Invoice::find()->select('invoice_number')->where(['id' => $paidInvoiceId])->scalar());
         }
 
         if (!$asset->save(false, $attributes)) {
@@ -246,6 +239,40 @@ final class RenewalFulfilmentService
 
         if (!$event->save(false, ['status', 'updated_at'])) {
             throw new \RuntimeException('Unable to fulfil billing event.');
+        }
+    }
+
+    /**
+     * Paid up again: a service staff suspended for non-payment goes back into billing and reminders, and staff are told.
+     * Inactive / cancelled services are disabled on purpose and stay as they are. Sets the status; the caller saves it.
+     */
+    private function reactivate(object $asset, int $paidInvoiceId): bool
+    {
+        if (!($asset instanceof Hosting && (int) $asset->status === Hosting::STATUS_SUSPENDED)
+            && !($asset instanceof Maintenance && (int) $asset->status === Maintenance::STATUS_OVERDUE)) {
+            return false;
+        }
+        $asset->status = $asset instanceof Hosting ? Hosting::STATUS_ACTIVE : Maintenance::STATUS_ACTIVE;
+        $service = $asset instanceof Hosting ? (string) $asset->primary_domain : (string) $asset->website_url;
+        $invoiceNumber = (string) Invoice::find()->select('invoice_number')->where(['id' => $paidInvoiceId])->scalar();
+        AfterCommit::run(static fn() => AdminAlertService::serviceReactivatedByPayment($service, $invoiceNumber));
+
+        return true;
+    }
+
+    /**
+     * A renewal granted earlier, then refunded as still owed and the service suspended meanwhile: paying again has
+     * nothing left to fulfil but must still bring the service back. Only for the period the service is currently in.
+     *
+     * @param int[] $invoiceIds
+     */
+    private function reactivateGranted(array $invoiceIds, int $paidInvoiceId): void
+    {
+        foreach (BillingEvent::find()->where(['invoice_id' => $invoiceIds, 'status' => BillingEvent::STATUS_FULFILLED])->all() as $event) {
+            $asset = $this->findAsset($event);
+            if ($asset !== null && (string) $event->period_end >= (string) $asset->current_expiry_date && $this->reactivate($asset, $paidInvoiceId)) {
+                $asset->updateAttributes(['status' => $asset->status, 'updated_at' => time()]);
+            }
         }
     }
 

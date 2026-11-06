@@ -2296,6 +2296,12 @@
                 "default": null,
                 "extra": ""
             },
+            "reactivated_at": {
+                "type": "int",
+                "null": true,
+                "default": null,
+                "extra": ""
+            },
             "status": {
                 "type": "smallint",
                 "null": false,

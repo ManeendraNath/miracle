@@ -75,6 +75,8 @@ final class PaymentProcessingService
                 );
             }
 
+            $wasPaid = $invoice->status === Invoice::STATUS_PAID;
+
             // Recalculate from the complete captured-payment ledger.
             $this->paymentService->reconcile(
                 $invoice
@@ -88,7 +90,8 @@ final class PaymentProcessingService
                 $this->fulfilmentService
                         ->fulfilInvoice(
                             $invoice,
-                            false
+                            false,
+                            !$wasPaid
                         );
             }
 

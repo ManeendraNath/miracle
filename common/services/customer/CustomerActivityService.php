@@ -18,8 +18,8 @@ final class CustomerActivityService
 
         $notifications = CustomerNotification::find()
             ->where(['user_id' => $userId])
-            // Invoices and tickets have their own timeline entries below.
-            ->andWhere(['not in', 'type', ['invoice', 'support']])
+            // Invoices, tickets and payments have their own entries below. A partial refund has none: a payment stays Captured.
+            ->andWhere(['or', ['not in', 'type', ['invoice', 'support', 'payment']], ['title' => 'Payment Refunded']])
             ->orderBy(['created_at' => SORT_DESC])
             ->limit($limit)
             ->all();
@@ -114,7 +114,8 @@ final class CustomerActivityService
             ServiceRenewalHistory::find()
                 ->innerJoinWith('invoice', false)
                 ->where(['invoice.user_id' => $userId])
-                ->andWhere(['not in', 'service_renewal_history.invoice_id', \common\services\billing\RenewalFulfilmentService::fullyRefundedInvoices()])
+                // 0: so a list with nothing in it still builds a condition. Older rows have no renewal to look up.
+                ->andWhere(['or', ['service_renewal_history.billing_event_id' => null], ['not in', 'service_renewal_history.billing_event_id', [0, ...(new \common\services\billing\RenewalFulfilmentService())->refundedEventIdsOfCustomer($userId)]]])
                 ->orderBy(['service_renewal_history.logged_at' => SORT_DESC])
                 ->limit($limit)
                 ->all()

@@ -9,7 +9,7 @@ use yii\helpers\Html;
 
 $name = Html::encode(CustomYii::getSetting('site_name') ?: 'Miracle Web Technologies');
 
-echo $this->render('_legal', ['title' => 'Privacy Policy', 'updated' => '05 Nov 2026', 'body' => <<<HTML
+echo $this->render('_legal', ['title' => 'Privacy Policy', 'updated' => '06 Nov 2026', 'body' => <<<HTML
 <p>This policy explains what personal data {$name} collects through this website and customer portal, why, and how it is protected.</p>
 
 <h2 class="h5 fw-bold mt-4">1. What we collect</h2>

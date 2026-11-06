@@ -34,6 +34,8 @@ class Transaction extends base\Transaction
     public const SCENARIO_ADMIN_ENTRY = 'admin-entry';
     /** Marks a Razorpay capture that could not be applied (invoice no longer payable). */
     public const UNAPPLIED_NOTE_PREFIX = 'UNAPPLIED:';
+    /** Lines staff actions add to user_payment_notes. */
+    private const STAFF_NOTE_PATTERN = '/^(UNAPPLIED:|Refunded ₹|Applied to invoice )/u';
 
     /**
      * gateway_id => label. A null gateway_id is Manual too.
@@ -69,6 +71,12 @@ class Transaction extends base\Transaction
             $this->status === self::STATUS_FAILED && (int) $this->gateway_id !== self::GATEWAY_RAZORPAY => 'Rejected',
             default => (string) $this->status,
         };
+    }
+
+    /** What the customer wrote: the same column also collects staff notes they shouldn't be shown as theirs. */
+    public function customerNotes(): string
+    {
+        return implode("\n", array_filter(explode("\n", (string) $this->user_payment_notes), static fn(string $line): bool => preg_match(self::STAFF_NOTE_PATTERN, $line) !== 1));
     }
 
     public function isUnapplied(): bool

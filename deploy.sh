@@ -21,6 +21,7 @@ APP=/home/rpocncwk/miracle
 PUBLIC=/home/rpocncwk/public_html
 HEALTH_URLS=(https://miraclewebtechnologies.com/ https://admin.miraclewebtechnologies.com/auth/login)
 MAINTENANCE_FLAG=$APP/runtime/maintenance.flag
+BACKUP_NOTE=$APP/runtime/pre-migration-backup
 DIRS=(common frontend backend console)
 # Excluded from copy and from --delete: these live only on the server.
 KEEP=(--exclude=/runtime/ --exclude=/web/assets/ --exclude=/config/params-local.php --exclude=error_log --exclude=.user.ini --exclude=php.ini)
@@ -32,7 +33,14 @@ PRIOR_FLAG=0        # 1: already in maintenance before this deploy, e.g. after a
 BACKUP=""
 SNAP=""
 
-die() { echo "ERROR: $*" >&2; exit 1; }
+die()
+{
+    echo "ERROR: $*" >&2
+    if [ -e "$MAINTENANCE_FLAG" ]; then
+        echo "Maintenance mode is still on, and every cron job and the nightly backup skip while it is. Once the site is sound: rm -f $MAINTENANCE_FLAG" >&2
+    fi
+    exit 1
+}
 
 # The site's PHP version and settings, as cPanel wrote them into an .htaccess we are about to replace.
 cpanel_block()
@@ -104,6 +112,10 @@ PHP
 
     # cPanel writes the site's PHP version and settings into this file: they must survive it being rewritten.
     cpanel=$(cpanel_block "$PUBLIC/.htaccess")
+    # A run that died halfway through writing it: the snapshot still has the block.
+    if [ -z "$cpanel" ] && [ -n "$SNAP" ]; then
+        cpanel=$(cpanel_block "$SNAP/public.htaccess")
+    fi
 
     cat > "$PUBLIC/.htaccess" <<'HTACCESS' || return 1
 RewriteEngine On
@@ -183,7 +195,7 @@ on_fail()
     # A failed restore may have left half-copied code: stay in maintenance until someone has looked.
     # Also true of a flag left by an earlier failed deploy when this one stops before touching anything.
     if [ -e "$MAINTENANCE_FLAG" ]; then
-        echo "Maintenance mode is still on. Once the site is sound: rm -f $MAINTENANCE_FLAG"
+        echo "Maintenance mode is still on, and every cron job and the nightly backup skip while it is. Once the site is sound: rm -f $MAINTENANCE_FLAG"
     fi
     exit $(( code ? code : 1 ))
 }
@@ -236,15 +248,16 @@ for d in "${DIRS[@]}"; do
     rsync -a "${KEEP[@]}" "$APP/$d/" "$SNAP/$d/"
 done
 cp -a "$APP/composer.json" "$APP/composer.lock" "$SNAP/"
+cp -a "$PUBLIC/.htaccess" "$SNAP/public.htaccess" 2>/dev/null || true
 
 
 echo "== Deploying (maintenance mode on)"
+if [ -e "$MAINTENANCE_FLAG" ]; then PRIOR_FLAG=1; fi
 STAGE=code
 # Web entry points answer 503 and cron jobs skip while this exists.
 # ponytail: a cron run already in progress is not waited for; add a wait here if runs get long.
 # runtime/logs: crontab output (billing-cron.log, read by the admin Cron Log page).
 mkdir -p "$APP/runtime/logs"
-if [ -e "$MAINTENANCE_FLAG" ]; then PRIOR_FLAG=1; fi
 touch "$MAINTENANCE_FLAG"
 
 sync_code "$REPO"
@@ -266,6 +279,12 @@ else
     # Database only: a slow or failing off-site copy must not stop the deploy.
     php yii backup/run --dbOnly=1
     BACKUP=$(ls -1t "$APP"/backups/db_backup_*.sql.gz | head -n 1)
+    # A retry after a migration died partway: this dump is of the half-migrated database, so keep pointing at the clean one.
+    if [ -s "$BACKUP_NOTE" ]; then
+        BACKUP=$(cat "$BACKUP_NOTE")
+    else
+        echo "$BACKUP" > "$BACKUP_NOTE"
+    fi
     echo "Pre-migration backup: $BACKUP"
     MIGRATED=1
     php yii migrate/up --interactive=0
@@ -288,6 +307,11 @@ health_check
 
 trap - ERR INT TERM HUP
 rm -rf "${SNAP:?}"
+rm -f "$BACKUP_NOTE"
+# A job that never starts can't report itself, and a new job needs its line added by hand. Razorpay sync is optional.
+for job in cron/run-billing cron/payment-reminders cron/send-reminders cron/profile-reminders cron/whatsapp-cleanup backup/run; do
+    crontab -l 2>/dev/null | grep -q "$job" || echo "WARNING: no crontab line for $job. See docs/BILLING_MODULE.md section 14."
+done
 echo "Deployment completed successfully."
 exit 0
 }

@@ -11,7 +11,7 @@ echo $this->render('_card', [
     'title' => 'Verify your email address',
     // No username here: anyone can sign up with any address, so the name they chose must not reach the inbox.
     'intro' => 'Hello, please confirm your email address to activate your account.'
-        . (empty($passwordReset) ? '' : ' For your security this link clears your earlier password: after confirming, use "Forgot password?" on the login page to set a new one.'),
+        . (empty($passwordReset) ? '' : ' For your security your earlier password has been cleared: after confirming, use "Forgot password?" on the login page to set a new one.'),
     'button' => ['Verify Email', $verifyLink],
-    'footnote' => 'If the button doesn\'t work, open this link: ' . $verifyLink,
+    'footnote' => 'If the button doesn\'t work, open this link: ' . $verifyLink . ' If you did not create this account, no further action is required.',
 ]);

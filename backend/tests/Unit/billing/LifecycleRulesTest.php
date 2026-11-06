@@ -104,6 +104,7 @@ final class LifecycleRulesTest extends Unit
         $ticket->setAttributes(['user_id' => $id, 'ticket_number' => 'TEST-' . bin2hex(random_bytes(4)), 'subject' => 'Help', 'message' => 'Help', 'status' => SupportTicket::STATUS_OPEN, 'created_at' => time(), 'updated_at' => time()], false);
         $this->assertTrue($ticket->save(false));
         $this->assertTrue(IncompleteProfileReminderService::isInUse($id));
+        $this->assertFalse(IncompleteProfileReminderService::isInUse($id, false), 'a ticket does not unlock the portal');
         $ticket->updateAttributes(['status' => SupportTicket::STATUS_CLOSED]);
         $this->assertFalse(IncompleteProfileReminderService::isInUse($id));
 
@@ -126,20 +127,19 @@ final class LifecycleRulesTest extends Unit
         $this->assertNull(User::findOne($this->_user->id)->profile_warned_at);
     }
 
-    public function testADailyAlertIsRetriedUntilItsEmailWentOut(): void
+    public function testAFailedAlertEmailIsSentAgainByTheNextCronJob(): void
     {
-        $title = 'Cron Job Failed: Unit Retry';
+        AdminNotification::updateAll(['emailed_at' => time()], ['emailed_at' => null]);
         $row = new AdminNotification();
-        $row->setAttributes(['type' => 'billing', 'title' => $title, 'message' => 'x', 'is_read' => 0, 'created_at' => time()], false);
+        $row->setAttributes(['type' => 'billing', 'title' => 'Unit Retry', 'message' => 'x', 'is_read' => 0, 'created_at' => time() - 3600], false);
         $this->assertTrue($row->save(false));
         $before = count($this->tester->grabSentEmails());
 
-        AdminAlertService::cronJobFailed('Unit Retry', 'boom');
+        AdminAlertService::retryUnsent();
         $this->assertCount($before + 1, $this->tester->grabSentEmails());
         $this->assertNotNull(AdminNotification::findOne($row->id)->emailed_at);
-        $this->assertSame(1, (int) AdminNotification::find()->where(['title' => $title])->count());
 
-        AdminAlertService::cronJobFailed('Unit Retry', 'boom');
+        AdminAlertService::retryUnsent();
         $this->assertCount($before + 1, $this->tester->grabSentEmails());
     }
 
@@ -198,7 +198,10 @@ final class LifecycleRulesTest extends Unit
         (new PaymentProcessingService())->transactionChanged($this->payment($invoice));
 
         $this->assertSame(Hosting::STATUS_ACTIVE, (int) Hosting::findOne($hosting->id)->status);
-        $this->assertTrue(AdminNotification::find()->where(['title' => 'Service Reactivated By Payment'])->andWhere(['like', 'message', $hosting->primary_domain])->exists());
+        $alert = AdminNotification::find()->where(['title' => 'Service Reactivated By Payment'])->andWhere(['like', 'message', $hosting->primary_domain]);
+        $this->assertFalse($alert->exists(), 'not while the transaction is open');
+        Yii::$app->db->trigger(\yii\db\Connection::EVENT_COMMIT_TRANSACTION); // this test runs inside a transaction that never commits
+        $this->assertTrue($alert->exists());
     }
 
     public function testRefundIsDecidedPerRenewalAlongItsOwnInvoices(): void
@@ -219,7 +222,7 @@ final class LifecycleRulesTest extends Unit
         }
 
         $this->assertSame([(int) $onC->id], (new RenewalFulfilmentService())->refundedEventIds(InvoiceItem::TYPE_HOSTING, (int) $hosting->id));
-        $this->assertNotContains((int) $c->id, RenewalFulfilmentService::fullyRefundedInvoices(), 'money kept two steps back');
+        $this->assertSame([(int) $onC->id], (new RenewalFulfilmentService())->refundedEventIdsOfCustomer((int) $this->_user->id));
     }
 
     public function testAOneTimePriceBillsAServiceWithNoBasePrice(): void
@@ -275,6 +278,128 @@ final class LifecycleRulesTest extends Unit
         Transaction::updateAll(['confirmation_emailed_at' => null], ['id' => $order->id]);
         $service->capture($orderId, 'pay_rep', 100000);
         $this->assertCount($sent + 1, $this->tester->grabSentEmails());
+    }
+
+    public function testReactivationIsDatedOnlyByStaffBringingAnAccountBack(): void
+    {
+        $user = User::findOne($this->_user->id);
+        $user->mobile = '9876543210';
+        $user->save(false);
+        $this->assertNull(User::findOne($user->id)->reactivated_at, 'editing details buys no time');
+        $user->status = User::getStatusSuspended();
+        $user->save(false);
+        $user->status = User::getStatusActive();
+        $user->save(false);
+        $this->assertNotNull(User::findOne($user->id)->reactivated_at);
+    }
+
+    public function testAnOldAccountReactivatedLongAgoCanBeDisabledButEditingDetailsDoesNotDelayIt(): void
+    {
+        $old = strtotime('-2 months');
+        $this->_user->updateAttributes(['created_at' => $old, 'updated_at' => time(), 'profile_warned_at' => strtotime('-8 days')]);
+        (new IncompleteProfileReminderService())->sendReminders();
+        $this->assertSame(User::getStatusSuspended(), (int) User::findOne($this->_user->id)->status);
+    }
+
+    public function testAOneTimePriceBecomesTheBasePriceOfAServiceWithNone(): void
+    {
+        $hosting = $this->hosting('2026-11-30', null);
+        $hosting->updateAttributes(['renewal_base_amount' => 0, 'next_renewal_amount' => 3000]);
+        $invoice = $this->invoice(3000.00);
+        $this->event($invoice, $hosting, '2026-12-01', '2027-11-30', 12)->updateAttributes(['amount' => 3000, 'is_manual_amount' => 1]);
+        (new PaymentProcessingService())->transactionChanged($this->payment($invoice));
+
+        $fresh = Hosting::findOne($hosting->id);
+        $this->assertEqualsWithDelta(3000.00, (float) $fresh->renewal_base_amount, 0.001);
+        $this->assertNull($fresh->next_renewal_amount);
+    }
+
+    public function testPayingAgainBringsBackAServiceWhoseRenewalWasAlreadyGranted(): void
+    {
+        $hosting = $this->hosting('2027-11-30', null);
+        $hosting->updateAttributes(['status' => Hosting::STATUS_SUSPENDED]);
+        $invoice = $this->invoice(1000.00);
+        $this->event($invoice, $hosting, '2026-12-01', '2027-11-30', 12)->updateAttributes(['status' => BillingEvent::STATUS_FULFILLED]);
+        (new PaymentProcessingService())->transactionChanged($this->payment($invoice));
+        $this->assertSame(Hosting::STATUS_ACTIVE, (int) Hosting::findOne($hosting->id)->status);
+
+        // Already Paid before this change: a later refund others still cover must not undo a suspension.
+        Hosting::updateAll(['status' => Hosting::STATUS_SUSPENDED], ['id' => $hosting->id]);
+        (new PaymentProcessingService())->transactionChanged($this->payment($invoice, ['amount' => 1.00]));
+        $this->assertSame(Hosting::STATUS_SUSPENDED, (int) Hosting::findOne($hosting->id)->status);
+    }
+
+    public function testACarriedInvoicesCouponStaysUsedWhenTheNewerInvoiceKeptTheMoney(): void
+    {
+        $source = $this->invoice(1000.00, Invoice::STATUS_CARRIED_FORWARD);
+        $target = $this->carried($source);
+        $this->payment($target, ['amount' => 500.00]);
+        $coupon = new \common\models\Coupon();
+        $coupon->setAttributes(['name' => 'Life', 'code' => 'LIFE' . strtoupper(bin2hex(random_bytes(3))), 'type' => \common\models\Coupon::TYPE_F, 'amount' => 10, 'is_active' => \common\models\Coupon::IS_ACTIVE_Y, 'created_at' => time(), 'updated_at' => time()], false);
+        $this->assertTrue($coupon->save(false));
+        $redemption = new \common\models\CouponRedemption();
+        $redemption->setAttributes(['coupon_code' => $coupon->code, 'coupon_id' => $coupon->id, 'user_id' => $this->_user->id, 'invoice_id' => $source->id, 'discount_amount' => 10, 'redeemed_at' => time(), 'created_at' => time()], false);
+        $this->assertTrue($redemption->save(false));
+
+        (new InvoicePaymentService())->closeAsRefunded($target, null, true);
+
+        $this->assertNotNull(\common\models\CouponRedemption::findOne(['invoice_id' => $source->id]));
+    }
+
+    public function testAPaymentFoundLateIsDatedWhenItWasPaidAndHeldIfTheInvoiceIsClosed(): void
+    {
+        $invoice = $this->invoice(1000.00);
+        $orderId = 'order_late_' . bin2hex(random_bytes(4));
+        $order = $this->payment($invoice, ['status' => Transaction::STATUS_PENDING, 'gateway_id' => Transaction::GATEWAY_RAZORPAY, 'gateway_order_id' => $orderId, 'paid_at' => null]);
+        $paidAt = strtotime('-10 days');
+        (new RazorpayService(self::RAZORPAY))->capture($orderId, 'pay_late', 100000, null, $paidAt);
+        $this->assertSame($paidAt, (int) Transaction::findOne($order->id)->paid_at);
+
+        $closed = $this->invoice(1000.00, Invoice::STATUS_CANCELLED);
+        $heldOrder = 'order_held_' . bin2hex(random_bytes(4));
+        $held = $this->payment($closed, ['status' => Transaction::STATUS_PENDING, 'gateway_id' => Transaction::GATEWAY_RAZORPAY, 'gateway_order_id' => $heldOrder, 'paid_at' => null]);
+        (new RazorpayService(self::RAZORPAY))->capture($heldOrder, 'pay_held', 100000);
+        $this->assertSame(1, (int) Transaction::findOne($held->id)->is_unapplied);
+        $mails = $this->tester->grabSentEmails();
+        $this->assertStringContainsString('not yet applied', (string) end($mails)->getSubject());
+    }
+
+    public function testPayOnlineStopsWhenAPaidOrderCannotBeRecorded(): void
+    {
+        $invoice = $this->invoice(1000.00);
+        $order = 'order_stuck_' . bin2hex(random_bytes(4));
+        $this->payment($invoice, ['status' => Transaction::STATUS_PENDING, 'gateway_id' => Transaction::GATEWAY_RAZORPAY, 'gateway_order_id' => $order, 'paid_at' => null]);
+        $http = new MockTransport();
+        $http->appendResponse($this->reply(['items' => [['id' => 'pay_stuck', 'status' => 'captured', 'amount' => 999]]])); // amount differs
+        $service = new RazorpayService(self::RAZORPAY, $http);
+
+        $this->assertSame(0, $service->recoverPaidOrders((int) $invoice->id));
+        $this->assertTrue($service->paidButNotRecorded);
+        $this->assertTrue(AdminNotification::find()->where(['title' => 'Online Payment Not Recorded'])->andWhere(['like', 'message', 'pay_stuck'])->exists());
+    }
+
+    public function testARefundRetrySendsTheSameKey(): void
+    {
+        $http = new MockTransport();
+        $service = new RazorpayService(self::RAZORPAY, $http);
+        foreach ([1, 2] as $attempt) {
+            $http->appendResponse($this->reply(['status' => 'captured', 'amount_refunded' => 0]));
+            $http->appendResponse($this->reply(['id' => 'rfnd_1']));
+            $this->assertSame('rfnd_1', $service->refundPayment('pay_key', 50000, 0));
+        }
+        $keys = [];
+        foreach ($http->flushRequests() as $request) {
+            if ($request->getMethod() === 'POST' || strtoupper($request->getMethod()) === 'POST') {
+                $keys[] = $request->getHeaders()->get('X-Refund-Idempotency');
+            }
+        }
+        $this->assertSame(['refund-pay_key-0-50000', 'refund-pay_key-0-50000'], $keys);
+    }
+
+    public function testACustomerSeesTheirNotesNotStaffOnes(): void
+    {
+        $payment = new Transaction(['user_payment_notes' => "UTR 123\nUNAPPLIED: invoice was Paid when approved.\nRefunded ₹10.00 on 01 Jan 2027.\nApplied to invoice X on 01 Jan 2027 (paid on Y)."]);
+        $this->assertSame('UTR 123', $payment->customerNotes());
     }
 
     private function reply(array $data): Response

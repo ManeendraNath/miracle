@@ -24,6 +24,7 @@ final class RoleAccessTest extends Unit
             'customer-billing-profile/create' => [true, true, true],
             'customer-billing-profile/update' => [false, true, true],
             'customer-billing-profile/index' => [false, true, true],
+            'customer-preference/index' => [false, true, true],
             'admin/cron-log' => [false, true, true],
             'admin/cron-switch' => [false, false, true],
             'admin/index' => [false, false, true],

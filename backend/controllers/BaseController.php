@@ -26,6 +26,7 @@ class BaseController extends Controller
         'transaction' => 'Admin',
         'coupon' => 'Admin',
         'customer-billing-profile' => 'Admin',
+        'customer-preference' => 'Admin',
         // Right after creating a customer; below Admin it only takes what the customer could enter themselves.
         'customer-billing-profile/create' => 'Manager',
         'user-login-history' => 'Admin',
@@ -223,11 +224,11 @@ class BaseController extends Controller
                     $where + ['status' => \common\models\BillingEvent::STATUS_PENDING, 'invoice_id' => null]
                 );
                 // The period of a refunded renewal is billable again once the expiry is back before its end.
-                $released = ['and', ['id' => $refunded], ['>', 'period_end', (string) $model->current_expiry_date]];
-                // Its one-time price was cleared when it was paid, and still applies to the re-billed renewal.
-                $oneTime = \common\models\BillingEvent::find()->where($released)->andWhere(['is_manual_amount' => 1])->orderBy(['period_end' => SORT_ASC])->one();
-                if ($oneTime !== null && $model->next_renewal_amount === null) {
-                    $model->updateAttributes(['next_renewal_amount' => $oneTime->amount]);
+                $released = ['and', ['id' => $refunded, 'status' => \common\models\BillingEvent::STATUS_FULFILLED], ['>', 'period_end', (string) $model->current_expiry_date]];
+                // Its one-time price was cleared when it was paid, and still applies to the re-billed renewal: the next one billed is the earliest.
+                $next = \common\models\BillingEvent::find()->where($released)->orderBy(['period_end' => SORT_ASC])->one();
+                if ($next !== null && (int) $next->is_manual_amount === 1 && $model->next_renewal_amount === null) {
+                    $model->updateAttributes(['next_renewal_amount' => $next->amount]);
                 }
                 \common\models\BillingEvent::updateAll(
                     ['status' => \common\models\BillingEvent::STATUS_CANCELLED, 'notes' => 'Renewal refunded; expiry set back by staff.', 'updated_at' => time()],

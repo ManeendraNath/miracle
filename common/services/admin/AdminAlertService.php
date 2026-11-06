@@ -180,22 +180,17 @@ final class AdminAlertService extends AdminNotificationService
         self::sendOncePerDay('Razorpay Webhook Failed', "Event: {$event}\n" . "Reason: {$reason}\n" . 'Razorpay retries it; further failures today are not emailed. The sync job also picks up missed payments, if it is on.', 'payment', '/transaction/index', null, true);
     }
 
-    /** @param string[] $customers one line each */
-    public static function accountsDisabled(array $customers): void
+    /** @param string[] $customers one line each, possibly capped */
+    public static function accountsDisabled(array $customers, int $total): void
     {
-        self::send('Inactive Accounts Disabled', count($customers) . " account(s) were suspended: billing details incomplete after a month, no active service and no open invoice.\n" . implode("\n", $customers) . "\nSet an account to Active on its customer page to give it another month.", 'billing', '/user/index');
+        self::send('Inactive Accounts Disabled', $total . " account(s) were suspended: billing details incomplete after a month and at least 7 days' notice, nothing live.\n" . implode("\n", $customers) . "\nSet an account to Active on its customer page to give it another month.", 'billing', '/user/index');
     }
 
-    /** One bell row a day, and its email retried each run until one has actually gone out. */
+    /** One bell row a day; retryUnsent() sees to the email if it fails. */
     private static function sendOncePerDay(string $title, string $message, string $type, ?string $route, ?string $match = null, bool $whatsappNotification = false): void
     {
         try {
-            $today = AdminNotification::find()->where(['title' => $title])->andWhere(['>=', 'created_at', strtotime('today')])->andFilterWhere(['like', 'message', $match])->orderBy(['id' => SORT_DESC])->one();
-            if ($today !== null) {
-                if ($today->emailed_at === null && self::sendEmail($title, $message)) {
-                    $today->updateAttributes(['emailed_at' => time()]);
-                }
-
+            if (AdminNotification::find()->where(['title' => $title])->andWhere(['>=', 'created_at', strtotime('today')])->andFilterWhere(['like', 'message', $match])->exists()) {
                 return;
             }
         } catch (\Throwable $e) {
@@ -203,6 +198,25 @@ final class AdminAlertService extends AdminNotificationService
             Yii::error($e, __METHOD__);
         }
         self::send($title, $message, $type, $route, $whatsappNotification);
+    }
+
+    /**
+     * At the start of every cron job: emails that failed in the last 3 days, oldest first. Stops at the first failure,
+     * as the mail server is probably still down. Not the last 5 minutes: another process may be sending those.
+     */
+    public static function retryUnsent(): void
+    {
+        try {
+            $unsent = AdminNotification::find()->where(['emailed_at' => null])->andWhere(['between', 'created_at', time() - 3 * 86400, time() - 300])->orderBy(['id' => SORT_ASC])->limit(20)->all();
+            foreach ($unsent as $notification) {
+                if (!self::sendEmail((string) $notification->title, (string) $notification->message)) {
+                    return;
+                }
+                $notification->updateAttributes(['emailed_at' => time()]);
+            }
+        } catch (\Throwable $e) {
+            Yii::error($e, __METHOD__);
+        }
     }
 
     public static function renewalLeftOpen(string $service, string $staff, string $warning): void

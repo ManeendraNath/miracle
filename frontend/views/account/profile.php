@@ -16,7 +16,7 @@ $this->params['breadcrumbs'][] = $this->title;
         <div class="text-body-secondary">Manage your customer account and review billing information.</div>
     </div>
     <?= Html::a('<i class="fas fa-key me-1"></i> Change Password', ['change-password'], ['class' => 'btn btn-outline-secondary']) ?>
-    <?= Html::a('<i class="fas fa-bell me-1"></i> Notification Preferences', ['preferences'], ['class' => 'btn btn-outline-secondary']) ?>
+    <?= \frontend\components\ProfileGate::mustCompleteFirst($user) ? '' : Html::a('<i class="fas fa-bell me-1"></i> Notification Preferences', ['preferences'], ['class' => 'btn btn-outline-secondary']) ?>
 </div>
 
 <div class="row g-4">

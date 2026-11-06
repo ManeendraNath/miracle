@@ -10,10 +10,13 @@ use common\models\User;
 use common\services\customer\CustomerBillingDetailsService;
 use Yii;
 use yii\helpers\ArrayHelper;
+use yii\web\ForbiddenHttpException;
 use yii\web\NotFoundHttpException;
 
 final class CustomerBillingProfileController extends BaseController
 {
+    private const MANAGER_WINDOW_DAYS = 30;
+
     public function actionIndex()
     {
         $searchModel = new CustomerBillingProfileSearch();
@@ -35,6 +38,10 @@ final class CustomerBillingProfileController extends BaseController
         if ($user_id !== null && $customer === null || $customer === null && !$canSetEverything) {
             throw new NotFoundHttpException('Customer does not exist.');
         }
+        // Below Admin this is for customers just created, not a way to fill in anyone with no profile.
+        if (!$canSetEverything && ((int) $customer->status === User::getStatusDeleted() || (int) $customer->created_at < time() - self::MANAGER_WINDOW_DAYS * 86400)) {
+            throw new ForbiddenHttpException('Only an Admin can add billing details for an existing customer.');
+        }
         if ($customer !== null && CustomerBillingProfile::find()->where(['user_id' => $customer->id])->exists()) {
             Yii::$app->session->setFlash('info', 'This customer already has billing details.');
 
@@ -42,7 +49,9 @@ final class CustomerBillingProfileController extends BaseController
         }
         $model = $canSetEverything ? new CustomerBillingProfile(['user_id' => $customer?->id]) : CustomerBillingDetailsService::forUser($customer);
 
-        if ($this->request->isPost && $model->load($this->request->post()) && $model->save()) {
+        // Below Admin through the customer path, which tells the admins to review GST.
+        $saved = $this->request->isPost && ($canSetEverything ? $model->load($this->request->post()) && $model->save() : CustomerBillingDetailsService::save($model, $this->request->post()));
+        if ($saved) {
             Yii::$app->session->setFlash('success', 'Customer billing profile created successfully.');
 
             return $this->redirect($customer !== null ? ['/user/view', 'id' => $customer->id] : ['index']);

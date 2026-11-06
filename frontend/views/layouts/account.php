@@ -29,7 +29,7 @@ $this->beginContent('@frontend/views/layouts/main.php');
         </div>
         <div class="col-lg-9">
             <?php if (!empty($this->params['profileBanner'])): ?>
-                <div class="alert alert-warning">Your billing details are incomplete. <?= \yii\helpers\Html::a('Complete them now', ['/account/profile'], ['class' => 'alert-link']) ?> so we can issue your invoices.</div>
+                <div class="alert alert-warning">Your billing details are incomplete. <?= \yii\helpers\Html::a('Complete them now', ['/account/profile'], ['class' => 'alert-link']) ?> so your invoices carry the right details.</div>
             <?php endif; ?>
             <?= $content ?>
         </div>

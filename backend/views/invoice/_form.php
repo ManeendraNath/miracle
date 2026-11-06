@@ -16,6 +16,7 @@ $isNew = $model->isNewRecord;
     <?php $form = ActiveForm::begin([
         'id' => 'invoice-form',
     ]); ?>
+<?= Html::hiddenInput('loaded_coupon_code', (string) $model->getOldAttribute('coupon_code')) ?>
 
     <div class="card card-outline card-primary shadow-sm">
 

@@ -183,6 +183,7 @@ final class AdminBillingCest
         $I->seeInCurrentUrl('customer-billing-profile/create');
         $I->see('Customer Will Complete This');
         $I->see('Default Discount');
+        $I->seeEmailIsSent();
     }
 
     public function aManagerCanOnlyFillInWhatACustomerCould(FunctionalTester $I): void
@@ -213,6 +214,10 @@ final class AdminBillingCest
         ]);
         $I->seeRecord(\common\models\CustomerBillingProfile::class, ['user_id' => $customer, 'legal_name' => 'Manager Typed', 'default_discount_amount' => 0, 'is_gst_applicable' => 0]);
         $I->dontSeeRecord(\common\models\CustomerBillingProfile::class, ['user_id' => $other]);
+        $I->seeRecord(\common\models\AdminNotification::class, ['title' => 'Customer Added Billing Details']);
+        $old = (int) $I->haveRecord(User::class, ['username' => 'mgr-old-' . $suffix, 'email' => 'old-' . $suffix . '@example.test', 'auth_key' => 'x', 'password_hash' => 'x', 'status' => User::getStatusActive(), 'created_at' => strtotime('-2 months'), 'updated_at' => time()]);
+        $I->amOnRoute('customer-billing-profile/create', ['user_id' => $old]);
+        $I->seeResponseCodeIs(403);
         $I->amOnRoute('customer-billing-profile/index');
         $I->seeResponseCodeIs(403);
     }

@@ -60,7 +60,8 @@ final class LoginThrottle
     private static function key(string $scope, string $username): string
     {
         $request = Yii::$app->request;
-        $ip = $request instanceof Request ? (string) $request->userIP : '';
+        // Coupon guesses count per customer: changing network must not start again.
+        $ip = $request instanceof Request && $scope !== 'coupon' ? (string) $request->userIP : '';
 
         return 'login-throttle:' . $scope . ':' . mb_strtolower(trim($username)) . ':' . $ip;
     }

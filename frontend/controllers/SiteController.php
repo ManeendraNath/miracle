@@ -378,7 +378,7 @@ class SiteController extends Controller
         }
 
         if ($model->verifyEmail()) {
-            Yii::$app->session->setFlash('success', 'Your email has been confirmed! Log in to complete your billing details and start using your account.');
+            Yii::$app->session->setFlash('success', 'Your email has been confirmed! Log in to complete your billing details and start using your account. If you asked for a new link, use "Forgot password?" first.');
             return $this->redirect(['/site/login']);
         }
 

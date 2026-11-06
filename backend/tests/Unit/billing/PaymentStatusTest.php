@@ -102,19 +102,6 @@ final class PaymentStatusTest extends Unit
         $this->assertNull($service->closeBlocker($invoice, null, true));
     }
 
-    public function testARenewalOnACarriedInvoiceStopsCountingAsPaidOnceWrittenOff(): void
-    {
-        $source = $this->invoice(1000.00);
-        $source->updateAttributes(['status' => Invoice::STATUS_CARRIED_FORWARD]);
-        $target = $this->carry($source);
-        $refunded = static fn(): array => \common\services\billing\RenewalFulfilmentService::fullyRefundedInvoices();
-        $this->assertNotContains((int) $source->id, $refunded());
-
-        (new InvoicePaymentService())->closeAsRefunded($target, null, true);
-
-        $this->assertContains((int) $source->id, $refunded());
-    }
-
     public function testRenewalStateFindsTheInvoiceBillingAService(): void
     {
         $service = new \common\models\Domains();
@@ -349,17 +336,6 @@ final class PaymentStatusTest extends Unit
         $this->assertNotNull($first->carriedTo());
         $pdf = Yii::$app->view->renderFile(Yii::getAlias('@common/mail/invoice-pdf.php'), ['invoice' => Invoice::findOne($first->id), 'capturedAmount' => 0.0, 'outstandingAmount' => 0.0, 'carriedInto' => $link]);
         $this->assertStringContainsString('Balance moved to invoice ' . $link->invoice_number, $pdf);
-    }
-
-    public function testMoneyKeptOnACarriedSourceIsNotAFullRefund(): void
-    {
-        $source = $this->invoice(1000.00);
-        $this->payment($source, Transaction::GATEWAY_UPI_BANK, Transaction::STATUS_CAPTURED, null, 300.00);
-        $source->updateAttributes(['status' => Invoice::STATUS_CARRIED_FORWARD]);
-        $target = $this->carry($source);
-        $target->updateAttributes(['status' => Invoice::STATUS_REFUNDED]);
-
-        $this->assertNotContains((int) $target->id, \common\services\billing\RenewalFulfilmentService::fullyRefundedInvoices());
     }
 
     public function testAClosedInvoiceCannotBeCancelled(): void

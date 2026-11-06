@@ -100,7 +100,14 @@ final class PaymentConfirmationService
         $sent = Yii::$app->mailer
             ->compose(
                 ['html' => '@common/mail/payment-refunded-html', 'text' => '@common/mail/payment-refunded-text'],
-                ['invoice' => $invoice, 'amount' => $amount, 'viaGateway' => $viaGateway, 'invoiceUrl' => $this->getInvoiceUrl($invoice)],
+                [
+                    'invoice' => $invoice,
+                    'amount' => $amount,
+                    'viaGateway' => $viaGateway,
+                    // A refund without closing the invoice makes it due again, and reminders will follow.
+                    'stillDue' => in_array($invoice->status, [Invoice::STATUS_UNPAID, Invoice::STATUS_PARTIALLY_PAID], true) ? (new InvoicePaymentService())->getOutstanding($invoice) : 0.0,
+                    'invoiceUrl' => $this->getInvoiceUrl($invoice),
+                ],
             )
             ->setFrom([Yii::$app->params['senderEmail'] => Yii::$app->params['senderName']])
             ->setTo($client->email)
@@ -108,6 +115,27 @@ final class PaymentConfirmationService
             ->send();
         if (!$sent) {
             throw new \RuntimeException('Refund email could not be sent.');
+        }
+    }
+
+    /** Charged, but the invoice could no longer take it: the customer must hear about their money by more than a bell. */
+    public function sendHeld(Invoice $invoice, float $amount): void
+    {
+        $client = User::findOne((int) $invoice->user_id);
+        if ($client === null || empty($client->email)) {
+            throw new \DomainException('Customer email address is unavailable.');
+        }
+        $sent = Yii::$app->mailer
+            ->compose(
+                ['html' => '@common/mail/payment-held-html', 'text' => '@common/mail/payment-held-text'],
+                ['invoice' => $invoice, 'amount' => $amount, 'invoiceUrl' => $this->getInvoiceUrl($invoice)],
+            )
+            ->setFrom([Yii::$app->params['senderEmail'] => Yii::$app->params['senderName']])
+            ->setTo($client->email)
+            ->setSubject('Payment received, not yet applied - ' . $invoice->invoice_number)
+            ->send();
+        if (!$sent) {
+            throw new \RuntimeException('Held payment email could not be sent.');
         }
     }
 

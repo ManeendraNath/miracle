@@ -38,6 +38,8 @@ final class CouponService
         if ($coupon === null) {
             throw new \DomainException('Coupon code is invalid.');
         }
+        // First: a customer must learn nothing about a coupon that isn't theirs.
+        $this->validateAssignedUser($coupon, $userId);
         if (!$alreadyApplied) {
             $this->validateAvailability($coupon);
         }
@@ -45,7 +47,6 @@ final class CouponService
         if ($subtotal < $minimumOrder) {
             throw new \DomainException('Invoice subtotal does not meet the minimum amount required for this coupon.');
         }
-        $this->validateAssignedUser($coupon, $userId);
         $this->validateUsageLimits($coupon, $userId, $excludeInvoiceId);
         $base = $subtotal;
         $allowedTypes = $this->allowedTypes($coupon);
@@ -88,7 +89,8 @@ final class CouponService
         }
     }
 
-    public function record(Invoice $invoice): void
+    /** @param bool $keeping the same coupon on the same lines: the discount stands, whatever became of its rules since */
+    public function record(Invoice $invoice, bool $keeping = false): void
     {
         $code = strtoupper(trim((string) $invoice->coupon_code));
         if ($code === '') {
@@ -98,7 +100,9 @@ final class CouponService
         if ($coupon === null) {
             throw new \DomainException('Coupon no longer exists.');
         }
-        $this->validateApplicability($coupon, $invoice);
+        if (!$keeping) {
+            $this->validateApplicability($coupon, $invoice);
+        }
         // Keep the invoice's link to the coupon row (coupon_code alone is only a snapshot).
         if ((int) $invoice->coupon_id !== (int) $coupon->id) {
             $invoice->updateAttributes(['coupon_id' => (int) $coupon->id]);

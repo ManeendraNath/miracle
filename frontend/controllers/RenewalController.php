@@ -43,7 +43,8 @@ final class RenewalController extends Controller
             ->where([
                 'i.user_id' => (int) Yii::$app->user->id,
             ])
-            ->andWhere(['not in', 'rh.invoice_id', \common\services\billing\RenewalFulfilmentService::fullyRefundedInvoices()])
+            // 0: so a list with nothing in it still builds a condition. Older rows have no renewal to look up.
+            ->andWhere(['or', ['rh.billing_event_id' => null], ['not in', 'rh.billing_event_id', [0, ...(new \common\services\billing\RenewalFulfilmentService())->refundedEventIdsOfCustomer((int) Yii::$app->user->id)]]])
             ->orderBy([
                 'rh.logged_at' => SORT_DESC,
                 'rh.id' => SORT_DESC,

@@ -280,7 +280,7 @@ Failures are emailed to `ADMIN_EMAIL` and shown on the admin bell, at most once 
 
 `cron/razorpay-sync` looks back 30 days for unpaid orders. With it off, a payment whose callback and webhook were both lost is found only when the customer presses Pay Online again on that invoice (`RazorpayService::recoverPaidOrders`).
 
-Daily alerts (a failed job, a customer's failed invoice, the incomplete profile list) keep one bell row a day and retry the email on each run until `admin_notification.emailed_at` is set.
+Daily alerts (a failed job, a customer's failed invoice, the incomplete profile list) keep one bell row a day. Any admin alert whose email failed is sent again at the start of the next cron job, for 3 days (`AdminAlertService::retryUnsent`, `admin_notification.emailed_at`).
 
 Deleted customers are not billed or reminded. Suspended customers still are: staff get a warning when suspending one who has active services or open invoices.
 

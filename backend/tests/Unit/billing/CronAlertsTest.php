@@ -122,7 +122,6 @@ final class CronAlertsTest extends Unit
         // Staff set it Active again: a month's grace, reminded meanwhile.
         $reactivated = User::findOne($idle->id);
         $reactivated->status = User::getStatusActive();
-        $reactivated->updated_at = time(); // as the Activate button does
         $this->assertTrue($reactivated->save(false));
         (new IncompleteProfileReminderService())->sendReminders();
         $this->assertSame(User::getStatusActive(), $status($idle));

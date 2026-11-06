@@ -38,7 +38,6 @@ class UserController extends BaseController
             Yii::$app->session->setFlash('success', "Account for profile '{$model->username}' has been activated and unlocked successfully!");
         }
 
-        $model->updated_at = time(); // save(false) skips the validation step that refreshes it; the disable rule counts from it
         $model->save(false); // Bypasses password validation restrictions during simple status toggles
         $this->warnAboutOpenBusiness($model);
         return $this->redirect(['index']);
@@ -68,11 +67,34 @@ class UserController extends BaseController
         }
         if ($model->load(Yii::$app->request->post()) && $model->save()) {
             Yii::$app->session->setFlash('success', 'User created. Now add the billing details, or leave them for the customer to complete after logging in.');
+            $this->sendWelcome($model);
             return $this->redirect(['/customer-billing-profile/create', 'user_id' => $model->id]);
         }
         $model->clearPlainPassword();
 
         return $this->render('create', ['model' => $model]);
+    }
+
+    /** They didn't sign up, so nothing else tells them they have an account, and its one-month clock is running. */
+    private function sendWelcome(User $customer): void
+    {
+        if ((int) $customer->status !== User::getStatusActive()) {
+            return;
+        }
+        try {
+            $sent = Yii::$app->mailer
+                ->compose(['html' => '@common/mail/account-created-html', 'text' => '@common/mail/account-created-text'], ['client' => $customer])
+                ->setFrom([Yii::$app->params['senderEmail'] => Yii::$app->params['senderName']])
+                ->setTo($customer->email)
+                ->setSubject('Your customer account is ready')
+                ->send();
+        } catch (\Throwable $e) {
+            Yii::error(['message' => 'Welcome email failed.', 'userId' => (int) $customer->id, 'error' => $e->getMessage()], __METHOD__);
+            $sent = false;
+        }
+        if (!$sent) {
+            Yii::$app->session->addFlash('warning', 'The welcome email could not be sent: please tell the customer their account exists.');
+        }
     }
 
     /**

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace common\services\billing;
 
 use common\models\BillingSettings;
+use common\models\CronJob;
 use common\models\CustomerBillingProfile;
 use common\models\CustomerPreference;
 use common\models\Domains;
@@ -94,7 +95,7 @@ final class ServiceRenewalReminderService
         }
         // As InvoicePaymentService::renewalState(): no invoice is coming for these, so don't promise one.
         $itemType = ['domain' => InvoiceItem::TYPE_DOMAIN, 'hosting' => InvoiceItem::TYPE_HOSTING, 'maintenance' => InvoiceItem::TYPE_MAINTENANCE][$type];
-        $billable = $hasPrice && (bool) BillingSettings::forType($itemType)->is_active && CustomerBillingProfile::find()->where(['user_id' => $userId])->exists();
+        $billable = $hasPrice && (bool) BillingSettings::forType($itemType)->is_active && CustomerBillingProfile::find()->where(['user_id' => $userId])->exists() && CronJob::isEnabled('cron/run-billing');
 
         return $this->sendReminder($type, $serviceId, $userId, $serviceName, $expiryDate, $daysUntilExpiry, $threshold, $billable);
     }

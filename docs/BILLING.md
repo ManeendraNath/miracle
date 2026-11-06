@@ -146,16 +146,19 @@ preferences don't apply: without a profile no renewal invoice can be created.
 The same job suspends an account a month after signup if it is still incomplete, has nothing live (a service that is
 active, suspended or overdue, an open invoice, an open ticket, or a payment held for refund or apply) and was warned at
 least 7 days earlier: a first run only warns, however old the account. The customer is emailed and admins get a list.
-Setting it Active again gives it another month, counted from that save. A suspended customer who enters the right
+Setting it Active again gives it another month, counted from that change of status. A suspended customer who enters the right
 password is told the account is disabled; a wrong password gets the usual message.
 
 ### Billing details first
 
 Email verification only proves the address. After it the customer logs in and lands on the billing form, and
 `frontend\components\ProfileGate` keeps them there: until the details are complete every portal page redirects to the
-form, except support and logout. A customer with something live gets a banner instead of being blocked, so a bill can
-always be paid. Staff creating a customer are taken to the billing form next, with a **Customer Will Complete This**
-button to leave it. Managers may use that form but can only enter what a customer could: no country, GST or discount.
+form, except change password, support and logout. A customer with something live (a service, an open invoice, a held
+payment) gets a banner instead of being blocked, so a bill can always be paid; so does anyone with an invoice on the
+invoice and payment pages, so a receipt stays reachable. An open ticket doesn't unlock the portal. Staff creating a
+customer send them a welcome email and are taken to the billing form next, with a **Customer Will Complete This** button
+to leave it. Managers may use that form for a customer created in the last 30 days, but can only enter what a customer
+could (no country, GST or discount), and admins are told to review GST.
 Resending a verification email clears the password chosen at signup, because whoever signed up may not own the mailbox:
 the email tells the customer to use Forgot Password after confirming.
 

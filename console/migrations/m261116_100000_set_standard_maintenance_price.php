@@ -25,7 +25,7 @@ final class m261116_100000_set_standard_maintenance_price extends Migration
             $this->insert('{{%admin_notification}}', [
                 'type' => 'billing',
                 'title' => 'Maintenance Without A Price',
-                'message' => "These maintenance services are past their expiry and were left with no renewal price, so they won't be billed until you set one:\n{$list}",
+                'message' => "These maintenance services are past their expiry and were left with no renewal price, so they won't be billed. Setting a price bills every period from the old expiry date, so move the expiry date first if those months aren't owed:\n{$list}",
                 'route' => '/maintenance/index',
                 'is_read' => 0,
                 'created_at' => time(),

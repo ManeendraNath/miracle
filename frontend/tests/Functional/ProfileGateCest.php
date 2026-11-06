@@ -39,6 +39,32 @@ final class ProfileGateCest
         $I->seeInCurrentUrl('/');
     }
 
+    public function changePasswordStaysOpenAndPreferencesAreHidden(FunctionalTester $I): void
+    {
+        $I->dontSee('Notification Preferences');
+        $I->amOnRoute('account/change-password');
+        $I->seeInCurrentUrl('change-password');
+        $I->amOnRoute('account/preferences');
+        $I->seeInCurrentUrl('account/profile');
+    }
+
+    public function aTicketDoesNotUnlockThePortal(FunctionalTester $I): void
+    {
+        $I->haveRecord(\common\models\SupportTicket::class, ['user_id' => $this->userId(), 'ticket_number' => 'GATE-' . bin2hex(random_bytes(3)), 'subject' => 'Help', 'message' => 'Help', 'status' => \common\models\SupportTicket::STATUS_OPEN, 'created_at' => time(), 'updated_at' => time()]);
+        $I->amOnRoute('dashboard/index');
+        $I->seeInCurrentUrl('account/profile');
+    }
+
+    public function aCustomerWithAPaidInvoiceCanStillReachIt(FunctionalTester $I): void
+    {
+        $I->haveRecord(\common\models\Invoice::class, ['user_id' => $this->userId(), 'invoice_number' => 'GATE-' . bin2hex(random_bytes(3)), 'client_name' => 'Erau', 'subtotal_amount' => 100, 'discount_amount' => 0, 'total_payable' => 100, 'status' => \common\models\Invoice::STATUS_PAID, 'created_at' => time(), 'updated_at' => time()]);
+        $I->amOnRoute('invoice/index');
+        $I->seeInCurrentUrl('invoice');
+        $I->see('Your billing details are incomplete.');
+        $I->amOnRoute('dashboard/index');
+        $I->seeInCurrentUrl('account/profile');
+    }
+
     public function aCustomerWithSomethingLiveGetsABannerNotABlock(FunctionalTester $I): void
     {
         $I->haveRecord(Hosting::class, ['user_id' => $this->userId(), 'primary_domain' => 'gate.test', 'start_date' => '2020-01-01', 'current_expiry_date' => '2030-01-01', 'status' => Hosting::STATUS_ACTIVE, 'created_at' => time(), 'updated_at' => time()]);

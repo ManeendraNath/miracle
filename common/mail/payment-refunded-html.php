@@ -6,6 +6,7 @@ declare(strict_types=1);
 /** @var common\models\Invoice $invoice */
 /** @var float $amount */
 /** @var bool $viaGateway */
+/** @var float $stillDue */
 /** @var string $invoiceUrl */
 echo $this->render('_card', [
     'tone' => 'info',
@@ -14,6 +15,7 @@ echo $this->render('_card', [
     'rows' => [
         ['Invoice', $invoice->invoice_number],
         ['Refunded', Yii::$app->formatter->asCurrency($amount, 'INR')],
+        ...($stillDue > 0 ? [['Balance still due on this invoice', Yii::$app->formatter->asCurrency($stillDue, 'INR'), 'accent']] : []),
     ],
     'button' => ['View Invoice', $invoiceUrl],
 ]);

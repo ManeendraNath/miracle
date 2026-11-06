@@ -73,8 +73,11 @@ final class LoginCest
 
     public function checkInactiveAccount(FunctionalTester $I): void
     {
-        $I->submitForm('#login-form', $this->formParams('test.test', 'Test1234'));
+        \common\models\User::updateAll(['password_hash' => \Yii::$app->security->generatePasswordHash('Test1234', 4), 'verification_token' => 'pending_token_' . time()], ['username' => 'test.test']);
+        $I->submitForm('#login-form', $this->formParams('test.test', 'wrong-password'));
         $I->seeValidationError('Incorrect username or password');
+        $I->submitForm('#login-form', $this->formParams('test.test', 'Test1234'));
+        $I->seeValidationError('Please confirm your email address first');
     }
 
     public function checkValidLogin(FunctionalTester $I): void

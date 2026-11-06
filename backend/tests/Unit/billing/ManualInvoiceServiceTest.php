@@ -600,6 +600,22 @@ final class ManualInvoiceServiceTest extends Unit
         $coupons->calculate('VIP', (int) $this->user->id + 100000, 100.00);
     }
 
+    public function testKeepingACouponAndItsLinesSurvivesItsRulesChanging(): void
+    {
+        $service = new ManualInvoiceService();
+        $coupon = $this->coupon('KEEP10', []);
+        $invoice = $this->newInvoice();
+        $invoice->coupon_code = 'KEEP10';
+        $invoice = $service->create($invoice, [$this->item('Hosting', 'Line', 1, 1000.00)]);
+
+        $coupon->updateAttributes(['is_active' => \common\models\Coupon::IS_ACTIVE_N]);
+        $coupon->setAttributes(['applies_to' => [(string) InvoiceItem::TYPE_DOMAIN]]);
+        $this->assertTrue($coupon->save(false));
+        $invoice->due_date = date('Y-m-d', strtotime('+20 days'));
+        $invoice = $service->update($invoice, [$this->item('Hosting', 'Line', 1, 1000.00)]);
+        $this->assertEquals(100.00, (float) $invoice->discount_amount);
+    }
+
     public function testRemovingACouponTakesItsDiscountAwayUnlessStaffTypedANewOne(): void
     {
         $service = new ManualInvoiceService();

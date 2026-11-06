@@ -201,6 +201,10 @@ class InvoiceController extends BaseController
                 $model->$attribute = $value;
             }
             try {
+                // The customer can apply or remove a coupon while this form is open.
+                if (isset($post['loaded_coupon_code']) && strtoupper(trim((string) $post['loaded_coupon_code'])) !== strtoupper(trim((string) $model->getOldAttribute('coupon_code')))) {
+                    throw new \DomainException('The coupon on this invoice changed while you were editing. Reload the page and check the figures.');
+                }
                 $items = $this->loadManualItems($post);
                 $service = new ManualInvoiceService();
                 $service->update($model, $items);
@@ -230,6 +234,12 @@ class InvoiceController extends BaseController
     public function actionResendInvoice(int $id)
     {
         $invoice = $this->findModel($id);
+        // The button is hidden too, but a tab left open still has it: the email says "View Invoice & Pay".
+        if (!in_array($invoice->status, [Invoice::STATUS_UNPAID, Invoice::STATUS_PARTIALLY_PAID], true)) {
+            Yii::$app->session->setFlash('error', 'This invoice is ' . $invoice->statusLabel() . ', so it was not sent.');
+
+            return $this->redirect(['view', 'id' => $id]);
+        }
         try {
             (new InvoiceDeliveryService())->send($invoice, true);
             Yii::$app->session->setFlash('success', 'Invoice email sent successfully.');

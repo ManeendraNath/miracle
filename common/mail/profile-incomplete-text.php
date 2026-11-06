@@ -9,7 +9,7 @@ $baseUrl = (string) (Yii::$app->params['frontendBaseUrl'] ?? '');
 ?>
 Hello <?= $client->username ?>,
 
-We need your complete billing details to issue your invoices.
+Your invoices need your complete billing details.
 
 Still needed: <?= implode(', ', $missing) ?>
 

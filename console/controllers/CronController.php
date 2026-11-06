@@ -46,6 +46,7 @@ class CronController extends Controller
             $locked = $mutex->acquire($lockName, 10);
             if (!$locked) {
                 $this->stdout("Billing cron already running.\n", Console::FG_YELLOW);
+                $this->alertFailure('Billing run', 'Skipped: another run or a staff save held the billing lock. If this repeats, a process may be stuck.');
                 return ExitCode::OK;
             }
             Yii::info('Automatic billing cron started.', __METHOD__);
@@ -214,6 +215,7 @@ class CronController extends Controller
             $this->stdout("Turned off in the admin panel: skipping {$action->id}.\n", Console::FG_YELLOW);
             return false;
         }
+        AdminAlertService::retryUnsent();
         return parent::beforeAction($action);
     }
 
@@ -246,6 +248,7 @@ class CronController extends Controller
             $locked = $mutex->acquire($lockName, 0);
             if (!$locked) {
                 $this->stdout("{$label} already running.\n", Console::FG_YELLOW);
+                $this->alertFailure($label, 'Skipped: the previous run still holds the lock. If this repeats, a process may be stuck.');
                 return ExitCode::OK;
             }
             $this->stdout("{$label} completed. " . $job() . PHP_EOL);

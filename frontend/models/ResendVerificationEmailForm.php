@@ -50,16 +50,12 @@ class ResendVerificationEmailForm extends Model
         }
         // A fresh link: the old one may have expired.
         $user->generateEmailVerificationToken();
-        // Whoever signed up with this address may not be who now owns the mailbox: confirming it must not hand them
-        // an account whose password someone else chose. They set their own after confirming.
-        $user->setPassword(Yii::$app->security->generateRandomString(32));
-        $user->generateAuthKey();
         $user->updated_at = time();
-        if (!$user->save(false, ['verification_token', 'password_hash', 'auth_key', 'updated_at'])) {
+        if (!$user->save(false, ['verification_token', 'updated_at'])) {
             return false;
         }
 
-        return $mailer
+        $sent = $mailer
             ->compose(
                 ['html' => 'emailVerify-html', 'text' => 'emailVerify-text'],
                 ['user' => $user, 'passwordReset' => true],
@@ -68,5 +64,14 @@ class ResendVerificationEmailForm extends Model
             ->setTo($this->email)
             ->setSubject('Account registration at ' . $appName)
             ->send();
+        if ($sent) {
+            // Whoever signed up with this address may not be who now owns the mailbox: confirming it must not hand them
+            // an account whose password someone else chose. They set their own after confirming.
+            $user->setPassword(Yii::$app->security->generateRandomString(32));
+            $user->generateAuthKey();
+            $user->save(false, ['password_hash', 'auth_key']);
+        }
+
+        return $sent;
     }
 }

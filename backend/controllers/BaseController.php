@@ -178,20 +178,31 @@ class BaseController extends Controller
         };
         $where = ['item_type' => $type, 'item_id' => (int) $model->id];
         // Moving a service to another customer: a renewal already granted is still owed on an open invoice.
-        $eventStatuses = $customerChanged ? [\common\models\BillingEvent::STATUS_INVOICED, \common\models\BillingEvent::STATUS_FULFILLED] : [\common\models\BillingEvent::STATUS_INVOICED];
-        $billedOn = static fn(array $statuses): \yii\db\ActiveQuery => \common\models\Invoice::find()->alias('i')
+        $invoiced = [\common\models\BillingEvent::STATUS_INVOICED];
+        $fulfilled = [\common\models\BillingEvent::STATUS_FULFILLED];
+        $billedOn = static fn(array $statuses, array $eventStatuses): \yii\db\ActiveQuery => \common\models\Invoice::find()->alias('i')
             ->innerJoin(['e' => \common\models\BillingEvent::tableName()], 'e.invoice_id = i.id')
             ->where(['e.item_type' => $type, 'e.item_id' => (int) $model->id, 'e.status' => $eventStatuses])
             ->andWhere(['i.status' => $statuses]);
-        $open = $billedOn([\common\models\Invoice::STATUS_UNPAID, \common\models\Invoice::STATUS_PARTIALLY_PAID])->one();
+        $open = $billedOn([\common\models\Invoice::STATUS_UNPAID, \common\models\Invoice::STATUS_PARTIALLY_PAID], $customerChanged ? [...$invoiced, ...$fulfilled] : $invoiced)->one();
         $attribute = $expiryChanged ? 'current_expiry_date' : 'user_id';
         if ($open !== null) {
             $model->addError($attribute, 'Renewal invoice ' . $open->invoice_number . ' is open for this service. It must be paid or cancelled before the expiry date or customer can change.');
             return false;
         }
-        $carried = $billedOn([\common\models\Invoice::STATUS_CARRIED_FORWARD])->one();
+        $payments = new \common\services\billing\InvoicePaymentService();
+        $carried = $billedOn([\common\models\Invoice::STATUS_CARRIED_FORWARD], $invoiced)->one();
+        // A granted renewal on a carried invoice stays Carried Forward once paid: only owed if the newer invoice is open again.
+        if ($carried === null && $customerChanged) {
+            foreach ($billedOn([\common\models\Invoice::STATUS_CARRIED_FORWARD], $fulfilled)->all() as $paid) {
+                if ($payments->openInvoiceCarrying((int) $paid->id) !== null) {
+                    $carried = $paid;
+                    break;
+                }
+            }
+        }
         if ($carried !== null && $customerChanged) {
-            $newer = (new \common\services\billing\InvoicePaymentService())->openInvoiceCarrying((int) $carried->id);
+            $newer = $payments->openInvoiceCarrying((int) $carried->id);
             $model->addError('user_id', 'This renewal\'s balance is owed on invoice ' . ($newer->invoice_number ?? $carried->invoice_number) . ' by the current customer. It must be paid before the customer can change.');
             return false;
         }

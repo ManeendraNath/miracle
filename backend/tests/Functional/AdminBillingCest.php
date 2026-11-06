@@ -148,6 +148,33 @@ final class AdminBillingCest
         $I->seeRecord(Transaction::class, ['id' => $payment, 'refunded_amount' => 800]);
     }
 
+    public function aPaidCarriedRenewalDoesNotBlockChangingTheCustomer(FunctionalTester $I): void
+    {
+        $source = $this->invoice($I, Invoice::STATUS_CARRIED_FORWARD);
+        $userId = (int) Invoice::findOne($source)->user_id;
+        $newer = $this->invoice($I, Invoice::STATUS_PARTIALLY_PAID);
+        Invoice::updateAll(['user_id' => $userId], ['id' => $newer]);
+        $I->haveRecord(\common\models\InvoiceItem::class, ['invoice_id' => $newer, 'item_type' => \common\models\InvoiceItem::TYPE_ARREARS, 'source_invoice_id' => $source, 'category' => 'Arrears', 'description' => 'Carried', 'quantity' => 1, 'unit_price' => 1000, 'total_price' => 1000]);
+        $hostingId = (int) $I->haveRecord(\common\models\Hosting::class, ['user_id' => $userId, 'primary_domain' => 'moved-' . bin2hex(random_bytes(4)) . '.test', 'start_date' => '2020-01-01', 'current_expiry_date' => '2027-12-01', 'status' => \common\models\Hosting::STATUS_ACTIVE, 'created_at' => time(), 'updated_at' => time()]);
+        $I->haveRecord(\common\models\BillingEvent::class, ['user_id' => $userId, 'invoice_id' => $source, 'item_type' => \common\models\InvoiceItem::TYPE_HOSTING, 'item_id' => $hostingId, 'description' => 'Renewal', 'period_start' => '2026-12-01', 'period_end' => '2027-12-01', 'previous_amount' => 0, 'increase_percent' => 0, 'calculated_amount' => 1000, 'amount' => 1000, 'is_manual_amount' => 0, 'due_date' => '2026-12-01', 'status' => \common\models\BillingEvent::STATUS_FULFILLED, 'created_at' => time(), 'updated_at' => time()]);
+        $other = (int) Invoice::findOne($this->invoice($I, Invoice::STATUS_UNPAID))->user_id;
+        $move = static function () use ($I, $hostingId, $other): void {
+            $I->amOnRoute('hosting/update', ['id' => $hostingId]);
+            $I->sendAjaxPostRequest('/hosting/update?id=' . $hostingId, [
+                Yii::$app->request->csrfParam => $I->grabAttributeFrom('meta[name=csrf-token]', 'content'),
+                'Hosting[user_id]' => $other,
+            ]);
+        };
+
+        // A refund reopened the newer invoice: the renewal is owed again.
+        $move();
+        $I->seeRecord(\common\models\Hosting::class, ['id' => $hostingId, 'user_id' => $userId]);
+
+        Invoice::updateAll(['status' => Invoice::STATUS_PAID], ['id' => $newer]);
+        $move();
+        $I->seeRecord(\common\models\Hosting::class, ['id' => $hostingId, 'user_id' => $other]);
+    }
+
     public function creatingACustomerOpensTheirBillingForm(FunctionalTester $I): void
     {
         $suffix = bin2hex(random_bytes(4));

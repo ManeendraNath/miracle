@@ -12,14 +12,14 @@ $name = Html::encode(CustomYii::getSetting('site_name') ?: 'Miracle Web Technolo
 $refund = Url::to(['/site/refund-policy']);
 $privacy = Url::to(['/site/privacy']);
 
-echo $this->render('_legal', ['title' => 'Terms & Conditions', 'updated' => '05 Nov 2026', 'body' => <<<HTML
+echo $this->render('_legal', ['title' => 'Terms & Conditions', 'updated' => '06 Nov 2026', 'body' => <<<HTML
 <p>{$name} is owned and operated by Nidhi Trivedi. These terms apply to every service bought from {$name} ("we", "us") through this website, the customer portal, an invoice or a quotation. By placing an order or paying an invoice you accept them.</p>
 
 <h2 class="h5 fw-bold mt-4">1. Services</h2>
 <p>We provide website design and development, domain name registration and renewal, web hosting, and website maintenance (annual maintenance contracts). The scope, price and billing cycle of each service are as shown on the quotation, order or invoice.</p>
 
 <h2 class="h5 fw-bold mt-4">2. Accounts</h2>
-<p>You are responsible for keeping your portal login private and for all activity under it. Please give accurate contact and billing details and keep them up to date.</p>
+<p>You are responsible for keeping your portal login private and for all activity under it. Please give accurate contact and billing details and keep them up to date. We may disable an account whose billing details are not completed within one month of signing up, if it has no active service and no unpaid invoice; contact us to have it enabled again.</p>
 
 <h2 class="h5 fw-bold mt-4">3. Prices, invoices and payment</h2>
 <ul>

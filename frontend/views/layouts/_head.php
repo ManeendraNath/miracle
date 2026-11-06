@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 /** @var yii\web\View $this */
 
+use common\components\CustomYii;
 use frontend\assets\AppAsset;
+use yii\helpers\Url;
 
 AppAsset::register($this);
 
@@ -19,14 +21,19 @@ $this->registerMetaTag(
         'content' => 'width=device-width, initial-scale=1',
     ],
 );
-if (!empty($this->params['meta_description'])) {
-    $this->registerMetaTag(
-        [
-            'name' => 'description',
-            'content' => $this->params['meta_description'],
-        ],
-    );
+$siteName = CustomYii::getSetting('site_name') ?: 'Miracle Web Technologies';
+if (!str_contains((string) $this->title, $siteName)) {
+    $this->title = trim($this->title . ' | ' . $siteName, ' |');
 }
+$description = $this->params['meta_description']
+    ?? 'Custom shopping carts, web applications and websites, built to your brief.';
+$this->registerMetaTag(['name' => 'description', 'content' => $description]);
+$this->registerMetaTag(['property' => 'og:site_name', 'content' => $siteName]);
+$this->registerMetaTag(['property' => 'og:type', 'content' => 'website']);
+$this->registerMetaTag(['property' => 'og:title', 'content' => $this->title]);
+$this->registerMetaTag(['property' => 'og:description', 'content' => $description]);
+$this->registerMetaTag(['property' => 'og:image', 'content' => Url::to('@web/images/og.png', true)]);
+$this->registerMetaTag(['name' => 'twitter:card', 'content' => 'summary_large_image']);
 if (!empty($this->params['meta_keywords'])) {
     $this->registerMetaTag(
         [
@@ -35,10 +42,3 @@ if (!empty($this->params['meta_keywords'])) {
         ],
     );
 }
-$this->registerLinkTag(
-    [
-        'rel' => 'icon',
-        'type' => 'image/x-icon',
-        'href' => Yii::getAlias('@web/images/favicon.ico'),
-    ],
-);

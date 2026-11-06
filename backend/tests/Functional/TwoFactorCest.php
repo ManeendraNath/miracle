@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace backend\tests\Functional;
 
+use backend\controllers\BaseController;
 use backend\tests\Support\FunctionalTester;
+use common\components\LoginThrottle;
 use common\components\Totp;
 use common\models\Admin;
 use Yii;
@@ -40,7 +42,6 @@ final class TwoFactorCest
         $I->submitForm('#login-form', [
             'LoginForm[username]' => $username,
             'LoginForm[password]' => self::PASSWORD,
-            'LoginForm[rememberMe]' => '1',
         ]);
     }
 
@@ -202,5 +203,46 @@ final class TwoFactorCest
         // The link works once.
         $I->amOnRoute('auth/reset-password', ['token' => $token]);
         $I->see('invalid or has expired');
+    }
+
+    public function adminWithoutTwoFactorCanOnlyOpenMyAccount(FunctionalTester $I): void
+    {
+        BaseController::$requireTwoFactor = true;
+        try {
+            $this->haveAdmin($I, 'tf-required', Admin::getRoleAdmin(), null);
+            $this->login($I, 'tf-required');
+            $I->amOnRoute('invoice/index');
+            $I->seeInCurrentUrl('admin/account');
+            $I->see('It is required for Admin and Superadmin accounts');
+            $I->click('Set up two-factor sign-in');
+            $I->seeElement('code.h5');
+        } finally {
+            BaseController::$requireTwoFactor = false;
+        }
+    }
+
+    public function managerIsNotForcedToSetUpTwoFactor(FunctionalTester $I): void
+    {
+        BaseController::$requireTwoFactor = true;
+        try {
+            $this->haveAdmin($I, 'tf-manager', Admin::getRoleManager(), null);
+            $this->login($I, 'tf-manager');
+            $I->amOnRoute('lead/index');
+            $I->dontSeeInCurrentUrl('admin/account');
+        } finally {
+            BaseController::$requireTwoFactor = false;
+        }
+    }
+
+    public function wrongCodesLockTheAccountAcrossNetworks(FunctionalTester $I): void
+    {
+        $name = 'throttled-admin';
+        for ($i = 0; $i < 5; $i++) {
+            $_SERVER['REMOTE_ADDR'] = '203.0.113.' . $i;
+            LoginThrottle::fail(LoginThrottle::SCOPE_ADMIN_CODE, $name);
+        }
+        $_SERVER['REMOTE_ADDR'] = '198.51.100.9';
+        \PHPUnit\Framework\Assert::assertTrue(LoginThrottle::isLocked(LoginThrottle::SCOPE_ADMIN_CODE, $name));
+        LoginThrottle::clear(LoginThrottle::SCOPE_ADMIN_CODE, $name);
     }
 }

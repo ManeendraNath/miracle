@@ -25,11 +25,11 @@ $phone = (string) CustomYii::getSetting('mobile_1');
 $email = (string) CustomYii::getSetting('email_1');
 
 $this->title = $title . ' | ' . $siteName;
-$this->params['breadcrumbs'][] = $title;
+$this->params['bare'] = true;
 $this->params['meta_description'] = $title . ' of ' . $siteName . '.';
 ?>
 <div class="site-legal container py-5">
-    <div class="mx-auto" style="max-width: 860px;">
+    <div class="mw-prose">
         <h1 class="fw-bold mb-1"><?= Html::encode($title) ?></h1>
         <p class="text-body-secondary small mb-4">Last updated: <?= Html::encode($updated) ?></p>
 
@@ -42,7 +42,7 @@ $this->params['meta_description'] = $title . ' of ' . $siteName . '.';
                 <h2 class="h6 fw-bold mb-2">Contact us</h2>
                 <p class="small mb-0">
                     <?= Html::encode($siteName) ?><?= $address !== '' ? '<br>' . Html::encode($address) : '' ?>
-                    <?= $phone !== '' ? '<br>Phone: ' . Html::a('+' . Html::encode($phone), 'tel:+' . $phone) : '' ?>
+                    <?= $phone !== '' ? '<br>Phone: ' . Html::a(Html::encode(CustomYii::formatPhone($phone)), 'tel:+' . $phone) : '' ?>
                     <?= $email !== '' ? '<br>Email: ' . Html::mailto(Html::encode($email), $email) : '' ?>
                 </p>
             </div>

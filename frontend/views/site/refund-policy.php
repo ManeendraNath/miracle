@@ -9,7 +9,7 @@ use yii\helpers\Html;
 
 $name = Html::encode(CustomYii::getSetting('site_name') ?: 'Miracle Web Technologies');
 
-echo $this->render('_legal', ['title' => 'Refund & Cancellation Policy', 'updated' => '05 Nov 2026', 'body' => <<<HTML
+echo $this->render('_legal', ['title' => 'Refund & Cancellation Policy', 'updated' => '06 Nov 2026', 'body' => <<<HTML
 <p>This policy explains how you can cancel a service bought from {$name} and when a refund is given.</p>
 
 <h2 class="h5 fw-bold mt-4">1. Cancelling a service</h2>
@@ -20,7 +20,7 @@ echo $this->render('_legal', ['title' => 'Refund & Cancellation Policy', 'update
     <li><strong>Domain registration and renewal:</strong> never refundable, because the registry fee cannot be recovered. This includes a domain supplied as part of a hosting plan.</li>
     <li><strong>Web hosting:</strong> a full refund if you cancel within 7 days of first activation of a new hosting plan, less the fee for any domain included with it. After that, or for renewals, no refund is given for the current period.</li>
     <li><strong>Maintenance (AMC):</strong> a full refund if you cancel before any work has been done in the paid period. Once work has started, no refund is given for that period.</li>
-    <li><strong>Website design and development:</strong> an advance is refundable in full if you cancel before work begins. After work begins, the amount for work already completed is kept and any balance is refunded.</li>
+    <li><strong>Shopping carts, web applications, websites and upgrades:</strong> an advance is refundable in full if you cancel before work begins. After work begins, the amount for work already completed is kept and any balance is refunded.</li>
     <li><strong>Duplicate or excess payments:</strong> always refunded. A payment made on an invoice that was already paid can instead be applied to another unpaid invoice of yours, if you prefer.</li>
 </ul>
 

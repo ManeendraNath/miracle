@@ -48,6 +48,7 @@ class Admin extends base\Admin implements IdentityInterface
                     [['username', 'email'], 'required'],
                     [['username', 'email'], 'unique'],
                     ['email', 'email'],
+                    ['password', 'match', 'pattern' => User::PASSWORD_PATTERN, 'message' => User::PASSWORD_MESSAGE, 'skipOnEmpty' => true],
                     [['username', 'email', 'role'], 'string', 'max' => 255],
                     ['role', 'default', 'value' => self::getRoleManager()],
                     ['role', 'in', 'range' => [

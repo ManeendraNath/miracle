@@ -87,6 +87,12 @@ use yii\helpers\Html;
                         'url' => ['/lead/index'],
                         'active' => Yii::$app->controller->id === 'lead'
                     ],
+                    [
+                        'label' => 'Testimonials',
+                        'icon' => 'quote-left',
+                        'url' => ['/testimonial/index'],
+                        'active' => Yii::$app->controller->id === 'testimonial'
+                    ],
                     // =====================================================================
                     // 🚀 1.1. CUSTOMER SUPPORT
                     // =====================================================================

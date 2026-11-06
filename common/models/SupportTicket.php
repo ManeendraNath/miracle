@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace common\models;
 
+use Yii;
 use yii\db\ActiveQuery;
 use yii\helpers\ArrayHelper;
 
@@ -30,6 +31,9 @@ use yii\helpers\ArrayHelper;
 class SupportTicket extends base\SupportTicket
 {
     use traits\ScalarInputTrait;
+
+    /** Each ticket or reply emails and alerts staff, so one account can't send them without limit. */
+    private const MAX_POSTS_PER_HOUR = 20;
 
     public const STATUS_OPEN = 'Open';
     public const STATUS_IN_PROGRESS = 'In Progress';
@@ -83,5 +87,18 @@ class SupportTicket extends base\SupportTicket
     public function getMessages(): ActiveQuery
     {
         return $this->hasMany(SupportTicketMessage::class, ['ticket_id' => 'id'])->orderBy(['created_at' => SORT_ASC, 'id' => SORT_ASC]);
+    }
+
+    /**
+     * Counts a new ticket or reply; true once the customer is over the limit for this clock hour.
+     * ponytail: unlocked counter, parallel posts can slip a few past the limit.
+     */
+    public static function overPostLimit(int $userId): bool
+    {
+        $key = 'support-posts:' . $userId . ':' . date('YmdH');
+        $posts = (int) Yii::$app->cache->get($key) + 1;
+        Yii::$app->cache->set($key, $posts, 3600);
+
+        return $posts > self::MAX_POSTS_PER_HOUR;
     }
 }

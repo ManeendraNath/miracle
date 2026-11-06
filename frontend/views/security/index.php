@@ -46,7 +46,7 @@ $formatter = Yii::$app->formatter;
                 'headerOptions' => ['class' => 'ps-3'],
                 'contentOptions' => ['class' => 'ps-3'],
                 // On phones the browser column is hidden, so the user agent is shown under the date instead.
-                'value' => static fn($model): string => '<div class="text-nowrap">' . $formatter->asDatetime($model->logged_in_at, 'php:d M Y, h:i A') . '</div>'
+                'value' => static fn($model): string => '<div class="text-nowrap">' . $formatter->asDatetime($model->logged_in_at) . '</div>'
                     . '<div class="small text-body-secondary">' . $formatter->asRelativeTime($model->logged_in_at) . '</div>'
                     . '<div class="small text-body-secondary text-break d-md-none mt-1">' . $formatter->asText($model->user_agent) . '</div>',
             ],

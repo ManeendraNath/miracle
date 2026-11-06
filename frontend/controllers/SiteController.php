@@ -94,7 +94,7 @@ class SiteController extends Controller
      */
     public function actionIndex(): string
     {
-        return $this->render('index');
+        return $this->render('index', ['testimonials' => \common\models\Testimonial::forHomePage()]);
     }
 
     /**
@@ -231,7 +231,7 @@ class SiteController extends Controller
                     Yii::error(['message' => 'Audit request admin alert failed.', 'auditRequestId' => (int) $model->id, 'error' => $e->getMessage()], __METHOD__);
                 }
 
-                Yii::$app->session->setFlash('success', 'Your system matrix data has been securely logged. Our engineers are reviewing your case.');
+                Yii::$app->session->setFlash('success', 'Thank you. We have your website details and will reply by email.');
                 return $this->refresh();
             }
         }
@@ -246,6 +246,11 @@ class SiteController extends Controller
     public function actionAbout(): string
     {
         return $this->render('about');
+    }
+
+    public function actionHosting(): string
+    {
+        return $this->render('hosting');
     }
 
     public function actionTerms(): string

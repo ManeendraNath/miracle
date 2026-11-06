@@ -51,6 +51,11 @@ final class AdminAlertService extends AdminNotificationService
         self::send($title, $message, 'lead', '/audit-request/index', true);
     }
 
+    public static function testimonialSubmitted(string $clientName): void
+    {
+        self::send('New Testimonial', "From: {$clientName}\nReview it before publishing.", 'lead', '/testimonial/index');
+    }
+
     public static function serviceExpiring(string $service, string $expiryDate, bool $hasPrice = true): void
     {
         $title = 'Service Expiring';

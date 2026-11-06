@@ -24,32 +24,32 @@ $socials = array_filter([
         <div class="row g-4">
             <div class="col-lg-5">
                 <div class="d-flex align-items-center mb-3">
-                    <img src="<?= Yii::$app->request->baseUrl ?>/favicon.ico" alt="" width="32" height="32" class="me-2" style="object-fit:contain;">
+                    <?= Html::img('@web/images/logo.svg', ['alt' => '', 'width' => 54, 'height' => 40, 'class' => 'me-2']) ?>
                     <h2 class="h5 fw-bold m-0"><?= Html::encode($siteName) ?></h2>
                 </div>
                 <p class="small footer-muted mb-0">
-                    Website design and development, domain registration, web hosting and ongoing maintenance for growing businesses.
+                    Shopping carts, web applications and websites, built to your brief. Based in Delhi, India.
                 </p>
             </div>
 
             <div class="col-sm-6 col-lg-4">
-                <h2 class="h6 fw-bold text-uppercase footer-heading mb-3">Contact</h2>
+                <h2 class="h6 fw-bold footer-heading mb-3">Contact</h2>
                 <ul class="list-unstyled small mb-0">
                     <?php foreach ($phones as $phone): ?>
                         <li class="mb-2">
-                            <i class="fas fa-phone-alt fa-fw me-2 footer-muted"></i>
-                            <a href="tel:+<?= Html::encode($phone) ?>">+<?= Html::encode($phone) ?></a>
+                            <i class="fas fa-phone-alt fa-fw me-2 footer-muted" aria-hidden="true"></i>
+                            <a href="tel:+<?= Html::encode($phone) ?>"><?= Html::encode(CustomYii::formatPhone((string) $phone)) ?></a>
                         </li>
                     <?php endforeach; ?>
                     <?php foreach ($emails as $email): ?>
                         <li class="mb-2">
-                            <i class="fas fa-envelope fa-fw me-2 footer-muted"></i>
+                            <i class="fas fa-envelope fa-fw me-2 footer-muted" aria-hidden="true"></i>
                             <a href="mailto:<?= Html::encode($email) ?>"><?= Html::encode($email) ?></a>
                         </li>
                     <?php endforeach; ?>
                     <?php if ($address): ?>
                         <li class="d-flex">
-                            <i class="fas fa-map-marker-alt fa-fw me-2 mt-1 footer-muted"></i>
+                            <i class="fas fa-map-marker-alt fa-fw me-2 mt-1 footer-muted" aria-hidden="true"></i>
                             <span class="footer-muted"><?= implode('<br>', array_map(static fn(string $l): string => Html::encode(rtrim($l, ', ')), $address)) ?></span>
                         </li>
                     <?php endif; ?>
@@ -57,10 +57,12 @@ $socials = array_filter([
             </div>
 
             <div class="col-sm-6 col-lg-3">
-                <h2 class="h6 fw-bold text-uppercase footer-heading mb-3">Quick links</h2>
+                <h2 class="h6 fw-bold footer-heading mb-3">Quick links</h2>
                 <ul class="list-unstyled small mb-3">
-                    <li class="mb-2"><?= Html::a('Hosting plans', ['/site/index', '#' => 'hosting-tiers']) ?></li>
-                    <li class="mb-2"><?= Html::a('Website audit', ['/site/audit']) ?></li>
+                    <li class="mb-2"><?= Html::a('What we build', ['/site/index', '#' => 'services']) ?></li>
+                    <li class="mb-2"><?= Html::a('Our work', ['/site/index', '#' => 'work']) ?></li>
+                    <li class="mb-2"><?= Html::a('Website upgrades', ['/site/audit']) ?></li>
+                    <li class="mb-2"><?= Html::a('Hosting and domains', ['/site/hosting']) ?></li>
                     <li class="mb-2"><?= Html::a('About us', ['/site/about']) ?></li>
                     <li class="mb-2"><?= Html::a('Contact us', ['/site/contact']) ?></li>
                     <li class="mb-2"><?= Yii::$app->user->isGuest ? Html::a('Customer login', ['/site/login']) : Html::a('My account', ['/dashboard/index']) ?></li>

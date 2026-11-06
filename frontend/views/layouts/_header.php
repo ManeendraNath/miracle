@@ -6,39 +6,39 @@ use yii\bootstrap5\Nav;
 use yii\bootstrap5\NavBar;
 
 ?>
-<header>
+<header class="sticky-top mw-sticky">
     <?php
     NavBar::begin([
-        // 🚀 THE CURE: Places a sharp, inline logo directly inside your Header Navbar
-        'brandLabel' => '<img src="' . Yii::$app->request->baseUrl . '/favicon.ico" alt="Logo" style="width:28px; height:28px; margin-right:10px; object-fit:contain; display:inline-block; vertical-align:middle;">'
-        . Html::encode(CustomYii::getSetting('site_name', 'Miracle Web Technologies')),
+        'brandLabel' => Html::img('@web/images/logo.svg', ['alt' => '', 'width' => 49, 'height' => 36])
+            . Html::encode(CustomYii::getSetting('site_name', 'Miracle Web Technologies')),
         'brandUrl' => Yii::$app->homeUrl,
-        'options' => [
-            'class' => 'navbar navbar-expand-md navbar-dark shadow-sm py-3',
-            'style' => 'background-color: #0f172a; border-bottom: 2px solid #00a3e0 !important;'
-        ],
+        'options' => ['class' => 'navbar navbar-expand-xl mw-header py-2'],
+        'togglerOptions' => ['aria-label' => 'Open menu'],
     ]);
 
     $menuItems = [
-        ['label' => 'Home', 'url' => ['/site/index']],
-        ['label' => 'Hosting Plans', 'url' => ['/site/index', '#' => 'hosting-tiers']],
-        ['label' => 'Infrastructure Audit ⚡', 'url' => ['/site/audit'], 'linkOptions' => ['style' => 'font-weight: 600; color: #00a3e0 !important;']],
-        ['label' => 'Reach Us', 'url' => ['/site/contact']],
+        ['label' => 'What we build', 'url' => ['/site/index', '#' => 'services'], 'active' => false],
+        ['label' => 'Our work', 'url' => ['/site/index', '#' => 'work'], 'active' => false],
+        ['label' => 'Website upgrades', 'url' => ['/site/audit']],
+        ['label' => 'Hosting', 'url' => ['/site/hosting']],
+        ['label' => 'About', 'url' => ['/site/about']],
+        ['label' => 'Contact', 'url' => ['/site/contact']],
     ];
 
     if (Yii::$app->user->isGuest) {
-        $menuItems[] = ['label' => 'Portal Access', 'url' => ['/site/login'], 'linkOptions' => ['style' => 'font-weight: 500;']];
+        $menuItems[] = ['label' => 'Log in', 'url' => ['/site/login']];
+        $menuItems[] = '<li class="nav-item ms-xl-2">' . Html::a('Get a quote', ['/site/contact', 'subject' => 'Project enquiry'], ['class' => 'btn btn-primary']) . '</li>';
     } else {
         $menuItems[] = ['label' => 'Dashboard', 'url' => ['/dashboard/index']];
         $menuItems[] = '<li class="nav-item">'
                 . Html::beginForm(['/site/logout'], 'post', ['class' => 'd-inline'])
-                . Html::submitButton('Sign Out (' . Html::encode(Yii::$app->user->identity->username) . ')', ['class' => 'btn btn-link nav-link logout', 'style' => 'font-weight:500; border:none;'])
+                . Html::submitButton('Sign Out (' . Html::encode(Yii::$app->user->identity->username) . ')', ['class' => 'btn btn-link nav-link logout'])
                 . Html::endForm()
                 . '</li>';
     }
 
     echo Nav::widget([
-        'options' => ['class' => 'navbar-nav ms-auto gap-2'],
+        'options' => ['class' => 'navbar-nav ms-auto align-items-xl-center flex-xl-nowrap'],
         'items' => $menuItems,
     ]);
 

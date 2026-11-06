@@ -21,9 +21,9 @@ final class TwoFactorForm extends Model
 
     public $code;
 
-    public static function start(Admin $admin, int $duration): void
+    public static function start(Admin $admin): void
     {
-        Yii::$app->session->set(self::SESSION_KEY, ['id' => $admin->id, 'duration' => $duration, 'expires' => time() + self::TTL]);
+        Yii::$app->session->set(self::SESSION_KEY, ['id' => $admin->id, 'expires' => time() + self::TTL]);
     }
 
     /** The admin waiting for the code step, or null when none or it expired. */
@@ -58,18 +58,18 @@ final class TwoFactorForm extends Model
         if ($admin === null || !$this->validate()) {
             return false;
         }
-        if (LoginThrottle::isLocked('backend', $admin->username)) {
+        if (LoginThrottle::isLocked(LoginThrottle::SCOPE_ADMIN_CODE, $admin->username)) {
             $this->addError('code', 'Too many failed attempts. Please try again in 15 minutes.');
             return false;
         }
         if (!$admin->consumeTotpCode((string) $this->code)) {
-            LoginThrottle::fail('backend', $admin->username);
+            LoginThrottle::fail(LoginThrottle::SCOPE_ADMIN_CODE, $admin->username);
             $this->addError('code', 'That code is not valid. Check the time on your phone and try again.');
             return false;
         }
-        $duration = (int) Yii::$app->session->get(self::SESSION_KEY)['duration'];
         Yii::$app->session->remove(self::SESSION_KEY);
         LoginThrottle::clear('backend', $admin->username);
-        return Yii::$app->user->login($admin, $duration);
+        LoginThrottle::clear(LoginThrottle::SCOPE_ADMIN_CODE, $admin->username);
+        return Yii::$app->user->login($admin);
     }
 }

@@ -26,8 +26,8 @@ $details = [
     'Invoice' => Html::a(Html::encode($model->invoice->invoice_number), ['/invoice/view', 'number' => $model->invoice->invoice_number], ['class' => 'fw-semibold text-decoration-none']),
     'Method' => Html::encode($methods[(int) $model->gateway_id] ?? '-'),
     'Reference' => '<span class="text-break">' . Html::encode($model->customerReference() ?: '-') . '</span>',
-    'Submitted' => $formatter->asDatetime($model->created_at, 'php:d M Y, h:i A'),
-    'Confirmed' => $model->paid_at ? $formatter->asDatetime($model->paid_at, 'php:d M Y, h:i A') : '-',
+    'Submitted' => $formatter->asDatetime($model->created_at),
+    'Confirmed' => $model->paid_at ? $formatter->asDatetime($model->paid_at) : '-',
 ];
 if ((float) $model->refunded_amount > 0) {
     $details['Refunded'] = $formatter->asCurrency($model->refunded_amount, 'INR');

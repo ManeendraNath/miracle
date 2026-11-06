@@ -29,6 +29,8 @@ $bankDetails = array_filter([
     <div class="text-body-secondary">Paid by UPI or bank transfer? Send us the reference and receipt so we can verify it.</div>
 </div>
 
+<p class="small text-body-secondary">Outside India? <?= Html::a('Pay online from the invoice page', ['view', 'number' => $invoice->invoice_number]) ?> with an international card. If your card is declined, <?= Html::a('raise a support ticket', ['/support/create', 'subject' => 'Paying from outside India']) ?>.</p>
+
 <div class="row g-4">
     <div class="col-xl-8 order-2 order-xl-1">
         <div class="card border-0 shadow-sm">

@@ -107,17 +107,12 @@ final class CustomerBillingDetailsTest extends Unit
 
     public function testForeignClientHasNoGstStateOrIds(): void
     {
-        // A customer can't declare themselves foreign: that would switch GST off.
+        // A customer chooses their own country.
         $profile = CustomerBillingDetailsService::forUser($this->_user);
-        $post = ['CustomerBillingProfile' => $this->input(['country' => 'United States'])];
+        $post = ['CustomerBillingProfile' => $this->input(['country' => 'United States', 'city' => 'San Francisco', 'postal_code' => '94105-1234'])];
         $this->assertTrue(CustomerBillingDetailsService::save($profile, $post), json_encode($profile->errors));
         $saved = CustomerBillingProfile::findOne(['user_id' => $this->_user->id]);
-        $this->assertSame(CustomerBillingProfile::COUNTRY_INDIA, $saved->country, 'country is admin-only');
-
-        // An admin (default scenario) sets the country.
-        $saved->setAttributes($this->input(['country' => 'United States', 'city' => 'San Francisco', 'postal_code' => '94105-1234']));
-        $this->assertTrue($saved->save(), json_encode($saved->errors));
-        $saved = CustomerBillingProfile::findOne(['user_id' => $this->_user->id]);
+        $this->assertSame('United States', $saved->country);
 
         // The customer can still edit their address afterwards; the profile stays foreign.
         $profile = CustomerBillingDetailsService::forUser($this->_user);
@@ -142,6 +137,15 @@ final class CustomerBillingDetailsTest extends Unit
         $indian->setAttributes($this->input(['postal_code' => '94105']));
         $this->assertFalse($indian->validate());
         $this->assertArrayHasKey('postal_code', $indian->errors, 'India keeps the PIN rule');
+
+        // Many countries have no postal code: not required abroad, and no reminder about it.
+        $saved->scenario = CustomerBillingProfile::SCENARIO_CUSTOMER;
+        $saved->postal_code = '';
+        $this->assertTrue($saved->validate(), json_encode($saved->errors));
+        $this->assertSame([], \common\services\customer\IncompleteProfileReminderService::missingFields($saved));
+        $indian->postal_code = '';
+        $this->assertFalse($indian->validate());
+        $this->assertArrayHasKey('postal_code', $indian->errors);
     }
 
     public function testExportInvoiceAddressAndNote(): void

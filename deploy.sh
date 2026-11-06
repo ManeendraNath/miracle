@@ -291,6 +291,8 @@ else
     php yii migrate/up --interactive=0
     rm -f "$BACKUP_NOTE"
 fi
+# Each app keeps its own copy of the table definitions, and they may just have changed.
+rm -rf "$APP"/frontend/runtime/schema-cache "$APP"/backend/runtime/schema-cache "$APP"/console/runtime/schema-cache
 
 # Logs and customers' payment proofs: not readable by other accounts on the server.
 for d in runtime frontend/runtime backend/runtime console/runtime common/runtime storage/payment-receipts; do

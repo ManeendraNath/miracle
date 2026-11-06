@@ -12,6 +12,7 @@ $items = [
     ['label' => 'Payments', 'icon' => 'fas fa-credit-card', 'url' => ['/payment/index'], 'controller' => 'payment'],
     ['label' => 'Renewals', 'icon' => 'fas fa-sync-alt', 'url' => ['/renewal/index'], 'controller' => 'renewal'],
     ['label' => 'Support Tickets', 'icon' => 'fas fa-headset', 'url' => ['/support/index'], 'controller' => 'support'],
+    ['label' => 'Share Feedback', 'icon' => 'fas fa-comment-dots', 'url' => ['/feedback/index'], 'controller' => 'feedback'],
     ['label' => 'Notifications', 'icon' => 'fas fa-bell', 'url' => ['/notification/index'], 'controller' => 'notification'],
     ['label' => 'Security', 'icon' => 'fas fa-shield-alt', 'url' => ['/security/index'], 'controller' => 'security'],
     ['label' => 'My Profile', 'icon' => 'fas fa-user', 'url' => ['/account/profile'], 'controller' => 'account', 'action' => ['profile', 'change-password', 'preferences']],
@@ -28,7 +29,7 @@ foreach ($items as $item) {
 ?>
 
 <div class="account-sidebar card shadow-sm border-0">
-    <div class="card-header border-0 d-flex align-items-center" style="background:linear-gradient(135deg, #0b1f4d, #1565c0); color:#fff;">
+    <div class="card-header border-0 d-flex align-items-center" style="background: var(--mw-ink); color:#fff;">
         <div class="flex-grow-1">
             <div class="fw-bold">My Account</div>
             <small style="opacity:.85;">Manage your services</small>

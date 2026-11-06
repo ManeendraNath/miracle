@@ -69,13 +69,13 @@ $formatter = Yii::$app->formatter;
             [
                 'label' => 'Submitted',
                 'value' => 'created_at',
-                'format' => ['datetime', 'php:d M Y, h:i A'],
+                'format' => 'datetime',
                 'headerOptions' => ['class' => 'd-none d-md-table-cell'],
                 'contentOptions' => ['class' => 'd-none d-md-table-cell small text-nowrap'],
             ],
             [
                 'label' => 'Confirmed',
-                'value' => static fn(Transaction $model): string => $model->paid_at ? $formatter->asDatetime($model->paid_at, 'php:d M Y, h:i A') : '-',
+                'value' => static fn(Transaction $model): string => $model->paid_at ? $formatter->asDatetime($model->paid_at) : '-',
                 'headerOptions' => ['class' => 'd-none d-lg-table-cell'],
                 'contentOptions' => ['class' => 'd-none d-lg-table-cell small text-nowrap'],
             ],

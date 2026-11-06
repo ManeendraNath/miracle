@@ -12,7 +12,6 @@ use yii\bootstrap5\Html;
 $this->title = 'Resend verification email';
 $this->params['breadcrumbs'][] = $this->title;
 $this->params['meta_description'] = 'Resend the verification email to confirm your account.';
-$this->params['meta_keywords'] = 'yii, yii2, verification, email, resend, confirm account';
 $htmlIcon = <<<HTML
 {label}<div class="input-group"><span class="input-group-text" aria-hidden="true">%s</span>{input}</div>{error}{hint}
 HTML;
@@ -30,15 +29,15 @@ $labelOptions = ['class' => 'form-label fw-semibold small'];
                             Yii::getAlias('@web/images/logo.png'),
                             [
                                 'alt' => 'Miracle Web Technologies',
-                                'height' => 40,
+                                'height' => 64,
                                 'class' => 'mb-4',
                             ],
                         ) ?>
                     </div>
                     <div>
-                        <h2 class="fw-bold mb-3 login-brand-title">
+                        <p class="fw-bold mb-3 login-brand-title">
                             Verify Your<br>Email
-                        </h2>
+                        </p>
                         <p class="opacity-75 mb-0 login-brand-text">
                             We will send a new verification email to confirm your account.
                         </p>
@@ -56,7 +55,7 @@ $labelOptions = ['class' => 'form-label fw-semibold small'];
                                 [
                                     'alt' => 'Miracle Web Technologies',
                                     'class' => 'login-mobile-logo',
-                                    'height' => 36,
+                                    'height' => 48,
                                 ],
                             ) ?>
                         </div>
@@ -69,7 +68,7 @@ $labelOptions = ['class' => 'form-label fw-semibold small'];
                     <div class="mb-4">
                         <?= $form->field($model, 'email', [
                             'options' => ['class' => 'mb-0'],
-                            'template' => sprintf($htmlIcon, '&#9993;'),
+                            'template' => sprintf($htmlIcon, '<i class="fas fa-envelope"></i>'),
                             'inputOptions' => [
                                 'autofocus' => true,
                                 'class' => 'form-control',

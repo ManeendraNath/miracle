@@ -183,20 +183,20 @@ class AdminController extends BaseController
                 $session->setFlash('error', 'Enter your current password to turn on two-factor sign-in.');
             } elseif (is_string($secret) && !$model->hasTwoFactor() && $model->enableTwoFactor($secret, $code)) {
                 $session->remove(self::TOTP_SETUP_KEY);
-                // New auth key: keep this session signed in, drop the old remember-me cookie.
+                // New auth key: keep this session signed in.
                 Yii::$app->user->switchIdentity($model, 0);
                 $session->setFlash('success', 'Two-factor sign-in is on. You will need a code from your app at every login.');
             } else {
                 $session->setFlash('error', 'That code is not valid. Check the time on your phone and try again.');
             }
         } elseif ($step === 'disable' && $model->hasTwoFactor()) {
-            if (LoginThrottle::isLocked('backend', $model->username)) {
+            if (LoginThrottle::isLocked(LoginThrottle::SCOPE_ADMIN_CODE, $model->username)) {
                 $session->setFlash('error', 'Too many failed attempts. Please try again in 15 minutes.');
             } elseif ($model->consumeTotpCode($code)) {
                 $model->disableTwoFactor();
                 $session->setFlash('success', 'Two-factor sign-in is off.');
             } else {
-                LoginThrottle::fail('backend', $model->username);
+                LoginThrottle::fail(LoginThrottle::SCOPE_ADMIN_CODE, $model->username);
                 $session->setFlash('error', 'That code is not valid. Two-factor sign-in is still on.');
             }
         }

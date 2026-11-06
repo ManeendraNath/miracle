@@ -29,11 +29,9 @@ return [
         ],
         'user' => [
             'identityClass' => backend\models\Admin::class,
-            'enableAutoLogin' => true,
-            'identityCookie' => [
-                'name' => '_identity-backend',
-                'httpOnly' => true,
-            ],
+            // Staff sign in each session; an unattended admin panel signs itself out.
+            'enableAutoLogin' => false,
+            'authTimeout' => 1800,
             'loginUrl' => ['/auth/login'],
         ],
         'session' => [

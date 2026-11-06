@@ -241,6 +241,11 @@ JS);
                             ['class' => 'btn ' . ($canPayOnline ? 'btn-outline-secondary btn-sm' : 'btn-success')]
                         ) ?>
                     </div>
+                    <?php if ($canPayOnline): ?>
+                        <p class="small text-body-secondary text-center mt-2 mb-0">
+                            Outside India? Pay online with an international card. The charge is in INR and your card issuer converts it. If your card is declined, <?= Html::a('raise a support ticket', ['/support/create', 'subject' => 'Paying from outside India']) ?>.
+                        </p>
+                    <?php endif; ?>
                     <p class="small text-body-secondary text-center mt-2 mb-0">
                         By paying you agree to our <?= Html::a('Terms &amp; Conditions', ['/site/terms'], ['target' => '_blank']) ?>
                         and <?= Html::a('Refund &amp; Cancellation Policy', ['/site/refund-policy'], ['target' => '_blank']) ?>.

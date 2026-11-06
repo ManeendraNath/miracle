@@ -12,7 +12,6 @@ use yii\bootstrap5\Html;
 $this->title = 'Login to your account';
 $this->params['breadcrumbs'][] = $this->title;
 $this->params['meta_description'] = 'Log in to your Miracle Web Technologies customer account.';
-$this->params['meta_keywords'] = 'yii, yii2, login, sign in, authentication';
 $htmlIcon = <<<HTML
 {label}<div class="input-group"><span class="input-group-text" aria-hidden="true">%s</span>{input}</div>{error}{hint}
 HTML;
@@ -31,14 +30,14 @@ $labelOptions = ['class' => 'form-label fw-semibold small'];
                             [
                                 'alt' => 'Miracle Web Technologies',
                                 'class' => 'mb-4',
-                                'height' => 40,
+                                'height' => 64,
                             ],
                         ) ?>
                     </div>
                     <div>
-                        <h2 class="fw-bold mb-3 login-brand-title">
+                        <p class="fw-bold mb-3 login-brand-title">
                             Welcome<br>Back
-                        </h2>
+                        </p>
                         <p class="opacity-75 mb-0 login-brand-text">
                             Log in to manage your services, invoices and support requests.
                         </p>
@@ -57,7 +56,7 @@ $labelOptions = ['class' => 'form-label fw-semibold small'];
                                 [
                                     'alt' => 'Miracle Web Technologies',
                                     'class' => 'login-mobile-logo',
-                                    'height' => 36,
+                                    'height' => 48,
                                 ],
                             ) ?>
                         </div>
@@ -70,7 +69,7 @@ $labelOptions = ['class' => 'form-label fw-semibold small'];
                     <div class="mb-3">
                         <?= $form->field($model, 'username', [
                             'options' => ['class' => 'mb-0'],
-                            'template' => sprintf($htmlIcon, '&#128100;'),
+                            'template' => sprintf($htmlIcon, '<i class="fas fa-user"></i>'),
                             'inputOptions' => [
                                 'class' => 'form-control',
                                 'placeholder' => 'username',
@@ -82,7 +81,7 @@ $labelOptions = ['class' => 'form-label fw-semibold small'];
                     <div class="mb-3">
                         <?= $form->field($model, 'password', [
                             'options' => ['class' => 'mb-0'],
-                            'template' => sprintf($htmlIcon, '&#128274;'),
+                            'template' => sprintf($htmlIcon, '<i class="fas fa-lock"></i>'),
                             'inputOptions' => [
                                 'class' => 'form-control',
                                 'placeholder' => 'Password',

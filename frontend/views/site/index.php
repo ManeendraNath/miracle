@@ -1,139 +1,344 @@
 <?php
 
-/** @var yii\web\View $this */
+declare(strict_types=1);
 
+/** @var yii\web\View $this */
+/** @var common\models\Testimonial[] $testimonials */
+
+use common\components\CustomYii;
 use yii\bootstrap5\Html;
 
-$this->title = 'Miracle Web Technologies | Web Hosting, Domains & Website Maintenance';
+$this->title = 'Website, Web Application and Shopping Cart Development | Miracle Web Technologies';
+$this->params['bare'] = true;
+$this->params['meta_description'] = 'Custom shopping carts, web applications and business websites for clients in India and abroad, plus upgrades to the site you already have. Get a written quote.';
+
+$address = array_filter(array_map(static fn($l): string => trim((string) $l, ' ,'), [
+    CustomYii::getSetting('address_line_1'),
+    CustomYii::getSetting('address_line_2'),
+    CustomYii::getSetting('address_line_3'),
+]));
+$phone = (string) CustomYii::getSetting('mobile_1');
+$email = (string) CustomYii::getSetting('email_1');
+
+$services = [
+    [
+        'icon' => 'fa-cogs',
+        'title' => 'Web applications',
+        'text' => 'Customer portals, billing systems, dashboards and internal tools that replace spreadsheets and manual work.',
+        'link' => 'Discuss your application',
+        'url' => ['site/contact', 'subject' => 'Project enquiry: web application'],
+    ],
+    [
+        'icon' => 'fa-laptop-code',
+        'title' => 'Business websites',
+        'text' => 'Websites built to your brief that work well on phones, tablets and desktops.',
+        'link' => 'Discuss your website',
+        'url' => ['site/contact', 'subject' => 'Project enquiry: business website'],
+    ],
+    [
+        'icon' => 'fa-sync-alt',
+        'title' => 'Upgrades to existing websites',
+        'text' => 'A faster, safer and better-looking version of the site you already have, or an older web application brought up to date.',
+        'link' => 'Upgrade my website',
+        'url' => ['site/audit'],
+    ],
+];
+
+$projects = [
+    [
+        'name' => 'NMP Ayurveda',
+        'url' => 'https://nmpamrit.com',
+        'image' => 'nmp-ayurveda.jpg',
+        'type' => 'Shopping cart',
+        'text' => 'An online store for Ayurvedic health supplements, with products to browse by category and health concern, a cart, checkout and customer accounts.',
+    ],
+    [
+        'name' => 'AS International',
+        'url' => 'https://asintl.net.in',
+        'image' => 'as-international.jpg',
+        'type' => 'Business website',
+        'text' => 'A website for a packaging and label company, showing its portfolio and bringing in quote requests.',
+    ],
+    [
+        'name' => 'RM Star Retouching',
+        'url' => 'https://rmstarretouchingcompany.com',
+        'image' => 'rm-star-retouching.jpg',
+        'type' => 'Business website',
+        'text' => 'A website for a photo retouching company serving clients around the world, presenting its many services.',
+    ],
+];
+
+$technologies = ['PHP', 'Yii', 'MySQL', 'PostgreSQL', 'Docker'];
+
+$steps = [
+    'Tell us what you need' => 'Send a short description, or the address of your current site. A rough idea is enough to start.',
+    'Get a written quote' => 'The quote sets out the scope and the price, so you know what you are paying for before work begins.',
+    'We build, you review' => 'We share our progress for your feedback. Timing depends on receiving your content and approvals on time.',
+    'Launch and handover' => 'The finished work is yours once its invoices are paid in full. We can host and maintain it if you want us to.',
+];
+
+$questions = [
+    'Who owns the finished work?' => 'You do, once its invoices are paid in full. We may show completed work in our portfolio unless you ask us not to.',
+    'What if I change my mind?' => 'An advance is refunded in full if you cancel before work begins. After that, we keep the amount for work already completed and refund any balance.',
+    'How do we stay in touch?' => 'By email and phone, and through support tickets in your customer portal.',
+    'Can you look after it afterwards?' => 'Yes. We offer website maintenance, hosting and domain registration, so one team can look after everything.',
+];
 ?>
-<div class="site-index" style="background-color: #f8fafc; color: #1e293b; font-family: 'Inter', system-ui, sans-serif;">
+<div class="site-index">
 
-    <!-- Hero -->
-    <div class="jumbotron text-center py-5 px-3 mb-5 border-0 position-relative shadow-sm" 
-         style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); border-radius: 1rem; color: #ffffff;">
-        <div class="container py-4">
-            <span class="badge px-3 py-2 mb-3 text-uppercase fw-bold shadow-sm" style="letter-spacing: 1.5px; font-size: 0.8rem; background-color: #dc2626;">
-                Hosting · Domains · Website Maintenance
-            </span>
-            <h1 class="display-3 fw-bold mb-3 tracking-tight" style="color: #ffffff;">
-                Reliable hosting, <span style="color: #00a3e0;">looked after for you.</span>
-            </h1>
-            <p class="lead mx-auto mb-4 text-slate-300" style="max-width: 800px; color: #cbd5e1; font-weight: 300; font-size: 1.25rem;">
-                We modernise older web applications and look after your hosting, domains and website maintenance.
-            </p>
-            <div class="d-flex justify-content-center gap-3 flex-wrap pt-2">
-                                <?= Html::a('Request a Website Audit', ['site/audit'], [
-                                'class' => 'btn btn-lg px-4 py-3 fw-bold shadow-sm text-white',
-                                'style' => 'background-color: #00a3e0 !important; border: none !important; min-width: 240px; border-radius: 0.5rem; color: #ffffff !important;'
-                ]) ?>
-                <a class="btn btn-outline-light btn-lg px-4 py-3 fw-bold" href="#hosting-tiers" style="border-color: #475569; color: #f1f5f9; min-width: 240px; border-radius: 0.5rem;">
-                    See Hosting Plans
-                </a>
-            </div>
-        </div>
-    </div>
-
-    <!-- Hosting plans -->
-    <div id="hosting-tiers" class="container py-4">
-        <div class="text-center mb-5">
-            <h2 class="fw-bold text-dark h1 mb-2">Managed Hosting Plans</h2>
-            <p class="text-muted fs-5 mx-auto" style="max-width: 600px;">
-                Plans for business websites, custom applications and web agencies. Pay monthly, yearly or for several years; renewal prices may rise every two years.
-            </p>
-        </div>
-
-        <div class="row g-4 align-items-stretch">
-            <!-- Plan 1 -->
-            <div class="col-lg-4">
-                <div class="card h-100 shadow-sm border-0 p-4 bg-white d-flex flex-column justify-content-between" style="border-radius: 0.75rem; border-top: 4px solid #00a3e0 !important;">
-                    <div>
-                        <span class="text-uppercase fw-bold text-muted tracking-wider" style="font-size: 0.75rem; letter-spacing: 1px;">Lite Entry</span>
-                        <h3 class="h3 fw-bold text-dark my-2">Developer Pro</h3>
-                        <p class="text-muted small mb-4">For a single small website, a staging copy or a lightweight custom PHP site.</p>
-                        <div class="mb-4">
-                            <span class="display-5 fw-bold text-dark">₹499</span>
-                            <span class="text-muted">/ month</span>
-                        </div>
-                        <hr class="text-slate-200">
-                        <ul class="list-unstyled my-4 text-muted small">
-                            <li class="mb-2">⚡ <strong>10 GB</strong> NVMe SSD storage</li>
-                            <li class="mb-2">🌐 <strong>1</strong> hosted domain</li>
-                            <li class="mb-2">🔒 Free Let's Encrypt SSL certificates</li>
-                            <li class="mb-2">📧 5 email inboxes on your domain</li>
-                        </ul>
+    <section class="mw-glow mw-hero">
+        <div class="container">
+            <div class="row g-4 g-lg-5 align-items-center">
+                <div class="col-lg-7">
+                    <p class="mw-eyebrow">Web development company in India, for clients in India and abroad</p>
+                    <h1 class="mw-h1 mb-4">Shopping carts, web applications and websites, <span class="mw-accent">cut to fit your business.</span></h1>
+                    <p class="mw-lead mb-4">Send us your idea, or the site you already have. We'll reply with a written quote, build it to your brief, and hand it over once it is paid for.</p>
+                    <div class="d-flex flex-wrap gap-2">
+                        <?= Html::a('Get a project quote', ['site/contact', 'subject' => 'Project enquiry'], ['class' => 'btn btn-mw-bright btn-lg']) ?>
+                        <?= Html::a('Upgrade my website', ['site/audit'], ['class' => 'btn btn-outline-light btn-lg']) ?>
                     </div>
-                    <?= Html::a('Enquire about Developer Pro', ['site/contact', 'subject' => 'Hosting enquiry: Developer Pro'], ['class' => 'btn btn-outline-dark w-100 fw-bold py-2', 'style' => 'border-radius: 0.5rem;']) ?>
+                </div>
+                <div class="col-lg-5">
+                    <figure class="mw-portal mw-stage">
+                        <?= Html::img('@web/images/gem.svg', ['alt' => '', 'class' => 'mw-gem', 'width' => 640, 'height' => 560]) ?>
+                        <div class="mw-portal-card">
+                            <div class="mw-browser-bar"><span></span><span></span><span></span><div class="mw-browser-url">yourstore.com/checkout</div></div>
+                            <div class="mw-portal-row">
+                                <div><span class="mw-portal-name">Leather notebook</span><span class="mw-portal-meta">Quantity 2</span></div>
+                                <div class="mw-portal-date">$48.00</div>
+                            </div>
+                            <div class="mw-portal-row">
+                                <div><span class="mw-portal-name">Brass pen</span><span class="mw-portal-meta">Quantity 1</span></div>
+                                <div class="mw-portal-date">$32.00</div>
+                            </div>
+                            <div class="mw-portal-invoice">
+                                <div><span class="mw-portal-name">Order total: $80.00</span></div>
+                                <div class="mw-portal-pay">Place order</div>
+                            </div>
+                        </div>
+                        <div class="mw-float">
+                            <span class="mw-float-status d-block">New order received</span>
+                            <span class="mw-portal-name d-block">$80, paid online</span>
+                            <span class="mw-portal-meta d-block">Your store's order dashboard</span>
+                        </div>
+                        <figcaption>An illustration with example details, not a client project.</figcaption>
+                    </figure>
                 </div>
             </div>
+            <ul class="mw-facts">
+                <li><i class="fas fa-check" aria-hidden="true"></i>A written quote before any work starts</li>
+                <li><i class="fas fa-check" aria-hidden="true"></i>Your advance back in full if you cancel before work begins</li>
+                <li><i class="fas fa-check" aria-hidden="true"></i>The finished work is yours once it is paid for</li>
+            </ul>
+        </div>
+    </section>
 
-            <!-- Plan 2 -->
-            <div class="col-lg-4">
-                <div class="card h-100 shadow-lg border-0 p-4 text-white d-flex flex-column justify-content-between position-relative overflow-hidden" 
-                     style="border-radius: 0.75rem; border: 2px solid #dc2626 !important; background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%) !important;">
-                    <div class="position-absolute top-0 end-0 text-white px-3 py-1 small fw-bold" style="border-bottom-left-radius: 0.5rem; font-size: 0.75rem; text-transform: uppercase; background-color: #dc2626;">
-                        Recommended Plan
-                    </div>
-                    <div>
-                        <span class="text-uppercase fw-bold tracking-wider" style="font-size: 0.75rem; letter-spacing: 1px; color: #00a3e0 !important;">Business</span>
-                        <h3 class="h3 fw-bold text-white my-2">Business Matrix</h3>
-                                                <p class="small mb-4" style="color: #cbd5e1 !important;">For busy business portals, online shops and analytics systems.</p>
-                        <div class="mb-4">
-                            <span class="display-5 fw-bold text-white">₹1,499</span>
-                            <span class="text-slate-300" style="color: #cbd5e1 !important;">/ month</span>
+    <section id="services" class="mw-section mw-section-soft">
+        <div class="container">
+            <h2 class="mw-h2">What we build</h2>
+            <p class="mw-lead mt-3 mb-5">Custom work, quoted for your project. Start something new or improve what you already have.</p>
+            <div class="row g-4">
+                <div class="col-12">
+                    <div class="mw-card mw-card-lead">
+                        <div class="row g-4 align-items-center">
+                            <div class="col-lg-6">
+                                <div class="mw-icon"><i class="fas fa-shopping-cart" aria-hidden="true"></i></div>
+                                <h3>Shopping carts and online stores</h3>
+                                <p>A store set up around how you sell, whether your customers are next door or in another country.</p>
+                                <?= Html::a('Discuss your store', ['site/contact', 'subject' => 'Project enquiry: shopping cart'], ['class' => 'fw-semibold']) ?>
+                            </div>
+                            <div class="col-lg-6">
+                                <ul class="mw-chips">
+                                    <li>Product catalogues</li>
+                                    <li>Cart and checkout</li>
+                                    <li>Payment gateway integration</li>
+                                    <li>Customer accounts</li>
+                                    <li>Order management</li>
+                                </ul>
+                            </div>
                         </div>
-                        <hr style="border-color: rgba(255,255,255,0.15);">
-                        <ul class="list-unstyled my-4 small" style="color: #e2e8f0 !important;">
-                            <li class="mb-2">⚡ <strong>50 GB</strong> NVMe storage</li>
-                            <li class="mb-2">🌐 <strong>5</strong> hosted domains</li>
-                            <li class="mb-2">🗄️ <strong>Unlimited</strong> MySQL databases</li>
-                            <li class="mb-2">⏰ <strong>Automated daily backups</strong></li>
-                        </ul>
                     </div>
-                    <?= Html::a('Enquire about Business Matrix', ['site/contact', 'subject' => 'Hosting enquiry: Business Matrix'], [
-                        'class' => 'btn w-100 fw-bold py-3 text-white',
-                        'style' => 'background-color: #00a3e0 !important; border: none !important; border-radius: 0.5rem; color: #ffffff !important;'
-                    ]) ?>
+                </div>
+                <?php foreach ($services as $service): ?>
+                    <div class="col-lg-4">
+                        <div class="mw-card">
+                            <div class="mw-icon"><i class="fas <?= $service['icon'] ?>" aria-hidden="true"></i></div>
+                            <h3><?= Html::encode($service['title']) ?></h3>
+                            <p><?= Html::encode($service['text']) ?></p>
+                            <?= Html::a(Html::encode($service['link']), $service['url'], ['class' => 'fw-semibold']) ?>
+                        </div>
+                    </div>
+                <?php endforeach; ?>
+            </div>
+            <div class="mw-tech">
+                <h3>Technologies we work with</h3>
+                <ul class="mw-chips">
+                    <?php foreach ($technologies as $technology): ?>
+                        <li><?= Html::encode($technology) ?></li>
+                    <?php endforeach; ?>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <section id="work" class="mw-section">
+        <div class="container">
+            <h2 class="mw-h2 mb-5">Work we have delivered</h2>
+            <div class="row g-4">
+                <?php foreach ($projects as $project): ?>
+                    <div class="col-lg-4">
+                        <article class="mw-card mw-project">
+                            <?= Html::img('@web/images/projects/' . $project['image'], ['alt' => 'Home page of ' . $project['name'], 'width' => 960, 'height' => 600, 'loading' => 'lazy']) ?>
+                            <div class="mw-project-body">
+                                <p class="mw-eyebrow mb-1"><?= Html::encode($project['type']) ?></p>
+                                <h3><?= Html::encode($project['name']) ?></h3>
+                                <p><?= Html::encode($project['text']) ?></p>
+                                <?= Html::a('Visit ' . Html::encode($project['name']) . ' <i class="fas fa-external-link-alt small" aria-hidden="true"></i>', $project['url'], ['class' => 'fw-semibold', 'target' => '_blank', 'rel' => 'noopener']) ?>
+                            </div>
+                        </article>
+                    </div>
+                <?php endforeach; ?>
+            </div>
+        </div>
+    </section>
+
+    <?php if ($testimonials): ?>
+        <section class="mw-section mw-section-soft">
+            <div class="container">
+                <h2 class="mw-h2 mb-5">What our clients say</h2>
+                <div class="row g-4">
+                    <?php foreach ($testimonials as $testimonial): ?>
+                        <div class="col-lg-4">
+                            <figure class="mw-card mb-0">
+                                <blockquote class="mb-3"><?= Html::encode($testimonial->quote) ?></blockquote>
+                                <figcaption>
+                                    <span class="mw-portal-name d-block"><?= Html::encode($testimonial->client_name) ?></span>
+                                    <span class="mw-portal-meta d-block"><?= Html::encode($testimonial->byline()) ?></span>
+                                </figcaption>
+                            </figure>
+                        </div>
+                    <?php endforeach; ?>
                 </div>
             </div>
+        </section>
+    <?php endif; ?>
 
-            <!-- Plan 3 -->
-            <div class="col-lg-4">
-                <div class="card h-100 shadow-sm border-0 p-4 bg-white d-flex flex-column justify-content-between" style="border-radius: 0.75rem; border-top: 4px solid #dc2626 !important;">
-                    <div>
-                        <span class="text-uppercase fw-bold text-muted tracking-wider" style="font-size: 0.75rem; letter-spacing: 1px;">Agency</span>
-                        <h3 class="h3 fw-bold text-dark my-2">Agency Premium</h3>
-                        <p class="text-muted small mb-4">For agencies and larger clients running many websites.</p>
-                        <div class="mb-4">
-                            <span class="display-5 fw-bold text-dark">₹3,499</span>
-                            <span class="text-muted">/ month</span>
+    <section class="mw-section mw-section-ink">
+        <div class="container">
+            <div class="row g-4 g-lg-5 align-items-center">
+                <div class="col-lg-6">
+                    <h2 class="mw-h2">We run our own business on software we built</h2>
+                    <p class="mw-lead mt-3 mb-4">Our customer portal is the kind of web application we build for clients. It handles:</p>
+                    <ul class="mw-checks">
+                        <li><i class="fas fa-check" aria-hidden="true"></i>Services and renewal dates</li>
+                        <li><i class="fas fa-check" aria-hidden="true"></i>Invoices, online payments and receipts</li>
+                        <li><i class="fas fa-check" aria-hidden="true"></i>Support tickets and notifications</li>
+                    </ul>
+                </div>
+                <div class="col-lg-6">
+                    <figure class="mw-portal">
+                        <div class="mw-portal-card">
+                            <div class="mw-portal-title">Your services</div>
+                            <div class="mw-portal-row">
+                                <div><span class="mw-portal-name">yourbusiness.com</span><span class="mw-portal-meta">Domain</span></div>
+                                <div class="mw-portal-date">Renews 14 Mar</div>
+                            </div>
+                            <div class="mw-portal-row">
+                                <div><span class="mw-portal-name">Website care</span><span class="mw-portal-meta">Maintenance</span></div>
+                                <div class="mw-portal-date">Renews 19 Aug</div>
+                            </div>
+                            <div class="mw-portal-invoice">
+                                <div><span class="mw-portal-name d-block">Next invoice</span><span class="mw-portal-meta">View, pay and download receipts</span></div>
+                                <div class="mw-portal-pay">Pay invoice</div>
+                            </div>
                         </div>
-                        <hr class="text-slate-200">
-                        <ul class="list-unstyled my-4 text-muted small">
-                            <li class="mb-2">⚡ <strong>150 GB</strong> NVMe storage</li>
-                            <li class="mb-2">🌐 <strong>Unlimited</strong> hosted domains</li>
-                            <li class="mb-2">🛡️ Firewall protection</li>
-                            <li class="mb-2">📞 Priority support</li>
-                        </ul>
-                    </div>
-                    <?= Html::a('Enquire about Agency Premium', ['site/contact', 'subject' => 'Hosting enquiry: Agency Premium'], [
-                        'class' => 'btn w-100 fw-bold py-2',
-                        'style' => 'border: 2px solid #dc2626 !important; color: #dc2626 !important; background: transparent !important; border-radius: 0.5rem;'
-                    ]) ?>
+                        <figcaption>An illustration of our customer portal, with example details.</figcaption>
+                    </figure>
                 </div>
             </div>
         </div>
+    </section>
 
-        <!-- How accounts are run -->
-        <div class="mt-5 p-5 rounded-4 text-center border bg-white shadow-sm" style="border-radius: 0.75rem;">
-            <h4 class="fw-bold text-dark mb-2 text-uppercase tracking-wider fs-6" style="letter-spacing: 0.5px;">Run for You</h4>
-            <p class="text-muted mx-auto mb-3" style="max-width: 700px;">
-                Every account runs on cPanel, and our team handles renewals, invoices and support through your customer portal.
-            </p>
-            <div class="d-flex justify-content-center gap-4 align-items-center text-muted fw-semibold flex-wrap small">
-                <div style="color: #00a3e0;">✓ cPanel Hosting</div>
-                <div style="color: #dc2626;">✓ Free SSL Certificates</div>
-                <div style="color: #00a3e0;">✓ Customer Portal</div>
+    <section id="process" class="mw-section">
+        <div class="container">
+            <h2 class="mw-h2 mb-5">How a project works</h2>
+            <ol class="mw-steps">
+                <?php $number = 0; ?>
+                <?php foreach ($steps as $title => $text): ?>
+                    <li class="mw-step">
+                        <div class="mw-step-number" aria-hidden="true"><?= ++$number ?></div>
+                        <h3><?= Html::encode($title) ?></h3>
+                        <p><?= Html::encode($text) ?></p>
+                    </li>
+                <?php endforeach; ?>
+            </ol>
+        </div>
+    </section>
+
+    <section class="mw-section mw-section-soft">
+        <div class="container">
+            <h2 class="mw-h2 mb-5">Wherever your business is</h2>
+            <div class="row g-4 mb-5">
+                <div class="col-md-6">
+                    <div class="mw-card">
+                        <div class="mw-icon"><i class="fas fa-globe" aria-hidden="true"></i></div>
+                        <h3>Clients abroad</h3>
+                        <ul class="mw-checks">
+                            <li><i class="fas fa-check" aria-hidden="true"></i>Everything handled online, in English</li>
+                            <li><i class="fas fa-check" aria-hidden="true"></i>Pay online by international card through Razorpay</li>
+                            <li><i class="fas fa-check" aria-hidden="true"></i>Stay in touch by email and phone</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mw-card">
+                        <div class="mw-icon"><i class="fas fa-map-marker-alt" aria-hidden="true"></i></div>
+                        <h3>Clients in India</h3>
+                        <ul class="mw-checks">
+                            <li><i class="fas fa-check" aria-hidden="true"></i>Based in Delhi</li>
+                            <li><i class="fas fa-check" aria-hidden="true"></i>Local payment methods, including UPI</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="row g-4 g-lg-5">
+                <div class="col-lg-7 mw-faq">
+                    <h2 class="h4 fw-bold mb-3">Common questions</h2>
+                    <?php foreach ($questions as $question => $answer): ?>
+                        <details>
+                            <summary><?= Html::encode($question) ?></summary>
+                            <p><?= Html::encode($answer) ?></p>
+                        </details>
+                    <?php endforeach; ?>
+                </div>
+                <div class="col-lg-5">
+                    <div class="mw-panel">
+                        <h2 class="h4 fw-bold mb-3">Talk to us</h2>
+                        <ul class="mw-contact-list">
+                            <?php if ($email !== ''): ?>
+                                <li><i class="fas fa-envelope fa-fw" aria-hidden="true"></i><?= Html::mailto(Html::encode($email), $email) ?></li>
+                            <?php endif; ?>
+                            <?php if ($phone !== ''): ?>
+                                <li><i class="fas fa-phone-alt fa-fw" aria-hidden="true"></i><?= Html::a(Html::encode(CustomYii::formatPhone($phone)), 'tel:+' . $phone) ?></li>
+                            <?php endif; ?>
+                            <?php if ($address): ?>
+                                <li><i class="fas fa-map-marker-alt fa-fw" aria-hidden="true"></i><span><?= implode('<br>', array_map([Html::class, 'encode'], $address)) ?><br>India</span></li>
+                            <?php endif; ?>
+                        </ul>
+                    </div>
+                    <p class="mt-4 mb-0">Need somewhere to run your site? <?= Html::a('See hosting and domains', ['site/hosting']) ?>.</p>
+                </div>
             </div>
         </div>
-    </div>
+    </section>
+
+    <section class="mw-band">
+        <div class="container d-flex flex-wrap justify-content-between align-items-center gap-3">
+            <div>
+                <h2 class="mw-h2 mb-2">Have a project in mind?</h2>
+                <p class="mb-0">Tell us what you want to build or improve, and we'll reply with the next steps.</p>
+            </div>
+            <?= Html::a('Get a project quote', ['site/contact', 'subject' => 'Project enquiry'], ['class' => 'btn btn-light btn-lg fw-semibold']) ?>
+        </div>
+    </section>
 </div>

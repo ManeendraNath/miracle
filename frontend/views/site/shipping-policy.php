@@ -11,7 +11,7 @@ use yii\helpers\Url;
 $name = Html::encode(CustomYii::getSetting('site_name') ?: 'Miracle Web Technologies');
 $refund = Url::to(['/site/refund-policy']);
 
-echo $this->render('_legal', ['title' => 'Shipping & Delivery Policy', 'updated' => '04 Nov 2026', 'body' => <<<HTML
+echo $this->render('_legal', ['title' => 'Shipping & Delivery Policy', 'updated' => '06 Nov 2026', 'body' => <<<HTML
 <p>{$name} sells digital services only. Nothing is shipped physically and there are no shipping charges. Services are delivered online as follows.</p>
 
 <h2 class="h5 fw-bold mt-4">Delivery times</h2>
@@ -19,7 +19,7 @@ echo $this->render('_legal', ['title' => 'Shipping & Delivery Policy', 'updated'
     <li><strong>Domain registration and renewal:</strong> processed within 1 working day of payment. Registry updates can take up to 48 hours to apply worldwide.</li>
     <li><strong>Web hosting:</strong> activated within 1 working day of payment. We send your login details to your registered email address.</li>
     <li><strong>Maintenance (AMC):</strong> covers the period shown on the invoice (a renewal continues from the day after the previous period ends); requests are handled through support tickets during the paid period.</li>
-    <li><strong>Website design and development:</strong> delivered on the timeline agreed in the quotation, once content and approvals are received from you.</li>
+    <li><strong>Shopping carts, web applications, websites and upgrades:</strong> delivered on the timeline agreed in the quotation, once content and approvals are received from you.</li>
 </ul>
 
 <h2 class="h5 fw-bold mt-4">Confirmation</h2>

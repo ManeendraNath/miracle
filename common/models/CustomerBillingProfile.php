@@ -121,8 +121,8 @@ class CustomerBillingProfile extends base\CustomerBillingProfile
         $scenarios = parent::scenarios();
         // "!" = validated but never mass-assigned.
         $scenarios[self::SCENARIO_CUSTOMER] = [
-            // Not country: outside India means no GST, so only an admin may set it.
-            'legal_name', 'address_line_1', 'address_line_2', 'city', 'state', 'postal_code', 'gstin', 'pan',
+            // Country too: outside India means no GST, and every change alerts the admins (CustomerBillingDetailsService).
+            'legal_name', 'address_line_1', 'address_line_2', 'city', 'state', 'postal_code', 'country', 'gstin', 'pan',
             '!state_code', '!user_id',
         ];
 
@@ -150,7 +150,12 @@ class CustomerBillingProfile extends base\CustomerBillingProfile
                 ],
                 ['state_code', 'filter', 'filter' => fn ($code) => $this->isForeign() ? self::FOREIGN_STATE_CODE : (self::GST_STATES[$this->state] ?? $code)],
                 [['legal_name', 'state', 'state_code'], 'required'],
-                [['address_line_1', 'city', 'postal_code'], 'required', 'on' => self::SCENARIO_CUSTOMER],
+                [['address_line_1', 'city'], 'required', 'on' => self::SCENARIO_CUSTOMER],
+                // Many countries have no postal code.
+                [
+                    'postal_code', 'required', 'on' => self::SCENARIO_CUSTOMER,
+                    'when' => fn (): bool => !$this->isForeign(), 'whenClient' => self::WHEN_INDIA_JS,
+                ],
                 [
                     'postal_code', 'match', 'pattern' => '/^\d{6}$/', 'message' => 'Enter a valid 6-digit PIN code.',
                     'when' => fn (): bool => !$this->isForeign(), 'whenClient' => self::WHEN_INDIA_JS,

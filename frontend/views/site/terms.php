@@ -16,7 +16,7 @@ echo $this->render('_legal', ['title' => 'Terms & Conditions', 'updated' => '06 
 <p>{$name} is owned and operated by Nidhi Trivedi. These terms apply to every service bought from {$name} ("we", "us") through this website, the customer portal, an invoice or a quotation. By placing an order or paying an invoice you accept them.</p>
 
 <h2 class="h5 fw-bold mt-4">1. Services</h2>
-<p>We provide website design and development, domain name registration and renewal, web hosting, and website maintenance (annual maintenance contracts). The scope, price and billing cycle of each service are as shown on the quotation, order or invoice.</p>
+<p>We build shopping carts, web applications and websites, and upgrade existing websites. We also provide domain name registration and renewal, web hosting, and website maintenance (annual maintenance contracts). The scope, price and billing cycle of each service are as shown on the quotation, order or invoice.</p>
 
 <h2 class="h5 fw-bold mt-4">2. Accounts</h2>
 <p>You are responsible for keeping your portal login private and for all activity under it. Please give accurate contact and billing details and keep them up to date. We may disable an account whose billing details are not completed within one month of signing up, if it has no active service and no unpaid invoice; contact us to have it enabled again.</p>
@@ -24,7 +24,7 @@ echo $this->render('_legal', ['title' => 'Terms & Conditions', 'updated' => '06 
 <h2 class="h5 fw-bold mt-4">3. Prices, invoices and payment</h2>
 <ul>
     <li>All prices are in Indian Rupees (INR). GST is not charged while we are not registered under GST; if we register, GST will be added at the applicable rate and shown on the invoice.</li>
-    <li>Invoices are payable by the due date shown. Payments can be made online through Razorpay (cards, UPI, net banking, wallets) or by UPI / bank transfer with the payment proof uploaded in the portal.</li>
+    <li>Invoices are payable by the due date shown. Payments can be made online through Razorpay (cards, UPI, net banking, wallets) or by UPI / bank transfer with the payment proof uploaded in the portal. If you are outside India, you can pay online by international card through Razorpay. The amount is charged in INR, and your card issuer may add conversion or other fees.</li>
     <li>We never charge your card or account automatically: renewals are invoiced and you choose when to pay. Renewals due around the same time share one invoice, and an overdue balance is carried onto your next invoice.</li>
     <li>Renewal prices include an increase at the rate agreed for the service: every year for domains, every two years for hosting and every three years for maintenance. The price shown on the renewal invoice is the one that applies.</li>
     <li>Recurring services (domains, hosting, maintenance) are invoiced before each renewal. A service may be suspended if its invoice remains unpaid after the due date, and a domain that is not renewed in time may expire and be lost or carry a registry recovery fee.</li>
@@ -36,8 +36,8 @@ echo $this->render('_legal', ['title' => 'Terms & Conditions', 'updated' => '06 
 <h2 class="h5 fw-bold mt-4">5. Hosting and acceptable use</h2>
 <p>You must not use our hosting for unlawful content, spam, malware, phishing or anything that harms our servers or other customers. We may suspend a service that breaches this, with notice where possible. You are responsible for your own content and should keep your own copy of it; we take backups as a precaution but do not guarantee them.</p>
 
-<h2 class="h5 fw-bold mt-4">6. Website projects</h2>
-<p>Project timelines depend on you supplying content, approvals and feedback on time. Ownership of the finished website passes to you once its invoices are paid in full. We may show completed work in our portfolio unless you ask us not to.</p>
+<h2 class="h5 fw-bold mt-4">6. Development projects</h2>
+<p>Project timelines depend on you supplying content, approvals and feedback on time. Ownership of the finished work passes to you once its invoices are paid in full. We may show completed work in our portfolio unless you ask us not to.</p>
 
 <h2 class="h5 fw-bold mt-4">7. Cancellations and refunds</h2>
 <p>See our <a href="{$refund}">Refund &amp; Cancellation Policy</a>.</p>

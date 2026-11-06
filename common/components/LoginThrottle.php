@@ -17,6 +17,8 @@ use yii\web\Request;
  */
 final class LoginThrottle
 {
+    /** Authenticator codes on the admin panel. Only someone who has the password can reach them. */
+    public const SCOPE_ADMIN_CODE = 'backend-code';
     private const MAX_FAILURES = 5;
     private const LOCK_SECONDS = 900;
     /** Hash of a random value nobody knows, same bcrypt cost as real passwords. */
@@ -60,8 +62,8 @@ final class LoginThrottle
     private static function key(string $scope, string $username): string
     {
         $request = Yii::$app->request;
-        // Coupon guesses count per customer: changing network must not start again.
-        $ip = $request instanceof Request && $scope !== 'coupon' ? (string) $request->userIP : '';
+        // Coupon and authenticator-code guesses count per account: changing network must not start again.
+        $ip = $request instanceof Request && !in_array($scope, ['coupon', self::SCOPE_ADMIN_CODE], true) ? (string) $request->userIP : '';
 
         return 'login-throttle:' . $scope . ':' . mb_strtolower(trim($username)) . ':' . $ip;
     }

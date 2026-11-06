@@ -12,7 +12,6 @@ use yii\bootstrap5\Html;
 $this->title = 'Set your new password';
 $this->params['breadcrumbs'][] = $this->title;
 $this->params['meta_description'] = 'Set a new password for your account.';
-$this->params['meta_keywords'] = 'yii, yii2, reset password, new password, security';
 $htmlIcon = <<<HTML
 {label}<div class="input-group"><span class="input-group-text" aria-hidden="true">%s</span>{input}</div>{error}{hint}
 HTML;
@@ -31,14 +30,14 @@ $labelOptions = ['class' => 'form-label fw-semibold small'];
                             [
                                 'alt' => 'Miracle Web Technologies',
                                 'class' => 'mb-4',
-                                'height' => 40,
+                                'height' => 64,
                             ],
                         ) ?>
                     </div>
                     <div>
-                        <h2 class="fw-bold mb-3 login-brand-title">
+                        <p class="fw-bold mb-3 login-brand-title">
                             New<br>Password
-                        </h2>
+                        </p>
                         <p class="opacity-75 mb-0 login-brand-text">
                             Choose a strong password to keep your account secure.
                         </p>
@@ -56,7 +55,7 @@ $labelOptions = ['class' => 'form-label fw-semibold small'];
                                 [
                                     'alt' => 'Miracle Web Technologies',
                                     'class' => 'login-mobile-logo',
-                                    'height' => 36,
+                                    'height' => 48,
                                 ],
                             ) ?>
                         </div>
@@ -69,7 +68,7 @@ $labelOptions = ['class' => 'form-label fw-semibold small'];
                     <div class="mb-4">
                         <?= $form->field($model, 'password', [
                             'options' => ['class' => 'mb-0'],
-                            'template' => sprintf($htmlIcon, '&#128274;'),
+                            'template' => sprintf($htmlIcon, '<i class="fas fa-lock"></i>'),
                             'inputOptions' => [
                                 'autofocus' => true,
                                 'class' => 'form-control',

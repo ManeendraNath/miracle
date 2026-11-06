@@ -61,6 +61,11 @@ final class SupportController extends Controller
     {
         $model = new SupportTicket();
         $model->priority = SupportTicket::PRIORITY_NORMAL;
+        // "Paying from outside India?" links fill in the subject.
+        $subject = Yii::$app->request->get('subject');
+        if (is_string($subject)) {
+            $model->subject = mb_substr($subject, 0, 255);
+        }
         $userId = (int) Yii::$app->user->id;
 
         $services = [
@@ -92,6 +97,9 @@ final class SupportController extends Controller
             $model->closed_at = null;
             if (!$this->validateServiceOwnership($model)) {
                 $model->addError('service_id', 'Selected service is not available.');
+            }
+            if (!$model->hasErrors() && SupportTicket::overPostLimit($userId)) {
+                $model->addError('subject', 'You have sent a lot of messages this hour. Please wait a while before sending more.');
             }
             if (!$model->hasErrors()) {
                 $now = time();
@@ -177,6 +185,10 @@ final class SupportController extends Controller
         $message = is_string($posted) ? trim($posted) : '';
         if ($message === '' || mb_strlen($message) > 10000) {
             Yii::$app->session->setFlash('error', 'Please enter a valid reply.');
+            return $this->redirect(['view', 'number' => $number]);
+        }
+        if (SupportTicket::overPostLimit((int) Yii::$app->user->id)) {
+            Yii::$app->session->setFlash('error', 'You have sent a lot of messages this hour. Please wait a while before sending more.');
             return $this->redirect(['view', 'number' => $number]);
         }
         $model = new SupportTicketMessage();

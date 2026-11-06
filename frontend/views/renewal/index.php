@@ -119,7 +119,7 @@ $expiryLabel = static function (string $expiry) use ($today): array {
             [
                 'label' => 'Completed',
                 'value' => 'logged_at',
-                'format' => ['datetime', 'php:d M Y, h:i A'],
+                'format' => 'datetime',
                 'headerOptions' => ['class' => 'pe-3'],
                 'contentOptions' => ['class' => 'text-nowrap small text-body-secondary pe-3'],
             ],

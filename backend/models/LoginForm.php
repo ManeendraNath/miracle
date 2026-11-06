@@ -15,7 +15,6 @@ class LoginForm extends Model
 
     public $username;
     public $password;
-    public $rememberMe = true;
 
     private $_user;
 
@@ -29,7 +28,6 @@ class LoginForm extends Model
             [['username', 'password'], 'required'],
             // Arrays (LoginForm[username][]=x) would hit the (string) casts below.
             [['username', 'password'], 'string', 'max' => 255],
-            ['rememberMe', 'boolean'],
             ['password', 'validatePassword'],
         ];
     }
@@ -68,15 +66,14 @@ class LoginForm extends Model
         if (!$this->validate()) {
             return false;
         }
-        $duration = $this->rememberMe ? 3600 * 24 * 30 : 0;
         if ($this->getUser()->hasTwoFactor()) {
             // The throttle is cleared only after the code, so a known password
             // can't be used to reset the count while guessing codes.
-            TwoFactorForm::start($this->getUser(), $duration);
+            TwoFactorForm::start($this->getUser());
             return true;
         }
         LoginThrottle::clear('backend', $this->throttleName());
-        return Yii::$app->user->login($this->getUser(), $duration);
+        return Yii::$app->user->login($this->getUser());
     }
 
     /**

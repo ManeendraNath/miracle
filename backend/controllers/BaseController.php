@@ -2,8 +2,10 @@
 
 namespace backend\controllers;
 
+use backend\models\Admin;
 use Yii;
 use yii\web\Controller;
+use yii\web\ErrorAction;
 use yii\filters\AccessControl;
 use yii\filters\VerbFilter;
 use yii\web\ForbiddenHttpException;
@@ -42,6 +44,8 @@ class BaseController extends Controller
         'audit-request/update' => 'Admin',
         'audit-request/delete' => 'Admin',
         'hosting/cpanel-password' => 'Admin',
+        // Public website content.
+        'testimonial' => 'Admin',
     ];
 
     private const ROLE_RANK = ['Manager' => 1, 'Admin' => 2, 'Superadmin' => 3];
@@ -248,6 +252,30 @@ class BaseController extends Controller
         $rank = self::ROLE_RANK[$user->role ?? ''] ?? 0;
         $required = self::MIN_ROLE["{$controllerId}/{$actionId}"] ?? self::MIN_ROLE[$controllerId] ?? 'Manager';
         return $rank > 0 && $rank >= self::ROLE_RANK[$required];
+    }
+
+    /** Other tests sign in without a code; TwoFactorCest turns this on. */
+    public static bool $requireTwoFactor = !YII_ENV_TEST;
+
+    /** Admins and Superadmins handle money and accounts: until two-factor is on they can only reach My account to set it up. */
+    public function beforeAction($action)
+    {
+        if (!parent::beforeAction($action)) {
+            return false;
+        }
+        $user = Yii::$app->user->identity;
+        $required = self::$requireTwoFactor
+            && $user instanceof Admin
+            && in_array($user->role, [Admin::getRoleAdmin(), Admin::getRoleSuperAdmin()], true)
+            && !$user->hasTwoFactor()
+            && Admin::canStoreTwoFactor();
+        if (!$required || $action->uniqueId === 'admin/account' || $action instanceof ErrorAction) {
+            return true;
+        }
+        Yii::$app->session->setFlash('warning', 'Please turn on two-factor sign-in to continue. It is required for Admin and Superadmin accounts.');
+        $this->redirect(['/admin/account']);
+
+        return false;
     }
 
     public function behaviors()

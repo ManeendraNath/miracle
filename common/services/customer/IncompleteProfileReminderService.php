@@ -100,7 +100,10 @@ final class IncompleteProfileReminderService
             return ['no billing details yet'];
         }
 
-        return array_values(array_filter(self::REQUIRED, static fn(string $label, string $attribute): bool => trim((string) $profile->$attribute) === '', ARRAY_FILTER_USE_BOTH));
+        // Many countries have no postal code.
+        $required = $profile->isForeign() ? array_diff_key(self::REQUIRED, ['postal_code' => true]) : self::REQUIRED;
+
+        return array_values(array_filter($required, static fn(string $label, string $attribute): bool => trim((string) $profile->$attribute) === '', ARRAY_FILTER_USE_BOTH));
     }
 
     /** @param bool $countTickets false for the portal gate: opening a ticket must not unlock the portal */

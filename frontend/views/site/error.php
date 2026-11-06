@@ -20,12 +20,11 @@ $statusCode = $exception instanceof HttpException ? $exception->statusCode : 500
         <h2 class="display-6 fw-semibold mb-3"><?= Html::encode($message) ?></h2>
 
         <p class="text-body-secondary mb-4">
-            The above error occurred while the Web server was processing your request.
-            Please contact us if you think this is a server error. Thank you.
+            Sorry, this page could not be shown. Please go back to the home page, or contact us if it keeps happening.
         </p>
 
         <?= Html::a(
-            'Go to Homepage',
+            'Go to the home page',
             Yii::$app->homeUrl,
             ['class' => 'btn btn-outline-primary btn-lg'],
         ) ?>

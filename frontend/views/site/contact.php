@@ -1,65 +1,66 @@
 <?php
 
+declare(strict_types=1);
+
+/** @var yii\web\View $this */
+/** @var frontend\models\ContactForm $model */
+
 use common\components\CustomYii;
 use yii\bootstrap5\ActiveForm;
 use yii\bootstrap5\Html;
 use yii\captcha\Captcha;
 
-$this->title = 'Contact General Inquiries | Miracle Web Technologies';
+$this->title = 'Get a Project Quote | Miracle Web Technologies';
+$this->params['bare'] = true;
+$this->params['meta_description'] = 'Tell Miracle Web Technologies what you want to build or upgrade: a shopping cart, web application or website. We will reply with the next steps.';
+
+$address = array_filter(array_map(static fn($l): string => trim((string) $l, ' ,'), [
+    CustomYii::getSetting('address_line_1'),
+    CustomYii::getSetting('address_line_2'),
+    CustomYii::getSetting('address_line_3'),
+]));
+$phone = (string) CustomYii::getSetting('mobile_1');
+$email = (string) CustomYii::getSetting('email_1');
 ?>
-<div class="site-contact container py-5" style="font-family: 'Inter', sans-serif;">
-    <div class="p-5 text-white mb-4 shadow-sm" style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); border-radius: 0.75rem;">
-        <h1 class="fw-bold m-0">Let's Connect</h1>
-        <p class="mt-2 mb-0 opacity-75">Send a quick message to our account executives for partnerships, pricing, or custom proposals.</p>
+<div class="site-contact">
+    <div class="mw-glow">
+        <div class="container mw-page-head">
+            <h1 class="mw-h1 mb-3">Tell us about your project</h1>
+            <p class="mw-lead mb-0">Describe what you want to build or upgrade, and we'll reply with the next steps. Hosting and domain questions are welcome too.</p>
+        </div>
     </div>
 
-    <div class="row g-4">
-        <div class="col-lg-7">
-            <div class="card border-0 shadow-sm p-4 bg-white" style="border-radius: 0.75rem;">
+    <div class="container py-5">
+        <div class="row g-4 g-lg-5">
+            <div class="col-lg-7">
                 <?php $form = ActiveForm::begin(['id' => 'contact-form']); ?>
-                    <?= $form->field($model, 'name')->textInput(['class' => 'form-control py-2']) ?>
-                    <?= $form->field($model, 'email')->textInput(['class' => 'form-control py-2']) ?>
-                    <?= $form->field($model, 'subject')->textInput(['class' => 'form-control py-2']) ?>
-                    <?= $form->field($model, 'body')->textarea(['rows' => 4, 'class' => 'form-control'])->label('Your Message') ?>
+                    <?= $form->field($model, 'name')->textInput(['autocomplete' => 'name'])->label('Full name') ?>
+                    <?= $form->field($model, 'email')->textInput(['type' => 'email', 'autocomplete' => 'email'])->label('Email address') ?>
+                    <?= $form->field($model, 'subject')->textInput()->label('Subject') ?>
+                    <?= $form->field($model, 'body')->textarea(['rows' => 5, 'placeholder' => 'What should it do? Your country, and any deadline or budget, also help.'])->label('Your project') ?>
                     <?= $form->field($model, 'verifyCode')->widget(Captcha::class, [
                         'template' => '<div class="row g-2 align-items-center"><div class="col-auto">{image}</div><div class="col">{input}</div></div>',
-                    ]) ?>
-                    <div class="form-group text-end mt-4">
-                        <?= Html::submitButton('Send Secure Message ✓', ['class' => 'btn btn-lg fw-bold text-white px-5', 'style' => 'background-color: #00a3e0 !important; border-radius: 0.5rem;']) ?>
-                    </div>
+                    ])->label('Type the code shown') ?>
+                    <?= Html::submitButton('Send project details', ['class' => 'btn btn-primary btn-lg mt-2']) ?>
                 <?php ActiveForm::end(); ?>
             </div>
-        </div>
-        <div class="col-lg-5">
-            <?php
-            $address = implode('<br>', array_map(static fn($l): string => Html::encode(trim((string) $l, ' ,')), array_filter([
-                CustomYii::getSetting('address_line_1'),
-                CustomYii::getSetting('address_line_2'),
-                CustomYii::getSetting('address_line_3'),
-            ])));
-            $phone = (string) CustomYii::getSetting('mobile_1');
-            $email = (string) CustomYii::getSetting('email_1');
-            ?>
-            <div class="card border-0 shadow-sm p-4 bg-white mb-4" style="border-radius: 0.75rem;">
-                <h2 class="h5 fw-bold mb-3"><?= Html::encode(CustomYii::getSetting('site_name') ?: 'Miracle Web Technologies') ?></h2>
-                <ul class="list-unstyled small mb-0">
-                    <?php if ($address !== ''): ?>
-                        <li class="d-flex mb-2"><i class="fas fa-map-marker-alt fa-fw me-2 mt-1 text-primary"></i><span><?= $address ?></span></li>
-                    <?php endif; ?>
-                    <?php if ($phone !== ''): ?>
-                        <li class="mb-2"><i class="fas fa-phone-alt fa-fw me-2 text-primary"></i><?= Html::a('+' . Html::encode($phone), 'tel:+' . $phone) ?></li>
-                    <?php endif; ?>
-                    <?php if ($email !== ''): ?>
-                        <li class="mb-2"><i class="fas fa-envelope fa-fw me-2 text-primary"></i><?= Html::mailto(Html::encode($email), $email) ?></li>
-                    <?php endif; ?>
-                </ul>
-            </div>
-            <div class="card border-0 shadow-sm p-4 text-white" style="background-color: #1e293b; border-radius: 0.75rem; border-left: 5px solid #dc2626 !important;">
-                <h4 class="fw-bold text-white mb-3">Need a website review?</h4>
-                <p class="small text-slate-300">Tell us about your current website or hosting and we'll suggest what to improve: speed, security, design or a better hosting plan.</p>
-                <div class="mt-4">
-                    <?= Html::a('Request a website audit', ['site/audit'], ['class' => 'btn w-100 fw-bold py-3 text-white', 'style' => 'background-color: #dc2626 !important; border-radius: 0.5rem;']) ?>
+            <div class="col-lg-5">
+                <div class="mw-panel mb-4">
+                    <h2 class="h4 fw-bold mb-3"><?= Html::encode(CustomYii::getSetting('site_name') ?: 'Miracle Web Technologies') ?></h2>
+                    <ul class="mw-contact-list">
+                        <?php if ($email !== ''): ?>
+                            <li><i class="fas fa-envelope fa-fw" aria-hidden="true"></i><?= Html::mailto(Html::encode($email), $email) ?></li>
+                        <?php endif; ?>
+                        <?php if ($phone !== ''): ?>
+                            <li><i class="fas fa-phone-alt fa-fw" aria-hidden="true"></i><?= Html::a(Html::encode(CustomYii::formatPhone($phone)), 'tel:+' . $phone) ?></li>
+                        <?php endif; ?>
+                        <?php if ($address): ?>
+                            <li><i class="fas fa-map-marker-alt fa-fw" aria-hidden="true"></i><span><?= implode('<br>', array_map([Html::class, 'encode'], $address)) ?><br>India</span></li>
+                        <?php endif; ?>
+                    </ul>
                 </div>
+                <p>Have an existing site to improve? <?= Html::a('Upgrade your website', ['site/audit']) ?>.</p>
+                <p class="mb-0">Already a customer? <?= Html::a('Log in', ['site/login']) ?> to raise a support ticket.</p>
             </div>
         </div>
     </div>

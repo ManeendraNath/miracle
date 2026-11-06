@@ -15,6 +15,12 @@ class CustomYii extends \Yii
      */
     const APPLICATION_NAME = 'Miracle Web Technologies';
 
+    /** Settings keep phone numbers as digits with the country code: shown as +91 96545 11842. */
+    public static function formatPhone(string $digits): string
+    {
+        return preg_match('/^91(\d{5})(\d{5})$/', $digits, $m) === 1 ? "+91 {$m[1]} {$m[2]}" : '+' . $digits;
+    }
+
     /**
      * @var SiteSetting|null Internal memory cache store for the site layout records
      */

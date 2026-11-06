@@ -45,6 +45,7 @@ $dataProvider->pagination->pageSize = GridPaginationHelper::getPageSize();
                     ],
                     [
                         'attribute' => 'message',
+                        'format' => 'ntext',
                         'contentOptions' => [
                             'style' => 'max-width:450px;',
                         ],

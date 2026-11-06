@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace frontend\controllers;
 
 use Yii;
+use common\components\LoginThrottle;
 use common\models\Invoice;
 use common\models\Transaction;
 use common\models\forms\PaymentProofForm;
@@ -118,6 +119,12 @@ final class InvoiceController extends Controller
         Yii::$app->response->format = Response::FORMAT_JSON;
         $invoice = $this->findOwnedInvoice($number);
         $razorpay = new RazorpayService();
+        // An earlier attempt may have been paid with both the callback and the webhook lost: never charge twice.
+        // Before any lock (see lockUnpaidOrders), and a failed lookup doesn't stop the customer paying.
+        if ($razorpay->isEnabled() && $razorpay->recoverPaidOrders((int) $invoice->id) > 0) {
+            Yii::$app->response->statusCode = 422;
+            return ['error' => 'We have just found your earlier payment and recorded it. Please reload this page to see your balance.'];
+        }
         // Lock the invoice so a coupon applied in another tab (InvoiceCouponService locks the same row)
         // can't change the total between reading the amount and creating the order.
         // ponytail: the row stays locked during the Razorpay API call (a few seconds at most).
@@ -132,6 +139,11 @@ final class InvoiceController extends Controller
                 $dbTransaction->rollBack();
                 Yii::$app->response->statusCode = 422;
                 return ['error' => $proofPending ? 'A payment for this invoice is already awaiting verification.' : 'Online payment is not available for this invoice.'];
+            }
+            if ($outstanding < 1) {
+                $dbTransaction->rollBack();
+                Yii::$app->response->statusCode = 422;
+                return ['error' => 'The remaining ₹' . number_format($outstanding, 2) . ' is below the ₹1 minimum for online payment. Please pay it by UPI or bank transfer, or contact support.'];
             }
             $transaction = $razorpay->createOrder($invoice, $outstanding);
             $dbTransaction->commit();
@@ -208,11 +220,22 @@ final class InvoiceController extends Controller
     {
         $invoice = $this->findOwnedInvoice($number);
         $code = Yii::$app->request->post('coupon_code');
+        // Five wrong codes and a wait, so codes can't be guessed; the same answer whether a code exists or is someone else's.
+        $throttleName = 'user#' . (int) Yii::$app->user->id;
+        if (LoginThrottle::isLocked('coupon', $throttleName)) {
+            Yii::$app->session->setFlash('error', 'Too many attempts. Please try again in 15 minutes.');
+            return $this->redirect(['view', 'number' => $invoice->invoice_number]);
+        }
         try {
             (new InvoiceCouponService())->apply($invoice, is_string($code) ? $code : '');
+            LoginThrottle::clear('coupon', $throttleName);
             Yii::$app->session->setFlash('success', 'Coupon applied.');
         } catch (\DomainException $e) {
-            Yii::$app->session->setFlash('error', $e->getMessage());
+            $unknown = in_array($e->getMessage(), ['Coupon code is invalid.', 'This coupon is not assigned to your account.'], true);
+            if ($unknown) {
+                LoginThrottle::fail('coupon', $throttleName);
+            }
+            Yii::$app->session->setFlash('error', $unknown ? 'This coupon code cannot be used on this invoice.' : $e->getMessage());
         }
         return $this->redirect(['view', 'number' => $invoice->invoice_number]);
     }

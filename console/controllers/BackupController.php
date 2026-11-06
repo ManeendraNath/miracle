@@ -25,6 +25,11 @@ class BackupController extends Controller
             $this->stdout("Turned off in the admin panel: skipping {$action->id}.\n", Console::FG_YELLOW);
             return false;
         }
+        // As the cron jobs: code and schema may be half changed. deploy.sh's own dump runs under this flag on purpose.
+        if (!$this->dbOnly && is_file(dirname(Yii::getAlias('@common')) . '/runtime/maintenance.flag')) {
+            $this->stdout("Deployment in progress: skipping {$action->id}.\n", Console::FG_YELLOW);
+            return false;
+        }
         return parent::beforeAction($action);
     }
 

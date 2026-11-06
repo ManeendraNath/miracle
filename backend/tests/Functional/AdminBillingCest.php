@@ -131,7 +131,8 @@ final class AdminBillingCest
             'User[password_reset_token]' => 'attacker-token_' . time(),
             'User[status]' => (string) User::getStatusSuspended(),
         ]);
-        $I->seeRecord(User::class, ['id' => $customer, 'username' => 'login-customer-' . $suffix, 'email' => 'login-' . $suffix . '@example.test', 'password_hash' => 'original-hash', 'auth_key' => 'x', 'password_reset_token' => null, 'status' => User::getStatusSuspended()]);
+        $I->seeRecord(User::class, ['id' => $customer, 'username' => 'login-customer-' . $suffix, 'email' => 'login-' . $suffix . '@example.test', 'password_hash' => 'original-hash', 'password_reset_token' => null, 'status' => User::getStatusSuspended()]);
+        $I->dontSeeRecord(User::class, ['id' => $customer, 'auth_key' => 'attacker-key']);
     }
 
     public function partialRefundCanCloseTheInvoiceKeepingTheRest(FunctionalTester $I): void
@@ -145,6 +146,70 @@ final class AdminBillingCest
         $this->post($I, 'refund', $payment, ['refund_amount' => '100', 'refunded_before' => '0.00']);
         $I->see('This payment was refunded meanwhile');
         $I->seeRecord(Transaction::class, ['id' => $payment, 'refunded_amount' => 800]);
+    }
+
+    public function creatingACustomerOpensTheirBillingForm(FunctionalTester $I): void
+    {
+        $suffix = bin2hex(random_bytes(4));
+        $I->amOnRoute('user/create');
+        $I->submitForm('#user-form', ['User[username]' => 'new-' . $suffix, 'User[email]' => 'new-' . $suffix . '@example.test', 'User[password]' => 'CustomerPassword1', 'User[status]' => (string) User::getStatusActive()]);
+        $I->seeInCurrentUrl('customer-billing-profile/create');
+        $I->see('Customer Will Complete This');
+        $I->see('Default Discount');
+    }
+
+    public function aManagerCanOnlyFillInWhatACustomerCould(FunctionalTester $I): void
+    {
+        $suffix = bin2hex(random_bytes(4));
+        $customer = (int) $I->haveRecord(User::class, ['username' => 'mgr-profile-' . $suffix, 'email' => 'mgr-' . $suffix . '@example.test', 'auth_key' => 'x', 'password_hash' => 'x', 'status' => User::getStatusActive(), 'created_at' => time(), 'updated_at' => time()]);
+        $other = (int) $I->haveRecord(User::class, ['username' => 'mgr-other-' . $suffix, 'email' => 'other-' . $suffix . '@example.test', 'auth_key' => 'x', 'password_hash' => 'x', 'status' => User::getStatusActive(), 'created_at' => time(), 'updated_at' => time()]);
+        $I->haveRecord(Admin::class, ['username' => 'billing-manager', 'email' => 'billing-manager@example.test', 'auth_key' => Yii::$app->security->generateRandomString(), 'password_hash' => Yii::$app->security->generatePasswordHash(self::PASSWORD), 'role' => 'Manager', 'status' => 1, 'created_at' => time(), 'updated_at' => time()]);
+        $I->amOnRoute('dashboard/index');
+        $I->sendAjaxPostRequest('/auth/logout', [Yii::$app->request->csrfParam => $I->grabAttributeFrom('meta[name=csrf-token]', 'content')]);
+        $I->amOnRoute('auth/login');
+        $I->submitForm('#login-form', ['LoginForm[username]' => 'billing-manager', 'LoginForm[password]' => self::PASSWORD]);
+
+        $I->amOnRoute('customer-billing-profile/create');
+        $I->seeResponseCodeIs(404);
+        $I->amOnRoute('customer-billing-profile/create', ['user_id' => $customer]);
+        $I->dontSee('Default Discount');
+        $I->sendAjaxPostRequest('/customer-billing-profile/create?user_id=' . $customer, [
+            Yii::$app->request->csrfParam => $I->grabAttributeFrom('meta[name=csrf-token]', 'content'),
+            'CustomerBillingProfile[user_id]' => (string) $other,
+            'CustomerBillingProfile[legal_name]' => 'Manager Typed',
+            'CustomerBillingProfile[address_line_1]' => '1 Road',
+            'CustomerBillingProfile[city]' => 'Delhi',
+            'CustomerBillingProfile[state]' => 'Delhi',
+            'CustomerBillingProfile[postal_code]' => '110001',
+            'CustomerBillingProfile[default_discount_amount]' => '999',
+            'CustomerBillingProfile[is_gst_applicable]' => '1',
+        ]);
+        $I->seeRecord(\common\models\CustomerBillingProfile::class, ['user_id' => $customer, 'legal_name' => 'Manager Typed', 'default_discount_amount' => 0, 'is_gst_applicable' => 0]);
+        $I->dontSeeRecord(\common\models\CustomerBillingProfile::class, ['user_id' => $other]);
+        $I->amOnRoute('customer-billing-profile/index');
+        $I->seeResponseCodeIs(403);
+    }
+
+    public function approvingAProofOnAPaidInvoiceHoldsTheMoney(FunctionalTester $I): void
+    {
+        $invoice = $this->invoice($I, Invoice::STATUS_PAID);
+        $payment = $this->transaction($I, $invoice, Transaction::GATEWAY_UPI_BANK, Transaction::STATUS_PENDING);
+        $this->post($I, 'approve', $payment);
+        $I->see('so it is held on the payment');
+        $I->seeRecord(Transaction::class, ['id' => $payment, 'status' => Transaction::STATUS_CAPTURED, 'is_unapplied' => 1]);
+        $I->seeRecord(Invoice::class, ['id' => $invoice, 'status' => Invoice::STATUS_PAID]);
+        $I->seeRecord(\common\models\AdminNotification::class, ['title' => 'Approved Payment Needs Attention']);
+    }
+
+    public function aRefundIsListedAndTheCustomerTold(FunctionalTester $I): void
+    {
+        $invoice = $this->invoice($I, Invoice::STATUS_PAID);
+        $payment = $this->transaction($I, $invoice, Transaction::GATEWAY_UPI_BANK, Transaction::STATUS_CAPTURED);
+        $this->post($I, 'refund', $payment, ['refund_amount' => '400']);
+        $this->post($I, 'refund', $payment, ['refund_amount' => '100']);
+        $I->assertEquals(['400.00', '100.00'], \common\models\TransactionRefund::find()->select('amount')->where(['transaction_id' => $payment])->orderBy(['id' => SORT_ASC])->column());
+        $I->seeRecord(\common\models\CustomerNotification::class, ['user_id' => Invoice::findOne($invoice)->user_id, 'title' => 'Payment Refunded']);
+        $I->seeEmailIsSent();
     }
 
     public function onlyASuperadminCanSwitchACronJob(FunctionalTester $I): void

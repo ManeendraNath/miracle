@@ -68,7 +68,7 @@ $refundStep = $viaRazorpay
                     </div>
                     <div class="col-md-3">
                         <strong>Status</strong><br>
-                        <?= Html::encode(Invoice::getStatuses()[$model->invoice->status] ?? $model->invoice->status) ?>
+                        <?= Html::encode(Invoice::labelOf($model->invoice)) ?>
                     </div>
                 </div>
             </div>
@@ -174,6 +174,8 @@ $refundStep = $viaRazorpay
             <?php
             $invoiceClosed = in_array($model->invoice->status ?? null, \common\services\billing\InvoicePaymentService::CLOSED_STATUSES, true);
             $stillOwedNote = $invoiceClosed ? 'The invoice is closed and stays as it is: nothing more is owed on it. Renewals already granted are NOT reversed: disable the service if needed.' : 'The refunded amount becomes due again on the invoice.';
+            $carrying = ($model->invoice->status ?? null) === Invoice::STATUS_CARRIED_FORWARD ? (new \common\services\billing\InvoicePaymentService())->openInvoiceCarrying((int) $model->invoice_id) : null;
+            $stillOwedNote = $carrying !== null ? 'The balance of this invoice moved to ' . $carrying->invoice_number . ', still open: this can only be refunded once that is settled, unless Razorpay already shows the refund.' : $stillOwedNote;
             $stillOwedNote = $model->isUnapplied() ? 'This payment was not counted on the invoice, so its balance does not change.' : $stillOwedNote;
             ?>
             <div class="col-lg-4">

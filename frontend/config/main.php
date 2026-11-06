@@ -23,6 +23,7 @@ return [
     'name' => \common\components\CustomYii::APPLICATION_NAME,
     'bootstrap' => ['log'],
     'controllerNamespace' => 'frontend\controllers',
+    'on beforeAction' => [\frontend\components\ProfileGate::class, 'check'],
     'components' => [
         // -----------------------------------------------------
         // ASSETS

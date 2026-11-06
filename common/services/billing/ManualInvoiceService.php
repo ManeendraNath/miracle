@@ -16,6 +16,9 @@ use Yii;
 
 final class ManualInvoiceService
 {
+    /** Something staff should be told about the last update. */
+    public ?string $notice = null;
+
     public function __construct(
         private readonly TaxCalculator $taxCalculator = new TaxCalculator(),
         private readonly InvoiceNumberService $numberService = new InvoiceNumberService(),
@@ -249,7 +252,18 @@ final class ManualInvoiceService
                 throw new \DomainException('Only fully manual invoices can be ' . 'modified using this editor.');
             }
 
-            if ($couponCode !== '') {
+            $storedCode = strtoupper(trim((string) $lockedInvoice->coupon_code));
+            $newTotals = $this->totalsByType($items);
+            $storedTotals = [];
+            foreach (InvoiceItem::find()->where(['invoice_id' => $lockedInvoice->id])->all() as $line) {
+                $storedTotals[$line->item_type] = round(($storedTotals[$line->item_type] ?? 0) + (float) $line->total_price, 2);
+            }
+            ksort($newTotals);
+            ksort($storedTotals);
+            if ($couponCode !== '' && $couponCode === $storedCode && $newTotals == $storedTotals) {
+                // Same coupon, same lines: the discount the customer was given stands, whatever became of the coupon since.
+                $discount = round((float) $lockedInvoice->discount_amount, 2);
+            } elseif ($couponCode !== '') {
                 $discount = $this->couponService->calculate(
                     $couponCode,
                     (int) $lockedInvoice->user_id,
@@ -257,13 +271,14 @@ final class ManualInvoiceService
                     (int) $lockedInvoice->id,
                     // Keeping the coupon it already has: an edit must not fail
                     // because that coupon has since expired or been disabled.
-                    $couponCode === strtoupper(trim((string) $lockedInvoice->coupon_code)),
-                    $this->totalsByType($items),
+                    $couponCode === $storedCode,
+                    $newTotals,
                 );
             } else {
                 $discount = max(0, round((float) $invoice->discount_amount, 2));
                 // The coupon was removed: its discount goes with it, unless staff typed a new figure.
                 if ((string) $lockedInvoice->coupon_code !== '' && abs($discount - (float) $lockedInvoice->discount_amount) < 0.005) {
+                    $this->notice = 'The coupon was removed, so its discount of ₹' . number_format($discount, 2) . ' was removed too.';
                     $discount = 0.0;
                 }
             }

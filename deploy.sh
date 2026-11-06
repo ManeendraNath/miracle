@@ -28,18 +28,30 @@ COMPOSER=(composer install --prefer-dist --no-dev --no-interaction --optimize-au
 
 STAGE=prep          # prep: nothing changed yet; code: $APP is being changed
 MIGRATED=0
+PRIOR_FLAG=0        # 1: already in maintenance before this deploy, e.g. after an earlier failed one
 BACKUP=""
 SNAP=""
 
 die() { echo "ERROR: $*" >&2; exit 1; }
 
+# The site's PHP version and settings, as cPanel wrote them into an .htaccess we are about to replace.
+cpanel_block()
+{
+    sed -n -e '/^# php -- BEGIN cPanel-generated/,/^# php -- END cPanel-generated/p' -e '/^# BEGIN cPanel-generated/,/^# END cPanel-generated/p' "$1" 2>/dev/null || true
+}
+
 # Mirrors $1/{common,frontend,backend,console} and composer files into $APP.
 sync_code()
 {
-    local d
+    local d cpanel admin_htaccess="$APP/backend/web/.htaccess"
+    # The admin subdomain's document root: same cPanel block as public_html, and rsync would drop it.
+    cpanel=$(cpanel_block "$admin_htaccess")
     for d in "${DIRS[@]}"; do
         rsync -a --delete "${KEEP[@]}" "$1/$d/" "$APP/$d/" || return 1
     done
+    if [ -n "$cpanel" ] && ! grep -q 'cPanel-generated' "$admin_htaccess" 2>/dev/null; then
+        printf '\n%s\n' "$cpanel" >> "$admin_htaccess" || return 1
+    fi
     cp -a "$1/composer.json" "$1/composer.lock" "$APP/" || return 1
 }
 
@@ -91,7 +103,7 @@ $config = yii\helpers\ArrayHelper::merge(
 PHP
 
     # cPanel writes the site's PHP version and settings into this file: they must survive it being rewritten.
-    cpanel=$(sed -n -e '/^# php -- BEGIN cPanel-generated/,/^# php -- END cPanel-generated/p' -e '/^# BEGIN cPanel-generated/,/^# END cPanel-generated/p' "$PUBLIC/.htaccess" 2>/dev/null || true)
+    cpanel=$(cpanel_block "$PUBLIC/.htaccess")
 
     cat > "$PUBLIC/.htaccess" <<'HTACCESS' || return 1
 RewriteEngine On
@@ -141,11 +153,16 @@ on_fail()
         echo "Restoring the previous code..."
         # A failed health check comes after the flag was removed: put it back before swapping code under traffic.
         touch "$MAINTENANCE_FLAG"
-        if sync_code "$SNAP" && (cd "$APP" && "${COMPOSER[@]}") && publish_public \
-            && (cd "$APP" && php yii help >/dev/null) && rm -f "$MAINTENANCE_FLAG" && health_check; then
+        if ! (sync_code "$SNAP" && (cd "$APP" && "${COMPOSER[@]}") && publish_public && cd "$APP" && php yii help >/dev/null); then
+            touch "$MAINTENANCE_FLAG"
+            echo "ROLLBACK HAD ERRORS. Previous code is kept in: $SNAP"
+        elif [ "$MIGRATED" = 1 ] || [ "$PRIOR_FLAG" = 1 ]; then
+            # The schema may be newer than the restored code, or the site was already down for another reason:
+            # customers stay out until someone has looked.
             echo "Previous code restored."
-            # The schema is newer than the restored code: keep customers out until someone has looked.
-            if [ "$MIGRATED" = 1 ]; then touch "$MAINTENANCE_FLAG"; fi
+            rm -rf "${SNAP:?}"
+        elif rm -f "$MAINTENANCE_FLAG" && health_check; then
+            echo "Previous code restored."
             rm -rf "${SNAP:?}"
         else
             touch "$MAINTENANCE_FLAG"
@@ -153,7 +170,11 @@ on_fail()
         fi
         if [ "$MIGRATED" = 1 ]; then
             echo "WARNING: migrations had started and were NOT reversed. Check: php yii migrate/history 5"
-            [ -n "$BACKUP" ] && echo "Restore if needed: gunzip -c $BACKUP | mysql <database>"
+            if [ -n "$BACKUP" ]; then
+                echo "To restore: tables added by the migrations must go too, so empty the database first:"
+                echo "  mysql -N -e \"SELECT CONCAT('DROP TABLE IF EXISTS \\\`', table_name, '\\\`;') FROM information_schema.tables WHERE table_schema='<database>'\" | (echo 'SET FOREIGN_KEY_CHECKS=0;'; cat) | mysql <database>"
+                echo "  gunzip -c $BACKUP | mysql <database>"
+            fi
         fi
     elif [ -n "$SNAP" ]; then
         rm -rf "${SNAP:?}"
@@ -223,6 +244,7 @@ STAGE=code
 # ponytail: a cron run already in progress is not waited for; add a wait here if runs get long.
 # runtime/logs: crontab output (billing-cron.log, read by the admin Cron Log page).
 mkdir -p "$APP/runtime/logs"
+if [ -e "$MAINTENANCE_FLAG" ]; then PRIOR_FLAG=1; fi
 touch "$MAINTENANCE_FLAG"
 
 sync_code "$REPO"
@@ -251,14 +273,13 @@ fi
 
 # Logs and customers' payment proofs: not readable by other accounts on the server.
 for d in runtime frontend/runtime backend/runtime console/runtime common/runtime storage/payment-receipts; do
-    mkdir -p "$APP/$d"
-    chmod -R u=rwX,g=rwX,o= "$APP/$d"
+    # The code and schema are already live: a file the shell user doesn't own must not roll all that back.
+    mkdir -p "$APP/$d" && chmod -R u=rwX,g=rwX,o= "$APP/$d" || echo "WARNING: could not set permissions on $APP/$d"
 done
-chmod 640 "$APP/.env"
+chmod 640 "$APP/.env" || echo "WARNING: could not set permissions on $APP/.env"
 # Served by the web server.
 for d in frontend/web/assets backend/web/assets; do
-    mkdir -p "$APP/$d"
-    chmod -R 775 "$APP/$d"
+    mkdir -p "$APP/$d" && chmod -R 775 "$APP/$d" || echo "WARNING: could not set permissions on $APP/$d"
 done
 rm -f "$MAINTENANCE_FLAG"
 

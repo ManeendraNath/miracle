@@ -6,7 +6,8 @@ Customer portal and admin panel for domain, hosting and maintenance billing
 - `frontend/` — customer portal (services, invoices, payments, support)
 - `backend/` — admin panel
 - `console/` — cron jobs (`cron/run-billing`, `cron/payment-reminders`,
-  `cron/send-reminders`, `cron/whatsapp-cleanup`, `cron/razorpay-sync`, `backup/run`) and migrations
+  `cron/send-reminders`, `cron/profile-reminders`, `cron/whatsapp-cleanup`, `cron/razorpay-sync`, `backup/run`)
+  and migrations
 - `common/services/` — billing, notification and support logic
 
 Billing rules: [docs/BILLING.md](docs/BILLING.md), [docs/BILLING_MODULE.md](docs/BILLING_MODULE.md).
@@ -16,7 +17,7 @@ Schema: [docs/DATABASE_DICTIONARY.md](docs/DATABASE_DICTIONARY.md).
 
 ```bash
 composer2 install
-php init                 # generates /yii and local config
+php init --env=Development --overwrite=n   # generates /yii and local config
 cp .env.example .env     # then fill it in
 php yii migrate          # a fresh install needs ADMIN_INITIAL_PASSWORD in .env
 ```

@@ -90,6 +90,19 @@ class Admin extends base\Admin implements IdentityInterface
      * {@inheritdoc}
      */
     #[\Override]
+    public function beforeSave($insert): bool
+    {
+        if (!$insert) {
+            $this->dropStaleResetToken();
+        }
+
+        return parent::beforeSave($insert);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    #[\Override]
     public function attributeLabels(): array
     {
         $attribute = [

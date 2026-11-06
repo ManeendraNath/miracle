@@ -68,7 +68,7 @@ class CronController extends Controller
             return ExitCode::UNSPECIFIED_ERROR;
         } finally {
             if ($locked) {
-                $mutex->release($lockName);
+                $this->releaseLock($mutex, $lockName);
             }
         }
         if ($problems !== null) {
@@ -114,7 +114,7 @@ class CronController extends Controller
             return ExitCode::UNSPECIFIED_ERROR;
         } finally {
             if ($locked) {
-                $mutex->release($emailLock);
+                $this->releaseLock($mutex, $emailLock);
             }
         }
     }
@@ -227,6 +227,16 @@ class CronController extends Controller
         }
     }
 
+    /** In a finally: a lost database connection here must not replace the job's result. */
+    private function releaseLock(\yii\mutex\Mutex $mutex, string $name): void
+    {
+        try {
+            $mutex->release($name);
+        } catch (\Throwable $e) {
+            Yii::error($e, __METHOD__);
+        }
+    }
+
     private function runLocked(string $lockName, string $label, callable $job): int
     {
         /** @var \yii\mutex\Mutex $mutex */
@@ -247,7 +257,7 @@ class CronController extends Controller
             return ExitCode::UNSPECIFIED_ERROR;
         } finally {
             if ($locked) {
-                $mutex->release($lockName);
+                $this->releaseLock($mutex, $lockName);
             }
         }
     }

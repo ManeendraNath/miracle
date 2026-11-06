@@ -91,6 +91,26 @@ final class PaymentConfirmationService
         }
     }
 
+    public function sendRefund(Invoice $invoice, float $amount, bool $viaGateway): void
+    {
+        $client = User::findOne((int) $invoice->user_id);
+        if ($client === null || empty($client->email)) {
+            throw new \DomainException('Customer email address is unavailable.');
+        }
+        $sent = Yii::$app->mailer
+            ->compose(
+                ['html' => '@common/mail/payment-refunded-html', 'text' => '@common/mail/payment-refunded-text'],
+                ['invoice' => $invoice, 'amount' => $amount, 'viaGateway' => $viaGateway, 'invoiceUrl' => $this->getInvoiceUrl($invoice)],
+            )
+            ->setFrom([Yii::$app->params['senderEmail'] => Yii::$app->params['senderName']])
+            ->setTo($client->email)
+            ->setSubject('Refund issued - ' . $invoice->invoice_number)
+            ->send();
+        if (!$sent) {
+            throw new \RuntimeException('Refund email could not be sent.');
+        }
+    }
+
     private function getInvoiceUrl(Invoice $invoice): string
     {
         $baseUrl = rtrim((string) (Yii::$app->params['frontendBaseUrl'] ?? ''), '/');

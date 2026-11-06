@@ -64,6 +64,14 @@ trait PasswordManagementTrait
         }
     }
 
+    /** A reset link asked for before the password or email changed must not work after. */
+    protected function dropStaleResetToken(): void
+    {
+        if ($this->isAttributeChanged('password_hash', false) || $this->isAttributeChanged('email', false)) {
+            $this->password_reset_token = null;
+        }
+    }
+
     /**
      * Clear the plain-text password.
      *

@@ -15,6 +15,7 @@ use Yii;
  * @property int $is_read
  * @property int|null $read_at
  * @property int $created_at
+ * @property int|null $emailed_at
  */
 class AdminNotification extends \yii\db\ActiveRecord
 {
@@ -36,7 +37,7 @@ class AdminNotification extends \yii\db\ActiveRecord
             [['is_read'], 'default', 'value' => 0],
             [['type', 'title', 'message', 'created_at'], 'required'],
             [['message'], 'string'],
-            [['is_read', 'read_at', 'created_at'], 'integer'],
+            [['is_read', 'read_at', 'created_at', 'emailed_at'], 'integer'],
             [['type'], 'string', 'max' => 50],
             [['title'], 'string', 'max' => 255],
             [['route'], 'string', 'max' => 500],

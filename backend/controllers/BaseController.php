@@ -26,6 +26,8 @@ class BaseController extends Controller
         'transaction' => 'Admin',
         'coupon' => 'Admin',
         'customer-billing-profile' => 'Admin',
+        // Right after creating a customer; below Admin it only takes what the customer could enter themselves.
+        'customer-billing-profile/create' => 'Manager',
         'user-login-history' => 'Admin',
         'report' => 'Admin',
         'razorpay-test' => 'Admin',
@@ -73,6 +75,9 @@ class BaseController extends Controller
         }
         if (!self::canEditRenewalPricing()) {
             $model->setAttributes($kept, false);
+        }
+        if ($model instanceof \common\models\Hosting && !self::canAccess(Yii::$app->user->identity, 'hosting', 'cpanel-password')) {
+            $model->new_cpanel_password = null;
         }
         $expiryChanged = $model->isAttributeChanged('current_expiry_date', false);
         $customerChanged = $model->isAttributeChanged('user_id', false);
@@ -172,9 +177,11 @@ class BaseController extends Controller
             default => \common\models\InvoiceItem::TYPE_MAINTENANCE,
         };
         $where = ['item_type' => $type, 'item_id' => (int) $model->id];
+        // Moving a service to another customer: a renewal already granted is still owed on an open invoice.
+        $eventStatuses = $customerChanged ? [\common\models\BillingEvent::STATUS_INVOICED, \common\models\BillingEvent::STATUS_FULFILLED] : [\common\models\BillingEvent::STATUS_INVOICED];
         $billedOn = static fn(array $statuses): \yii\db\ActiveQuery => \common\models\Invoice::find()->alias('i')
             ->innerJoin(['e' => \common\models\BillingEvent::tableName()], 'e.invoice_id = i.id')
-            ->where(['e.item_type' => $type, 'e.item_id' => (int) $model->id, 'e.status' => \common\models\BillingEvent::STATUS_INVOICED])
+            ->where(['e.item_type' => $type, 'e.item_id' => (int) $model->id, 'e.status' => $eventStatuses])
             ->andWhere(['i.status' => $statuses]);
         $open = $billedOn([\common\models\Invoice::STATUS_UNPAID, \common\models\Invoice::STATUS_PARTIALLY_PAID])->one();
         $attribute = $expiryChanged ? 'current_expiry_date' : 'user_id';
@@ -205,9 +212,15 @@ class BaseController extends Controller
                     $where + ['status' => \common\models\BillingEvent::STATUS_PENDING, 'invoice_id' => null]
                 );
                 // The period of a refunded renewal is billable again once the expiry is back before its end.
+                $released = ['and', ['id' => $refunded], ['>', 'period_end', (string) $model->current_expiry_date]];
+                // Its one-time price was cleared when it was paid, and still applies to the re-billed renewal.
+                $oneTime = \common\models\BillingEvent::find()->where($released)->andWhere(['is_manual_amount' => 1])->orderBy(['period_end' => SORT_ASC])->one();
+                if ($oneTime !== null && $model->next_renewal_amount === null) {
+                    $model->updateAttributes(['next_renewal_amount' => $oneTime->amount]);
+                }
                 \common\models\BillingEvent::updateAll(
                     ['status' => \common\models\BillingEvent::STATUS_CANCELLED, 'notes' => 'Renewal refunded; expiry set back by staff.', 'updated_at' => time()],
-                    ['and', ['id' => $refunded], ['>', 'period_end', (string) $model->current_expiry_date]]
+                    $released
                 );
                 if (is_string($carriedEnd) && (string) $model->current_expiry_date < $carriedEnd) {
                     Yii::$app->session->setFlash('warning', 'A carried-forward renewal runs until ' . Yii::$app->formatter->asDate($carriedEnd, 'php:d M Y') . '. When its balance is paid, the expiry moves to that date.');

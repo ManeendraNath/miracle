@@ -8,7 +8,7 @@ use common\models\AdminNotification;
 
 class AdminNotificationService
 {
-    public function create(string $type, string $title, string $message, ?string $route = null): void
+    public function create(string $type, string $title, string $message, ?string $route = null): AdminNotification
     {
         $model = new AdminNotification();
         $model->type = $type;
@@ -21,5 +21,7 @@ class AdminNotificationService
         if (!$model->save()) {
             throw new \RuntimeException('Admin notification could not be saved.');
         }
+
+        return $model;
     }
 }

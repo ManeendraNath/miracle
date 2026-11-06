@@ -50,13 +50,17 @@ class LoginForm extends Model
                 $this->addError($attribute, 'Too many failed attempts. Please try again in 15 minutes.');
                 return;
             }
-            $user = $this->getUser();
+            // Suspended: only someone who knows the password is told why they can't get in.
+            $user = $this->getUser() ?? User::findOne(['username' => $this->username, 'status' => User::getStatusSuspended()]);
             if (!($user ? $user->validatePassword($this->password) : LoginThrottle::checkAgainstNobody((string) $this->password))) {
                 LoginThrottle::fail('frontend', $this->throttleName());
                 $this->addError($attribute, 'Incorrect username or password.');
                 return;
             }
             LoginThrottle::clear('frontend', $this->throttleName());
+            if ((int) $user->status === User::getStatusSuspended()) {
+                $this->addError($attribute, 'Your account has been disabled. Please contact support to have it set active again.');
+            }
         }
     }
 

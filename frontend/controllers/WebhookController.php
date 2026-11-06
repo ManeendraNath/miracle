@@ -61,15 +61,15 @@ final class WebhookController extends Controller
         ) {
             throw new BadRequestHttpException('Incomplete payment information.');
         }
-        if (strtoupper($currency) !== 'INR') {
-            throw new BadRequestHttpException('Unexpected payment currency.');
-        }
-
         // Orders this app didn't create (payment links, other integrations on the same Razorpay account)
         // are none of our business: no invoice to update, nothing to alert about.
         if (!Transaction::find()->where(['gateway_order_id' => $orderId])->exists()) {
             Yii::info(['message' => 'Razorpay webhook for an order this app did not create.', 'orderId' => $orderId, 'paymentId' => $paymentId], __METHOD__);
             return ['status' => 'ignored'];
+        }
+        // After the check above: another integration's foreign-currency order is not an error, and a 4xx gets the webhook disabled.
+        if (strtoupper($currency) !== 'INR') {
+            throw new BadRequestHttpException('Unexpected payment currency.');
         }
 
         try {
@@ -88,6 +88,7 @@ final class WebhookController extends Controller
             return ['status' => 'not_recorded'];
         } catch (\Throwable $e) {
             Yii::error(['message' => 'Razorpay webhook processing failed.', 'orderId' => $orderId, 'paymentId' => $paymentId, 'error' => $e->getMessage()], __METHOD__);
+            AdminAlertService::webhookFailed("payment.captured {$paymentId}", $e->getMessage());
             throw new ServerErrorHttpException('Payment processing failed.', 0, $e);
         }
     }

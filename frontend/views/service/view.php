@@ -150,7 +150,7 @@ $eventClass = static fn(?string $status): string => match ($status) {
                         <dd class="col-6 text-end fw-bold"><?= $formatter->asCurrency($invoice->total_payable, 'INR') ?></dd>
                         <dt class="col-6 fw-normal text-body-secondary">Status</dt>
                         <dd class="col-6 text-end mb-0">
-                            <span class="badge <?= $invoiceClass($invoice->status) ?>"><?= Html::encode(Invoice::getStatuses()[$invoice->status] ?? $invoice->status) ?></span>
+                            <span class="badge <?= $invoiceClass($invoice->status) ?>"><?= Html::encode(Invoice::labelOf($invoice)) ?></span>
                         </dd>
                     </dl>
                 </div>

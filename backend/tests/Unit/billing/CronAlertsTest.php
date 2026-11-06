@@ -92,6 +92,17 @@ final class CronAlertsTest extends Unit
         $invoice->setAttributes(['user_id' => $owing->id, 'invoice_number' => 'TEST-IDLE-' . bin2hex(random_bytes(4)), 'client_name' => 'Idle', 'subtotal_amount' => 100, 'total_payable' => 100, 'status' => \common\models\Invoice::STATUS_UNPAID, 'created_at' => time(), 'updated_at' => time()], false);
         $this->assertTrue($invoice->save(false));
 
+        // First run only warns, however old the account: at least 7 days' notice.
+        (new IncompleteProfileReminderService())->sendReminders();
+        $this->assertNotNull(User::findOne($idle->id)->profile_warned_at);
+        $this->assertNull(User::findOne($withService->id)->profile_warned_at);
+        $this->assertSame(User::getStatusActive(), (int) User::findOne($idle->id)->status);
+        $this->tester->grabSentEmails(); // (read below by recipient and subject)
+        foreach ([$idle, $withService] as $customer) {
+            User::updateAll(['profile_warned_at' => strtotime('-8 days')], ['id' => $customer->id]);
+        }
+        CustomerNotification::deleteAll(['user_id' => $idle->id]);
+
         $service = new IncompleteProfileReminderService();
         $service->sendReminders();
 
@@ -101,14 +112,17 @@ final class CronAlertsTest extends Unit
             $this->assertSame(User::getStatusActive(), $status($kept));
         }
         $this->assertGreaterThanOrEqual(1, $service->disabled);
-        $this->assertCount(1, $this->mailsTo($idle));
-        $this->assertSame('Your account has been disabled', $this->mailsTo($idle)[0]->getSubject());
+        $this->assertNotSame(User::findOne($idle->id)->auth_key, $idle->auth_key, 'old remember-me cookies stop working');
+        $this->assertNull(User::findOne($withService->id)->profile_warned_at, 'warning dropped while something is live');
+        $this->assertCount(2, $this->mailsTo($idle));
+        $this->assertSame('Your account has been disabled', $this->mailsTo($idle)[1]->getSubject());
         $this->assertStringContainsString($idle->username, AdminNotification::find()->where(['title' => 'Inactive Accounts Disabled'])->one()->message);
         $this->assertStringNotContainsString($owing->username, AdminNotification::find()->where(['title' => 'Inactive Accounts Disabled'])->one()->message);
 
         // Staff set it Active again: a month's grace, reminded meanwhile.
         $reactivated = User::findOne($idle->id);
         $reactivated->status = User::getStatusActive();
+        $reactivated->updated_at = time(); // as the Activate button does
         $this->assertTrue($reactivated->save(false));
         (new IncompleteProfileReminderService())->sendReminders();
         $this->assertSame(User::getStatusActive(), $status($idle));

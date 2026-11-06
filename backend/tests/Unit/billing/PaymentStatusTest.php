@@ -83,7 +83,8 @@ final class PaymentStatusTest extends Unit
         $target = $this->carry($source);
         $service = new InvoicePaymentService();
 
-        $this->assertNull($service->closeBlocker($target), 'money kept on the older invoice no longer strands the newer one');
+        $this->assertNotNull($service->closeBlocker($target), 'closing as refunded would call kept money refunded');
+        $this->assertNull($service->closeBlocker($target, null, true), 'money kept on the older invoice no longer strands the newer one');
         $service->closeAsRefunded($target, null, true);
 
         $this->assertSame(Invoice::STATUS_REFUNDED, Invoice::findOne($target->id)->status);
@@ -106,7 +107,7 @@ final class PaymentStatusTest extends Unit
         $source = $this->invoice(1000.00);
         $source->updateAttributes(['status' => Invoice::STATUS_CARRIED_FORWARD]);
         $target = $this->carry($source);
-        $refunded = static fn(): array => array_map('intval', \common\services\billing\RenewalFulfilmentService::fullyRefundedInvoices()->column());
+        $refunded = static fn(): array => \common\services\billing\RenewalFulfilmentService::fullyRefundedInvoices();
         $this->assertNotContains((int) $source->id, $refunded());
 
         (new InvoicePaymentService())->closeAsRefunded($target, null, true);
@@ -120,6 +121,10 @@ final class PaymentStatusTest extends Unit
         $service->setAttributes(['user_id' => $this->_user->id, 'status' => 1, 'renewal_base_amount' => 500, 'current_expiry_date' => '2030-06-30'], false);
         $service->id = 987654;
         $settings = \common\models\BillingSettings::forType(InvoiceItem::TYPE_DOMAIN);
+        $this->assertFalse((new InvoicePaymentService())->renewalState($service, InvoiceItem::TYPE_DOMAIN)['billable'], 'no billing details, no invoice is coming');
+        $profile = new \common\models\CustomerBillingProfile();
+        $profile->setAttributes(['user_id' => $this->_user->id, 'legal_name' => 'Pay Test', 'state' => 'Delhi', 'state_code' => '07', 'created_at' => time(), 'updated_at' => time()], false);
+        $this->assertTrue($profile->save(false));
         $state = (new InvoicePaymentService())->renewalState($service, InvoiceItem::TYPE_DOMAIN);
         $this->assertNull($state['invoiceNumber']);
         $this->assertSame(date('Y-m-d', strtotime('2030-06-30 -' . (int) $settings->invoice_before_days . ' days')), $state['issuedFrom']);
@@ -296,7 +301,7 @@ final class PaymentStatusTest extends Unit
     public function testReminderWaitsWhileAProofIsUnderReview(): void
     {
         $invoice = $this->invoice(1000.00);
-        $invoice->updateAttributes(['due_date' => date('Y-m-d')]);
+        $invoice->updateAttributes(['due_date' => date('Y-m-d'), 'created_at' => strtotime('-5 days')]);
         $reminders = static fn(): int => (int) \common\models\InvoiceReminderLog::find()->where(['invoice_id' => $invoice->id])->count();
         $proof = $this->payment($invoice, Transaction::GATEWAY_UPI_BANK, Transaction::STATUS_PENDING);
         (new \common\services\billing\InvoiceReminderService())->sendDueReminders();
@@ -322,11 +327,12 @@ final class PaymentStatusTest extends Unit
     public function testAWrittenOffInvoiceIsNotCalledRefunded(): void
     {
         $invoice = $this->invoice(1000.00);
-        $invoice->updateAttributes(['status' => Invoice::STATUS_REFUNDED]);
-        $this->assertSame('Closed (balance written off)', $invoice->statusLabel());
+        (new InvoicePaymentService())->closeAsRefunded($invoice, null, true);
+        $this->assertSame('Closed (balance written off)', Invoice::findOne($invoice->id)->statusLabel());
 
-        $this->payment($invoice, Transaction::GATEWAY_UPI_BANK, Transaction::STATUS_REFUNDED)->updateAttributes(['refunded_amount' => 1000]);
-        $this->assertSame('Refunded', $invoice->statusLabel());
+        $refunded = $this->invoice(1000.00);
+        (new InvoicePaymentService())->closeAsRefunded($refunded);
+        $this->assertSame('Refunded', Invoice::findOne($refunded->id)->statusLabel());
     }
 
     public function testACarriedBalanceIsFollowedHoweverLongTheChain(): void
@@ -353,7 +359,7 @@ final class PaymentStatusTest extends Unit
         $target = $this->carry($source);
         $target->updateAttributes(['status' => Invoice::STATUS_REFUNDED]);
 
-        $this->assertNotContains((int) $target->id, array_map('intval', \common\services\billing\RenewalFulfilmentService::fullyRefundedInvoices()->column()));
+        $this->assertNotContains((int) $target->id, \common\services\billing\RenewalFulfilmentService::fullyRefundedInvoices());
     }
 
     public function testAClosedInvoiceCannotBeCancelled(): void

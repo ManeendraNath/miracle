@@ -10,6 +10,8 @@ use common\models\Domains;
 use common\models\Hosting;
 use common\models\Invoice;
 use common\models\Maintenance;
+use common\models\SupportTicket;
+use common\models\Transaction;
 use common\models\User;
 use common\services\admin\AdminAlertService;
 use common\services\notification\NotificationService;
@@ -20,13 +22,15 @@ use Yii;
  * account was created until it is complete. Without a profile no renewal invoice can be created.
  * Not subject to the reminder preferences: this is needed for billing.
  *
- * A month on, an account still incomplete that has no live service or open invoice is suspended, and the customer told.
- * Open invoices count because a suspended customer can't log in to pay them. Staff can set it Active again, which
- * gives another month (see disableAfter()).
+ * A month on, an account still incomplete with nothing live (see customersInUse()) is suspended, and the customer told,
+ * but only after at least NOTICE_DAYS of warnings. Open invoices count because a suspended customer can't log in to pay
+ * them. Staff can set it Active again, which gives another month.
  */
 final class IncompleteProfileReminderService
 {
     public const TITLE = 'Please Complete Your Billing Details';
+    private const NOTICE_DAYS = 7;
+    private const DIGEST_LINES = 200;
     private const REQUIRED = ['legal_name' => 'legal name', 'address_line_1' => 'address', 'city' => 'city', 'state' => 'state', 'postal_code' => 'postal code'];
 
     /** Customers who could not be reminded in the last run. */
@@ -52,16 +56,27 @@ final class IncompleteProfileReminderService
             }
             $line = sprintf('%s (%s): %s', $customer->username, $customer->email, implode(', ', $missing));
             $canBeDisabled = !isset($inUse[(int) $customer->id]);
-            // updated_at too: staff setting an account Active again saves it, and must not see it suspended the next morning.
-            if ($canBeDisabled && (int) $customer->created_at <= $disableBefore && (int) $customer->updated_at <= $disableBefore) {
-                $this->disable($customer);
-                $suspended[] = $line;
-                continue;
-            }
-            $incomplete[] = $line;
+            $warnedAt = $customer->profile_warned_at === null ? null : (int) $customer->profile_warned_at;
             try {
+                // A warning only counts for a stretch with nothing live: the warnings were not sent while there was.
+                if (!$canBeDisabled && $warnedAt !== null) {
+                    $customer->updateAttributes(['profile_warned_at' => null]);
+                }
+                // updated_at too: staff setting an account Active again saves it, and must not see it suspended the next morning.
+                if (
+                    $canBeDisabled && $warnedAt !== null && $warnedAt <= time() - self::NOTICE_DAYS * 86400
+                    && (int) $customer->created_at <= $disableBefore && (int) $customer->updated_at <= $disableBefore
+                ) {
+                    $this->disable($customer);
+                    $suspended[] = $line;
+                    continue;
+                }
+                $incomplete[] = $line;
                 if ($this->remind($customer, $missing, $startOfToday, $canBeDisabled)) {
                     $sent++;
+                    if ($canBeDisabled && $warnedAt === null) {
+                        $customer->updateAttributes(['profile_warned_at' => time()]);
+                    }
                 }
             } catch (\Throwable $e) {
                 $this->failures++;
@@ -69,10 +84,10 @@ final class IncompleteProfileReminderService
             }
         }
         if ($incomplete !== []) {
-            AdminAlertService::profilesIncomplete($incomplete);
+            AdminAlertService::profilesIncomplete(self::capped($incomplete));
         }
         if ($suspended !== []) {
-            AdminAlertService::accountsDisabled($suspended);
+            AdminAlertService::accountsDisabled(self::capped($suspended));
         }
 
         return $sent;
@@ -88,21 +103,56 @@ final class IncompleteProfileReminderService
         return array_values(array_filter(self::REQUIRED, static fn(string $label, string $attribute): bool => trim((string) $profile->$attribute) === '', ARRAY_FILTER_USE_BOTH));
     }
 
-    /** @return array<int, true> customers with a live service or an open invoice */
-    private static function customersInUse(): array
+    public static function isInUse(int $userId): bool
     {
-        $ids = Invoice::find()->select('user_id')->where(['status' => [Invoice::STATUS_UNPAID, Invoice::STATUS_PARTIALLY_PAID]])->column();
+        return self::customersInUse($userId) !== [];
+    }
+
+    /** One bell row per customer: read once the details are complete, however they got there. */
+    public static function clearReminder(int $userId): void
+    {
+        CustomerNotification::updateAll(['is_read' => 1, 'read_at' => time()], ['user_id' => $userId, 'title' => self::TITLE, 'is_read' => 0]);
+        User::updateAll(['profile_warned_at' => null], ['id' => $userId]);
+    }
+
+    /**
+     * Customers who still need the portal, so must not be disabled or kept out of it: a live service, an open invoice,
+     * an open ticket, or a payment held for refund or apply.
+     *
+     * @return array<int, true>
+     */
+    private static function customersInUse(?int $userId = null): array
+    {
+        $ids = Invoice::find()->select('user_id')->where(['status' => [Invoice::STATUS_UNPAID, Invoice::STATUS_PARTIALLY_PAID]])->andFilterWhere(['user_id' => $userId])->column();
         foreach ([Domains::class, Hosting::class, Maintenance::class] as $service) {
-            $ids = array_merge($ids, $service::find()->select('user_id')->where(['status' => $service::RENEWABLE_STATUSES])->column());
+            $ids = array_merge($ids, $service::find()->select('user_id')->where(['status' => $service::RENEWABLE_STATUSES])->andFilterWhere(['user_id' => $userId])->column());
         }
+        $ids = array_merge(
+            $ids,
+            SupportTicket::find()->select('user_id')->where(['status' => [SupportTicket::STATUS_OPEN, SupportTicket::STATUS_IN_PROGRESS]])->andFilterWhere(['user_id' => $userId])->column(),
+            Invoice::find()->alias('i')->select('i.user_id')->innerJoin(['t' => Transaction::tableName()], 't.invoice_id = i.id')
+                ->where(['t.status' => Transaction::STATUS_CAPTURED, 't.is_unapplied' => 1])->andFilterWhere(['i.user_id' => $userId])->column(),
+        );
 
         return array_fill_keys(array_map('intval', $ids), true);
+    }
+
+    /**
+     * @param string[] $lines
+     * @return string[] short enough for an email and the bell
+     */
+    private static function capped(array $lines): array
+    {
+        $extra = count($lines) - self::DIGEST_LINES;
+
+        return $extra > 0 ? [...array_slice($lines, 0, self::DIGEST_LINES), "+{$extra} more"] : $lines;
     }
 
     private function disable(User $customer): void
     {
         // Only these columns: an older record failing today's rules must not block it.
-        $customer->updateAttributes(['status' => User::getStatusSuspended(), 'updated_at' => time()]);
+        $customer->generateAuthKey(); // a remember-me cookie must not come back to life if it is reactivated
+        $customer->updateAttributes(['status' => User::getStatusSuspended(), 'auth_key' => $customer->auth_key, 'updated_at' => time()]);
         $this->disabled++;
         // Suspended either way: the admin list names it, so a failed email doesn't lose track of it.
         try {

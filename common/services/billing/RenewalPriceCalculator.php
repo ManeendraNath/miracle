@@ -11,7 +11,8 @@ use common\services\billing\dto\RenewalPriceResult;
 /**
  * Renewal price = the previous final billed amount, raised by the increase each time the service passes a
  * block of renewals on its current cycle: a year for domains, two years for hosting, three for maintenance.
- * So hosting rises every 24th monthly renewal, every 2nd yearly one and every renewal of two years or longer.
+ * So hosting rises after every 24 monthly renewals, after every 2 yearly ones (the 3rd, 5th, ... billed here)
+ * and after each renewal of two years or longer. The first renewal billed here is the base amount and counts as the start.
  * When the cycle length changed since the previous renewal (e.g. yearly -> monthly), that amount no longer
  * fits, so the service's renewal base amount for the new cycle is used and the count starts again.
  */

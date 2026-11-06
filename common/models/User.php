@@ -48,7 +48,7 @@ class User extends base\User implements IdentityInterface
     #[\Override]
     public function scenarios(): array
     {
-        $internal = ['password_hash', 'auth_key', 'password_reset_token', 'verification_token', 'created_at', 'updated_at'];
+        $internal = ['profile_warned_at', 'password_hash', 'auth_key', 'password_reset_token', 'verification_token', 'created_at', 'updated_at'];
 
         return array_map(
             static fn(array $attributes): array => array_map(static fn(string $name): string => in_array($name, $internal, true) ? '!' . $name : $name, $attributes),
@@ -62,6 +62,13 @@ class User extends base\User implements IdentityInterface
     {
         if ((int) $this->status !== self::getStatusInactive()) {
             $this->verification_token = null;
+        }
+        if (!$insert) {
+            $this->dropStaleResetToken();
+            // A remember-me cookie from before a suspension must not come back to life on reactivation.
+            if ($this->isAttributeChanged('status', false) && (int) $this->getOldAttribute('status') === self::getStatusActive()) {
+                $this->generateAuthKey();
+            }
         }
 
         return parent::beforeSave($insert);

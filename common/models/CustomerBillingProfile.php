@@ -107,6 +107,15 @@ class CustomerBillingProfile extends base\CustomerBillingProfile
         return [self::COUNTRY_INDIA => self::COUNTRY_INDIA] + array_combine($names, $names);
     }
 
+    #[\Override]
+    public function afterSave($insert, $changedAttributes): void
+    {
+        parent::afterSave($insert, $changedAttributes);
+        if (\common\services\customer\IncompleteProfileReminderService::missingFields($this) === []) {
+            \common\services\customer\IncompleteProfileReminderService::clearReminder((int) $this->user_id);
+        }
+    }
+
     public function scenarios(): array
     {
         $scenarios = parent::scenarios();

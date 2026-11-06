@@ -7,6 +7,7 @@ namespace common\services\report;
 use common\models\CustomerBillingProfile;
 use common\models\Invoice;
 use common\models\Transaction;
+use common\models\TransactionRefund;
 use common\services\billing\TaxCalculator;
 use DateTimeImmutable;
 
@@ -97,18 +98,20 @@ final class AccountingReportService
     }
 
     /**
-     * Header row, then one row per payment captured (paid_at) or refunded (refunded_at) in [$start, $end), so a
-     * refund of an earlier month's payment still shows up: that payment then appears in both months' files, with
-     * its original Paid Date. Refunded To Date is the running total at download time and Last Refund Date the latest
-     * one (status Refunded when all of it went back), so don't add that column up across months.
+     * Header row, then one row per payment captured or refunded in [$start, $end), so a refund of an earlier month's
+     * payment still shows up: that payment then appears in both months' files, with its original Paid Date.
+     * Refunded In Period only counts refunds in this file, so that column can be added up across months.
      */
     public function paymentRows(int $start, int $end): \Generator
     {
-        yield ['Paid Date', 'Invoice Number', 'Customer', 'Method', 'Reference', 'Amount', 'Gateway Fee', 'Refunded To Date', 'Last Refund Date', 'Status'];
+        yield ['Paid Date', 'Invoice Number', 'Customer', 'Method', 'Reference', 'Amount', 'Gateway Fee', 'Refunded In Period', 'Last Refund Date In Period', 'Status'];
+        $refunds = TransactionRefund::find()->select(['transaction_id', 'total' => 'SUM(amount)', 'last' => 'MAX(refunded_at)'])
+            ->where(['>=', 'refunded_at', $start])->andWhere(['<', 'refunded_at', $end])
+            ->groupBy('transaction_id')->indexBy('transaction_id')->asArray()->all();
         $query = Transaction::find()
             ->with('invoice')
             ->where(['status' => [Transaction::STATUS_CAPTURED, Transaction::STATUS_REFUNDED]])
-            ->andWhere(['or', ['and', ['>=', 'paid_at', $start], ['<', 'paid_at', $end]], ['and', ['>=', 'refunded_at', $start], ['<', 'refunded_at', $end]]])
+            ->andWhere(['or', ['and', ['>=', 'paid_at', $start], ['<', 'paid_at', $end]], ['id' => array_keys($refunds)]])
             ->orderBy(['paid_at' => SORT_ASC, 'id' => SORT_ASC]);
         foreach ($query->each(500) as $payment) {
             /** @var Transaction $payment */
@@ -120,8 +123,8 @@ final class AccountingReportService
                 (string) $payment->gateway_payment_id,
                 self::money($payment->amount),
                 self::money($payment->gateway_fee),
-                self::money($payment->refunded_amount),
-                $payment->refunded_at ? date('Y-m-d', (int) $payment->refunded_at) : '',
+                self::money($refunds[$payment->id]['total'] ?? 0),
+                isset($refunds[$payment->id]) ? date('Y-m-d', (int) $refunds[$payment->id]['last']) : '',
                 $payment->isUnapplied() ? $payment->status . ' (unapplied)' : $payment->status,
             ];
         }

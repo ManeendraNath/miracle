@@ -18,6 +18,8 @@ final class CustomerActivityService
 
         $notifications = CustomerNotification::find()
             ->where(['user_id' => $userId])
+            // Invoices and tickets have their own timeline entries below.
+            ->andWhere(['not in', 'type', ['invoice', 'support']])
             ->orderBy(['created_at' => SORT_DESC])
             ->limit($limit)
             ->all();

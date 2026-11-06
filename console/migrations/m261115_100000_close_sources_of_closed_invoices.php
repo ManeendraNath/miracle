@@ -22,6 +22,12 @@ final class m261115_100000_close_sources_of_closed_invoices extends Migration
                 [':now' => time()],
             )->execute();
         } while ($changed > 0);
+        // As closing does now: a coupon on a closed invoice with no money kept is free to be used again.
+        $this->execute(
+            "DELETE r FROM {{%coupon_redemption}} r
+             JOIN {{%invoice}} i ON i.id = r.invoice_id
+             WHERE i.status = 'Refunded' AND NOT EXISTS (SELECT 1 FROM {{%transaction}} t WHERE t.invoice_id = i.id AND t.status = 'Captured' AND t.is_unapplied = 0)"
+        );
     }
 
     /** Data only, and which rows changed isn't recorded. */

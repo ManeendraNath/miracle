@@ -20,9 +20,9 @@ $this->params['actions'] = [Html::a('<i class="fas fa-arrow-left me-1"></i> Back
 if ($model->status === Invoice::STATUS_PARTIALLY_PAID) {
     $this->params['actions'][] = Html::a('<i class="fas fa-times-circle me-1"></i> Write Off Balance', ['close', 'id' => $model->id], [
         'class' => 'btn btn-outline-danger',
-        'title' => 'Forgive what is left: money already received is kept. It shows as Refunded.',
+        'title' => 'Forgive what is left: money already received is kept. It shows as Closed (balance written off).',
         'data' => [
-            'confirm' => 'Write off the remaining balance? Money already received is kept and nothing more is owed on this invoice or on balances carried into it. It shows as Refunded. Its unpaid renewals are billed again in full on the next run, with no credit for money kept, unless those services are disabled.',
+            'confirm' => 'Write off the remaining balance? Money already received is kept and nothing more is owed on this invoice or on balances carried into it. It shows as Closed (balance written off). Its unpaid renewals are billed again in full on the next run, with no credit for money kept, unless those services are disabled.',
             'method' => 'post',
         ],
     ]);
@@ -38,9 +38,9 @@ if ($model->status === Invoice::STATUS_UNPAID) {
     ]);
     $this->params['actions'][] = Html::a('<i class="fas fa-times-circle me-1"></i> Write Off', ['close', 'id' => $model->id], [
         'class' => 'btn btn-outline-danger',
-        'title' => 'For an invoice that cannot be cancelled: nothing more is owed. It shows as Refunded.',
+        'title' => 'For an invoice that cannot be cancelled: nothing more is owed. It shows as Closed (balance written off).',
         'data' => [
-            'confirm' => 'Write off this invoice? Nothing more is owed on it or on balances carried into it, and it shows as Refunded. Money kept on those balances stays. Its unpaid renewals are billed again in full on the next run, with no credit for money kept, unless those services are disabled.',
+            'confirm' => 'Write off this invoice? Nothing more is owed on it or on balances carried into it, and it shows as Closed (balance written off). Money kept on those balances stays. Its unpaid renewals are billed again in full on the next run, with no credit for money kept, unless those services are disabled.',
             'method' => 'post',
         ],
     ]);

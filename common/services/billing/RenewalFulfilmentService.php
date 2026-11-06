@@ -12,6 +12,7 @@ use common\models\InvoiceItem;
 use common\models\Maintenance;
 use common\models\ServiceRenewalHistory;
 use common\models\Transaction;
+use common\services\admin\AdminAlertService;
 use Yii;
 
 final class RenewalFulfilmentService
@@ -40,7 +41,7 @@ final class RenewalFulfilmentService
         try {
             $events = BillingEvent::find()
                 ->where([
-                    'invoice_id' => $this->coveredInvoiceIds((int) $invoice->id),
+                    'invoice_id' => self::coveredInvoiceIds((int) $invoice->id),
                     'status' => BillingEvent::STATUS_INVOICED,
                 ])
                 ->orderBy(['id' => SORT_ASC])
@@ -65,29 +66,70 @@ final class RenewalFulfilmentService
     }
 
     /**
-     * Fulfilled renewals of a service whose paying invoice was closed as refunded with no money kept: they
-     * no longer count as paid periods or towards the price.
+     * Fulfilled renewals of a service whose paying invoice was closed as refunded with no money kept for them: they
+     * no longer count as paid periods or towards the price. Decided per renewal: money kept on its own invoice, or on
+     * any invoice its balance was carried to, paid for it. Money kept on an older invoice carried in did not.
      *
      * @return int[]
      */
     public function refundedEventIds(int $itemType, int $itemId): array
     {
-        return array_map('intval', ServiceRenewalHistory::find()->alias('h')->select('h.billing_event_id')
-            ->where(['h.item_type' => $this->historyType($itemType), 'h.item_id' => $itemId])
-            ->andWhere(['h.invoice_id' => self::fullyRefundedInvoices()])
-            ->column());
+        $rows = ServiceRenewalHistory::find()->alias('h')
+            ->innerJoin(['i' => Invoice::tableName()], 'i.id = h.invoice_id')
+            ->innerJoin(['e' => BillingEvent::tableName()], 'e.id = h.billing_event_id')
+            ->select(['h.billing_event_id', 'e.invoice_id', 'paid' => 'h.invoice_id'])
+            ->where(['h.item_type' => $this->historyType($itemType), 'h.item_id' => $itemId, 'i.status' => Invoice::STATUS_REFUNDED])
+            ->asArray()->all();
+        $refunded = [];
+        foreach ($rows as $row) {
+            if (!$this->moneyKeptOnTheWay((int) $row['invoice_id'], (int) $row['paid'])) {
+                $refunded[] = (int) $row['billing_event_id'];
+            }
+        }
+
+        return $refunded;
     }
 
-    /** Ids of invoices closed as refunded with no money kept, as a subquery. */
-    public static function fullyRefundedInvoices(): \yii\db\ActiveQuery
+    /** From the renewal's invoice forward along arrears lines to the invoice it was finally paid on. */
+    private function moneyKeptOnTheWay(int $fromInvoiceId, int $paidInvoiceId): bool
     {
-        return Invoice::find()->alias('fr')->select('fr.id')
-            ->where(['fr.status' => Invoice::STATUS_REFUNDED])
-            ->andWhere(['not exists', Transaction::find()->alias('frt')->select('frt.id')->where('frt.invoice_id = fr.id')->andWhere(['frt.status' => Transaction::STATUS_CAPTURED, 'frt.is_unapplied' => 0])])
-            // Money kept on a balance carried into it counts too. ponytail: one step back; a recursive CTE if chains with money kept on older links appear.
-            ->andWhere(['not exists', Transaction::find()->alias('frs')->select('frs.id')
-                ->innerJoin(['fri' => InvoiceItem::tableName()], 'fri.source_invoice_id = frs.invoice_id')
-                ->where('fri.invoice_id = fr.id')->andWhere(['fri.item_type' => InvoiceItem::TYPE_ARREARS, 'frs.status' => Transaction::STATUS_CAPTURED, 'frs.is_unapplied' => 0])]);
+        // Each step goes to a newer invoice, so this can't loop.
+        for ($id = $fromInvoiceId; $id !== 0;) {
+            if (self::moneyKept([$id])) {
+                return true;
+            }
+            if ($id === $paidInvoiceId) {
+                return false;
+            }
+            $id = (int) InvoiceItem::find()->select('invoice_id')->where(['source_invoice_id' => $id, 'item_type' => InvoiceItem::TYPE_ARREARS])->orderBy(['id' => SORT_DESC])->scalar();
+        }
+
+        return false;
+    }
+
+    /** @param int[] $invoiceIds */
+    private static function moneyKept(array $invoiceIds): bool
+    {
+        return Transaction::find()->where(['invoice_id' => $invoiceIds, 'status' => Transaction::STATUS_CAPTURED, 'is_unapplied' => 0])->exists();
+    }
+
+    /**
+     * Ids of invoices closed as refunded with no money kept anywhere on them or on what was carried into them.
+     *
+     * ponytail: walks each refunded invoice's chain in PHP; refunded invoices are few. Cache it if that changes.
+     *
+     * @return int[]
+     */
+    public static function fullyRefundedInvoices(): array
+    {
+        $ids = [];
+        foreach (Invoice::find()->select('id')->where(['status' => Invoice::STATUS_REFUNDED])->column() as $id) {
+            if (!self::moneyKept(self::coveredInvoiceIds((int) $id))) {
+                $ids[] = (int) $id;
+            }
+        }
+
+        return $ids;
     }
 
     /**
@@ -97,7 +139,7 @@ final class RenewalFulfilmentService
      *
      * @return int[]
      */
-    private function coveredInvoiceIds(int $invoiceId): array
+    private static function coveredInvoiceIds(int $invoiceId): array
     {
         $ids = [$invoiceId];
         $pending = [$invoiceId];
@@ -164,18 +206,19 @@ final class RenewalFulfilmentService
 
         $now = time();
 
-        // Never shorten: an admin may have extended the asset by hand meanwhile.
-        if ((string) $asset->current_expiry_date < (string) $event->period_end) {
-            $asset->current_expiry_date = $event->period_end;
-        }
-
         $asset->updated_at = $now;
         $attributes = ['current_expiry_date', 'updated_at'];
-        // Staff moved the expiry since the anchor was set: later periods must follow the date just granted.
-        $endsOn = strtotime((string) $event->period_end);
-        if ($asset->renewal_anchor_day !== null && $endsOn !== false && (int) date('j', $endsOn) !== min((int) $asset->renewal_anchor_day, (int) date('t', $endsOn))) {
-            $asset->renewal_anchor_day = RenewalPeriodCalculator::anchorDayFor((string) $event->period_end);
-            $attributes[] = 'renewal_anchor_day';
+        // Never shorten: an admin may have extended the asset by hand meanwhile (and then the anchor stays theirs).
+        if ((string) $asset->current_expiry_date < (string) $event->period_end) {
+            $asset->current_expiry_date = $event->period_end;
+            // Staff moved the expiry since the anchor was set: later periods must follow the date just granted.
+            // Not a whole-year period ending in February: 28 or 29 there says nothing about the anchor.
+            $endsOn = strtotime((string) $event->period_end);
+            $februaryYear = $months % 12 === 0 && $endsOn !== false && (int) date('n', $endsOn) === 2;
+            if ($asset->renewal_anchor_day !== null && $endsOn !== false && !$februaryYear && (int) date('j', $endsOn) !== min((int) $asset->renewal_anchor_day, (int) date('t', $endsOn))) {
+                $asset->renewal_anchor_day = RenewalPeriodCalculator::anchorDayFor((string) $event->period_end);
+                $attributes[] = 'renewal_anchor_day';
+            }
         }
         // The one-time price was used for this renewal; later ones are calculated from it again. A different
         // value was set meanwhile for the renewal after this one, so it stays.
@@ -190,6 +233,7 @@ final class RenewalFulfilmentService
             || ($asset instanceof Maintenance && (int) $asset->status === Maintenance::STATUS_OVERDUE)) {
             $asset->status = $asset instanceof Hosting ? Hosting::STATUS_ACTIVE : Maintenance::STATUS_ACTIVE;
             $attributes[] = 'status';
+            AdminAlertService::serviceReactivatedByPayment($asset instanceof Hosting ? (string) $asset->primary_domain : (string) $asset->website_url, (string) Invoice::find()->select('invoice_number')->where(['id' => $paidInvoiceId])->scalar());
         }
 
         if (!$asset->save(false, $attributes)) {

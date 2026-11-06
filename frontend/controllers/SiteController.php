@@ -114,7 +114,9 @@ class SiteController extends Controller
 
         if ($model->load(Yii::$app->request->post()) && $model->login()) {
             (new UserLoginHistoryService())->record((int) Yii::$app->user->id);
-            return $this->goBack();
+            /** @var \common\models\User $identity */
+            $identity = Yii::$app->user->identity;
+            return \frontend\components\ProfileGate::mustCompleteFirst($identity) ? $this->redirect(['/account/profile']) : $this->goBack();
         }
 
         $model->password = '';
@@ -376,8 +378,8 @@ class SiteController extends Controller
         }
 
         if ($model->verifyEmail()) {
-            Yii::$app->session->setFlash('success', 'Your email has been confirmed!');
-            return $this->goHome();
+            Yii::$app->session->setFlash('success', 'Your email has been confirmed! Log in to complete your billing details and start using your account.');
+            return $this->redirect(['/site/login']);
         }
 
         Yii::$app->session->setFlash('error', 'Sorry, we are unable to verify your account with provided token.');

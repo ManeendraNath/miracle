@@ -7,6 +7,7 @@ namespace backend\controllers;
 use backend\models\searches\TransactionSearch;
 use common\models\Invoice;
 use common\models\Transaction;
+use common\models\TransactionRefund;
 use common\services\admin\AdminAlertService;
 use common\services\billing\InvoicePaymentService;
 use common\services\billing\PaymentConfirmationService;
@@ -170,23 +171,41 @@ class TransactionController extends BaseController
             if ((int) $paymentTransaction->gateway_id === Transaction::GATEWAY_RAZORPAY) {
                 throw new \DomainException('Razorpay payments are confirmed automatically and cannot be approved manually.');
             }
-            // E.g. paid online meanwhile: approving would collect the money twice.
             $lockedInvoiceId = Yii::$app->db->createCommand('SELECT id FROM {{%invoice}} WHERE id = :id FOR UPDATE')->bindValue(':id', (int) $paymentTransaction->invoice_id)->queryScalar();
             $invoice = $lockedInvoiceId !== false ? Invoice::findOne((int) $lockedInvoiceId) : null;
             if ($invoice === null) {
                 throw new \DomainException('This payment has no invoice.');
             }
-            (new InvoicePaymentService())->assertPayable($invoice);
+            // E.g. paid online meanwhile. The money did arrive, so as in RazorpayService::capture() it is recorded
+            // but held off the invoice, for staff to refund or apply. Reject is there for a proof that isn't real.
+            $unapplied = $invoice->status === Invoice::STATUS_PAID || in_array($invoice->status, InvoicePaymentService::CLOSED_STATUSES, true);
             $now = time();
             $paymentTransaction->status = Transaction::STATUS_CAPTURED;
             $paymentTransaction->paid_at = $now;
             $paymentTransaction->updated_at = $now;
-            if (!$paymentTransaction->save(false, ['status', 'paid_at', 'updated_at'])) {
+            if ($unapplied) {
+                $paymentTransaction->is_unapplied = 1;
+                $paymentTransaction->user_payment_notes = trim($paymentTransaction->user_payment_notes . "\n" . Transaction::UNAPPLIED_NOTE_PREFIX . " invoice was {$invoice->status} when approved. Refund it, or apply it to another invoice of this customer.");
+            }
+            if (!$paymentTransaction->save(false, ['status', 'paid_at', 'updated_at', 'is_unapplied', 'user_payment_notes'])) {
                 throw new \RuntimeException('Payment could not be approved.');
             }
-            (new PaymentProcessingService())->transactionChanged($paymentTransaction, false);
-            $excess = (new InvoicePaymentService())->getCapturedAmount((int) $invoice->id) - (float) $invoice->total_payable;
+            if (!$unapplied) {
+                (new PaymentProcessingService())->transactionChanged($paymentTransaction, false);
+            }
+            $excess = $unapplied ? 0.0 : (new InvoicePaymentService())->getCapturedAmount((int) $invoice->id) - (float) $invoice->total_payable;
             $dbTransaction->commit();
+            if ($unapplied) {
+                Yii::$app->session->setFlash('warning', 'Invoice ' . $invoice->invoice_number . ' could not accept this payment (' . $invoice->statusLabel() . '), so it is held on the payment. Refund it or apply it to another invoice.');
+                try {
+                    AdminAlertService::paymentApprovedOnClosedInvoice($invoice->invoice_number, $invoice->statusLabel(), (float) $paymentTransaction->amount, (int) $paymentTransaction->id);
+                    (new NotificationService())->create((int) $invoice->user_id, 'payment', 'Payment Received: Not Yet Applied', 'We received your payment of ₹' . number_format((float) $paymentTransaction->amount, 2) . ' for invoice ' . $invoice->invoice_number . ', which can no longer take payments. We will refund it or apply it to another invoice.', '/invoice/view?number=' . rawurlencode((string) $invoice->invoice_number));
+                } catch (\Throwable $alertError) {
+                    Yii::error(['message' => 'Unapplied approval alert failed.', 'transactionId' => $id, 'error' => $alertError->getMessage()], __METHOD__);
+                }
+
+                return $this->redirect(['view', 'id' => $paymentTransaction->id]);
+            }
             // E.g. a proof submitted for the full balance, approved after another payment was recorded.
             if (round($excess, 2) > 0) {
                 try {
@@ -289,13 +308,14 @@ class TransactionController extends BaseController
             if (!$model->save(false, ['refunded_amount', 'refunded_at', 'status', 'user_payment_notes', 'updated_at'])) {
                 throw new \RuntimeException('Refund could not be recorded.');
             }
+            (new TransactionRefund(['transaction_id' => (int) $model->id, 'amount' => $amount, 'refunded_at' => (int) $model->refunded_at, 'note' => $refundId]))->save(false);
 
             $flash = 'success';
             // The money kept when the invoice was closed went back too: the discount is no longer used.
             if (($invoice->status ?? null) === Invoice::STATUS_REFUNDED && !empty($invoice->coupon_code) && $paymentService->getCapturedAmount((int) $invoice->id) <= 0) {
                 (new \common\services\billing\CouponService())->removeForInvoice((int) $invoice->id);
             }
-            $message = 'Refund of ₹' . number_format($amount, 2) . ' recorded. The invoice was ' . (Invoice::getStatuses()[$invoice->status ?? ''] ?? $invoice->status ?? '-') . ', so it is unchanged and nothing more is owed on it.' . ($model->isUnapplied() ? '' : ' Renewals already granted are not reversed: disable the service if needed.');
+            $message = 'Refund of ₹' . number_format($amount, 2) . ' recorded. The invoice was ' . ($invoice !== null ? $invoice->statusLabel() : '-') . ', so it is unchanged and nothing more is owed on it.' . ($model->isUnapplied() ? '' : ' Renewals already granted are not reversed: disable the service if needed.');
             if ($carrying !== null) {
                 $flash = 'warning';
                 $message = 'Refund of ₹' . number_format($amount, 2) . ' recorded. Invoice ' . $carrying->invoice_number . ' carries the old balance, which does not include this amount: bill it separately if it is still owed.';
@@ -320,6 +340,16 @@ class TransactionController extends BaseController
             }
             $dbTransaction->commit();
             Yii::$app->session->setFlash($flash, $message);
+            if ($invoice !== null) {
+                // Recorded: a failed message must not look like a failed refund.
+                try {
+                    (new NotificationService())->create((int) $invoice->user_id, 'payment', 'Payment Refunded', '₹' . number_format($amount, 2) . ' for invoice ' . $invoice->invoice_number . ' has been refunded.', '/invoice/view?number=' . rawurlencode((string) $invoice->invoice_number));
+                    (new PaymentConfirmationService())->sendRefund($invoice, $amount, $viaRazorpay);
+                } catch (\Throwable $e) {
+                    Yii::error(['message' => 'Refund was recorded but the customer could not be told.', 'transactionId' => $id, 'error' => $e->getMessage()], __METHOD__);
+                    Yii::$app->session->addFlash('warning', 'The refund is recorded, but the email to the customer could not be sent.');
+                }
+            }
         } catch (\Throwable $e) {
             if ($dbTransaction->isActive) {
                 $dbTransaction->rollBack();

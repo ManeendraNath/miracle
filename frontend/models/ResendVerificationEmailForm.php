@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace frontend\models;
 
 use common\models\User;
+use Yii;
 use yii\base\Model;
 use yii\mail\MailerInterface;
 
@@ -49,15 +50,19 @@ class ResendVerificationEmailForm extends Model
         }
         // A fresh link: the old one may have expired.
         $user->generateEmailVerificationToken();
+        // Whoever signed up with this address may not be who now owns the mailbox: confirming it must not hand them
+        // an account whose password someone else chose. They set their own after confirming.
+        $user->setPassword(Yii::$app->security->generateRandomString(32));
+        $user->generateAuthKey();
         $user->updated_at = time();
-        if (!$user->save(false, ['verification_token', 'updated_at'])) {
+        if (!$user->save(false, ['verification_token', 'password_hash', 'auth_key', 'updated_at'])) {
             return false;
         }
 
         return $mailer
             ->compose(
                 ['html' => 'emailVerify-html', 'text' => 'emailVerify-text'],
-                ['user' => $user],
+                ['user' => $user, 'passwordReset' => true],
             )
             ->setFrom([$supportEmail => $appName . ' robot'])
             ->setTo($this->email)

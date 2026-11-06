@@ -149,13 +149,14 @@ final class InvoicePaymentService
         }
         $invoice->status = Invoice::STATUS_REFUNDED;
         $invoice->updated_at = time();
-        if (!$invoice->save(false, ['status', 'updated_at'])) {
+        $invoice->written_off_at = $writeOff ? time() : null;
+        if (!$invoice->save(false, ['status', 'updated_at', 'written_off_at'])) {
             throw new \RuntimeException('Unable to close the invoice as refunded.');
         }
         $invoiceIds = $this->withCarriedInvoiceIds((int) $invoice->id);
         // Nothing is owed on what was carried in either. Their renewal history points at them, so a
         // renewal with no money kept must stop counting as paid (RenewalFulfilmentService::fullyRefundedInvoices).
-        Invoice::updateAll(['status' => Invoice::STATUS_REFUNDED, 'updated_at' => time()], ['id' => $invoiceIds, 'status' => Invoice::STATUS_CARRIED_FORWARD]);
+        Invoice::updateAll(['status' => Invoice::STATUS_REFUNDED, 'updated_at' => time(), 'written_off_at' => $writeOff ? time() : null], ['id' => $invoiceIds, 'status' => Invoice::STATUS_CARRIED_FORWARD]);
         // As cancelling does: the coupon use shouldn't count against its limits for the re-billed invoice.
         // Money kept on the invoice means the customer did use the discount.
         foreach ($invoiceIds as $invoiceId) {
@@ -177,7 +178,9 @@ final class InvoicePaymentService
      */
     public function closeBlocker(Invoice $invoice, ?int $refundingTransactionId = null, bool $writeOff = false): ?string
     {
-        if (!$writeOff && $this->getCapturedAmount((int) $invoice->id, $refundingTransactionId) > 0) {
+        // Also what was carried in: closing would mark those Refunded too, with their money still kept.
+        $kept = $writeOff ? 0.0 : array_sum(array_map(fn(int $id): float => $this->getCapturedAmount($id, $refundingTransactionId), $this->withCarriedInvoiceIds((int) $invoice->id)));
+        if ($kept > 0) {
             return 'Other payments on this invoice are still kept, so it can\'t be closed as refunded. Use Write Off to forgive the balance and keep them.';
         }
 
@@ -225,7 +228,7 @@ final class InvoicePaymentService
 
     /**
      * What a customer can do about a service nearing expiry. Renewal invoices only exist from
-     * invoice_before_days before expiry, and only for active, priced services.
+     * invoice_before_days before expiry, and only for active, priced services of a customer with billing details.
      *
      * @param \common\models\Domains|\common\models\Hosting|\common\models\Maintenance $service
      * @return array{invoiceNumber: string|null, billable: bool, issuedFrom: string}
@@ -237,7 +240,8 @@ final class InvoicePaymentService
 
         return [
             'invoiceNumber' => $this->payableInvoiceForService((int) $service->user_id, $itemType, (int) $service->id)->invoice_number ?? null,
-            'billable' => (bool) $settings->is_active && (int) $service->status === 1 && (float) $service->renewal_base_amount > 0,
+            'billable' => (bool) $settings->is_active && (int) $service->status === 1 && ((float) $service->renewal_base_amount > 0 || (float) $service->next_renewal_amount > 0)
+                && \common\models\CustomerBillingProfile::find()->where(['user_id' => (int) $service->user_id])->exists(),
             'issuedFrom' => date('Y-m-d', (int) strtotime($service->current_expiry_date . " -{$days} days")),
         ];
     }

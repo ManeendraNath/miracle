@@ -44,15 +44,8 @@ final class MaintenanceBillingCollector
                     'status' => 1,
                 ])
                 ->andWhere(['not in', 'user_id', User::deletedIds()])
-                ->andWhere([
-                    'not',
-                    ['renewal_base_amount' => null],
-                ])
-                ->andWhere([
-                    '>',
-                    'renewal_base_amount',
-                    0,
-                ])
+                // A one-time Next Renewal Price is a price too.
+                ->andWhere(['or', ['>', 'renewal_base_amount', 0], ['>', 'next_renewal_amount', 0]])
                 ->andWhere([
                     '<=',
                     'current_expiry_date',

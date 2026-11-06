@@ -39,7 +39,7 @@ final class BillingEventService
             );
         }
 
-        if ($renewal->baseAmount <= 0) {
+        if ($renewal->baseAmount <= 0 && $renewal->overrideAmount === null) {
             throw new \InvalidArgumentException(
                 'Renewal base amount must be greater than zero.'
             );
@@ -109,7 +109,7 @@ final class BillingEventService
                 // of that field decides: set -> bill it; cleared meanwhile -> back to the calculated price.
                 $price = $this->prices->calculate($renewal->itemType, $renewal->itemId, $renewal->baseAmount, $increase, $cycle);
                 $existing->previous_amount = $price->previousAmount;
-                $existing->increase_percent = $price->increasePercent;
+                $existing->increase_percent = $renewal->overrideAmount !== null ? 0.0 : $price->increasePercent; // none was applied to a price set by hand
                 $existing->calculated_amount = $price->amount;
                 $existing->amount = $renewal->overrideAmount !== null ? round($renewal->overrideAmount, 2) : $price->amount;
                 $existing->is_manual_amount = $renewal->overrideAmount !== null ? 1 : 0;
@@ -168,7 +168,7 @@ final class BillingEventService
 
         $event->previous_amount = $price->previousAmount;
 
-        $event->increase_percent = $price->increasePercent;
+        $event->increase_percent = $renewal->overrideAmount !== null ? 0.0 : $price->increasePercent; // none was applied to a price set by hand
 
         $event->calculated_amount = $price->amount;
 

@@ -108,3 +108,10 @@ These tables handle secondary operational features. They are currently active bu
 *   **Engine Type:** `MyISAM` / `InnoDB`
 *   **Operational Purpose:** Handles newsletter mailing indexes, internal corporate support tickets, and general customer feedback text.
 
+### `transaction_refund`
+*   **Operational Purpose:** One row per refund of a payment (`transaction.refunded_amount` is the running total), so the accounting export can show each refund in its own period. Refunds before this table existed are one row holding their total.
+
+### Added columns
+*   `user.profile_warned_at`: when the customer was first warned, with nothing live, that the account can be disabled. Disabling needs at least 7 days since then.
+*   `admin_notification.emailed_at`: when the alert's email actually went out.
+*   `invoice.written_off_at`: set when staff forgave the balance; the status stays Refunded but it shows as "Closed (balance written off)".

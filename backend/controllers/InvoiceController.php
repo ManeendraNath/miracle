@@ -202,8 +202,12 @@ class InvoiceController extends BaseController
             }
             try {
                 $items = $this->loadManualItems($post);
-                (new ManualInvoiceService())->update($model, $items);
+                $service = new ManualInvoiceService();
+                $service->update($model, $items);
                 Yii::$app->session->setFlash('success', 'Invoice updated successfully.');
+                if ($service->notice !== null) {
+                    Yii::$app->session->setFlash('info', $service->notice);
+                }
                 // The customer holds the old figures: send the new ones. Saved either way.
                 if ($model->emailed_at !== null) {
                     try {

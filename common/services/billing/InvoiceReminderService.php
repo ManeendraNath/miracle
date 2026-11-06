@@ -33,6 +33,10 @@ final class InvoiceReminderService
         $sentCount = 0;
         foreach ($invoices as $invoice) {
             try {
+                // It was emailed when issued: a reminder the same day says nothing new.
+                if ((int) $invoice->created_at >= $today->getTimestamp()) {
+                    continue;
+                }
                 $outstanding = $paymentService->getOutstanding($invoice);
                 // Under review: if the proof is rejected, the 2-day catch-up sends this reminder then.
                 if ($outstanding <= 0 || $paymentService->hasPendingProof((int) $invoice->id)) {

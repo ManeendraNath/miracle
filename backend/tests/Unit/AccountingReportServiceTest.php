@@ -97,7 +97,7 @@ final class AccountingReportServiceTest extends Unit
         $rows = $this->rows((new AccountingReportService())->paymentRows(...AccountingReportService::range('2001-03-01', '2001-03-31')), 'Reference');
         $this->assertSame([$this->_prefix . 'cap', $this->_prefix . 'ref'], array_keys($rows));
         $this->assertSame(
-            ['Paid Date' => '2001-03-05', 'Invoice Number' => $this->_prefix . 'pay', 'Customer' => 'Acme Pvt Ltd', 'Method' => 'Razorpay', 'Reference' => $this->_prefix . 'cap', 'Amount' => '500.00', 'Gateway Fee' => '2.36', 'Refunded To Date' => '0.00', 'Last Refund Date' => '', 'Status' => 'Captured'],
+            ['Paid Date' => '2001-03-05', 'Invoice Number' => $this->_prefix . 'pay', 'Customer' => 'Acme Pvt Ltd', 'Method' => 'Razorpay', 'Reference' => $this->_prefix . 'cap', 'Amount' => '500.00', 'Gateway Fee' => '2.36', 'Refunded In Period' => '0.00', 'Last Refund Date In Period' => '', 'Status' => 'Captured'],
             $rows[$this->_prefix . 'cap']
         );
         $this->assertSame(['UPI / Bank Transfer', 'Refunded'], [$rows[$this->_prefix . 'ref']['Method'], $rows[$this->_prefix . 'ref']['Status']]);
@@ -107,7 +107,10 @@ final class AccountingReportServiceTest extends Unit
     {
         $invoice = $this->invoice('late', '2001-05-01 10:00:00');
         $this->payment($invoice, 'may', Transaction::STATUS_REFUNDED, '2001-05-20 10:00:00', Transaction::GATEWAY_UPI_BANK);
-        Transaction::updateAll(['refunded_at' => strtotime('2001-06-03 10:00:00')], ['gateway_payment_id' => $this->_prefix . 'may']);
+        $refund = new \common\models\TransactionRefund(['transaction_id' => Transaction::findOne(['gateway_payment_id' => $this->_prefix . 'may'])->id, 'amount' => 200, 'refunded_at' => strtotime('2001-06-03 10:00:00')]);
+        $this->assertTrue($refund->save(false));
+        $june = $this->rows((new AccountingReportService())->paymentRows(...AccountingReportService::range('2001-06-01', '2001-06-30')), 'Reference')[$this->_prefix . 'may'];
+        $this->assertSame(['200.00', '2001-06-03'], [$june['Refunded In Period'], $june['Last Refund Date In Period']]);
 
         foreach ([['2001-05-01', '2001-05-31', 1], ['2001-06-01', '2001-06-30', 1], ['2001-07-01', '2001-07-31', 0]] as [$from, $to, $expected]) {
             $rows = $this->rows((new AccountingReportService())->paymentRows(...AccountingReportService::range($from, $to)), 'Reference');

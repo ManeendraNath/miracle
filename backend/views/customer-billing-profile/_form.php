@@ -25,6 +25,7 @@ $form = ActiveForm::begin([
 
         <?= $form->field($model, 'user_id')->widget(Select2::class, [
             'data' => $usersList,
+            'disabled' => !$canSetEverything,
             'options' => [
                 'placeholder' => 'Select Client',
             ],
@@ -53,9 +54,11 @@ $form = ActiveForm::begin([
             </div>
         </div>
 
-        <?= $form->field($model, 'country')
+        <?php if ($canSetEverything): ?>
+            <?= $form->field($model, 'country')
             ->dropDownList(CustomerBillingProfile::countryOptions())
             ->hint('Outside India: export of services, no GST; state, GSTIN and PAN are not used.') ?>
+        <?php endif; ?>
         <?= $this->render('@common/views/_billing_country_js') ?>
 
         <div class="row">
@@ -89,6 +92,7 @@ $form = ActiveForm::begin([
             </div>
         </div>
 
+        <?php if ($canSetEverything): ?>
         <div class="row">
             <div class="col-md-6">
                 <?= $form->field($model, 'is_gst_applicable')->dropDownList([
@@ -108,6 +112,7 @@ $form = ActiveForm::begin([
                     ->hint('Fixed discount applied to automatically generated invoices.') ?>
             </div>
         </div>
+        <?php endif; ?>
     </div>
 
     <div class="card-footer">
@@ -116,8 +121,8 @@ $form = ActiveForm::begin([
         ]) ?>
 
         <?= Html::a(
-            'Cancel',
-            ['index'],
+            $customer !== null ? 'Customer Will Complete This' : 'Cancel',
+            $customer !== null ? ['/user/view', 'id' => $customer->id] : ['index'],
             [
                 'class' => 'btn btn-outline-secondary',
             ],

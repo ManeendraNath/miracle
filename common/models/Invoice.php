@@ -95,11 +95,17 @@ class Invoice extends base\Invoice
      */
     public function statusLabel(): string
     {
-        if ($this->status === self::STATUS_REFUNDED && !Transaction::find()->where(['invoice_id' => (int) $this->id])->andWhere(['>', 'refunded_amount', 0])->exists()) {
+        return self::labelOf($this);
+    }
+
+    /** For an invoice reached through a relation, which gives the base model. */
+    public static function labelOf(base\Invoice $invoice): string
+    {
+        if ($invoice->status === self::STATUS_REFUNDED && $invoice->written_off_at !== null) {
             return 'Closed (balance written off)';
         }
 
-        return self::getStatuses()[$this->status] ?? (string) $this->status;
+        return self::getStatuses()[$invoice->status] ?? (string) $invoice->status;
     }
 
     public static function getStatuses(): array

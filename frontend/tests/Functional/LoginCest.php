@@ -107,6 +107,7 @@ final class LoginCest
 
     public function signOutOtherDevicesRotatesKeyButKeepsThisBrowser(FunctionalTester $I): void
     {
+        $I->haveRecord(\common\models\CustomerBillingProfile::class, ['user_id' => \common\models\User::findOne(['username' => 'erau'])->id, 'legal_name' => 'Erau', 'address_line_1' => '1 Road', 'city' => 'Delhi', 'state' => 'Delhi', 'state_code' => '07', 'postal_code' => '110001', 'created_at' => time(), 'updated_at' => time()]);
         $I->submitForm('#login-form', $this->formParams('erau', 'password_0'));
         $I->amOnRoute('security/index');
         $I->see('Sign Out Other Devices');

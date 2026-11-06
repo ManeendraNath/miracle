@@ -9,6 +9,12 @@ Invoice Number:
 Total Payable:
 INR <?= number_format((float) $invoice->total_payable, 2) ?>
 
+<?php if ($outstanding < (float) $invoice->total_payable): ?>
+
+Outstanding after payments received:
+INR <?= number_format($outstanding, 2) ?>
+
+<?php endif; ?>
 
 Due Date:
 <?= $invoice->due_date ?>

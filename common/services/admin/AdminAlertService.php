@@ -122,8 +122,9 @@ final class AdminAlertService extends AdminNotificationService
     public static function invoiceGenerationFailed(int $userId, string $reason): void
     {
         $title = 'Automatic Invoice Failed';
-        $message = "Client ID: {$userId}\n" . "Reason: {$reason}\n" . 'It will be retried on the next billing run.';
-        self::send($title, $message, 'billing', '/customer-billing-profile/index', true);
+        // Retried on every run, so at most one a day per customer.
+        $client = "Client ID: {$userId}\n";
+        self::sendOncePerDay($title, $client . "Reason: {$reason}\n" . 'It will be retried on the next billing run.', 'billing', '/customer-billing-profile/index', $client, true);
     }
 
     public static function renewalSkipped(string $service, string $reason): void
@@ -147,10 +148,7 @@ final class AdminAlertService extends AdminNotificationService
     /** At most one a day for each job: a job running every 30 minutes must not flood the inbox. */
     public static function cronJobFailed(string $job, string $reason): void
     {
-        $title = 'Cron Job Failed: ' . $job;
-        if (!self::alertedToday($title)) {
-            self::send($title, "Reason: {$reason}\n" . 'Further failures of this job today are not emailed. It runs again at its next scheduled time.', 'billing', '/admin/cron-log');
-        }
+        self::sendOncePerDay('Cron Job Failed: ' . $job, "Reason: {$reason}\n" . 'Further failures of this job today are not emailed. It runs again at its next scheduled time.', 'billing', '/admin/cron-log');
     }
 
     public static function cronJobSwitched(string $job, bool $enabled, string $by): void
@@ -162,10 +160,24 @@ final class AdminAlertService extends AdminNotificationService
     /** @param string[] $customers one line each */
     public static function profilesIncomplete(array $customers): void
     {
-        $title = 'Incomplete Customer Profiles';
-        if (!self::alertedToday($title)) {
-            self::send($title, count($customers) . " customer(s) have incomplete billing details and were reminded:\n" . implode("\n", $customers), 'billing', '/customer-billing-profile/index');
-        }
+        self::sendOncePerDay('Incomplete Customer Profiles', 'Customers with incomplete billing details (reminded daily; a customer already reminded today is not emailed again):' . "\n" . implode("\n", $customers), 'billing', '/customer-billing-profile/index');
+    }
+
+    /** A service came back because the customer paid: staff suspended it, so they should know. */
+    public static function serviceReactivatedByPayment(string $service, string $invoiceNumber): void
+    {
+        self::send('Service Reactivated By Payment', "Service: {$service}\n" . "Invoice: {$invoiceNumber}\n" . 'It was suspended or overdue and is Active again because this renewal was paid. Suspend it again if that is not what you want.', 'billing', '/renewal-monitoring/index');
+    }
+
+    public static function paymentApprovedOnClosedInvoice(string $invoiceNumber, string $invoiceStatus, float $amount, int $transactionId): void
+    {
+        $message = "Invoice: {$invoiceNumber} ({$invoiceStatus})\n" . "Amount: ₹{$amount}\n" . 'The proof was approved but the invoice could not accept it, so the money is held on the payment. Open it and refund or apply it.';
+        self::send('Approved Payment Needs Attention', $message, 'payment', '/transaction/view?id=' . $transactionId, true);
+    }
+
+    public static function webhookFailed(string $event, string $reason): void
+    {
+        self::sendOncePerDay('Razorpay Webhook Failed', "Event: {$event}\n" . "Reason: {$reason}\n" . 'Razorpay retries it; further failures today are not emailed. The sync job also picks up missed payments, if it is on.', 'payment', '/transaction/index', null, true);
     }
 
     /** @param string[] $customers one line each */
@@ -174,16 +186,23 @@ final class AdminAlertService extends AdminNotificationService
         self::send('Inactive Accounts Disabled', count($customers) . " account(s) were suspended: billing details incomplete after a month, no active service and no open invoice.\n" . implode("\n", $customers) . "\nSet an account to Active on its customer page to give it another month.", 'billing', '/user/index');
     }
 
-    private static function alertedToday(string $title): bool
+    /** One bell row a day, and its email retried each run until one has actually gone out. */
+    private static function sendOncePerDay(string $title, string $message, string $type, ?string $route, ?string $match = null, bool $whatsappNotification = false): void
     {
         try {
-            return AdminNotification::find()->where(['title' => $title])->andWhere(['>=', 'created_at', strtotime('today')])->exists();
+            $today = AdminNotification::find()->where(['title' => $title])->andWhere(['>=', 'created_at', strtotime('today')])->andFilterWhere(['like', 'message', $match])->orderBy(['id' => SORT_DESC])->one();
+            if ($today !== null) {
+                if ($today->emailed_at === null && self::sendEmail($title, $message)) {
+                    $today->updateAttributes(['emailed_at' => time()]);
+                }
+
+                return;
+            }
         } catch (\Throwable $e) {
             // Better a repeated alert than none, e.g. when the database is why this one is being sent.
             Yii::error($e, __METHOD__);
-
-            return false;
         }
+        self::send($title, $message, $type, $route, $whatsappNotification);
     }
 
     public static function renewalLeftOpen(string $service, string $staff, string $warning): void
@@ -206,18 +225,25 @@ final class AdminAlertService extends AdminNotificationService
     private static function send(string $title, string $message, string $type = 'system', ?string $route = null, bool $whatsappNotification = false): void
     {
         // One channel failing (e.g. the database is why this alert exists) must not silence the others.
+        $notification = null;
         try {
-            (new AdminNotificationService())->create($type, $title, $message, $route);
+            $notification = (new AdminNotificationService())->create($type, $title, $message, $route);
         } catch (\Throwable $e) {
             Yii::error(['message' => 'Admin notification could not be saved.', 'title' => $title, 'error' => $e->getMessage()], __METHOD__);
         }
-        self::sendEmail($title, $message);
+        if (self::sendEmail($title, $message) && $notification !== null) {
+            try {
+                $notification->updateAttributes(['emailed_at' => time()]);
+            } catch (\Throwable $e) {
+                Yii::error($e, __METHOD__);
+            }
+        }
         if ($whatsappNotification) {
             self::sendWhatsApp($title, $message);
         }
     }
 
-    private static function sendEmail(string $title, string $message): void
+    private static function sendEmail(string $title, string $message): bool
     {
         try {
             $sent = Yii::$app->mailer
@@ -229,8 +255,12 @@ final class AdminAlertService extends AdminNotificationService
             if (!$sent) {
                 Yii::error(['message' => 'Admin alert email was not sent.', 'title' => $title], __METHOD__);
             }
+
+            return (bool) $sent;
         } catch (\Throwable $e) {
             Yii::error($e, __METHOD__);
+
+            return false;
         }
     }
 

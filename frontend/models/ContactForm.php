@@ -29,6 +29,10 @@ class ContactForm extends Model
             [['name', 'email', 'subject', 'body'], 'required'],
             // email has to be a valid email address
             ['email', 'email'],
+            // As the Leads columns they are kept in, so an enquiry is not cut short silently.
+            ['name', 'string', 'max' => 150],
+            ['subject', 'string', 'max' => 255],
+            ['body', 'string', 'max' => 10000],
             // verifyCode needs to be entered correctly
             ['verifyCode', 'captcha'],
         ];

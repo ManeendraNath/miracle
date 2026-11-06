@@ -34,7 +34,7 @@ final class InvoiceDeliveryService
                             'html' => '@common/mail/invoice-html',
                             'text' => '@common/mail/invoice-text',
                         ],
-                    ['invoice' => $invoice]
+                    ['invoice' => $invoice, 'outstanding' => (new InvoicePaymentService())->getOutstanding($invoice)]
                 )
                 ->setFrom([
                     Yii::$app->params['senderEmail'] => Yii::$app->params['senderName'],

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace common\services\billing;
 
 use common\models\BillingSettings;
+use common\models\CustomerBillingProfile;
 use common\models\CustomerPreference;
 use common\models\Domains;
 use common\models\Hosting;
@@ -40,7 +41,7 @@ final class ServiceRenewalReminderService
         $sent = 0;
         $domains = Domains::find()->where(['status' => Domains::STATUS_ACTIVE])->andWhere(['not in', 'user_id', \common\models\User::deletedIds()])->andWhere(['>=', 'current_expiry_date', $today->format('Y-m-d')])->all();
         foreach ($domains as $domain) {
-            $serviceProcessed = $this->processService('domain', (int) $domain->id, (int) $domain->user_id, (string) $domain->domain_url, (string) $domain->current_expiry_date, $today, (int) $domain->created_at, (float) $domain->renewal_base_amount > 0);
+            $serviceProcessed = $this->processService('domain', (int) $domain->id, (int) $domain->user_id, (string) $domain->domain_url, (string) $domain->current_expiry_date, $today, (int) $domain->created_at, (float) $domain->renewal_base_amount > 0 || (float) $domain->next_renewal_amount > 0);
             if ($serviceProcessed) {
                 $sent++;
             }
@@ -53,7 +54,7 @@ final class ServiceRenewalReminderService
         $sent = 0;
         $hostings = Hosting::find()->where(['status' => Hosting::STATUS_ACTIVE])->andWhere(['not in', 'user_id', \common\models\User::deletedIds()])->andWhere(['>=', 'current_expiry_date', $today->format('Y-m-d')])->all();
         foreach ($hostings as $hosting) {
-            $serviceProcessed = $this->processService('hosting', (int) $hosting->id, (int) $hosting->user_id, (string) $hosting->primary_domain, (string) $hosting->current_expiry_date, $today, (int) $hosting->created_at, (float) $hosting->renewal_base_amount > 0);
+            $serviceProcessed = $this->processService('hosting', (int) $hosting->id, (int) $hosting->user_id, (string) $hosting->primary_domain, (string) $hosting->current_expiry_date, $today, (int) $hosting->created_at, (float) $hosting->renewal_base_amount > 0 || (float) $hosting->next_renewal_amount > 0);
             if ($serviceProcessed) {
                 $sent++;
             }
@@ -66,7 +67,7 @@ final class ServiceRenewalReminderService
         $sent = 0;
         $maintenances = Maintenance::find()->where(['status' => Maintenance::STATUS_ACTIVE])->andWhere(['not in', 'user_id', \common\models\User::deletedIds()])->andWhere(['>=', 'current_expiry_date', $today->format('Y-m-d')])->all();
         foreach ($maintenances as $maintenance) {
-            $serviceProcessed = $this->processService('maintenance', (int) $maintenance->id, (int) $maintenance->user_id, (string) $maintenance->website_url, (string) $maintenance->current_expiry_date, $today, (int) $maintenance->created_at, (float) $maintenance->renewal_base_amount > 0);
+            $serviceProcessed = $this->processService('maintenance', (int) $maintenance->id, (int) $maintenance->user_id, (string) $maintenance->website_url, (string) $maintenance->current_expiry_date, $today, (int) $maintenance->created_at, (float) $maintenance->renewal_base_amount > 0 || (float) $maintenance->next_renewal_amount > 0);
             if ($serviceProcessed) {
                 $sent++;
             }
@@ -93,7 +94,7 @@ final class ServiceRenewalReminderService
         }
         // As InvoicePaymentService::renewalState(): no invoice is coming for these, so don't promise one.
         $itemType = ['domain' => InvoiceItem::TYPE_DOMAIN, 'hosting' => InvoiceItem::TYPE_HOSTING, 'maintenance' => InvoiceItem::TYPE_MAINTENANCE][$type];
-        $billable = $hasPrice && (bool) BillingSettings::forType($itemType)->is_active;
+        $billable = $hasPrice && (bool) BillingSettings::forType($itemType)->is_active && CustomerBillingProfile::find()->where(['user_id' => $userId])->exists();
 
         return $this->sendReminder($type, $serviceId, $userId, $serviceName, $expiryDate, $daysUntilExpiry, $threshold, $billable);
     }
@@ -101,7 +102,7 @@ final class ServiceRenewalReminderService
     /**
      * The reminder day due now: today's, or one missed in the last 2 days (the cron skips runs during a
      * deploy). Older misses are not caught up, and a missed day is only caught up if the invoice or service
-     * already existed on it, so one created just after a reminder day doesn't get it on day one.
+     * existed before it, so one created on or just after a reminder day doesn't get it straight away.
      *
      * @param int[] $reminderDays
      * @param DateTimeImmutable|null $target the due/expiry date the days count down to
@@ -114,7 +115,7 @@ final class ServiceRenewalReminderService
         }
         $threshold = min($due);
         if ($threshold !== $days && $target !== null && $createdAt > 0
-            && $createdAt >= $target->modify(sprintf('%+d days', -$threshold + 1))->getTimestamp()) {
+            && $createdAt >= $target->modify(sprintf('%+d days', -$threshold))->getTimestamp()) {
             return null;
         }
 

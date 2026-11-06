@@ -278,6 +278,10 @@ A Superadmin can turn any job on or off under **Cron Jobs & Logs** (the crontab 
 
 Failures are emailed to `ADMIN_EMAIL` and shown on the admin bell, at most once a day per job. A job that never starts (broken crontab) or a PHP crash mid-run can't report itself.
 
+`cron/razorpay-sync` looks back 30 days for unpaid orders. With it off, a payment whose callback and webhook were both lost is found only when the customer presses Pay Online again on that invoice (`RazorpayService::recoverPaidOrders`).
+
+Daily alerts (a failed job, a customer's failed invoice, the incomplete profile list) keep one bell row a day and retry the email on each run until `admin_notification.emailed_at` is set.
+
 Deleted customers are not billed or reminded. Suspended customers still are: staff get a warning when suspending one who has active services or open invoices.
 
 Keep `CronController::actionRunBilling()` as the operational entry point. Avoid maintaining a second production billing command unless it has a distinct documented purpose.

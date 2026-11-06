@@ -38,6 +38,7 @@ class UserController extends BaseController
             Yii::$app->session->setFlash('success', "Account for profile '{$model->username}' has been activated and unlocked successfully!");
         }
 
+        $model->updated_at = time(); // save(false) skips the validation step that refreshes it; the disable rule counts from it
         $model->save(false); // Bypasses password validation restrictions during simple status toggles
         $this->warnAboutOpenBusiness($model);
         return $this->redirect(['index']);
@@ -66,8 +67,8 @@ class UserController extends BaseController
             $model->status = User::getStatusActive(); // staff-created customers verify nothing, so they start usable
         }
         if ($model->load(Yii::$app->request->post()) && $model->save()) {
-            Yii::$app->session->setFlash('success', 'User created successfully.');
-            return $this->redirect(['view', 'id' => $model->id]);
+            Yii::$app->session->setFlash('success', 'User created. Now add the billing details, or leave them for the customer to complete after logging in.');
+            return $this->redirect(['/customer-billing-profile/create', 'user_id' => $model->id]);
         }
         $model->clearPlainPassword();
 

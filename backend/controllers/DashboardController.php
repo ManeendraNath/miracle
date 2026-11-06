@@ -26,6 +26,7 @@ class DashboardController extends BaseController
                 return (int) $className
                     ::find()
                     ->where(['status' => 1])
+                    ->andWhere(['not in', 'user_id', User::deletedIds()])
                     ->count();
             }
             return 0; // Fallback if table/model does not exist yet
@@ -93,7 +94,7 @@ class DashboardController extends BaseController
                 ->andWhere(['status' => 'Pending'])
                 ->count(),
             // 4. Clients
-            'totalClients' => (int) User::find()->count(),
+            'totalClients' => (int) User::find()->where(['<>', 'status', User::getStatusDeleted()])->count(),
             // 5. Infrastructure Inventory Corrections
             'activeDomainsCount' => $getAssetCountWithStatus('\common\models\Domains'),
             'activeHostingCount' => $getAssetCountWithStatus('\common\models\Hosting'),

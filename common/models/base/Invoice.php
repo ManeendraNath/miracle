@@ -26,6 +26,7 @@ use Yii;
  * @property int $created_at
  * @property int $updated_at
  * @property int|null $emailed_at
+ * @property int|null $written_off_at
  * @property int|null $billing_run_id
  * @property string|null $client_city
  * @property string|null $client_state
@@ -78,7 +79,7 @@ class Invoice extends \yii\db\ActiveRecord
             [['sgst_percent'], 'default', 'value' => 9.00],
             [['status'], 'default', 'value' => 'Unpaid'],
             [['user_id', 'invoice_number', 'client_name', 'created_at', 'updated_at'], 'required'],
-            [['user_id', 'coupon_id', 'created_at', 'updated_at', 'emailed_at', 'billing_run_id'], 'integer'],
+            [['user_id', 'coupon_id', 'created_at', 'updated_at', 'emailed_at', 'written_off_at', 'billing_run_id'], 'integer'],
             [['subtotal_amount', 'discount_amount', 'cgst_percent', 'sgst_percent', 'igst_percent', 'total_payable'], 'number'],
             [['status'], 'string'],
             [['due_date'], 'safe'],

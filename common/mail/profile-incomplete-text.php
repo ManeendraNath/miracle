@@ -19,7 +19,7 @@ Complete them here: <?= $baseUrl ?>/account/profile
 <?php endif; ?>
 This reminder is sent daily until your details are complete.
 <?php if ($canBeDisabled): ?>
-Accounts with no active service are disabled if the details are not complete within a month of signing up.
+Accounts with no active service are disabled if the details are not complete within a month of signing up, after at least 7 days' notice.
 <?php endif; ?>
 
 Regards,

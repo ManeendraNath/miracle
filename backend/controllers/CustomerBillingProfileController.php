@@ -7,6 +7,7 @@ namespace backend\controllers;
 use backend\models\searches\CustomerBillingProfileSearch;
 use common\models\CustomerBillingProfile;
 use common\models\User;
+use common\services\customer\CustomerBillingDetailsService;
 use Yii;
 use yii\helpers\ArrayHelper;
 use yii\web\NotFoundHttpException;
@@ -23,21 +24,35 @@ final class CustomerBillingProfileController extends BaseController
         ]);
     }
 
-    public function actionCreate()
+    /**
+     * ?user_id= comes from creating a customer. Managers may only use this path, and only fill in what a customer
+     * could (no country, GST or discount): the customer scenario leaves those out.
+     */
+    public function actionCreate(?int $user_id = null)
     {
-        $model = new CustomerBillingProfile();
+        $canSetEverything = self::canAccess(Yii::$app->user->identity, 'customer-billing-profile', 'update');
+        $customer = $user_id === null ? null : User::findOne($user_id);
+        if ($user_id !== null && $customer === null || $customer === null && !$canSetEverything) {
+            throw new NotFoundHttpException('Customer does not exist.');
+        }
+        if ($customer !== null && CustomerBillingProfile::find()->where(['user_id' => $customer->id])->exists()) {
+            Yii::$app->session->setFlash('info', 'This customer already has billing details.');
 
-        if ($this->request->isPost && $model->load($this->request->post())) {
-            if ($model->save()) {
-                Yii::$app->session->setFlash('success', 'Customer billing profile created successfully.');
+            return $this->redirect(['/user/view', 'id' => $customer->id]);
+        }
+        $model = $canSetEverything ? new CustomerBillingProfile(['user_id' => $customer?->id]) : CustomerBillingDetailsService::forUser($customer);
 
-                return $this->redirect(['index']);
-            }
+        if ($this->request->isPost && $model->load($this->request->post()) && $model->save()) {
+            Yii::$app->session->setFlash('success', 'Customer billing profile created successfully.');
+
+            return $this->redirect($customer !== null ? ['/user/view', 'id' => $customer->id] : ['index']);
         }
 
         return $this->render('create', [
             'model' => $model,
             'usersList' => $this->getUsersList(),
+            'customer' => $customer,
+            'canSetEverything' => $canSetEverything,
         ]);
     }
 
@@ -54,6 +69,8 @@ final class CustomerBillingProfileController extends BaseController
         return $this->render('update', [
             'model' => $model,
             'usersList' => $this->getUsersList(),
+            'customer' => null,
+            'canSetEverything' => true,
         ]);
     }
 

@@ -30,8 +30,8 @@ $form = ActiveForm::begin();
                 <div class="alert alert-light border d-flex gap-2 mb-0">
                     <i class="fas fa-info-circle text-body-secondary mt-1"></i>
                     <div>
-                        Essential account and financial messages, such as password resets,
-                        invoice delivery and payment confirmations, cannot be disabled.
+                        Essential account and financial messages, such as password resets, reminders to
+                        complete your billing details, invoice delivery and payment confirmations, cannot be disabled.
                     </div>
                 </div>
             </div>

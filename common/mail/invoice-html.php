@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 /** @var yii\web\View $this */
 /** @var common\models\Invoice $invoice */
+/** @var float $outstanding */
 $baseUrl = (string) (Yii::$app->params['frontendBaseUrl'] ?? '');
 
 echo $this->render('_card', [
@@ -14,6 +15,7 @@ echo $this->render('_card', [
     'rows' => [
         ['Invoice', $invoice->invoice_number],
         ['Total payable', Yii::$app->formatter->asCurrency($invoice->total_payable, 'INR')],
+        ...($outstanding < (float) $invoice->total_payable ? [['Outstanding after payments received', Yii::$app->formatter->asCurrency($outstanding, 'INR')]] : []),
         ['Pay by', Yii::$app->formatter->asDate($invoice->due_date, 'php:d M Y'), 'accent'],
     ],
     'button' => $baseUrl !== '' ? ['View Invoice & Pay', $baseUrl . '/invoice/view?number=' . rawurlencode($invoice->invoice_number)] : null,

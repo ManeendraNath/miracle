@@ -32,13 +32,13 @@ echo $this->render('_legal', ['title' => 'Privacy Policy', 'updated' => '05 Nov 
 <p>Only with those needed to deliver the service: domain registrars and registries (registration details, as their rules require), our hosting and email providers, our WhatsApp messaging provider (your name and number, and details of the message such as an invoice number or service name, for reminders and service messages), Razorpay for payments, and authorities where the law requires it.</p>
 
 <h2 class="h5 fw-bold mt-4">5. How long we keep it</h2>
-<p>For as long as you use our services, and afterwards for as long as tax and accounting law requires invoice and payment records to be kept.</p>
+<p>For as long as you use our services, and afterwards for as long as tax and accounting law requires invoice and payment records to be kept. An account you stop using stays on record until you ask us to close it; a disabled account is kept, not erased.</p>
 
 <h2 class="h5 fw-bold mt-4">6. Security</h2>
 <p>The site uses HTTPS, account passwords are stored only as secure hashes, hosting control panel passwords we hold to manage your service are stored encrypted, and staff access is limited by role.</p>
 
 <h2 class="h5 fw-bold mt-4">7. Your choices</h2>
-<p>You can view and update your details in the customer portal, or contact us to correct them or to close your account. Invoice and payment records are kept for as long as tax and accounting law requires, even after an account is closed. You can turn reminder and notification emails on or off in the customer portal under My Profile &rarr; Notification Preferences.</p>
+<p>You can view and update your details in the customer portal, or contact us to correct them or to close your account. Invoice and payment records are kept for as long as tax and accounting law requires, even after an account is closed. You can turn reminder and notification emails on or off in the customer portal under My Profile &rarr; Notification Preferences; reminders to complete your billing details are needed for billing and can't be turned off.</p>
 
 <h2 class="h5 fw-bold mt-4">8. Grievance Officer</h2>
 <p>For any complaint or request about your personal data, contact our Grievance Officer:<br>

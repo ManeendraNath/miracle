@@ -18,6 +18,10 @@ Please verify your email address using the link below:
 
 <?= $verifyLink ?>
 
+<?php if (!empty($passwordReset)): ?>
+For your security this link clears your earlier password. After confirming, use "Forgot password?" on the login page to set a new one.
+
+<?php endif; ?>
 
 If you did not create this account,
 no further action is required.

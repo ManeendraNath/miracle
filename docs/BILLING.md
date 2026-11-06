@@ -35,9 +35,10 @@ amount becomes the base for the next percentage increase.
 
 The increase is not per renewal: it applies each time the renewals on the current cycle pass a block
 of time: a year for domains, two years for hosting, three years for maintenance. Hosting renews monthly,
-yearly or for several years (set per service) and goes up at every 24th monthly renewal, every 2nd yearly
-one and every renewal of two years or longer. Domains go up at every renewal of a year or longer;
-yearly maintenance every 3rd renewal. If the cycle length changed since
+yearly or for several years (set per service) and goes up after every 24 monthly renewals, after every 2 yearly
+ones (so the 3rd, 5th, ... billed here) and after each renewal of two years or longer, by one step whatever its length.
+Domains go up after each renewal of a year or longer; yearly maintenance after every 3 (the 4th, 7th, ...).
+The first renewal billed through this system is the base amount; the count starts there. If the cycle length changed since
 the previous renewal (e.g. yearly to monthly), the previous amount no longer fits, so the service's
 renewal base amount (set for the new cycle) is billed and the count starts again.
 
@@ -142,9 +143,21 @@ state or postal code blank, gets an email and a portal notification, starting th
 and repeating daily until complete. Admins get one daily email and bell notification listing them all. Reminder
 preferences don't apply: without a profile no renewal invoice can be created.
 
-The same job suspends an account a month after signup if it is still incomplete and has no live service (active,
-suspended or overdue) and no open invoice. The customer is emailed and admins get a list. Setting it Active again
-gives it another month, counted from that save.
+The same job suspends an account a month after signup if it is still incomplete, has nothing live (a service that is
+active, suspended or overdue, an open invoice, an open ticket, or a payment held for refund or apply) and was warned at
+least 7 days earlier: a first run only warns, however old the account. The customer is emailed and admins get a list.
+Setting it Active again gives it another month, counted from that save. A suspended customer who enters the right
+password is told the account is disabled; a wrong password gets the usual message.
+
+### Billing details first
+
+Email verification only proves the address. After it the customer logs in and lands on the billing form, and
+`frontend\components\ProfileGate` keeps them there: until the details are complete every portal page redirects to the
+form, except support and logout. A customer with something live gets a banner instead of being blocked, so a bill can
+always be paid. Staff creating a customer are taken to the billing form next, with a **Customer Will Complete This**
+button to leave it. Managers may use that form but can only enter what a customer could: no country, GST or discount.
+Resending a verification email clears the password chosen at signup, because whoever signed up may not own the mailbox:
+the email tells the customer to use Forgot Password after confirming.
 
 ## Foreign clients (export of services)
 
@@ -163,7 +176,7 @@ A billing profile whose **Country** is not India is billed as an export of servi
 
 | Role | Access |
 |---|---|
-| Manager | Dashboard (without money figures), customers (status only, not their login details), domains, hosting, maintenance, renewals, support, leads and audit requests (view only), notifications |
+| Manager | Dashboard (without money figures), customers (status only, not their login details; may add a new customer's billing details), domains, hosting, maintenance, renewals, support, leads and audit requests (view only), notifications |
 | Admin | Manager + invoices, payments, coupons, billing profiles, login history, cron log |
 | Superadmin | Admin + administrator accounts, site settings |
 

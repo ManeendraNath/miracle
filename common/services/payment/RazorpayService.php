@@ -74,7 +74,7 @@ final class RazorpayService
                 'status' => Transaction::STATUS_PENDING,
             ])
             ->andWhere(['not', ['gateway_order_id' => null]])
-            // Only recent orders: syncPending() looks back 3 days, so a reused order must leave it time to catch a lost payment.
+            // Only recent orders: an older one may have been paid in a checkout long forgotten.
             ->andWhere(['>=', 'created_at', time() - 86400])
             ->orderBy(['id' => SORT_DESC])
             ->one();
@@ -257,9 +257,12 @@ final class RazorpayService
      * any captured payment, then fills in Razorpay's fee where it is still missing, and alerts staff
      * about refunds made in the Razorpay dashboard, which nothing else reports.
      *
+     * ponytail: one API call per unpaid order of the last 30 days each run, newest first and stopped after 10 minutes;
+     * expire old orders here if abandoned checkouts ever outgrow that.
+     *
      * @return array{captured: int, fees: int, unrecordedRefunds: int, errors: int}
      */
-    public function syncPending(int $minAge = 1800, int $maxAge = 3 * 86400): array
+    public function syncPending(int $minAge = 1800, int $maxAge = 30 * 86400): array
     {
         $result = ['captured' => 0, 'fees' => 0, 'unrecordedRefunds' => 0, 'errors' => 0];
         $now = time();
@@ -268,19 +271,17 @@ final class RazorpayService
             ->andWhere(['not', ['gateway_order_id' => null]])
             ->andWhere(['or', ['status' => Transaction::STATUS_PENDING], ['status' => Transaction::STATUS_FAILED, 'user_payment_notes' => self::SUPERSEDED_NOTE]])
             ->andWhere(['between', 'created_at', $now - $maxAge, $now - $minAge])
+            ->orderBy(['id' => SORT_DESC])
             ->all();
         foreach ($orders as $order) {
+            if (time() - $now > 600) {
+                $result['errors']++;
+                Yii::warning('Razorpay order check stopped early.', __METHOD__);
+                break;
+            }
             try {
-                $response = $this->api()->get('orders/' . rawurlencode((string) $order->gateway_order_id) . '/payments')->send();
-                if (!$response->isOk) {
-                    throw new \RuntimeException('HTTP ' . $response->statusCode);
-                }
-                foreach ($response->data['items'] ?? [] as $payment) {
-                    if (($payment['status'] ?? null) === 'captured') {
-                        $this->capture((string) $order->gateway_order_id, (string) $payment['id'], (int) $payment['amount'], isset($payment['fee']) ? (int) $payment['fee'] : null);
-                        $result['captured']++;
-                        break;
-                    }
+                if ($this->captureIfPaid((string) $order->gateway_order_id)) {
+                    $result['captured']++;
                 }
             } catch (\Throwable $e) {
                 $result['errors']++;
@@ -350,6 +351,50 @@ final class RazorpayService
         }
 
         return $result;
+    }
+
+    /**
+     * Before starting a new payment: was an earlier order of this invoice paid without us hearing?
+     *
+     * @return int payments recorded
+     */
+    public function recoverPaidOrders(int $invoiceId): int
+    {
+        $orders = Transaction::find()
+            ->where(['invoice_id' => $invoiceId, 'gateway_id' => Transaction::GATEWAY_RAZORPAY, 'gateway_payment_id' => null])
+            ->andWhere(['not', ['gateway_order_id' => null]])
+            ->andWhere(['or', ['status' => Transaction::STATUS_PENDING], ['status' => Transaction::STATUS_FAILED, 'user_payment_notes' => self::SUPERSEDED_NOTE]])
+            ->orderBy(['id' => SORT_DESC])
+            ->limit(5)
+            ->all();
+        $recorded = 0;
+        foreach ($orders as $order) {
+            try {
+                $recorded += $this->captureIfPaid((string) $order->gateway_order_id) ? 1 : 0;
+            } catch (\Throwable $e) {
+                Yii::error(['message' => 'Could not check an earlier Razorpay order.', 'orderId' => $order->gateway_order_id, 'error' => $e->getMessage()], __METHOD__);
+            }
+        }
+
+        return $recorded;
+    }
+
+    /** Asks Razorpay about the order and records a captured payment. */
+    private function captureIfPaid(string $orderId): bool
+    {
+        $response = $this->api()->get('orders/' . rawurlencode($orderId) . '/payments')->send();
+        if (!$response->isOk) {
+            throw new \RuntimeException('HTTP ' . $response->statusCode);
+        }
+        foreach ($response->data['items'] ?? [] as $payment) {
+            if (($payment['status'] ?? null) === 'captured') {
+                $this->capture($orderId, (string) $payment['id'], (int) $payment['amount'], isset($payment['fee']) ? (int) $payment['fee'] : null);
+
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private function refundedMinor(Transaction $payment): int
@@ -449,6 +494,10 @@ final class RazorpayService
                     $this->saveFee($transaction, $feeMinor);
                 }
                 $dbTransaction->commit();
+                // A replay is the only retry there is when the first confirmation email failed.
+                if ($transaction->status === Transaction::STATUS_CAPTURED && !$transaction->isUnapplied() && empty($transaction->confirmation_emailed_at)) {
+                    $this->sendConfirmation($transaction);
+                }
                 return $transaction;
             }
             // A superseded order can still be paid from a checkout that was already open.
@@ -519,13 +568,29 @@ final class RazorpayService
             throw $e;
         }
 
+        // Notification first: a mail failure must not cost the customer both.
         try {
-            (new PaymentConfirmationService())->send($transaction);
+            (new NotificationService())->create((int) $invoice->user_id, 'payment', 'Payment Confirmed', 'Your payment for invoice ' . $invoice->invoice_number . ' has been confirmed.', '/invoice/view?number=' . rawurlencode((string) $invoice->invoice_number));
+        } catch (\Throwable $e) {
+            Yii::error(['message' => 'Payment confirmed notification failed.', 'transactionId' => (int) $transaction->id, 'error' => $e->getMessage()], __METHOD__);
+        }
+        $this->sendConfirmation($transaction);
+
+        return $transaction;
+    }
+
+    /** Under the row lock, so the callback and the webhook arriving together send one email: the second sees it was sent. */
+    private function sendConfirmation(Transaction $transaction): void
+    {
+        try {
+            Yii::$app->db->transaction(static function () use ($transaction): void {
+                Yii::$app->db->createCommand('SELECT id FROM {{%transaction}} WHERE id = :id FOR UPDATE')->bindValue(':id', (int) $transaction->id)->queryScalar();
+                $transaction->refresh();
+                (new PaymentConfirmationService())->send($transaction);
+            });
         } catch (\Throwable $e) {
             Yii::error(['message' => 'Razorpay payment was captured but confirmation email failed.', 'transactionId' => (int) $transaction->id, 'error' => $e->getMessage()], __METHOD__);
         }
-
-        return $transaction;
     }
 
     private function toMinor(float $amount): int

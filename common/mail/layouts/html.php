@@ -90,7 +90,11 @@ use yii\helpers\Html;
                                 <br>
                                 https://miraclewebtechnologies.com
                                 <br>
-                                <a href="https://miraclewebtechnologies.com/dashboard/">Access Customer Portal</a>
+                                <?php if (!empty($this->params['staffEmail'])): ?>
+                                    <a href="<?= Html::encode(Yii::$app->params['backendBaseUrl']) ?>">Open the admin panel</a>
+                                <?php else: ?>
+                                    <a href="https://miraclewebtechnologies.com/dashboard/">Access Customer Portal</a>
+                                <?php endif; ?>
                                 <br><br>
                                 © 2015-<?= date('Y') ?> Miracle Web Technologies
                             </td>

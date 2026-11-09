@@ -3,8 +3,10 @@
 declare(strict_types=1);
 
 /** @var yii\web\View $this */
+
 /** @var common\models\SupportTicket $ticket */
 // Sent to the support team: link to the admin panel.
+$this->params['staffEmail'] = true;
 $link = Yii::$app->params['backendBaseUrl'] . '/support-ticket/view?number=' . rawurlencode($ticket->ticket_number);
 
 echo $this->render('_card', [

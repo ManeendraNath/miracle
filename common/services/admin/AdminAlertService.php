@@ -171,7 +171,7 @@ final class AdminAlertService extends AdminNotificationService
     public static function cronJobSwitched(string $job, bool $enabled, string $by): void
     {
         $state = $enabled ? 'on' : 'off';
-        self::send("Cron Job Turned " . ucfirst($state) . ': ' . $job, "{$by} turned this job {$state} in the admin panel.", 'billing', '/admin/cron-log');
+        self::send('Cron Job Turned ' . ucfirst($state) . ': ' . $job, "{$by} turned this job {$state} in the admin panel.", 'billing', '/admin/cron-log');
     }
 
     /** @param string[] $customers one line each */
@@ -226,7 +226,7 @@ final class AdminAlertService extends AdminNotificationService
         try {
             $unsent = AdminNotification::find()->where(['emailed_at' => null])->andWhere(['between', 'created_at', time() - 3 * 86400, time() - 300])->orderBy(['id' => SORT_ASC])->limit(20)->all();
             foreach ($unsent as $notification) {
-                if (!self::sendEmail((string) $notification->title, (string) $notification->message)) {
+                if (!self::sendEmail((string) $notification->title, (string) $notification->message, $notification->route)) {
                     return;
                 }
                 $notification->updateAttributes(['emailed_at' => time()]);
@@ -265,7 +265,7 @@ final class AdminAlertService extends AdminNotificationService
         } catch (\Throwable $e) {
             Yii::error(['message' => 'Admin notification could not be saved.', 'title' => $title, 'error' => $e->getMessage()], __METHOD__);
         }
-        if (self::sendEmail($title, $message) && $notification !== null) {
+        if (self::sendEmail($title, $message, $route) && $notification !== null) {
             try {
                 $notification->updateAttributes(['emailed_at' => time()]);
             } catch (\Throwable $e) {
@@ -277,11 +277,11 @@ final class AdminAlertService extends AdminNotificationService
         }
     }
 
-    private static function sendEmail(string $title, string $message): bool
+    private static function sendEmail(string $title, string $message, ?string $route = null): bool
     {
         try {
             $sent = Yii::$app->mailer
-                    ->compose('admin-alert-html', ['title' => $title, 'message' => $message])
+                    ->compose('admin-alert-html', ['title' => $title, 'message' => $message, 'route' => $route])
                     ->setFrom(Yii::$app->params['senderEmail'])
                     ->setTo(Yii::$app->params['adminEmail'])
                     ->setSubject("[ADMIN] {$title}")

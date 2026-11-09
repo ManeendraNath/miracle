@@ -13,6 +13,9 @@ declare(strict_types=1);
  * @var string $replyEmail
  * @var string $replySubject
  */
+
+// Sent to staff: the footer links to the admin panel.
+$this->params['staffEmail'] = true;
 echo $this->render('_card', [
     'tone' => 'info',
     'eyebrow' => $eyebrow,

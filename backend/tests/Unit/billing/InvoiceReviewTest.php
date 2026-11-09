@@ -83,6 +83,43 @@ final class InvoiceReviewTest extends Unit
         $this->assertStringContainsString('Pay by (expiry date)', $mailer->render('invoice-html', ['invoice' => Invoice::findOne($invoice->id), 'outstanding' => 0.0]));
     }
 
+    public function testSendingDatesTheInvoiceToday(): void
+    {
+        $invoice = $this->renewalInvoice();
+        Invoice::updateAll(['created_at' => strtotime('-10 days')], ['id' => $invoice->id]);
+        (new InvoiceReviewService())->release(Invoice::findOne($invoice->id));
+        $this->assertSame(date('Y-m-d'), date('Y-m-d', (int) Invoice::findOne($invoice->id)->created_at));
+    }
+
+    public function testAnOverdueBalanceIsNotMovedOntoAHeldInvoice(): void
+    {
+        $old = $this->overdueInvoice(strtotime('-30 days'));
+        $held = $this->renewalInvoice();
+        $this->assertSame(Invoice::STATUS_UNPAID, Invoice::findOne($old->id)->status, 'still payable, with its reminders');
+        $this->assertFalse(InvoiceItem::find()->where(['invoice_id' => $held->id, 'item_type' => InvoiceItem::TYPE_ARREARS])->exists());
+    }
+
+    public function testAnOverdueBalanceMovesOnlyAfterTheGracePeriod(): void
+    {
+        $this->setReview(false);
+        $recent = $this->overdueInvoice(strtotime('-5 days'));
+        $this->renewalInvoice();
+        $this->assertSame(Invoice::STATUS_UNPAID, Invoice::findOne($recent->id)->status, 'sent 5 days ago: the customer still has time');
+
+        Invoice::updateAll(['created_at' => strtotime('-20 days')], ['id' => $recent->id]);
+        $this->renewalInvoice();
+        $this->assertSame(Invoice::STATUS_CARRIED_FORWARD, Invoice::findOne($recent->id)->status);
+    }
+
+    private function overdueInvoice(int $createdAt): Invoice
+    {
+        $invoice = new Invoice();
+        $invoice->setAttributes(['user_id' => $this->_user->id, 'invoice_number' => 'TEST-OLD-' . bin2hex(random_bytes(4)), 'client_name' => 'Review Test', 'subtotal_amount' => 500, 'discount_amount' => 0, 'cgst_percent' => 0, 'sgst_percent' => 0, 'igst_percent' => 0, 'total_payable' => 500, 'status' => Invoice::STATUS_UNPAID, 'due_date' => date('Y-m-d', strtotime('-3 days')), 'created_at' => $createdAt, 'updated_at' => $createdAt], false);
+        $this->assertTrue($invoice->save(false));
+
+        return $invoice;
+    }
+
     public function testWithTheStepOffInvoicesAreIssuedAtOnce(): void
     {
         $this->setReview(false);
@@ -105,14 +142,16 @@ final class InvoiceReviewTest extends Unit
 
     private function renewalInvoice(): Invoice
     {
-        $profile = new CustomerBillingProfile();
-        $profile->setAttributes(['user_id' => $this->_user->id, 'legal_name' => 'Review Test', 'state' => 'Delhi', 'state_code' => '07', 'is_gst_applicable' => 0, 'default_discount_amount' => 0, 'created_at' => time(), 'updated_at' => time()], false);
-        $this->assertTrue($profile->save(false));
+        if (!CustomerBillingProfile::find()->where(['user_id' => $this->_user->id])->exists()) {
+            $profile = new CustomerBillingProfile();
+            $profile->setAttributes(['user_id' => $this->_user->id, 'legal_name' => 'Review Test', 'state' => 'Delhi', 'state_code' => '07', 'is_gst_applicable' => 0, 'default_discount_amount' => 0, 'created_at' => time(), 'updated_at' => time()], false);
+            $this->assertTrue($profile->save(false));
+        }
         $run = new BillingRun();
         $run->setAttributes(['run_number' => 'TEST-RUN-' . bin2hex(random_bytes(4)), 'status' => BillingRun::STATUS_RUNNING, 'started_at' => time(), 'created_at' => time(), 'updated_at' => time()], false);
         $this->assertTrue($run->save(false));
         $event = new BillingEvent();
-        $event->setAttributes(['billing_run_id' => $run->id, 'user_id' => $this->_user->id, 'item_type' => InvoiceItem::TYPE_HOSTING, 'item_id' => 1, 'description' => 'Hosting', 'period_start' => '2026-12-01', 'period_end' => '2027-11-30', 'increase_percent' => 0, 'calculated_amount' => 1000, 'amount' => 1000, 'is_manual_amount' => 0, 'due_date' => '2026-12-01', 'status' => BillingEvent::STATUS_PENDING, 'created_at' => time(), 'updated_at' => time()], false);
+        $event->setAttributes(['billing_run_id' => $run->id, 'user_id' => $this->_user->id, 'item_type' => InvoiceItem::TYPE_HOSTING, 'item_id' => random_int(100000, 999999), 'description' => 'Hosting', 'period_start' => '2026-12-01', 'period_end' => '2027-11-30', 'increase_percent' => 0, 'calculated_amount' => 1000, 'amount' => 1000, 'is_manual_amount' => 0, 'due_date' => '2026-12-01', 'status' => BillingEvent::STATUS_PENDING, 'created_at' => time(), 'updated_at' => time()], false);
         $this->assertTrue($event->save(false));
 
         $invoice = (new AutoInvoiceService())->generateForUser((int) $run->id, (int) $this->_user->id);

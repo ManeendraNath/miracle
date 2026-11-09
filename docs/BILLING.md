@@ -89,8 +89,16 @@ expiry is due at once and its email says how many days ago the service expired.
 
 With "Check renewal invoices before they are sent" on, a new renewal invoice
 is a Draft ("Waiting for review"): not in the portal, not emailed, no
-reminders. Staff send it from the invoice page; its due date stays the expiry
-date. Staff get one alert a day while drafts wait.
+reminders. Staff send it from the invoice page: it is then dated that day,
+and its due date stays the expiry date. An overdue balance is never moved
+onto a held invoice. Staff get one alert a day while drafts wait.
+
+### Overdue balances move to the next invoice after 15 days
+
+An unpaid invoice past its due date moves onto the customer's next invoice
+only when it was issued at least 15 days earlier
+(OutstandingBalanceService::CARRY_FORWARD_GRACE_DAYS), so a renewal invoiced
+after its expiry date still gives the customer time to pay it.
 
 ## Online payments (Razorpay)
 

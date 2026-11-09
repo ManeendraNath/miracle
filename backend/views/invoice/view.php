@@ -30,7 +30,7 @@ if ($model->status === Invoice::STATUS_PARTIALLY_PAID) {
 if ($model->status === Invoice::STATUS_DRAFT) {
     $this->params['actions'][] = Html::a('<i class="fas fa-paper-plane me-1"></i> Send to customer', ['release', 'id' => $model->id], [
         'class' => 'btn btn-success',
-        'data' => ['confirm' => 'Send this invoice to the customer now? They will see it in the portal and get it by email, and the due date counts from today.', 'method' => 'post'],
+        'data' => ['confirm' => 'Send this invoice to the customer now? They will see it in the portal and get it by email, dated today and due on the expiry date shown.', 'method' => 'post'],
     ]);
     $this->params['actions'][] = Html::a('<i class="fas fa-edit me-1"></i> Update', ['update', 'id' => $model->id], ['class' => 'btn btn-primary']);
     $this->params['actions'][] = Html::a('<i class="fas fa-ban me-1"></i> Cancel Invoice', ['cancel', 'id' => $model->id], [

@@ -11,6 +11,9 @@ use common\models\Transaction;
 
 final class OutstandingBalanceService
 {
+    /** Days a customer has to pay an invoice before its overdue balance moves onto their next invoice. */
+    public const CARRY_FORWARD_GRACE_DAYS = 15;
+
     public function __construct(private readonly InvoicePaymentService $paymentService = new InvoicePaymentService())
     {
     }
@@ -36,6 +39,7 @@ final class OutstandingBalanceService
           AND id <> :targetInvoiceId
           AND status IN (:unpaid, :partiallyPaid)
           AND (due_date IS NULL OR due_date < :today)
+          AND created_at < :sentBefore
           AND NOT EXISTS (
               SELECT 1 FROM {{%transaction}} t
               WHERE t.invoice_id = {{%invoice}}.id
@@ -56,6 +60,9 @@ final class OutstandingBalanceService
                 ':unpaid' => Invoice::STATUS_UNPAID,
                 ':partiallyPaid' => Invoice::STATUS_PARTIALLY_PAID,
                 ':today' => date('Y-m-d'),
+                // Renewals are due on the expiry date, so one sent late is overdue at once: the customer gets
+                // CARRY_FORWARD_GRACE_DAYS to pay it before the balance moves onto their next invoice.
+                ':sentBefore' => strtotime('-' . self::CARRY_FORWARD_GRACE_DAYS . ' days'),
                 // A submitted proof awaiting approval must not be billed again as arrears.
                 ':pendingPayment' => Transaction::STATUS_PENDING,
                 // Abandoned Razorpay orders also sit at Pending; only payments awaiting review count.

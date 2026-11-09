@@ -257,7 +257,11 @@ JS);
                             The unpaid balance moved to invoice <?= Html::a(Html::encode($carriedInto->invoice_number), ['view', 'number' => $carriedInto->invoice_number]) ?>. Please pay it there.
                         <?php else: ?>
                             <?php $next = $model->carriedTo(); ?>
-                            The unpaid balance moved to <?= $next !== null ? 'invoice ' . Html::a(Html::encode($next->invoice_number), ['view', 'number' => $next->invoice_number]) . ', which is settled' : 'a later invoice' ?>. Nothing more is owed here.
+                            <?php if ($next !== null && $next->status === Invoice::STATUS_DRAFT): ?>
+                                The unpaid balance moved to your next invoice, which we will send you shortly. Please pay it there.
+                            <?php else: ?>
+                                The unpaid balance moved to <?= $next !== null ? 'invoice ' . Html::a(Html::encode($next->invoice_number), ['view', 'number' => $next->invoice_number]) . ', which is settled' : 'a later invoice' ?>. Nothing more is owed here.
+                            <?php endif; ?>
                         <?php endif; ?>
                     </div>
                 <?php elseif ($model->status === Invoice::STATUS_PAID): ?>

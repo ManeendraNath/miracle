@@ -22,7 +22,7 @@ final class InvoiceReviewService
     }
 
     /**
-     * Makes a Draft payable and tells the customer. The due date stays the service's expiry date.
+     * Makes a Draft payable, dated today, and tells the customer. The due date stays the service's expiry date.
      *
      * @return bool whether the email went out (if not, staff can use Resend Invoice)
      */
@@ -36,10 +36,13 @@ final class InvoiceReviewService
             if ($locked === null || $locked->status !== Invoice::STATUS_DRAFT) {
                 throw new \DomainException('Only an invoice waiting for review can be sent.');
             }
+            // Dated the day it is sent (the invoice date, GST report and reminders all use created_at).
             // The due date stays the expiry date set when it was made (or what staff changed it to).
+            // ponytail: the number keeps the financial year it was made in; a Draft held across 31 March keeps last year's series.
             $locked->status = Invoice::STATUS_UNPAID;
+            $locked->created_at = time();
             $locked->updated_at = time();
-            if (!$locked->save(false, ['status', 'updated_at'])) {
+            if (!$locked->save(false, ['status', 'created_at', 'updated_at'])) {
                 throw new \RuntimeException('Invoice could not be released.');
             }
             (new NotificationService())->create(

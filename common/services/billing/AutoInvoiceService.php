@@ -146,7 +146,11 @@ final class AutoInvoiceService
                 $this->createInvoiceItem($invoice, $event);
             }
 
-            $this->outstandingService->transferForUser($invoice);
+            // Not into an invoice held for review: the customer couldn't see or pay the balance until it is sent.
+            // The older invoice stays open (with its reminders) and is carried by a later run.
+            if (!InvoiceReviewService::isOn()) {
+                $this->outstandingService->transferForUser($invoice);
+            }
 
             // The profile's fixed default discount can't exceed this run's charges
             // (e.g. ₹500 off a ₹400 renewal): cap it rather than failing every run.

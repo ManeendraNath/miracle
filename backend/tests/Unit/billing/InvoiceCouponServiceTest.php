@@ -46,6 +46,7 @@ final class InvoiceCouponServiceTest extends Unit
         if ($this->_dbTransaction !== null && $this->_dbTransaction->isActive) {
             $this->_dbTransaction->rollBack();
         }
+        (new \ReflectionProperty(\common\components\CustomYii::class, '_settings'))->setValue(null, null);
         parent::_after();
     }
 
@@ -200,8 +201,11 @@ final class InvoiceCouponServiceTest extends Unit
 
     public function testDefaultDiscountIsCappedWhenArrearsAreStillOwed(): void
     {
+        // Review step off: a balance is never moved onto an invoice held for review.
+        Yii::$app->db->createCommand()->update('{{%site_setting}}', ['review_invoices' => 0])->execute();
+        (new \ReflectionProperty(\common\components\CustomYii::class, '_settings'))->setValue(null, null);
         $old = $this->invoice([InvoiceItem::TYPE_HOSTING => 100.00]);
-        $old->updateAttributes(['due_date' => '2000-01-01']); // overdue: carried into the renewal
+        $old->updateAttributes(['due_date' => '2000-01-01', 'created_at' => strtotime('-30 days')]); // overdue past the grace: carried into the renewal
 
         $invoice = $this->renewalInvoice(400.00, 500.00);
 

@@ -63,6 +63,7 @@ class CronController extends Controller
             $this->stderr('Billing failed: ' . $e->getMessage() . PHP_EOL, Console::FG_RED);
             try {
                 \common\services\admin\AdminAlertService::billingRunFailed($e->getMessage());
+                $this->alertDraftsWaiting(); // invoices made on earlier days still wait
             } catch (\Throwable $alertError) {
                 Yii::error($alertError, __METHOD__);
             }
@@ -102,10 +103,7 @@ class CronController extends Controller
                     $this->stderr("Invoice email failed: {$invoice->invoice_number}: {$e->getMessage()}\n", Console::FG_RED);
                 }
             }
-            $waiting = (int) Invoice::find()->where(['status' => Invoice::STATUS_DRAFT])->count();
-            if ($waiting > 0) {
-                \common\services\admin\AdminAlertService::invoicesWaitingForReview($waiting);
-            }
+            $this->alertDraftsWaiting();
             Yii::info(['message' => 'Automatic billing completed.', 'invoiceCount' => $count, 'emailFailures' => $failed], __METHOD__);
             if ($failed > 0) {
                 $this->stderr("Billing finished with {$failed} invoice email failure(s); they will be retried on the next run.\n", Console::FG_RED);
@@ -284,6 +282,15 @@ class CronController extends Controller
             if ($locked) {
                 $this->releaseLock($mutex, $lockName);
             }
+        }
+    }
+
+    /** Once a day while invoices wait for review (AdminAlertService sends it once per day). */
+    private function alertDraftsWaiting(): void
+    {
+        $waiting = (int) Invoice::find()->where(['status' => Invoice::STATUS_DRAFT])->count();
+        if ($waiting > 0) {
+            \common\services\admin\AdminAlertService::invoicesWaitingForReview($waiting);
         }
     }
 }

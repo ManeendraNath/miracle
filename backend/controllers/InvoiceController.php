@@ -242,7 +242,7 @@ class InvoiceController extends BaseController
         try {
             $emailed = (new \common\services\billing\InvoiceReviewService())->release($invoice);
             Yii::$app->session->setFlash($emailed ? 'success' : 'warning', $emailed
-                ? 'Invoice sent to the customer. The due date now counts from today.'
+                ? 'Invoice sent to the customer. It is due on ' . Yii::$app->formatter->asDate($invoice->due_date, 'php:d M Y') . ' (the expiry date).'
                 : 'The invoice is now visible to the customer, but the email could not be sent. Use Resend Invoice to try again.');
         } catch (\DomainException $e) {
             Yii::$app->session->setFlash('error', $e->getMessage());

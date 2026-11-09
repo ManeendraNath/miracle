@@ -285,7 +285,7 @@ $questions = [
                         <h3>Clients abroad</h3>
                         <ul class="mw-checks">
                             <li><i class="fas fa-check" aria-hidden="true"></i>Everything handled online, in English</li>
-                            <li><i class="fas fa-check" aria-hidden="true"></i>Pay online by international card through Razorpay</li>
+                            <li><i class="fas fa-check" aria-hidden="true"></i>Payment options for your country confirmed with your quote</li>
                             <li><i class="fas fa-check" aria-hidden="true"></i>Stay in touch by email and phone</li>
                         </ul>
                     </div>

@@ -29,6 +29,9 @@ $this->params['breadcrumbs'][] = 'Update';
                 ],
             ]) ?>
         <?php endif; ?>
+        <?php if ((int) $model->id === (int) Yii::$app->user->id): ?>
+            <?= Html::a('Backup codes and two-factor settings: My account', ['account'], ['class' => 'btn btn-sm btn-outline-primary ml-2']) ?>
+        <?php endif; ?>
     </div>
 
 </div>

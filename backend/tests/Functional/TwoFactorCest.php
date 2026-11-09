@@ -107,12 +107,16 @@ final class TwoFactorCest
 
     public function superadminResetsAnotherAdminsTwoFactor(FunctionalTester $I): void
     {
-        $this->haveAdmin($I, 'tf-root', Admin::getRoleSuperAdmin(), null);
+        $rootId = $this->haveAdmin($I, 'tf-root', Admin::getRoleSuperAdmin(), null);
         $id = $this->haveAdmin($I, 'tf-lost', Admin::getRoleAdmin(), self::SECRET);
         $this->login($I, 'tf-root');
         $I->see('Miracle Corporate Control Center');
         $I->amOnRoute('admin/update', ['id' => $id]);
         $I->see('Turn off two-factor');
+        $I->dontSee('Backup codes and two-factor settings'); // someone else's page
+        $I->amOnRoute('admin/update', ['id' => $rootId]);
+        $I->seeLink('Backup codes and two-factor settings: My account');
+        $I->amOnRoute('admin/update', ['id' => $id]);
         $this->post($I, ['/admin/reset-two-factor', 'id' => $id]);
         $I->seeRecord(Admin::class, ['id' => $id, 'totp_secret' => null]);
     }

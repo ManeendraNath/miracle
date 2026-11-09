@@ -9,7 +9,7 @@ use yii\helpers\Html;
 
 $name = Html::encode(CustomYii::getSetting('site_name') ?: 'Miracle Web Technologies');
 
-echo $this->render('_legal', ['title' => 'Refund & Cancellation Policy', 'updated' => '06 Nov 2026', 'body' => <<<HTML
+echo $this->render('_legal', ['title' => 'Refund & Cancellation Policy', 'updated' => '09 Nov 2026', 'body' => <<<HTML
 <p>This policy explains how you can cancel a service bought from {$name} and when a refund is given.</p>
 
 <h2 class="h5 fw-bold mt-4">1. Cancelling a service</h2>
@@ -25,7 +25,7 @@ echo $this->render('_legal', ['title' => 'Refund & Cancellation Policy', 'update
 </ul>
 
 <h2 class="h5 fw-bold mt-4">3. How refunds are paid</h2>
-<p>Approved refunds are made to the original payment method: payments made through Razorpay are refunded through Razorpay, and UPI / bank transfers are refunded to the account they came from. We process an approved refund within 5–7 working days; your bank or card issuer may take a few more days to show it.</p>
+<p>Approved refunds are made to the original payment method: payments made through Razorpay are refunded through Razorpay, PayPal payments are refunded through PayPal in US dollars, and UPI / bank transfers are refunded to the account they came from. We process an approved refund within 5–7 working days; your bank or card issuer may take a few more days to show it.</p>
 
 <h2 class="h5 fw-bold mt-4">4. Failed payments</h2>
 <p>If money was debited but the payment failed or the invoice still shows as unpaid, it is usually reversed automatically by your bank within 5–7 working days. If not, contact us with the payment reference and we will resolve it.</p>

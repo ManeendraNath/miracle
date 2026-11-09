@@ -19,8 +19,8 @@ use yii\httpclient\Transport;
 /**
  * Razorpay Standard Checkout: order creation, signature checks and capture.
  *
- * Configured from .env through params['razorpay']:
- * RAZORPAY_ENABLED, RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET, RAZORPAY_WEBHOOK_SECRET.
+ * Keys from .env through params['razorpay']: RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET, RAZORPAY_WEBHOOK_SECRET.
+ * Customers see it when Site Settings > Payments switches it on for clients in India and/or abroad.
  *
  * A payment is captured from two independent signals, whichever arrives first:
  * the browser callback (checkout signature) and the payment.captured webhook.
@@ -46,15 +46,18 @@ final class RazorpayService
 
     public function isEnabled(): bool
     {
-        return !empty($this->_config['enabled'])
-            && ($this->_config['keyId'] ?? '') !== ''
+        return ($this->_config['keyId'] ?? '') !== ''
             && ($this->_config['keySecret'] ?? '') !== '';
     }
 
-    /** Customers never get a test-mode checkout on live: a test card would mark the invoice paid with no money received. */
-    public function acceptsCustomerPayments(): bool
+    /**
+     * Switched on in Site Settings for the client's location ($abroad: billing country not India). Customers never
+     * get a test-mode checkout on live: a test card would mark the invoice paid with no money received.
+     */
+    public function acceptsCustomerPayments(bool $abroad): bool
     {
-        return $this->isEnabled() && !(YII_ENV_PROD && $this->isTestMode());
+        return (bool) \common\components\CustomYii::getSetting($abroad ? 'razorpay_abroad' : 'razorpay_india', 0)
+            && $this->isEnabled() && !(YII_ENV_PROD && $this->isTestMode());
     }
 
     public function getKeyId(): string
@@ -110,14 +113,14 @@ final class RazorpayService
     }
 
     /**
-     * Locks the invoice's unpaid Razorpay orders. Call BEFORE locking the invoice row: capture() locks
+     * Locks the invoice's unpaid online orders (Razorpay, PayPal). Call BEFORE locking the invoice row: capture() locks
      * the order first and the invoice second, so the same order avoids deadlocks.
      */
     public static function lockUnpaidOrders(int $invoiceId): void
     {
         Yii::$app->db->createCommand(
-            'SELECT id FROM {{%transaction}} WHERE invoice_id = :invoice AND gateway_id = :gateway AND status = :status AND gateway_payment_id IS NULL FOR UPDATE',
-            [':invoice' => $invoiceId, ':gateway' => Transaction::GATEWAY_RAZORPAY, ':status' => Transaction::STATUS_PENDING]
+            'SELECT id FROM {{%transaction}} WHERE invoice_id = :invoice AND gateway_id IN (' . implode(',', Transaction::ONLINE_GATEWAYS) . ') AND status = :status AND gateway_payment_id IS NULL FOR UPDATE',
+            [':invoice' => $invoiceId, ':status' => Transaction::STATUS_PENDING]
         )->queryColumn();
     }
 
@@ -136,15 +139,15 @@ final class RazorpayService
     /** Every other row: proofs, manual payments, paid orders (NULL-safe, unlike ['not', unpaidOrderCondition()]). */
     public static function notUnpaidOrderCondition(): array
     {
-        return ['or', ['gateway_id' => null], ['<>', 'gateway_id', Transaction::GATEWAY_RAZORPAY], ['not', ['gateway_payment_id' => null]]];
+        return ['or', ['gateway_id' => null], ['not in', 'gateway_id', Transaction::ONLINE_GATEWAYS], ['not', ['gateway_payment_id' => null]]];
     }
 
-    /** Razorpay orders created for the invoice but not paid yet. */
+    /** Online (Razorpay, PayPal) orders created for the invoice but not paid yet. */
     public static function unpaidOrderCondition(int $invoiceId): array
     {
         return [
             'invoice_id' => $invoiceId,
-            'gateway_id' => Transaction::GATEWAY_RAZORPAY,
+            'gateway_id' => Transaction::ONLINE_GATEWAYS,
             'status' => Transaction::STATUS_PENDING,
             'gateway_payment_id' => null,
         ];
@@ -163,7 +166,7 @@ final class RazorpayService
     public function createTestOrder(int $amountMinor): string
     {
         if (!$this->isEnabled() || !$this->isTestMode()) {
-            throw new \DomainException('Test payments need RAZORPAY_ENABLED=true and test keys (rzp_test_…).');
+            throw new \DomainException('Test payments need Razorpay test keys (rzp_test_…) in .env.');
         }
         if ($amountMinor < 100) {
             throw new \DomainException('The minimum amount is ₹1.');

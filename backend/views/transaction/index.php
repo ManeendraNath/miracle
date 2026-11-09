@@ -58,6 +58,7 @@ GridViewHelper::register($this);
                             [$icon, $class] = match ((int) $model->gateway_id) {
                                 Transaction::GATEWAY_RAZORPAY => ['fa-credit-card', 'bg-dark'],
                                 Transaction::GATEWAY_UPI_BANK => ['fa-university', 'bg-info'],
+                                Transaction::GATEWAY_PAYPAL => ['fa-globe', 'bg-primary'],
                                 default => ['fa-hand-holding-usd', 'bg-secondary'],
                             };
                             return Html::tag('span', '<i class="fas ' . $icon . ' me-1"></i> ' . Html::encode($model->gatewayLabel), ['class' => 'badge ' . $class . ' text-white px-2 py-1']);

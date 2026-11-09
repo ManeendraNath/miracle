@@ -9,7 +9,7 @@ use yii\helpers\Html;
 
 $name = Html::encode(CustomYii::getSetting('site_name') ?: 'Miracle Web Technologies');
 
-echo $this->render('_legal', ['title' => 'Privacy Policy', 'updated' => '06 Nov 2026', 'body' => <<<HTML
+echo $this->render('_legal', ['title' => 'Privacy Policy', 'updated' => '09 Nov 2026', 'body' => <<<HTML
 <p>This policy explains what personal data {$name} collects through this website and customer portal, why, and how it is protected.</p>
 
 <h2 class="h5 fw-bold mt-4">1. What we collect</h2>
@@ -23,13 +23,13 @@ echo $this->render('_legal', ['title' => 'Privacy Policy', 'updated' => '06 Nov 
 </ul>
 
 <h2 class="h5 fw-bold mt-4">2. Payments</h2>
-<p>Online payments are processed by Razorpay. Card, UPI and bank details are entered on Razorpay's secure checkout and are never stored by us; we keep only the payment reference, amount and status. Payment proofs you upload for UPI or bank transfers are stored securely and seen only by our staff.</p>
+<p>Online payments are processed by Razorpay, and payments from outside India by PayPal where the invoice offers it. Card, UPI, bank and PayPal account details are entered on their secure checkouts and are never stored by us; we keep only the payment reference, amount and status. Payment proofs you upload for UPI or bank transfers are stored securely and seen only by our staff.</p>
 
 <h2 class="h5 fw-bold mt-4">3. How we use it</h2>
 <p>To provide and renew your services, raise invoices and record payments, send renewal reminders and service notices, answer support requests, and meet legal and accounting obligations. We do not sell your data or use it for third-party advertising.</p>
 
 <h2 class="h5 fw-bold mt-4">4. Who we share it with</h2>
-<p>Only with those needed to deliver the service: domain registrars and registries (registration details, as their rules require), our hosting and email providers, our WhatsApp messaging provider (your name and number, and details of the message such as an invoice number or service name, for reminders and service messages), Razorpay for payments, and authorities where the law requires it.</p>
+<p>Only with those needed to deliver the service: domain registrars and registries (registration details, as their rules require), our hosting and email providers, our WhatsApp messaging provider (your name and number, and details of the message such as an invoice number or service name, for reminders and service messages), Razorpay and PayPal for payments, and authorities where the law requires it.</p>
 
 <h2 class="h5 fw-bold mt-4">5. How long we keep it</h2>
 <p>For as long as you use our services, and afterwards for as long as tax and accounting law requires invoice and payment records to be kept. An account you stop using stays on record until you ask us to close it; a disabled account is kept, not erased.</p>

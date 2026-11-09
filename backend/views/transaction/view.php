@@ -13,7 +13,7 @@ $this->params['breadcrumbs'][] = ['label' => 'Transactions', 'url' => ['index']]
 $this->params['breadcrumbs'][] = $this->title;
 \yii\web\YiiAsset::register($this);
 $this->params['actions'] = [Html::a('<i class="fas fa-arrow-left me-1"></i> Back', ['index'], ['class' => 'btn btn-light border'])];
-if ($model->status === Transaction::STATUS_PENDING && (int) $model->gateway_id !== Transaction::GATEWAY_RAZORPAY) {
+if ($model->status === Transaction::STATUS_PENDING && !$model->isOnline()) {
     $this->params['actions'][] = Html::a('<i class="fas fa-check-circle me-1"></i> Approve Payment', ['approve', 'id' => $model->id], [
         'class' => 'btn btn-success',
         'data' => [
@@ -32,13 +32,15 @@ if ($model->status === Transaction::STATUS_PENDING && (int) $model->gateway_id !
 $refundable = round((float) $model->amount - (float) $model->refunded_amount, 2);
 // Razorpay payments are refunded through Razorpay by the form itself; others are returned by hand first.
 $viaRazorpay = (int) $model->gateway_id === Transaction::GATEWAY_RAZORPAY && (string) $model->gateway_payment_id !== '' && (new RazorpayService())->isEnabled();
-$refundStep = $viaRazorpay
-    ? 'The amount is refunded to the customer through Razorpay now (5-7 working days to reach them).'
-    : 'Only do this after the money has been returned (bank / UPI).';
+$refundStep = match (true) {
+    $viaRazorpay => 'The amount is refunded to the customer through Razorpay now (5-7 working days to reach them).',
+    (int) $model->gateway_id === Transaction::GATEWAY_PAYPAL => 'Refund it in your PayPal account first (Activity, the payment, Issue a refund), then record the rupee amount here.',
+    default => 'Only do this after the money has been returned (bank / UPI).',
+};
 ?>
 <div class="transaction-view container-fluid pt-3">
     <div class="mb-4">
-        <?php if ($model->status === Transaction::STATUS_PENDING && (int) $model->gateway_id !== Transaction::GATEWAY_RAZORPAY && !empty($model->payment_receipt_file)): ?>
+        <?php if ($model->status === Transaction::STATUS_PENDING && !$model->isOnline() && !empty($model->payment_receipt_file)): ?>
             <div class="card shadow-sm mb-4">
                 <div class="card-header">
                     <strong>Payment Proof</strong>
@@ -108,7 +110,7 @@ $refundStep = $viaRazorpay
                                 'value' => Yii::$app->formatter->asCurrency($model->amount, 'INR'),
                             ],
                             [
-                                'label' => 'Razorpay Fee (incl. GST)',
+                                'label' => (int) $model->gateway_id === Transaction::GATEWAY_PAYPAL ? 'PayPal Fee (at the payment\'s rate)' : 'Razorpay Fee (incl. GST)',
                                 'value' => Yii::$app->formatter->asCurrency($model->gateway_fee, 'INR') . ' (you receive ' . Yii::$app->formatter->asCurrency((float) $model->amount - (float) $model->gateway_fee, 'INR') . ')',
                                 'visible' => (float) $model->gateway_fee > 0,
                             ],

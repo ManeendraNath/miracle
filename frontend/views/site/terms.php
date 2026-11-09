@@ -24,7 +24,7 @@ echo $this->render('_legal', ['title' => 'Terms & Conditions', 'updated' => '09 
 <h2 class="h5 fw-bold mt-4">3. Prices, invoices and payment</h2>
 <ul>
     <li>All prices are in Indian Rupees (INR). GST is not charged while we are not registered under GST; if we register, GST will be added at the applicable rate and shown on the invoice.</li>
-    <li>Invoices are payable by the due date shown. Payment is by UPI or bank transfer, with the payment proof uploaded in the portal; if online payment is available, the invoice offers it. If you are outside India, contact us before ordering and we will confirm how to pay.</li>
+    <li>Invoices are payable by the due date shown. Payment is by UPI or bank transfer, with the payment proof uploaded in the portal; if online payment is available, the invoice offers it. If you are outside India, the invoice can be paid in US dollars with PayPal when it offers that option, at the rupee amount converted at the rate shown; otherwise contact us and we will confirm how to pay.</li>
     <li>We never charge your card or account automatically: renewals are invoiced and you choose when to pay. Renewals due around the same time share one invoice, and an overdue balance is carried onto your next invoice.</li>
     <li>Renewal prices include an increase at the rate agreed for the service: every year for domains, every two years for hosting and every three years for maintenance. The price shown on the renewal invoice is the one that applies.</li>
     <li>Recurring services (domains, hosting, maintenance) are invoiced before each renewal. A service may be suspended if its invoice remains unpaid after the due date, and a domain that is not renewed in time may expire and be lost or carry a registry recovery fee.</li>

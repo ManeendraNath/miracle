@@ -102,10 +102,10 @@ after its expiry date still gives the customer time to pay it.
 
 ## Online payments (Razorpay)
 
-Turned on entirely from `.env`; no code change needed to go live:
+Keys in `.env`; switched on for clients in India and/or abroad in
+Site Settings > Payments (a gateway without keys stays off):
 
 ```
-RAZORPAY_ENABLED=true
 RAZORPAY_KEY_ID=rzp_live_...        # rzp_test_... for test mode
 RAZORPAY_KEY_SECRET=...
 RAZORPAY_WEBHOOK_SECRET=...         # same value as the webhook secret in the Razorpay dashboard
@@ -121,6 +121,26 @@ settles the invoice. An unpaid order is reused on the next attempt if the amount
 
 Pending Razorpay transactions are unpaid orders, not payments: admins cannot approve or edit
 them, and they do not block arrears carry-forward or UPI proof upload.
+
+## PayPal (clients abroad)
+
+Invoices stay in rupees. For a client outside India (billing country not
+India) the invoice page shows a PayPal button that charges the outstanding
+amount in US dollars when Site Settings > Payments switches PayPal on. The
+rate is the European Central Bank USD/INR rate from Frankfurter (free, no
+key; checked at most every 12 hours when needed) less a margin for PayPal's
+own conversion, or a rate typed in by hand. No rate, no button. The payment
+is recorded as the rupee amount; the PayPal fee is converted at the same rate.
+
+Keys in `.env`: `PAYPAL_MODE=live` (or `sandbox` for test accounts; a
+sandbox checkout never shows on live),
+`PAYPAL_CLIENT_ID`, `PAYPAL_SECRET` from PayPal Developer > Apps &
+Credentials. No webhook: the server captures the approved order itself, and
+the 30-minute `cron/razorpay-sync` (and the next Pay on that invoice)
+records an order whose browser was lost.
+
+Refunds: refund in the PayPal account first, then record the rupee amount
+on the transaction page.
 
 ## Disabling instead of deleting
 
@@ -216,13 +236,17 @@ change its own email and password under **My account** (user icon in the top bar
 `BACKEND_BASE_URL`). Using it signs out other sessions, clears the login lock and alerts admins; two-factor
 stays on. Mail not working: another Superadmin can set a new password on the admin's edit page.
 
-### Two-factor sign-in (optional, per admin)
+### Two-factor sign-in (required for every staff account)
+
+Until it is on, a staff account can only open My account to set it up.
 
 - **Turn on:** My account → *Set up two-factor sign-in* → scan the QR code (or type the key)
   in an authenticator app → enter the 6-digit code it shows. Turning it on signs out
   "remember me" logins on other devices.
 - **Login:** after the password, the panel asks for a code (5 minutes to enter it). Wrong
-  codes count toward the normal login lock (5 failures → 15 minutes). "Remember me" applies
+  codes count toward the normal login lock (5 failures → 15 minutes); 20 wrong codes lock the
+  account for 24 hours and alert admins. 20 wrong passwords from any addresses lock an account
+  for an hour. "Remember me" applies
   only after the code. Each code works once.
 - **Turn off:** My account → enter a current code → *Turn off*.
 - **Lost phone:** a Superadmin opens the admin's edit page → *Turn off two-factor*. If the

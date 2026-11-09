@@ -217,7 +217,7 @@ final class TwoFactorCest
             $this->login($I, 'tf-required');
             $I->amOnRoute('invoice/index');
             $I->seeInCurrentUrl('admin/account');
-            $I->see('It is required for Admin and Superadmin accounts');
+            $I->see('It is required for every staff account');
             $I->click('Set up two-factor sign-in');
             $I->seeElement('code.h5');
         } finally {
@@ -225,16 +225,14 @@ final class TwoFactorCest
         }
     }
 
-    public function managerIsNotForcedToSetUpTwoFactor(FunctionalTester $I): void
+    public function managerIsAlsoAskedToSetUpTwoFactor(FunctionalTester $I): void
     {
         BaseController::$requireTwoFactor = true;
         try {
             $this->haveAdmin($I, 'tf-manager', Admin::getRoleManager(), null);
             $this->login($I, 'tf-manager');
             $I->amOnRoute('lead/index');
-            $I->dontSeeInCurrentUrl('admin/account');
-            $I->seeInCurrentUrl('lead');
-            $I->dontSeeElement('#login-form');
+            $I->seeInCurrentUrl('admin/account');
         } finally {
             BaseController::$requireTwoFactor = false;
         }

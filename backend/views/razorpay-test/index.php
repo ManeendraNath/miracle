@@ -25,7 +25,7 @@ $this->params['subtitle'] = 'Try a payment with test keys. No invoice, customer 
                 <div class="card-body">
                     <?php if (!$ready): ?>
                         <div class="alert alert-warning mb-0">
-                            Needs <code>RAZORPAY_ENABLED=true</code> and <strong>test</strong> keys
+                            Needs Razorpay <strong>test</strong> keys
                             (<code>rzp_test_…</code>) in <code>.env</code>. This page never runs with live keys.
                         </div>
                     <?php else: ?>

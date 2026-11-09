@@ -2,6 +2,8 @@
 
 use yii\bootstrap5\ActiveForm;
 use yii\bootstrap5\Html;
+use common\services\payment\PayPalService;
+use common\services\payment\RazorpayService;
 
 /** @var yii\web\View $this */
 /** @var common\models\SiteSetting $model */
@@ -32,8 +34,53 @@ $this->params['breadcrumbs'][] = $this->title;
         </div>
 
         <div class="mb-3">
-            <?= $form->field($model, 'review_invoices')->checkbox()->hint('New renewal invoices wait under Invoices (Waiting for review) until you send them. The customer sees nothing until then, and the due date counts from the day you send.') ?>
+            <?= $form->field($model, 'review_invoices')->checkbox()->hint('New renewal invoices wait under Invoices (Waiting for review) until you send them. The customer sees nothing until then. The due date stays the service\'s expiry date.') ?>
         </div>
+
+        <!-- PAYMENTS: which gateway each client sees; keys stay in .env -->
+        <?php
+        $razorpay = new RazorpayService();
+        $paypal = new PayPalService();
+        $keyStatus = static fn(bool $hasKeys, bool $test, string $envNames): string => match (true) {
+            !$hasKeys => '<span class="badge bg-secondary">Keys missing</span> <span class="small text-muted">Add ' . $envNames . ' to .env on the server.</span>',
+            $test && YII_ENV_PROD => '<span class="badge bg-warning text-dark">Test keys</span> <span class="small text-muted">Customers never see a test checkout on the live site.</span>',
+            $test => '<span class="badge bg-info text-dark">Test keys</span>',
+            default => '<span class="badge bg-success">Live keys</span>',
+        };
+        $market = (float) $model->usd_market_rate;
+        $rateNow = PayPalService::usdRate();
+        ?>
+        <h4 class="fw-bold mt-4 mb-3 text-dark border-bottom pb-2" style="font-size: 1.1rem; color: #0f172a;">💳 Payments</h4>
+        <p class="small text-muted">Choose which online payment customers see, by their billing country. A gateway works only when it is ticked here and its keys are in <code>.env</code>. UPI / bank transfer with proof upload is always offered.</p>
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <p class="fw-semibold mb-1">Razorpay (charges in ₹) <?= $keyStatus($razorpay->isEnabled(), $razorpay->isTestMode(), 'RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET') ?></p>
+                <?= $form->field($model, 'razorpay_india')->checkbox() ?>
+                <?= $form->field($model, 'razorpay_abroad')->checkbox()->hint('Foreign cards need International Payments switched on in your Razorpay account.') ?>
+            </div>
+            <div class="col-md-6 mb-3">
+                <p class="fw-semibold mb-1">PayPal (charges in US$) <?= $keyStatus($paypal->isEnabled(), $paypal->isSandbox(), 'PAYPAL_CLIENT_ID and PAYPAL_SECRET') ?></p>
+                <?= $form->field($model, 'paypal_abroad')->checkbox()->hint('PayPal India cannot take payments from customers in India, so it is offered to clients abroad only.') ?>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-4 mb-3">
+                <?= $form->field($model, 'usd_rate_auto')->checkbox()->hint($market > 0
+                    ? 'Today: ₹' . Html::encode(rtrim(rtrim(number_format($market, 4, '.', ''), '0'), '.')) . ' per US$1 (European Central Bank, updated ' . Yii::$app->formatter->asRelativeTime((int) $model->usd_rate_fetched_at) . ').'
+                    : 'Fetched free from the European Central Bank (Frankfurter) when a PayPal invoice is opened.') ?>
+            </div>
+            <div class="col-md-4 mb-3">
+                <?= $form->field($model, 'usd_rate_margin')->input('number', ['step' => '0.1', 'min' => 0, 'max' => 20])->hint('PayPal converts dollars to rupees about 3–4% below the market rate. Charging this much more covers it.') ?>
+            </div>
+            <div class="col-md-4 mb-3">
+                <?= $form->field($model, 'usd_inr_rate')->input('number', ['step' => '0.0001', 'min' => 10])->hint('Used when the daily rate is off or could not be fetched.') ?>
+            </div>
+        </div>
+        <p class="small mb-3">
+            <?= $rateNow > 0
+                ? 'PayPal now charges at <strong>₹' . Html::encode(rtrim(rtrim(number_format($rateNow, 4, '.', ''), '0'), '.')) . ' per US$1</strong>: a ₹10,000 invoice is <strong>US$' . PayPalService::toUsd(10000, $rateNow) . '</strong>.'
+                : '<span class="text-danger">No exchange rate yet: PayPal stays hidden until one is fetched or set by hand.</span>' ?>
+        </p>
 
         <!-- SECTION 2: COMMUNICATIONS CONNECTORS -->
         <h4 class="fw-bold mt-3 mb-3 text-dark border-bottom pb-2" style="font-size: 1.1rem; color: #0f172a;">📞 Support & Communication Links</h4>

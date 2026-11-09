@@ -42,7 +42,10 @@ return [
                     ->set('X-Frame-Options', 'DENY')
                     ->set('X-Content-Type-Options', 'nosniff')
                     ->set('Referrer-Policy', 'strict-origin-when-cross-origin')
-                    ->set('Strict-Transport-Security', 'max-age=31536000');
+                    ->set('Strict-Transport-Security', 'max-age=31536000')
+                    // Safe on every page (no inline-script rules): no plugins, no <base> hijack, never framed.
+                    // ponytail: no script-src yet; it needs the inline scripts moved out first.
+                    ->set('Content-Security-Policy', "base-uri 'self'; object-src 'none'; frame-ancestors 'none'");
             },
         ],
         'formatter' => [

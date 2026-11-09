@@ -58,7 +58,7 @@ final class AdminBillingCest
         $this->post($I, 'reject', $order);
         $I->seeRecord(Transaction::class, ['id' => $order, 'status' => Transaction::STATUS_PENDING]);
         $I->amOnRoute('transaction/view', ['id' => $order]);
-        $I->see('Razorpay orders are settled automatically and cannot be rejected manually.');
+        $I->see('Online orders (Razorpay, PayPal) are settled automatically and cannot be rejected manually.');
     }
 
     public function rejectedProofFreesItsReferenceForAResubmit(FunctionalTester $I): void

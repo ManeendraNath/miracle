@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use common\models\Invoice;
 use common\services\billing\TaxCalculator;
+use common\services\payment\PayPalService;
 use yii\helpers\Html;
 use yii\helpers\Json;
 use yii\helpers\Url;
@@ -19,6 +20,8 @@ $this->params['breadcrumbs'][] = $model->invoice_number;
 
 $isPayable = in_array($model->status, [Invoice::STATUS_UNPAID, Invoice::STATUS_PARTIALLY_PAID], true) && $outstandingAmount > 0;
 $canPayOnline = $isPayable && $pendingPayment === null && !empty($razorpayEnabled);
+// Clients abroad pay in US dollars with PayPal (rate from Site Settings).
+$canPayPal = $isPayable && $pendingPayment === null && !empty($paypal);
 $formatter = Yii::$app->formatter;
 $inr = static fn($amount): string => $formatter->asCurrency($amount, 'INR');
 // Same tax breakdown as the PDF and the GST report.
@@ -79,6 +82,33 @@ document.getElementById('pay-online').addEventListener('click', function () {
         })
         .catch(function (e) { alert(e.message); button.disabled = false; });
 });
+JS);
+}
+
+if ($canPayPal) {
+    $this->registerJsFile('https://www.paypal.com/sdk/js?' . http_build_query(['client-id' => $paypal['clientId'], 'currency' => 'USD', 'intent' => 'capture']));
+    $this->registerJs(<<<JS
+(function () {
+    var box = document.getElementById('paypal-buttons');
+    var headers = {'X-CSRF-Token': yii.getCsrfToken(), 'X-Requested-With': 'XMLHttpRequest'};
+    paypal.Buttons({
+        createOrder: function () {
+            return fetch(box.dataset.orderUrl, {method: 'POST', headers: headers})
+                .then(function (r) { return r.json().then(function (data) { return {ok: r.ok, data: data}; }); })
+                .then(function (res) {
+                    if (!res.ok) { alert(res.data.error || 'Could not start PayPal payment.'); throw new Error(res.data.error); }
+                    return res.data.id;
+                });
+        },
+        onApprove: function (data) {
+            box.innerHTML = '<p class="text-center my-3">Confirming your payment…</p>';
+            var body = new URLSearchParams();
+            body.append('order_id', data.orderID);
+            return fetch(box.dataset.captureUrl, {method: 'POST', headers: headers, body: body})
+                .finally(function () { window.location.reload(); });
+        }
+    }).render('#paypal-buttons');
+})();
 JS);
 }
 ?>
@@ -229,6 +259,16 @@ JS);
                     </div>
                 <?php elseif ($isPayable): ?>
                     <div class="d-grid gap-2 mt-3">
+                        <?php if ($canPayPal): ?>
+                            <?php $usd = PayPalService::toUsd((float) $outstandingAmount, (float) $paypal['rate']); ?>
+                            <p class="small text-center mb-0">
+                                Pay <strong>US$<?= Html::encode($usd) ?></strong> with PayPal or a card
+                                (<?= $inr($outstandingAmount) ?> at ₹<?= Html::encode(rtrim(rtrim(number_format((float) $paypal['rate'], 4, '.', ''), '0'), '.')) ?> per US$1).
+                            </p>
+                            <div id="paypal-buttons"
+                                 data-order-url="<?= Url::to(['paypal-order', 'number' => $model->invoice_number]) ?>"
+                                 data-capture-url="<?= Url::to(['paypal-capture', 'number' => $model->invoice_number]) ?>"></div>
+                        <?php endif; ?>
                         <?php if ($canPayOnline): ?>
                             <button type="button" id="pay-online" class="btn btn-success btn-lg"
                                     data-order-url="<?= Url::to(['pay-online', 'number' => $model->invoice_number]) ?>">
@@ -238,10 +278,10 @@ JS);
                         <?= Html::a(
                             '<i class="fas fa-university me-1"></i> Paid by UPI / bank transfer? Submit proof',
                             ['submit-payment', 'number' => $model->invoice_number],
-                            ['class' => 'btn ' . ($canPayOnline ? 'btn-outline-secondary btn-sm' : 'btn-success')]
+                            ['class' => 'btn ' . ($canPayOnline || $canPayPal ? 'btn-outline-secondary btn-sm' : 'btn-success')]
                         ) ?>
                     </div>
-                    <?php if ($canPayOnline): ?>
+                    <?php if ($canPayOnline && !$canPayPal): ?>
                         <p class="small text-body-secondary text-center mt-2 mb-0">
                             Paying from outside India? <?= Html::a('Raise a support ticket', ['/support/create', 'subject' => 'Paying from outside India']) ?> and we'll confirm how to pay.
                         </p>

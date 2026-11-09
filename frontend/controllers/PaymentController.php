@@ -40,9 +40,9 @@ final class PaymentController extends Controller
             ->where([
                 'i.user_id' => (int) Yii::$app->user->id,
             ])
-            // Pending/failed Razorpay rows are unpaid or abandoned checkout orders, not payments.
+            // Pending/failed Razorpay and PayPal rows are unpaid or abandoned checkout orders, not payments.
             ->andWhere(['or',
-                ['not', ['t.gateway_id' => Transaction::GATEWAY_RAZORPAY]],
+                ['not', ['t.gateway_id' => Transaction::ONLINE_GATEWAYS]],
                 ['t.gateway_id' => null],
                 ['t.status' => [Transaction::STATUS_CAPTURED, Transaction::STATUS_REFUNDED]],
             ])

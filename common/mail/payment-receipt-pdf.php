@@ -71,6 +71,9 @@ $money = static fn(int|float|string|null $amount): string => 'INR ' . number_for
 
 <div class="success">Payment Confirmed</div>
 <div class="amount"><?= Html::encode($money($transaction->amount)) ?></div>
+<?php if ($transaction->paidInUsd() !== null): ?>
+<div>Paid with PayPal: <?= Html::encode($transaction->paidInUsd()) ?></div>
+<?php endif; ?>
 <table class="details">
     <?php if ((float) $transaction->refunded_amount > 0): ?>
     <tr>

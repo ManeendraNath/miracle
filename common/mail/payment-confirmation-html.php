@@ -18,6 +18,7 @@ echo $this->render('_card', [
     'rows' => [
         ['Invoice', $invoice->invoice_number],
         ['Amount received', $formatter->asCurrency((float) $transaction->amount - (float) $transaction->refunded_amount, 'INR'), 'accent'],
+        ...($transaction->paidInUsd() !== null ? [['Paid with PayPal', $transaction->paidInUsd()]] : []),
         ['Payment reference', $transaction->gateway_payment_id ?: 'Recorded payment'],
         ['Remaining balance', $formatter->asCurrency($outstandingAmount, 'INR')],
     ],

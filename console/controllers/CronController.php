@@ -12,6 +12,7 @@ use common\services\billing\AutoBillingService;
 use common\services\billing\InvoiceDeliveryService;
 use common\services\billing\InvoiceReminderService;
 use common\services\billing\ServiceRenewalReminderService;
+use common\services\payment\PayPalService;
 use common\services\payment\RazorpayService;
 use common\models\CronJob;
 use common\models\WhatsappLog;
@@ -173,21 +174,32 @@ class CronController extends Controller
     }
 
     /**
-     * Records Razorpay payments whose callback and webhook were both missed, and fills in Razorpay's fees.
+     * Records Razorpay payments whose callback and webhook were both missed, and fills in Razorpay's fees;
+     * also PayPal payments whose browser was lost before the app heard back.
      * Every 30 minutes: php yii cron/razorpay-sync
      */
     public function actionRazorpaySync(): int
     {
         return $this->runLocked('miracle:razorpay-sync', 'Razorpay sync', function (): string {
+            $lines = [];
+            $errors = 0;
             $razorpay = new RazorpayService();
-            if (!$razorpay->isEnabled()) {
-                return 'Razorpay is not enabled.';
+            if ($razorpay->isEnabled()) {
+                $result = $razorpay->syncPending();
+                $errors += $result['errors'];
+                $lines[] = sprintf('Razorpay: recorded %d missed payment(s) and %d fee(s), found %d unrecorded refund(s)%s.', $result['captured'], $result['fees'], $result['unrecordedRefunds'], $result['errors'] > 0 ? '; ' . $result['errors'] . ' lookup(s) failed' : '');
             }
-            $result = $razorpay->syncPending();
-            if ($result['errors'] > 0) {
-                throw new \RuntimeException(sprintf('Recorded %d missed payment(s) and %d fee(s), found %d unrecorded refund(s); %d lookup(s) failed, see the app log.', $result['captured'], $result['fees'], $result['unrecordedRefunds'], $result['errors']));
+            $paypal = new PayPalService();
+            if ($paypal->isEnabled()) {
+                $result = $paypal->syncPending();
+                $errors += $result['errors'];
+                $lines[] = sprintf('PayPal: recorded %d missed payment(s)%s.', $result['captured'], $result['errors'] > 0 ? '; ' . $result['errors'] . ' lookup(s) failed' : '');
             }
-            return sprintf('Recorded %d missed payment(s) and %d fee(s), found %d unrecorded refund(s).', $result['captured'], $result['fees'], $result['unrecordedRefunds']);
+            $summary = $lines === [] ? 'Razorpay and PayPal are not enabled.' : implode(' ', $lines);
+            if ($errors > 0) {
+                throw new \RuntimeException($summary . ' See the app log.');
+            }
+            return $summary;
         });
     }
 

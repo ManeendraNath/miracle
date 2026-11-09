@@ -9,7 +9,7 @@ use Yii;
  *
  * @property int $id
  * @property int $invoice_id
- * @property int|null $gateway_id null/0: Manual, 1: Razorpay, 2: Personal UPI / Bank Deposit
+ * @property int|null $gateway_id null/0: Manual, 1: Razorpay, 2: Personal UPI / Bank Deposit, 3: PayPal
  * @property string|null $gateway_payment_id Razorpay pay_id OR User-entered UPI Transaction/UTR Ref No
  * @property string|null $gateway_order_id Razorpay order_id reference token (null for Manual UPI)
  * @property float $amount

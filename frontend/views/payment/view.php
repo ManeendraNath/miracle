@@ -15,6 +15,7 @@ $methods = [
     Transaction::GATEWAY_MANUAL => 'Manual',
     Transaction::GATEWAY_RAZORPAY => 'Razorpay',
     Transaction::GATEWAY_UPI_BANK => 'UPI / Bank Transfer',
+    Transaction::GATEWAY_PAYPAL => 'PayPal',
 ];
 $statusClass = match ($model->status) {
     Transaction::STATUS_CAPTURED => $model->isUnapplied() ? 'bg-warning-subtle text-warning-emphasis' : 'bg-success-subtle text-success-emphasis',
@@ -53,7 +54,10 @@ if ((float) $model->refunded_amount > 0) {
 <div class="card border-0 shadow-sm">
     <div class="card-body p-4">
         <div class="small text-body-secondary">Amount</div>
-        <div class="display-6 fw-bold mb-4"><?= $formatter->asCurrency($model->amount, 'INR') ?></div>
+        <div class="display-6 fw-bold <?= $model->paidInUsd() !== null ? 'mb-1' : 'mb-4' ?>"><?= $formatter->asCurrency($model->amount, 'INR') ?></div>
+        <?php if ($model->paidInUsd() !== null): ?>
+            <p class="text-body-secondary mb-4">Paid with PayPal: <?= Html::encode($model->paidInUsd()) ?></p>
+        <?php endif; ?>
         <?php if ($model->status === Transaction::STATUS_CAPTURED && $model->isUnapplied()): ?>
             <div class="alert alert-warning small">
                 <i class="fas fa-info-circle me-1"></i>

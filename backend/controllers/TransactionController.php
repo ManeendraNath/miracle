@@ -118,8 +118,8 @@ class TransactionController extends BaseController
         if ($model->status !== Transaction::STATUS_PENDING) {
             throw new BadRequestHttpException('Only pending transactions can be modified.');
         }
-        if ((int) $model->gateway_id === Transaction::GATEWAY_RAZORPAY) {
-            Yii::$app->session->setFlash('error', 'Razorpay payments are managed by the gateway and cannot be edited.');
+        if ($model->isOnline()) {
+            Yii::$app->session->setFlash('error', 'Online payments (Razorpay, PayPal) are managed by the gateway and cannot be edited.');
             return $this->redirect(['view', 'id' => $model->id]);
         }
         // Status, paid_at etc. are not editable here: approve / reject / refund handle them.
@@ -168,8 +168,8 @@ class TransactionController extends BaseController
                 throw new \DomainException('Only pending payments can be approved.');
             }
             // Online orders are confirmed by Razorpay itself; a pending one was never paid.
-            if ((int) $paymentTransaction->gateway_id === Transaction::GATEWAY_RAZORPAY) {
-                throw new \DomainException('Razorpay payments are confirmed automatically and cannot be approved manually.');
+            if ($paymentTransaction->isOnline()) {
+                throw new \DomainException('Online payments (Razorpay, PayPal) are confirmed automatically and cannot be approved manually.');
             }
             $lockedInvoiceId = Yii::$app->db->createCommand('SELECT id FROM {{%invoice}} WHERE id = :id FOR UPDATE')->bindValue(':id', (int) $paymentTransaction->invoice_id)->queryScalar();
             $invoice = $lockedInvoiceId !== false ? Invoice::findOne((int) $lockedInvoiceId) : null;
@@ -351,7 +351,7 @@ class TransactionController extends BaseController
                 // Recorded: a failed message must not look like a failed refund.
                 try {
                     (new NotificationService())->create((int) $invoice->user_id, 'payment', 'Payment Refunded', '₹' . number_format($amount, 2) . ' for invoice ' . $invoice->invoice_number . ' has been refunded.', '/invoice/view?number=' . rawurlencode((string) $invoice->invoice_number));
-                    (new PaymentConfirmationService())->sendRefund(Invoice::findOne((int) $invoice->id), $amount, $viaRazorpay);
+                    (new PaymentConfirmationService())->sendRefund(Invoice::findOne((int) $invoice->id), $amount, $viaRazorpay || (int) $model->gateway_id === Transaction::GATEWAY_PAYPAL);
                 } catch (\Throwable $e) {
                     Yii::error(['message' => 'Refund was recorded but the customer could not be told.', 'transactionId' => $id, 'error' => $e->getMessage()], __METHOD__);
                     Yii::$app->session->addFlash('warning', 'The refund is recorded, but the email to the customer could not be sent.');
@@ -387,8 +387,8 @@ class TransactionController extends BaseController
             }
             // A pending online order may still be paid in the customer's open checkout;
             // failing it here would make that capture unrecordable.
-            if ((int) $model->gateway_id === Transaction::GATEWAY_RAZORPAY) {
-                throw new \DomainException('Razorpay orders are settled automatically and cannot be rejected manually.');
+            if ($model->isOnline()) {
+                throw new \DomainException('Online orders (Razorpay, PayPal) are settled automatically and cannot be rejected manually.');
             }
             $reference = (string) $model->gateway_payment_id;
             $model->status = Transaction::STATUS_FAILED;

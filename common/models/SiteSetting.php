@@ -38,6 +38,12 @@ class SiteSetting extends base\SiteSetting
         $labels = [
             'site_name' => 'Agency Corporate Name',
             'review_invoices' => 'Check renewal invoices before they are sent',
+            'razorpay_india' => 'Razorpay for clients in India',
+            'razorpay_abroad' => 'Razorpay for clients abroad',
+            'paypal_abroad' => 'PayPal for clients abroad',
+            'usd_rate_auto' => 'Use the daily exchange rate',
+            'usd_rate_margin' => 'Margin below the daily rate (%)',
+            'usd_inr_rate' => 'Rate by hand (₹ per US$1)',
             'site_url' => 'Production Server Web Domain',
             'mobile_1' => 'Primary Technical Support Hotline',
             'mobile_2' => 'Alternative Backup Line',

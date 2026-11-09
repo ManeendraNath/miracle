@@ -44,7 +44,7 @@ final class OutstandingBalanceService
               SELECT 1 FROM {{%transaction}} t
               WHERE t.invoice_id = {{%invoice}}.id
                 AND t.status = :pendingPayment
-                AND (t.gateway_id IS NULL OR t.gateway_id <> :razorpay)
+                AND (t.gateway_id IS NULL OR t.gateway_id NOT IN (:razorpay, :paypal))
           )
           AND (
               billing_run_id IS NULL
@@ -65,8 +65,9 @@ final class OutstandingBalanceService
                 ':sentBefore' => strtotime('-' . self::CARRY_FORWARD_GRACE_DAYS . ' days'),
                 // A submitted proof awaiting approval must not be billed again as arrears.
                 ':pendingPayment' => Transaction::STATUS_PENDING,
-                // Abandoned Razorpay orders also sit at Pending; only payments awaiting review count.
+                // Abandoned Razorpay and PayPal orders also sit at Pending; only payments awaiting review count.
                 ':razorpay' => Transaction::GATEWAY_RAZORPAY,
+                ':paypal' => Transaction::GATEWAY_PAYPAL,
                 ':billingRunId' => (int) $targetInvoice->billing_run_id,
             ])
             ->queryColumn();

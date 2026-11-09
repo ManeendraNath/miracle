@@ -11,6 +11,10 @@ Invoice:
 Amount Received:
 INR <?= number_format((float) $transaction->amount - (float) $transaction->refunded_amount, 2)
 ?>
+<?php if ($transaction->paidInUsd() !== null): ?>
+Paid with PayPal: <?= $transaction->paidInUsd() ?>
+
+<?php endif; ?>
 
 
 Reference:

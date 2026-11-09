@@ -75,6 +75,12 @@ final class AdminAlertService extends AdminNotificationService
         self::sendOncePerDay('Invoices Waiting for Review', $message, 'invoice', '/invoice/index?' . http_build_query(['InvoiceSearch' => ['status' => 'Draft']]));
     }
 
+    /** The daily exchange rate for PayPal could not be used (ExchangeRateService). Type 'billing': Admins only. */
+    public static function exchangeRateProblem(string $problem): void
+    {
+        self::sendOncePerDay('PayPal Exchange Rate Problem', $problem . ' Check Site Settings > Payments; PayPal uses the rate by hand meanwhile, or stays hidden without one.', 'billing', '/site-setting/index');
+    }
+
     /** The daily list from ServiceRenewalReminderService: one email, however many services. */
     public static function servicesExpiring(int $count, string $details): void
     {
@@ -96,14 +102,14 @@ final class AdminAlertService extends AdminNotificationService
         self::send($title, $message, 'payment', '/transaction/index?' . http_build_query(['TransactionSearch' => ['gateway_payment_id' => $paymentId]]), true);
     }
 
-    public static function paymentNotRecorded(string $orderId, string $paymentId, float $amount, string $reason): void
+    public static function paymentNotRecorded(string $orderId, string $paymentId, float $amount, string $reason, string $gateway = 'Razorpay'): void
     {
         $title = 'Online Payment Not Recorded';
         // Razorpay may deliver the same event again (timeouts, manual resend): alert once per payment.
         if (AdminNotification::find()->where(['title' => $title])->andWhere(['like', 'message', $paymentId])->exists()) {
             return;
         }
-        $message = "Razorpay order: {$orderId}\n" . "Razorpay payment: {$paymentId}\n" . "Amount: ₹{$amount}\n" . "Reason: {$reason}\n" . 'The customer was charged but no invoice was updated. Check the payment in Razorpay and refund it or record it manually.';
+        $message = "{$gateway} order: {$orderId}\n" . "{$gateway} payment: {$paymentId}\n" . "Amount: ₹{$amount}\n" . "Reason: {$reason}\n" . "The customer was charged but no invoice was updated. Check the payment in {$gateway} and refund it or record it manually.";
         self::send($title, $message, 'payment', '/transaction/index', true);
     }
 

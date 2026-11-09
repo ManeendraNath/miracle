@@ -57,7 +57,7 @@ $plans = [
 ];
 
 $questions = [
-    'Can I pay from outside India?' => 'Please ask us before ordering, and we will confirm the payment options for your country.',
+    'Can I pay from outside India?' => 'Yes. Where your invoice offers it, you can pay in US dollars with PayPal or a card. Otherwise ask us and we will confirm how to pay from your country.',
     'Will you charge my card automatically?' => 'No. Renewals are invoiced first and you choose when to pay.',
     'Do these prices include tax?' => 'We are not registered under GST at present, so none is added. If we register, GST will be added at the applicable rate where it applies and shown on your invoice.',
     'Do renewal prices change?' => 'Renewal prices include an increase at the rate agreed for the service: every year for domains, every two years for hosting and every three years for maintenance. The renewal invoice always shows the price that applies.',

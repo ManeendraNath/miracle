@@ -13,6 +13,7 @@ use common\services\admin\AdminAlertService;
 use common\services\billing\InvoiceCouponService;
 use common\services\billing\InvoicePaymentService;
 use common\services\billing\InvoicePdfService;
+use common\services\payment\PayPalService;
 use common\services\payment\RazorpayService;
 use common\services\notification\NotificationService;
 use common\services\notification\WhatsAppService;
@@ -45,6 +46,8 @@ final class InvoiceController extends Controller
                 'actions' => [
                     'pay-online' => ['POST'],
                     'razorpay-callback' => ['POST'],
+                    'paypal-order' => ['POST'],
+                    'paypal-capture' => ['POST'],
                     'apply-coupon' => ['POST'],
                     'remove-coupon' => ['POST'],
                 ],
@@ -96,6 +99,7 @@ final class InvoiceController extends Controller
         $model = $this->findOwnedInvoice($number);
         $pendingPayment = Transaction::find()->where(['invoice_id' => $model->id, 'status' => Transaction::STATUS_PENDING])->andWhere(\common\services\payment\RazorpayService::notUnpaidOrderCondition())->orderBy(['id' => SORT_DESC])->one();
         $paymentService = new InvoicePaymentService();
+        $paypal = new PayPalService();
         return $this->render(
             'view',
             [
@@ -104,7 +108,9 @@ final class InvoiceController extends Controller
                             'outstandingAmount' => $paymentService->getOutstanding($model),
                             'pendingPayment' => $pendingPayment,
                             'carriedInto' => $model->status === Invoice::STATUS_CARRIED_FORWARD ? $paymentService->openInvoiceCarrying((int) $model->id) : null,
-                            'razorpayEnabled' => (new RazorpayService())->acceptsCustomerPayments(),
+                            'razorpayEnabled' => (new RazorpayService())->acceptsCustomerPayments($model->isExport()),
+                            // Clients abroad: PayPal in US dollars.
+                            'paypal' => $model->isExport() && $paypal->acceptsCustomerPayments() ? ['clientId' => $paypal->getClientId(), 'rate' => PayPalService::usdRate()] : null,
                             'canChangeCoupon' => (new InvoiceCouponService())->blockReason($model) === null,
                         ]
         );
@@ -134,12 +140,13 @@ final class InvoiceController extends Controller
         // ponytail: the row stays locked during the Razorpay API call (up to 20 s if it is slow).
         $dbTransaction = Yii::$app->db->beginTransaction();
         try {
+            RazorpayService::lockUnpaidOrders((int) $invoice->id); // order rows before the invoice, as coupon changes lock them
             Yii::$app->db->createCommand('SELECT id FROM {{%invoice}} WHERE id = :id FOR UPDATE')->bindValue(':id', $invoice->id)->execute();
             $invoice->refresh();
             $outstanding = (new InvoicePaymentService())->getOutstanding($invoice);
             $payable = in_array($invoice->status, [Invoice::STATUS_UNPAID, Invoice::STATUS_PARTIALLY_PAID], true) && $outstanding > 0;
             $proofPending = (new InvoicePaymentService())->hasPendingProof((int) $invoice->id);
-            if (!$razorpay->acceptsCustomerPayments() || !$payable || $proofPending) {
+            if (!$razorpay->acceptsCustomerPayments($invoice->isExport()) || !$payable || $proofPending) {
                 $dbTransaction->rollBack();
                 Yii::$app->response->statusCode = 422;
                 return ['error' => $proofPending ? 'A payment for this invoice is already awaiting verification.' : 'Online payment is not available for this invoice.'];
@@ -222,6 +229,97 @@ final class InvoiceController extends Controller
             }
         }
         return $this->redirect(['view', 'number' => $invoice->invoice_number]);
+    }
+
+    /** Creates a PayPal order (in USD) for the outstanding amount; the PayPal button opens it. */
+    public function actionPaypalOrder(string $number): array
+    {
+        Yii::$app->response->format = Response::FORMAT_JSON;
+        $invoice = $this->findOwnedInvoice($number);
+        $paypal = new PayPalService();
+        // An earlier order may have been paid with the browser lost: never charge twice.
+        if ($paypal->isEnabled() && $paypal->recoverPaidOrders((int) $invoice->id) > 0) {
+            Yii::$app->response->statusCode = 422;
+            return ['error' => 'We have just found your earlier payment and recorded it. Please reload this page to see your balance.'];
+        }
+        if ($paypal->paidButNotRecorded) {
+            Yii::$app->response->statusCode = 422;
+            return ['error' => 'We can see an earlier payment for this invoice that has not been recorded yet. Please do not pay again: try this page in a few minutes, or contact support.'];
+        }
+        // Before any lock: the rate may need fetching (a few seconds at most, twice a day).
+        PayPalService::usdRate();
+        // Locked as in actionPayOnline: a coupon can't change the total between reading it and creating the order.
+        // ponytail: the invoice stays locked during the PayPal API calls (up to 20 s each if PayPal is slow).
+        $dbTransaction = Yii::$app->db->beginTransaction();
+        try {
+            RazorpayService::lockUnpaidOrders((int) $invoice->id); // order rows before the invoice, as coupon changes lock them
+            Yii::$app->db->createCommand('SELECT id FROM {{%invoice}} WHERE id = :id FOR UPDATE')->bindValue(':id', $invoice->id)->execute();
+            $invoice->refresh();
+            $paymentService = new InvoicePaymentService();
+            $outstanding = $paymentService->getOutstanding($invoice);
+            $payable = in_array($invoice->status, [Invoice::STATUS_UNPAID, Invoice::STATUS_PARTIALLY_PAID], true) && $outstanding > 0;
+            $proofPending = $paymentService->hasPendingProof((int) $invoice->id);
+            if (!$invoice->isExport() || !$paypal->acceptsCustomerPayments() || !$payable || $proofPending) {
+                $dbTransaction->rollBack();
+                Yii::$app->response->statusCode = 422;
+                return ['error' => $proofPending ? 'A payment for this invoice is already awaiting verification.' : 'PayPal is not available for this invoice.'];
+            }
+            $transaction = $paypal->createOrder($invoice, $outstanding);
+            $dbTransaction->commit();
+        } catch (\DomainException $e) {
+            $dbTransaction->rollBack();
+            Yii::$app->response->statusCode = 422;
+            return ['error' => $e->getMessage()];
+        } catch (\Throwable $e) {
+            if ($dbTransaction->isActive) {
+                $dbTransaction->rollBack();
+            }
+            Yii::error(['message' => 'Could not start PayPal checkout.', 'invoice' => $invoice->invoice_number, 'error' => $e->getMessage()], __METHOD__);
+            Yii::$app->response->statusCode = 502;
+            return ['error' => 'Could not start PayPal payment. Please try again shortly.'];
+        }
+
+        return ['id' => $transaction->gateway_order_id];
+    }
+
+    /** The customer approved the order in PayPal: capture it and record the payment. The page reloads after. */
+    public function actionPaypalCapture(string $number): array
+    {
+        Yii::$app->response->format = Response::FORMAT_JSON;
+        $invoice = $this->findOwnedInvoice($number);
+        $orderId = Yii::$app->request->post('order_id');
+        $orderId = is_string($orderId) ? $orderId : '';
+        $session = Yii::$app->session;
+        if ($orderId === '' || !Transaction::find()->where(['gateway_order_id' => $orderId, 'invoice_id' => $invoice->id, 'gateway_id' => Transaction::GATEWAY_PAYPAL])->exists()) {
+            $session->setFlash('error', 'We could not find this PayPal payment. If money was taken, contact support.');
+            return ['ok' => false];
+        }
+        try {
+            $captured = (new PayPalService())->captureOrder($orderId);
+            if ($captured->status === Transaction::STATUS_FAILED) {
+                $session->setFlash('warning', 'PayPal did not take this payment (' . rtrim(lcfirst(preg_replace('/^Not taken: /', '', (string) $captured->user_payment_notes)), '.') . '). Please reload the page and check the amount due.');
+            } elseif ($captured->status === Transaction::STATUS_PENDING) {
+                $session->setFlash('warning', 'PayPal is still processing your payment. We will confirm it once PayPal completes it, so please do not pay again.');
+            } elseif ($captured->isUnapplied()) {
+                $session->setFlash('warning', 'Payment received, but this invoice no longer needed it. Our team will refund it or apply it to your account. Reference: ' . $captured->gateway_payment_id);
+            } else {
+                $session->setFlash('success', 'Payment received. Thank you!');
+            }
+        } catch (\Throwable $e) {
+            Yii::error(['message' => 'PayPal capture failed.', 'invoice' => $invoice->invoice_number, 'orderId' => $orderId, 'error' => $e->getMessage()], __METHOD__);
+            $session->setFlash('warning', 'We could not confirm your PayPal payment yet. If PayPal shows it as paid, it will be recorded shortly, so please do not pay again. Reference: ' . $orderId);
+            if ($e instanceof \DomainException) {
+                try {
+                    $row = Transaction::findOne(['gateway_order_id' => $orderId]);
+                    $usd = json_decode((string) $row?->raw_payload, true)['usd'] ?? null;
+                    AdminAlertService::paymentNotRecorded($orderId, (string) ($row?->gateway_payment_id ?: $orderId), (float) $row?->amount, $e->getMessage() . ($usd !== null ? ' (US$' . $usd . ')' : ''), 'PayPal');
+                } catch (\Throwable $alertError) {
+                    Yii::error(['message' => 'Could not alert admins about an unrecorded PayPal payment.', 'orderId' => $orderId, 'error' => $alertError->getMessage()], __METHOD__);
+                }
+            }
+        }
+
+        return ['ok' => true];
     }
 
     public function actionApplyCoupon(string $number)

@@ -22,6 +22,7 @@ final class AccountingReportService
         Transaction::GATEWAY_MANUAL => 'Manual',
         Transaction::GATEWAY_RAZORPAY => 'Razorpay',
         Transaction::GATEWAY_UPI_BANK => 'UPI / Bank Transfer',
+        Transaction::GATEWAY_PAYPAL => 'PayPal',
     ];
 
     public function __construct(

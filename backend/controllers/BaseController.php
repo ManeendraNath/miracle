@@ -257,7 +257,7 @@ class BaseController extends Controller
     /** Other tests sign in without a code; TwoFactorCest turns this on. */
     public static bool $requireTwoFactor = !YII_ENV_TEST;
 
-    /** Admins and Superadmins handle money and accounts: until two-factor is on they can only reach My account to set it up. */
+    /** Every staff account sees customer data: until two-factor is on it can only reach My account to set it up. */
     public function beforeAction($action)
     {
         if (!parent::beforeAction($action)) {
@@ -266,13 +266,12 @@ class BaseController extends Controller
         $user = Yii::$app->user->identity;
         $required = self::$requireTwoFactor
             && $user instanceof Admin
-            && in_array($user->role, [Admin::getRoleAdmin(), Admin::getRoleSuperAdmin()], true)
             && !$user->hasTwoFactor()
             && Admin::canStoreTwoFactor();
         if (!$required || $action->uniqueId === 'admin/account' || $action instanceof ErrorAction) {
             return true;
         }
-        Yii::$app->session->setFlash('warning', 'Please turn on two-factor sign-in to continue. It is required for Admin and Superadmin accounts.');
+        Yii::$app->session->setFlash('warning', 'Please turn on two-factor sign-in to continue. It is required for every staff account.');
         $this->redirect(['/admin/account']);
 
         return false;

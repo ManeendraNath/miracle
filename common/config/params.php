@@ -61,11 +61,17 @@ return [
     // Shell command that copies each DB backup off the server; {file} = dump path.
     // Quote it in .env, e.g. BACKUP_OFFSITE_COMMAND="rclone copy {file} gdrive:miracle-backups"
     'backupOffsiteCommand' => $_ENV['BACKUP_OFFSITE_COMMAND'] ?? '',
-    // Online payments. Set RAZORPAY_ENABLED=true plus the keys in .env to go live.
+    // Online payments: keys here; which customers see Razorpay (India / abroad) is set in Site Settings.
     'razorpay' => [
-        'enabled' => filter_var($_ENV['RAZORPAY_ENABLED'] ?? false, FILTER_VALIDATE_BOOLEAN),
         'keyId' => $_ENV['RAZORPAY_KEY_ID'] ?? '',
         'keySecret' => $_ENV['RAZORPAY_KEY_SECRET'] ?? '',
         'webhookSecret' => $_ENV['RAZORPAY_WEBHOOK_SECRET'] ?? '',
+    ],
+    // PayPal Checkout for clients abroad (invoice charged in USD). PAYPAL_MODE: live or sandbox.
+    // Which gateways customers see (India / abroad) is set in Site Settings; the keys stay here.
+    'paypal' => [
+        'clientId' => $_ENV['PAYPAL_CLIENT_ID'] ?? '',
+        'secret' => $_ENV['PAYPAL_SECRET'] ?? '',
+        'sandbox' => ($_ENV['PAYPAL_MODE'] ?? 'live') !== 'live',
     ],
 ];

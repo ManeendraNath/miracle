@@ -30,6 +30,9 @@ class Transaction extends base\Transaction
     public const GATEWAY_MANUAL = 0;
     public const GATEWAY_RAZORPAY = 1;
     public const GATEWAY_UPI_BANK = 2;
+    public const GATEWAY_PAYPAL = 3;
+    /** Checkout gateways: a Pending row is an order not paid yet, not a payment awaiting review. */
+    public const ONLINE_GATEWAYS = [self::GATEWAY_RAZORPAY, self::GATEWAY_PAYPAL];
     /** Admin "record a payment" form: only these come from the form; status/paid_at/etc. go through approve/refund. */
     public const SCENARIO_ADMIN_ENTRY = 'admin-entry';
     /** Marks a Razorpay capture that could not be applied (invoice no longer payable). */
@@ -48,6 +51,7 @@ class Transaction extends base\Transaction
             self::GATEWAY_MANUAL => 'Manual / Admin Credit',
             self::GATEWAY_RAZORPAY => 'Razorpay (Automated)',
             self::GATEWAY_UPI_BANK => 'Manual UPI / Bank Transfer',
+            self::GATEWAY_PAYPAL => 'PayPal (Automated)',
         ];
     }
 
@@ -63,12 +67,29 @@ class Transaction extends base\Transaction
         return (string) preg_replace('/^REJECTED-\d+-/', '', (string) $this->gateway_payment_id);
     }
 
+    /** What a PayPal payer was charged, e.g. "US$41.18 at ₹85 per US$1"; null for any other payment. */
+    public function paidInUsd(): ?string
+    {
+        $payload = (int) $this->gateway_id === self::GATEWAY_PAYPAL ? json_decode((string) $this->raw_payload, true) : null;
+        if (!is_array($payload) || !isset($payload['usd'], $payload['rate'])) {
+            return null;
+        }
+
+        return 'US$' . $payload['usd'] . ' at ₹' . rtrim(rtrim(number_format((float) $payload['rate'], 4, '.', ''), '0'), '.') . ' per US$1';
+    }
+
+    /** Paid through a checkout (Razorpay, PayPal), not a proof or a manual entry. */
+    public function isOnline(): bool
+    {
+        return in_array((int) $this->gateway_id, self::ONLINE_GATEWAYS, true);
+    }
+
     /** The status in the customer's words. */
     public function customerStatus(): string
     {
         return match (true) {
             $this->status === self::STATUS_CAPTURED => $this->isUnapplied() ? 'Not Applied' : 'Paid',
-            $this->status === self::STATUS_FAILED && (int) $this->gateway_id !== self::GATEWAY_RAZORPAY => 'Rejected',
+            $this->status === self::STATUS_FAILED && !$this->isOnline() => 'Rejected',
             default => (string) $this->status,
         };
     }
@@ -99,7 +120,7 @@ class Transaction extends base\Transaction
             [['user_payment_notes'], 'string'],
             // A zero or negative "payment" would lower what the invoice counts as received.
             ['amount', 'number', 'min' => 0.01, 'tooSmall' => 'Amount must be greater than zero.'],
-            ['gateway_id', 'in', 'range' => [self::GATEWAY_MANUAL, self::GATEWAY_UPI_BANK], 'on' => self::SCENARIO_ADMIN_ENTRY, 'message' => 'Online payments are recorded by Razorpay, not by hand.'],
+            ['gateway_id', 'in', 'range' => [self::GATEWAY_MANUAL, self::GATEWAY_UPI_BANK], 'on' => self::SCENARIO_ADMIN_ENTRY, 'message' => 'Online payments are recorded by Razorpay or PayPal, not by hand.'],
         ]);
     }
 }

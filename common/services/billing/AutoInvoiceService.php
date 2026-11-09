@@ -182,14 +182,20 @@ final class AutoInvoiceService
 
             $this->numberService->assign($invoice);
 
-            // After assign(): before it the number is a TMP- placeholder.
-            (new NotificationService())->create(
-                (int) $invoice->user_id,
-                'invoice',
-                'New Invoice Generated',
-                'Invoice ' . $invoice->invoice_number . ' has been generated.',
-                '/invoice/view?number=' . rawurlencode($invoice->invoice_number),
-            );
+            if (InvoiceReviewService::isOn()) {
+                // Last, so coupons and carry-forward above worked on a payable invoice. The customer hears at release.
+                $invoice->status = Invoice::STATUS_DRAFT;
+                $invoice->save(false, ['status']);
+            } else {
+                // After assign(): before it the number is a TMP- placeholder.
+                (new NotificationService())->create(
+                    (int) $invoice->user_id,
+                    'invoice',
+                    'New Invoice Generated',
+                    'Invoice ' . $invoice->invoice_number . ' has been generated.',
+                    '/invoice/view?number=' . rawurlencode($invoice->invoice_number),
+                );
+            }
 
             $dbTransaction->commit();
 

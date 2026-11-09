@@ -78,6 +78,20 @@ client are grouped into one invoice during the same billing run.
 
 Each renewal remains an independent InvoiceItem and BillingEvent.
 
+### A renewal is due on its expiry date
+
+A renewal BillingEvent is due on the service's expiry date (the day before
+the new period starts), and a combined invoice on its earliest one. The
+Payment Due Days setting is not used for renewals. An invoice issued after
+expiry is due at once and its email says how many days ago the service expired.
+
+### Invoice review (site setting)
+
+With "Check renewal invoices before they are sent" on, a new renewal invoice
+is a Draft ("Waiting for review"): not in the portal, not emailed, no
+reminders. Staff send it from the invoice page; its due date stays the expiry
+date. Staff get one alert a day while drafts wait.
+
 ## Online payments (Razorpay)
 
 Turned on entirely from `.env`; no code change needed to go live:

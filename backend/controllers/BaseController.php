@@ -314,6 +314,7 @@ class BaseController extends Controller
                     'cancel' => ['POST'],
                     'close' => ['POST'],
                     'resend-invoice' => ['POST'],
+                    'release' => ['POST'],
                     'toggle-status' => ['POST'],
                     'cpanel-password' => ['POST'],
                     'verify' => ['POST'],

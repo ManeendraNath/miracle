@@ -56,6 +56,7 @@ class Invoice extends \yii\db\ActiveRecord
     public const STATUS_UNPAID = 'Unpaid';
     public const STATUS_PARTIALLY_PAID = 'Partially_Paid';
     public const STATUS_PAID = 'Paid';
+    public const STATUS_DRAFT = 'Draft';
     public const STATUS_CARRIED_FORWARD = 'Carried_Forward';
     public const STATUS_CANCELLED = 'Cancelled';
     public const STATUS_REFUNDED = 'Refunded';
@@ -248,6 +249,7 @@ class Invoice extends \yii\db\ActiveRecord
             self::STATUS_CARRIED_FORWARD => 'Carried_Forward',
             self::STATUS_CANCELLED => 'Cancelled',
             self::STATUS_REFUNDED => 'Refunded',
+            self::STATUS_DRAFT => 'Draft',
         ];
     }
 

@@ -102,6 +102,10 @@ class CronController extends Controller
                     $this->stderr("Invoice email failed: {$invoice->invoice_number}: {$e->getMessage()}\n", Console::FG_RED);
                 }
             }
+            $waiting = (int) Invoice::find()->where(['status' => Invoice::STATUS_DRAFT])->count();
+            if ($waiting > 0) {
+                \common\services\admin\AdminAlertService::invoicesWaitingForReview($waiting);
+            }
             Yii::info(['message' => 'Automatic billing completed.', 'invoiceCount' => $count, 'emailFailures' => $failed], __METHOD__);
             if ($failed > 0) {
                 $this->stderr("Billing finished with {$failed} invoice email failure(s); they will be retried on the next run.\n", Console::FG_RED);

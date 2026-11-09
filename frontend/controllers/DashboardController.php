@@ -38,7 +38,7 @@ final class DashboardController extends Controller
     public function actionIndex()
     {
         $userId = (int) Yii::$app->user->id;
-        $invoiceQuery = Invoice::find()->where(['user_id' => $userId]);
+        $invoiceQuery = Invoice::forCustomer()->andWhere(['user_id' => $userId]);
         $totalInvoices = (int) (clone $invoiceQuery)->count();
         $openInvoices = (int) (clone $invoiceQuery)->andWhere(['status' => [Invoice::STATUS_UNPAID, Invoice::STATUS_PARTIALLY_PAID]])->count();
         $openInvoiceModels = (clone $invoiceQuery)->andWhere(['status' => [Invoice::STATUS_UNPAID, Invoice::STATUS_PARTIALLY_PAID]])->all();

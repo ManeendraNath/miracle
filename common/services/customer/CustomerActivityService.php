@@ -35,8 +35,8 @@ final class CustomerActivityService
         }
 
         foreach (
-            Invoice::find()
-                ->where(['user_id' => $userId])
+            Invoice::forCustomer()
+                ->andWhere(['user_id' => $userId])
                 ->orderBy(['created_at' => SORT_DESC])
                 ->limit($limit)
                 ->all()

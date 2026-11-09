@@ -155,7 +155,7 @@ final class ManualInvoiceService
             throw new \DomainException('At least one invoice item is required.');
         }
 
-        if ($invoice->status !== Invoice::STATUS_UNPAID) {
+        if (!in_array($invoice->status, [Invoice::STATUS_UNPAID, Invoice::STATUS_DRAFT], true)) {
             throw new \DomainException('Only unpaid invoices can be modified.');
         }
 
@@ -191,7 +191,7 @@ final class ManualInvoiceService
                 throw new \RuntimeException('Invoice no longer exists.');
             }
 
-            if ($lockedInvoice->status !== Invoice::STATUS_UNPAID) {
+            if (!in_array($lockedInvoice->status, [Invoice::STATUS_UNPAID, Invoice::STATUS_DRAFT], true)) {
                 throw new \DomainException(
                     'Invoice status changed while editing. ' . 'The invoice can no longer be modified.',
                 );

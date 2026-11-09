@@ -27,6 +27,20 @@ if ($model->status === Invoice::STATUS_PARTIALLY_PAID) {
         ],
     ]);
 }
+if ($model->status === Invoice::STATUS_DRAFT) {
+    $this->params['actions'][] = Html::a('<i class="fas fa-paper-plane me-1"></i> Send to customer', ['release', 'id' => $model->id], [
+        'class' => 'btn btn-success',
+        'data' => ['confirm' => 'Send this invoice to the customer now? They will see it in the portal and get it by email, and the due date counts from today.', 'method' => 'post'],
+    ]);
+    $this->params['actions'][] = Html::a('<i class="fas fa-edit me-1"></i> Update', ['update', 'id' => $model->id], ['class' => 'btn btn-primary']);
+    $this->params['actions'][] = Html::a('<i class="fas fa-ban me-1"></i> Cancel Invoice', ['cancel', 'id' => $model->id], [
+        'class' => 'btn btn-outline-danger',
+        'data' => [
+            'confirm' => 'Cancel this invoice? Any renewal on it will be billed again by the next billing run. To stop that, make the service inactive as well.',
+            'method' => 'post',
+        ],
+    ]);
+}
 if ($model->status === Invoice::STATUS_UNPAID) {
     $this->params['actions'][] = Html::a('<i class="fas fa-edit me-1"></i> Update', ['update', 'id' => $model->id], ['class' => 'btn btn-primary']);
     $this->params['actions'][] = Html::a('<i class="fas fa-ban me-1"></i> Cancel Invoice', ['cancel', 'id' => $model->id], [
@@ -58,6 +72,9 @@ $this->params['actions'][] = Html::button('<i class="fas fa-print me-1"></i> Pri
 ?>
 
 <div class="container-fluid py-4">
+    <?php if ($model->status === Invoice::STATUS_DRAFT): ?>
+        <div class="alert alert-warning">Waiting for review: the customer can't see or pay this invoice, and gets no email or reminder, until you click Send to customer.</div>
+    <?php endif; ?>
     <?php if ($model->emailed_at === null && in_array($model->status, [Invoice::STATUS_UNPAID, Invoice::STATUS_PARTIALLY_PAID], true)): ?>
         <div class="alert alert-warning">No email is recorded for this invoice, so the customer may not have received it. Check their email address, then use Resend Invoice.</div>
     <?php endif; ?>

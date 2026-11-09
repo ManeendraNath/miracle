@@ -90,6 +90,29 @@ class Invoice extends base\Invoice
     }
 
     /**
+     * For a renewal invoice (it bills a billing event): days since its due date, the service's expiry date
+     * (0 = expires today, negative = not yet). Null for any other invoice.
+     */
+    public function renewalDaysExpired(): ?int
+    {
+        if ($this->due_date === null || !BillingEvent::find()->where(['invoice_id' => $this->id])->exists()) {
+            return null;
+        }
+
+        return (int) (new \DateTimeImmutable((string) $this->due_date))->diff(new \DateTimeImmutable('today'))->format('%r%a');
+    }
+
+    /**
+     * Invoices the customer may see: not one still waiting for a staff check (InvoiceReviewService).
+     *
+     * @return \yii\db\ActiveQuery<static>
+     */
+    public static function forCustomer(): \yii\db\ActiveQuery
+    {
+        return self::find()->andWhere(['<>', self::tableName() . '.status', self::STATUS_DRAFT]);
+    }
+
+    /**
      * The status to show people: a written-off invoice is stored as Refunded, but saying so when no money
      * went back would make a customer look for a refund that never existed.
      */
@@ -117,6 +140,7 @@ class Invoice extends base\Invoice
             self::STATUS_CARRIED_FORWARD => 'Carried Forward',
             self::STATUS_CANCELLED => 'Cancelled',
             self::STATUS_REFUNDED => 'Refunded',
+            self::STATUS_DRAFT => 'Waiting for review',
         ];
     }
 }

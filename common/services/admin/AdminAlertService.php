@@ -68,6 +68,13 @@ final class AdminAlertService extends AdminNotificationService
         self::send('Check Hosting Prices', "Hosting now renews every year. The next invoice of each service below uses the price shown for one year: its Next Renewal Price, or its Renewal Base Amount when it has no paid renewal yet. Halve any that is a two-year price:\n\n{$list}", 'billing', '/hosting/index');
     }
 
+    /** Daily while any renewal invoice waits for a staff check: until sent, the customer can't see or pay it. */
+    public static function invoicesWaitingForReview(int $count): void
+    {
+        $message = "{$count} renewal invoice(s) are waiting for review. The customers can't see or pay them until you send them.";
+        self::sendOncePerDay('Invoices Waiting for Review', $message, 'invoice', '/invoice/index?' . http_build_query(['InvoiceSearch' => ['status' => 'Draft']]));
+    }
+
     /** The daily list from ServiceRenewalReminderService: one email, however many services. */
     public static function servicesExpiring(int $count, string $details): void
     {

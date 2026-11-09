@@ -97,9 +97,7 @@ final class BillingEventService
                 // The service may have been moved to the right customer after the failed run.
                 $existing->user_id = $renewal->userId;
 
-                // Due date counts from the run that actually invoices it, so a
-                // delayed run doesn't produce an invoice that is already overdue.
-                $existing->due_date = $this->dueDate($settings);
+                $existing->due_date = self::expiryDate((string) $existing->period_start);
 
                 // Re-price from the service's current settings: an admin may have fixed the
                 // price or cycle after the failed run. A manually set amount is kept.
@@ -177,7 +175,7 @@ final class BillingEventService
 
         $event->is_manual_amount = $renewal->overrideAmount !== null ? 1 : 0;
 
-        $event->due_date = $this->dueDate($settings);
+        $event->due_date = self::expiryDate((string) $event->period_start);
 
         $event->status = BillingEvent::STATUS_PENDING;
 
@@ -210,9 +208,10 @@ final class BillingEventService
         }
     }
 
-    private function dueDate($settings): string
+    /** A renewal is due on the service's expiry date: the day before the new period starts. */
+    public static function expiryDate(string $periodStart): string
     {
-        return date('Y-m-d', strtotime('+' . max(0, (int) $settings->payment_due_days) . ' days'));
+        return date('Y-m-d', strtotime($periodStart . ' -1 day'));
     }
 
     private function findExisting(

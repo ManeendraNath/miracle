@@ -37,6 +37,7 @@ class SiteSetting extends base\SiteSetting
     {
         $labels = [
             'site_name' => 'Agency Corporate Name',
+            'review_invoices' => 'Check renewal invoices before they are sent',
             'site_url' => 'Production Server Web Domain',
             'mobile_1' => 'Primary Technical Support Hotline',
             'mobile_2' => 'Alternative Backup Line',

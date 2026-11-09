@@ -28,7 +28,7 @@ final class RenewalReleaseService
             ->where(['item_type' => $itemType, 'item_id' => $itemId, 'status' => [BillingEvent::STATUS_INVOICED, BillingEvent::STATUS_FULFILLED]])
             ->column();
         $leftOpen = [];
-        foreach (Invoice::find()->where(['id' => $invoiceIds, 'status' => [Invoice::STATUS_UNPAID, Invoice::STATUS_PARTIALLY_PAID, Invoice::STATUS_CARRIED_FORWARD]])->all() as $invoice) {
+        foreach (Invoice::find()->where(['id' => $invoiceIds, 'status' => [Invoice::STATUS_DRAFT, Invoice::STATUS_UNPAID, Invoice::STATUS_PARTIALLY_PAID, Invoice::STATUS_CARRIED_FORWARD]])->all() as $invoice) {
             if ($invoice->status === Invoice::STATUS_CARRIED_FORWARD) {
                 $newer = (new InvoicePaymentService())->openInvoiceCarrying((int) $invoice->id);
                 if ($newer !== null) {

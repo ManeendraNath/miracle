@@ -62,8 +62,9 @@ final class AccountingReportService
             // (as Carried Forward): sum Invoice Value, not Total Payable, to avoid counting them twice.
             'Arrears Carried In', 'Invoice Value (excl. arrears)',
         ];
-        $query = Invoice::find()
-            ->where(['>=', 'created_at', $start])
+        // A Draft hasn't been issued to the customer yet.
+        $query = Invoice::forCustomer()
+            ->andWhere(['>=', 'created_at', $start])
             ->andWhere(['<', 'created_at', $end])
             ->orderBy(['created_at' => SORT_ASC, 'id' => SORT_ASC]);
         foreach ($query->each(500) as $invoice) {

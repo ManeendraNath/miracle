@@ -62,7 +62,7 @@ final class InvoiceController extends Controller
         $filter = array_key_exists($filter, $filters) ? $filter : 'all';
         $userId = (int) Yii::$app->user->id;
 
-        $byStatus = Invoice::find()->select(['COUNT(*)', 'status'])->where(['user_id' => $userId])->groupBy('status')->indexBy('status')->column();
+        $byStatus = Invoice::forCustomer()->select(['COUNT(*)', 'status'])->where(['user_id' => $userId])->groupBy('status')->indexBy('status')->column();
         $counts = [];
         foreach ($filters as $key => $statuses) {
             $counts[$key] = $statuses === null ? array_sum($byStatus) : array_sum(array_intersect_key($byStatus, array_flip($statuses)));
@@ -75,8 +75,8 @@ final class InvoiceController extends Controller
         }
 
         $dataProvider = new ActiveDataProvider([
-            'query' => Invoice::find()
-                ->where(['user_id' => $userId])
+            'query' => Invoice::forCustomer()
+                ->andWhere(['user_id' => $userId])
                 ->andFilterWhere(['status' => $filters[$filter]])
                 ->orderBy(['created_at' => SORT_DESC, 'id' => SORT_DESC]),
             'pagination' => ['pageSize' => 20],
@@ -262,7 +262,7 @@ final class InvoiceController extends Controller
 
     private function findOwnedInvoice(string $number): Invoice
     {
-        $model = Invoice::find()->with(['items'])->where(['invoice_number' => $number, 'user_id' => Yii::$app->user->id])->one();
+        $model = Invoice::forCustomer()->with(['items'])->andWhere(['invoice_number' => $number, 'user_id' => Yii::$app->user->id])->one();
         if ($model !== null) {
             return $model;
         }

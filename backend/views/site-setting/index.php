@@ -31,6 +31,10 @@ $this->params['breadcrumbs'][] = $this->title;
             </div>
         </div>
 
+        <div class="mb-3">
+            <?= $form->field($model, 'review_invoices')->checkbox()->hint('New renewal invoices wait under Invoices (Waiting for review) until you send them. The customer sees nothing until then, and the due date counts from the day you send.') ?>
+        </div>
+
         <!-- SECTION 2: COMMUNICATIONS CONNECTORS -->
         <h4 class="fw-bold mt-3 mb-3 text-dark border-bottom pb-2" style="font-size: 1.1rem; color: #0f172a;">📞 Support & Communication Links</h4>
         <div class="row">

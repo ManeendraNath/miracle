@@ -115,7 +115,7 @@ class InvoiceController extends BaseController
         /*
          * Only unpaid invoices may be edited.
          */
-        if ($model->status !== Invoice::STATUS_UNPAID) {
+        if (!in_array($model->status, [Invoice::STATUS_UNPAID, Invoice::STATUS_DRAFT], true)) {
             Yii::$app->session->setFlash('error', 'Only unpaid invoices can be edited.');
             return $this->redirect(['view', 'number' => $model->invoice_number]);
         }
@@ -233,6 +233,21 @@ class InvoiceController extends BaseController
             }
         }
         return $this->render('update', ['model' => $model, 'items' => $items]);
+    }
+
+    /** "Send to customer" for an invoice waiting for review. */
+    public function actionRelease(int $id)
+    {
+        $invoice = $this->findModel($id);
+        try {
+            $emailed = (new \common\services\billing\InvoiceReviewService())->release($invoice);
+            Yii::$app->session->setFlash($emailed ? 'success' : 'warning', $emailed
+                ? 'Invoice sent to the customer. The due date now counts from today.'
+                : 'The invoice is now visible to the customer, but the email could not be sent. Use Resend Invoice to try again.');
+        } catch (\DomainException $e) {
+            Yii::$app->session->setFlash('error', $e->getMessage());
+        }
+        return $this->redirect(['view', 'number' => $invoice->invoice_number]);
     }
 
     public function actionResendInvoice(int $id)

@@ -77,6 +77,7 @@ final class ServiceController extends Controller
             ->alias('i')
             ->innerJoin(['ii' => InvoiceItem::tableName()], 'ii.invoice_id = i.id')
             ->where(['i.user_id' => $userId, 'ii.item_type' => $itemType, 'ii.item_id' => $id])
+            ->andWhere(['<>', 'i.status', Invoice::STATUS_DRAFT])
             ->orderBy(['i.id' => SORT_DESC])
             ->one();
         return $this->render('view', [

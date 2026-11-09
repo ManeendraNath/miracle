@@ -12,6 +12,7 @@ use Yii;
  * @property string $site_url
  * @property int $mobile_1
  * @property int|null $mobile_2
+ * @property int $review_invoices
  * @property string $email_1
  * @property string|null $email_2
  * @property string|null $email_3
@@ -44,6 +45,7 @@ class SiteSetting extends \yii\db\ActiveRecord
             [['mobile_2', 'email_2', 'email_3', 'address_line_1', 'address_line_2', 'address_line_3', 'facebook', 'x', 'youtube', 'linkedin', 'instagram', 'updated_at'], 'default', 'value' => null],
             [['site_name', 'site_url', 'mobile_1', 'email_1'], 'required'],
             [['mobile_1', 'mobile_2', 'updated_at'], 'integer'],
+            [['review_invoices'], 'boolean'],
             [['site_name', 'site_url', 'email_1', 'email_2', 'email_3', 'address_line_1', 'address_line_2', 'address_line_3', 'facebook', 'x', 'youtube', 'linkedin', 'instagram'], 'string', 'max' => 255],
         ];
     }

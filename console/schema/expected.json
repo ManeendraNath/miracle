@@ -1,5 +1,5 @@
 {
-    "migrations": 65,
+    "migrations": 66,
     "columns": {
         "admin": {
             "auth_key": {
@@ -1411,7 +1411,7 @@
                 "extra": ""
             },
             "status": {
-                "type": "enum('Unpaid','Partially_Paid','Paid','Carried_Forward','Cancelled','Refunded')",
+                "type": "enum('Unpaid','Partially_Paid','Paid','Carried_Forward','Cancelled','Refunded','Draft')",
                 "null": false,
                 "default": "Unpaid",
                 "extra": ""
@@ -1904,6 +1904,12 @@
                 "type": "bigint",
                 "null": true,
                 "default": null,
+                "extra": ""
+            },
+            "review_invoices": {
+                "type": "tinyint",
+                "null": false,
+                "default": "1",
                 "extra": ""
             },
             "site_name": {

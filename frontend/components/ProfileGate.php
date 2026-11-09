@@ -31,7 +31,7 @@ final class ProfileGate
             return;
         }
         Yii::$app->view->params['profileBanner'] = true;
-        $hasInvoices = in_array($controller, ['invoice', 'payment'], true) && Invoice::find()->where(['user_id' => (int) $identity->id])->exists();
+        $hasInvoices = in_array($controller, ['invoice', 'payment'], true) && Invoice::forCustomer()->andWhere(['user_id' => (int) $identity->id])->exists();
         if ($controller !== 'support' && !$hasInvoices && !IncompleteProfileReminderService::isInUse((int) $identity->id, false)) {
             Yii::$app->session->setFlash('warning', 'Please complete your billing details to continue.');
             Yii::$app->response->redirect(['/account/profile']);

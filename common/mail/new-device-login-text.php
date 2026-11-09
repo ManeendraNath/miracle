@@ -16,7 +16,7 @@ Device:     <?= $device ?>
 
 IP address: <?= $login->ip_address ?>
 
-Time:       <?= Yii::$app->formatter->asDatetime($login->logged_in_at, 'php:d M Y, h:i A') ?>
+Time:       <?= Yii::$app->formatter->asDatetime($login->logged_in_at) ?>
 
 
 If this was you, you don't need to do anything.

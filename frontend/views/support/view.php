@@ -78,7 +78,7 @@ $statusClass = match ($model->status) {
         <div class="card-body">
             <form method="post" action="<?= Url::to(['/support/reply', 'number' => $model->ticket_number]) ?>">
                 <?= Html::hiddenInput(Yii::$app->request->csrfParam, Yii::$app->request->getCsrfToken()) ?>
-                <textarea name="message" rows="5" class="form-control mb-3" required aria-label="Your reply" placeholder="Write your reply..."></textarea>
+                <textarea name="message" rows="5" class="form-control mb-3" required aria-label="Your reply" placeholder="Write your reply..."><?= Html::encode((string) Yii::$app->session->getFlash('replyDraft', '', true)) ?></textarea>
                 <button type="submit" class="btn btn-primary"><i class="fas fa-paper-plane me-1"></i> Send Reply</button>
             </form>
         </div>

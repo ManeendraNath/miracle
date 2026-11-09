@@ -81,9 +81,7 @@ class DashboardController extends BaseController
             'unpaidBalance' => $outstanding,
             // 2. Gateway Ledger Verification Streams
             'totalRevenueCollected' => $canBilling ? $received(null, null) : 0.0,
-            'pendingUpiVerifications' => Transaction::find()
-                ->andWhere(['gateway_id' => Transaction::GATEWAY_UPI_BANK, 'status' => 'Pending'])
-                ->count(),
+            'paymentsAwaitingReview' => \common\services\billing\InvoicePaymentService::awaitingReview()->count(),
             'capturedRevenueToday' => $canBilling ? $received(strtotime('today'), strtotime('tomorrow') - 1) : 0.0,
             // Taken but counted on no invoice and in no figure above, until staff refund or apply it.
             'unappliedHeld' => !$canBilling ? 0.0 : (float) Transaction::find()

@@ -56,6 +56,7 @@ $this->params['meta_description'] = 'Tell Miracle Web Technologies about your cu
                     </div>
                 </div>
                 <?= $form->field($model, 'message')->textarea(['rows' => 5, 'placeholder' => 'For example: the site is slow, the checkout is out of date, or the design looks old.'])->label('What do you want to improve?') ?>
+                <?= \frontend\components\FormGuard::field() ?>
                 <?= $form->field($model, 'verifyCode')->widget(Captcha::class, [
                     'template' => '<div class="row g-2 align-items-center"><div class="col-auto">{image}</div><div class="col">{input}</div></div>',
                 ])->label('Type the code shown') ?>

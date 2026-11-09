@@ -9,6 +9,7 @@ use yii\widgets\ActiveForm;
 /** @var common\models\Admin $model */
 /** @var string|null $setupSecret two-factor key shown until the first code confirms it */
 /** @var string|null $setupUri */
+/** @var string[]|null $backupCodes just created, shown this once */
 
 $this->title = 'My Account';
 $this->params['breadcrumbs'][] = $this->title;
@@ -52,10 +53,22 @@ $this->params['breadcrumbs'][] = $this->title;
     </div>
     <div class="card-body">
         <?php if ($model->hasTwoFactor()): ?>
-            <p class="mb-3">Every login asks for a 6-digit code from your authenticator app. To turn it off, enter a current code.</p>
+            <?php if (!empty($backupCodes)): ?>
+                <div class="alert alert-warning">
+                    <strong>Your backup codes.</strong> Save them somewhere safe, such as a password manager. Each one works once in place of a code from your app. They won't be shown again.
+                    <pre class="mb-0 mt-2 h5"><?= Html::encode(implode("\n", $backupCodes)) ?></pre>
+                </div>
+            <?php endif; ?>
+            <p class="mb-2">Backup codes left: <strong><?= $model->backupCodesLeft() ?></strong>. Creating new ones stops the old ones working.</p>
+            <?= Html::beginForm(['account'], 'post', ['class' => 'form-inline mb-4']) ?>
+                <?= Html::hiddenInput('two_factor', 'backup-codes') ?>
+                <?= Html::passwordInput('current_password', '', ['id' => 'backup-codes-current-password', 'class' => 'form-control mr-2', 'placeholder' => 'Current password', 'autocomplete' => 'current-password', 'aria-label' => 'Current password']) ?>
+                <?= Html::submitButton('Create new backup codes', ['class' => 'btn btn-outline-secondary']) ?>
+            <?= Html::endForm() ?>
+            <p class="mb-3">Every login asks for a 6-digit code from your authenticator app. To turn it off, enter a current code or a backup code.</p>
             <?= Html::beginForm(['account'], 'post', ['class' => 'form-inline']) ?>
                 <?= Html::hiddenInput('two_factor', 'disable') ?>
-                <?= Html::textInput('code', '', ['class' => 'form-control mr-2', 'placeholder' => '6-digit code', 'inputmode' => 'numeric', 'autocomplete' => 'one-time-code', 'maxlength' => 7, 'required' => true, 'aria-label' => 'Authenticator code']) ?>
+                <?= Html::textInput('code', '', ['class' => 'form-control mr-2', 'placeholder' => 'Code or backup code', 'autocomplete' => 'one-time-code', 'maxlength' => 12, 'required' => true, 'aria-label' => 'Code or backup code']) ?>
                 <?= Html::submitButton('Turn off', ['class' => 'btn btn-outline-danger']) ?>
             <?= Html::endForm() ?>
         <?php elseif ($setupSecret !== null): ?>

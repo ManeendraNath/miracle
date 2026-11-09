@@ -121,6 +121,14 @@ final class BillingEventServiceTest extends Unit
         $fulfil('2031-01-01', '2033-12-31', 18000.00);
         $this->assertEquals(19800.00, $hosting(18000.00, 36), 'three-year cycle: +10% each renewal');
 
+        // Back to yearly after a multi-year renewal: the yearly share of it plus the rise, whatever the base says.
+        $this->assertEquals(6600.00, $hosting(18000.00, 12), 'three years at ₹18000: ₹6000 a year +10%');
+        $this->assertEquals(600.00, $hosting(600.00, 1), 'to monthly: still the base');
+        $fulfil('2034-01-01', '2034-12-31', 6600.00);
+        $this->assertEquals(6600.00, $hosting(18000.00, 12), 'no rise after the first yearly renewal');
+        $fulfil('2035-01-01', '2035-12-31', 6600.00);
+        $this->assertEquals(7260.00, $hosting(18000.00, 12), '+10% after two years');
+
         // Domains stay yearly.
         $fulfil('2025-01-01', '2025-12-31', 1000.00, InvoiceItem::TYPE_DOMAIN);
         $this->assertEquals(1100.00, $prices->calculate(InvoiceItem::TYPE_DOMAIN, $itemId, 1000.00, 10.0, 12)->amount);

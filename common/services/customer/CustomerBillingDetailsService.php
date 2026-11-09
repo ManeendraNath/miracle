@@ -32,12 +32,15 @@ final class CustomerBillingDetailsService
             return false;
         }
         $created = $profile->isNewRecord;
+        // An empty country is an older profile, which counts as India.
+        $oldCountry = $created ? null : ((string) $profile->getOldAttribute('country') ?: \common\models\CustomerBillingProfile::COUNTRY_INDIA);
+        $oldCountry = $oldCountry === $profile->country ? null : $oldCountry;
         $changed = $created || $profile->getDirtyAttributes() !== [];
         if (!$profile->save()) {
             return false;
         }
         if ($changed) {
-            AdminAlertService::billingDetailsChanged($profile->id, (string) $profile->user->username, $profile->legal_name, $created);
+            AdminAlertService::billingDetailsChanged($profile->id, (string) $profile->user->username, $profile->legal_name, $created, $oldCountry === null ? null : $oldCountry . ' to ' . $profile->country);
         }
 
         return true;

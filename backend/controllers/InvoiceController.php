@@ -6,6 +6,7 @@ namespace backend\controllers;
 
 use Yii;
 use backend\models\searches\InvoiceSearch;
+use common\models\BillingEvent;
 use common\models\Invoice;
 use common\models\InvoiceItem;
 use common\models\User;
@@ -269,9 +270,15 @@ class InvoiceController extends BaseController
     public function actionCancel(int $id)
     {
         $model = $this->findModel($id);
+        // Cancelling releases a renewal's period, so a billing run can invoice it again (BillingEventService::findExisting).
+        $hasRenewals = BillingEvent::find()->where(['invoice_id' => $model->id])->exists();
         try {
             (new InvoiceCancellationService())->cancel($model, sprintf('Cancelled manually by admin user ID %s.', Yii::$app->user->id));
-            Yii::$app->session->setFlash('success', 'Invoice cancelled successfully.');
+            if ($hasRenewals) {
+                Yii::$app->session->setFlash('warning', 'Invoice cancelled. The next billing run will bill its renewals again unless you make those services inactive.');
+            } else {
+                Yii::$app->session->setFlash('success', 'Invoice cancelled successfully.');
+            }
         } catch (\Throwable $e) {
             Yii::error($e, __METHOD__);
             Yii::$app->session->setFlash('error', $e->getMessage());

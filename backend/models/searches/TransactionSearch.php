@@ -17,6 +17,9 @@ class TransactionSearch extends Transaction
 
     use DateRangeSearchTrait;
 
+    /** Status filter for payments that block their invoice (InvoicePaymentService::awaitingReview), used by the dashboard link. */
+    public const AWAITING_REVIEW = 'awaiting-review';
+
     // Transient placeholder to handle the composite range string text
     public $date_range;
     public ?string $created_at_range = null;
@@ -79,6 +82,9 @@ class TransactionSearch extends Transaction
             $query->andWhere(['invoice_id' => \common\models\Invoice::find()->select('id')->where(['like', 'invoice_number', $this->invoice_number])]);
         }
         $query->andFilterWhere(['is_unapplied' => $this->is_unapplied]);
+        if ($this->status === self::AWAITING_REVIEW) {
+            $query->andWhere(['status' => Transaction::STATUS_PENDING])->andWhere(\common\services\payment\RazorpayService::notUnpaidOrderCondition());
+        }
         $gatewayId = $this->gateway_id;
         if ((string) $gatewayId === (string) Transaction::GATEWAY_MANUAL) {
             // Manual entries are stored as 0 or NULL.
@@ -95,7 +101,7 @@ class TransactionSearch extends Transaction
 
         $query->andFilterWhere(['like', 'gateway_payment_id', $this->gateway_payment_id])
                 ->andFilterWhere(['like', 'gateway_order_id', $this->gateway_order_id])
-                ->andFilterWhere(['status' => $this->status])
+                ->andFilterWhere(['status' => $this->status === self::AWAITING_REVIEW ? null : $this->status])
                 ->andFilterWhere(['like', 'user_payment_notes', $this->user_payment_notes])
                 ->andFilterWhere(['like', 'payment_receipt_file', $this->payment_receipt_file])
                 ->andFilterWhere(['like', 'raw_payload', $this->raw_payload]);

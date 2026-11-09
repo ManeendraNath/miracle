@@ -15,6 +15,8 @@ use common\services\billing\dto\RenewalPriceResult;
  * and after each renewal of two years or longer. The first renewal billed here is the base amount and counts as the start.
  * When the cycle length changed since the previous renewal (e.g. yearly -> monthly), that amount no longer
  * fits, so the service's renewal base amount for the new cycle is used and the count starts again.
+ * Exception: hosting moving from a multi-year renewal to yearly continues from the yearly share of what was last billed,
+ * raised by the increase if that renewal ran two years or longer.
  */
 final class RenewalPriceCalculator
 {
@@ -46,6 +48,14 @@ final class RenewalPriceCalculator
             $sameCycle++;
         }
         if ($sameCycle === 0) {
+            $lastMonths = $fulfilled === [] ? 0 : RenewalPeriodCalculator::months((string) $fulfilled[0]->period_start, (string) $fulfilled[0]->period_end);
+            if ($itemType === InvoiceItem::TYPE_HOSTING && $cycleMonths === 12 && $lastMonths > 12) {
+                $yearly = (float) $fulfilled[0]->amount / $lastMonths * 12;
+                $percent = $lastMonths >= 24 ? $increasePercent : 0.0;
+
+                return new RenewalPriceResult(round($yearly, 2), round($percent, 2), round($yearly * (1 + $percent / 100), 2));
+            }
+
             return new RenewalPriceResult(round($baseAmount, 2), 0.0, round($baseAmount, 2));
         }
 

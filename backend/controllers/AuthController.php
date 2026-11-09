@@ -105,7 +105,8 @@ class AuthController extends Controller
                 return $this->redirect(Yii::$app->user->getIsGuest() ? ['auth/two-factor'] : ['dashboard/index']);
             } else {
                 // Debug fallback block for verification issues
-                Yii::error('Admin panel login attempt failed for user: ' . $model->username, 'admin-auth');
+                // Not the typed username: it may be a password typed into the wrong field.
+                Yii::warning('Admin panel login attempt failed.', 'admin-auth');
             }
         }
 

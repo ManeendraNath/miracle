@@ -331,7 +331,9 @@ $igstAmount = $tax['igstAmount'];
 <?php endif; ?>
 
 <?php $invoiceClosed = in_array($invoice->status, \common\services\billing\InvoicePaymentService::CLOSED_STATUSES, true); ?>
-<?php if ($invoiceClosed): ?>
+<?php if ($invoice->status === \common\models\Invoice::STATUS_PAID): ?>
+    <p><strong>Status: <?= Html::encode($invoice->statusLabel()) ?>. Nothing more is due on this invoice.</strong></p>
+<?php elseif ($invoiceClosed): ?>
     <p><strong>Status: <?= Html::encode($invoice->statusLabel()) ?>. This invoice is no longer payable.<?= $carriedInto !== null ? ' Balance moved to invoice ' . Html::encode($carriedInto->invoice_number) . ': please pay it there.' : '' ?></strong></p>
 <?php else: ?>
 <!-- MANUAL PAYMENT DETAIL -->

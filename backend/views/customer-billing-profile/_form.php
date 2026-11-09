@@ -54,11 +54,9 @@ $form = ActiveForm::begin([
             </div>
         </div>
 
-        <?php if ($canSetEverything): ?>
-            <?= $form->field($model, 'country')
+        <?= $form->field($model, 'country')
             ->dropDownList(CustomerBillingProfile::countryOptions())
             ->hint('Outside India: export of services, no GST; state, GSTIN and PAN are not used.') ?>
-        <?php endif; ?>
         <?= $this->render('@common/views/_billing_country_js') ?>
 
         <div class="row">

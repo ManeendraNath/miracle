@@ -27,3 +27,9 @@ Deploy on the server (needs `rsync`):
 ```bash
 cd /home/rpocncwk/repositories/miracle && bash deploy.sh   # fetches origin/main itself
 ```
+
+Locked out of the admin panel because the authenticator app is lost: sign in with a backup code, ask another Superadmin to reset two-factor, or run this on the server (cPanel Terminal), then set it up again under My account:
+
+```bash
+cd /home/rpocncwk/miracle && php yii admin-2fa/reset <username>
+```

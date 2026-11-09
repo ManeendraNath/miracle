@@ -70,7 +70,7 @@ class Admin extends base\Admin implements IdentityInterface
     public function scenarios(): array
     {
         return array_map(
-            static fn(array $attributes): array => array_values(array_diff($attributes, ['totp_secret', 'totp_last_step'])),
+            static fn(array $attributes): array => array_values(array_diff($attributes, ['totp_backup_codes', 'totp_secret', 'totp_last_step'])),
             parent::scenarios(),
         );
     }
@@ -227,6 +227,46 @@ class Admin extends base\Admin implements IdentityInterface
 
     public function disableTwoFactor(): void
     {
-        $this->updateAttributes(['totp_secret' => null, 'totp_last_step' => null]);
+        $this->updateAttributes(['totp_secret' => null, 'totp_last_step' => null, 'totp_backup_codes' => null]);
+    }
+
+    /** @return string[] new one-time codes to show once (only their hashes are kept); any earlier set stops working */
+    public function generateBackupCodes(): array
+    {
+        $codes = [];
+        for ($i = 0; $i < 10; $i++) {
+            $raw = bin2hex(random_bytes(5));
+            $codes[] = substr($raw, 0, 5) . '-' . substr($raw, 5);
+        }
+        $this->updateAttributes(['totp_backup_codes' => json_encode(array_map(static fn(string $code): string => hash('sha256', str_replace('-', '', $code)), $codes))]);
+
+        return $codes;
+    }
+
+    public function backupCodesLeft(): int
+    {
+        return count(json_decode((string) $this->totp_backup_codes, true) ?: []);
+    }
+
+    /** Accepts a backup code once; the conditional update stops two requests using the same code. */
+    public function consumeBackupCode(string $code): bool
+    {
+        $code = strtolower((string) preg_replace('/[\s-]+/', '', $code));
+        if (!$this->hasTwoFactor() || preg_match('/^[0-9a-f]{10}$/', $code) !== 1) {
+            return false;
+        }
+        $stored = (string) $this->totp_backup_codes;
+        $hashes = json_decode($stored, true) ?: [];
+        $used = hash('sha256', $code);
+        $left = array_values(array_filter($hashes, static fn(string $hash): bool => !hash_equals($hash, $used)));
+        if (count($left) === count($hashes)) {
+            return false;
+        }
+        if (static::updateAll(['totp_backup_codes' => json_encode($left)], ['id' => $this->id, 'totp_backup_codes' => $stored]) !== 1) {
+            return false;
+        }
+        $this->totp_backup_codes = json_encode($left);
+
+        return true;
     }
 }

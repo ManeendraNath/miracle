@@ -51,6 +51,12 @@ final class RazorpayService
             && ($this->_config['keySecret'] ?? '') !== '';
     }
 
+    /** Customers never get a test-mode checkout on live: a test card would mark the invoice paid with no money received. */
+    public function acceptsCustomerPayments(): bool
+    {
+        return $this->isEnabled() && !(YII_ENV_PROD && $this->isTestMode());
+    }
+
     public function getKeyId(): string
     {
         return (string) ($this->_config['keyId'] ?? '');

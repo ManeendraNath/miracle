@@ -38,6 +38,7 @@ $email = (string) CustomYii::getSetting('email_1');
                     <?= $form->field($model, 'email')->textInput(['type' => 'email', 'autocomplete' => 'email'])->label('Email address') ?>
                     <?= $form->field($model, 'subject')->textInput()->label('Subject') ?>
                     <?= $form->field($model, 'body')->textarea(['rows' => 5, 'placeholder' => 'What should it do? Your country, and any deadline or budget, also help.'])->label('Your project') ?>
+                    <?= \frontend\components\FormGuard::field() ?>
                     <?= $form->field($model, 'verifyCode')->widget(Captcha::class, [
                         'template' => '<div class="row g-2 align-items-center"><div class="col-auto">{image}</div><div class="col">{input}</div></div>',
                     ])->label('Type the code shown') ?>

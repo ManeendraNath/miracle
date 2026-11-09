@@ -56,9 +56,9 @@ $assigned = $model->getUsers()->orderBy('username')->all();
                 <div class="card-body">
                     <dl class="row mb-0">
                         <dt class="col-sm-5">Starts</dt>
-                        <dd class="col-sm-7"><?= $model->start_date ? $formatter->asDatetime($model->start_date, 'php:d M Y, h:i A') : 'Immediately' ?></dd>
+                        <dd class="col-sm-7"><?= $model->start_date ? $formatter->asDatetime(strtotime($model->start_date), 'php:d M Y, h:i A') : 'Immediately' ?></dd>
                         <dt class="col-sm-5">Expires</dt>
-                        <dd class="col-sm-7"><?= $model->end_date ? $formatter->asDatetime($model->end_date, 'php:d M Y, h:i A') : 'No expiry' ?></dd>
+                        <dd class="col-sm-7"><?= $model->end_date ? $formatter->asDatetime(strtotime($model->end_date), 'php:d M Y, h:i A') : 'No expiry' ?></dd>
                         <dt class="col-sm-5">Used</dt>
                         <dd class="col-sm-7"><?= $used ?> <?= $limit > 0 ? "of {$limit}" : 'times (no limit)' ?></dd>
                         <dt class="col-sm-5">Per Customer</dt>

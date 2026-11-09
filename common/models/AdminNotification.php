@@ -20,7 +20,8 @@ class AdminNotification extends base\AdminNotification
             return $query->andWhere('0 = 1');
         }
         if (!$admin->isAdmin()) {
-            $query->andWhere(['not in', 'type', self::BILLING_TYPES]);
+            // Testimonials (their page is Admin only) and account security changes too.
+            $query->andWhere(['not in', 'type', [...self::BILLING_TYPES, 'testimonial', 'security']]);
         }
 
         return $query;

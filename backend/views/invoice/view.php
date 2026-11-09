@@ -32,7 +32,7 @@ if ($model->status === Invoice::STATUS_UNPAID) {
     $this->params['actions'][] = Html::a('<i class="fas fa-ban me-1"></i> Cancel Invoice', ['cancel', 'id' => $model->id], [
         'class' => 'btn btn-outline-danger',
         'data' => [
-            'confirm' => 'Are you sure you want to cancel this invoice?',
+            'confirm' => 'Cancel this invoice? Any renewal on it will be billed again by the next billing run. To stop that, make the service inactive as well.',
             'method' => 'post',
         ],
     ]);

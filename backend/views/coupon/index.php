@@ -121,7 +121,7 @@ GridViewHelper::register($this);
                                     return 'No expiry';
                                 }
 
-                                return Yii::$app->formatter->asDatetime($model->end_date, 'php:d M Y, h:i A');
+                                return Yii::$app->formatter->asDatetime(strtotime($model->end_date), 'php:d M Y, h:i A');
                             },
                             'headerOptions' => [
                                 'style' => 'min-width: 170px;',

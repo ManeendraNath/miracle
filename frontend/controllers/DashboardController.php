@@ -48,10 +48,8 @@ final class DashboardController extends Controller
             $outstandingTotal += $paymentService->getOutstanding($openInvoice);
         }
         $recentInvoices = (clone $invoiceQuery)->orderBy(['created_at' => SORT_DESC, 'id' => SORT_DESC])->limit(5)->all();
-        $pendingPayments = (int) Transaction::find()
-                        ->alias('t')
-                        ->innerJoin(['i' => Invoice::tableName()], 'i.id = t.invoice_id')
-                        ->where(['i.user_id' => $userId, 't.status' => Transaction::STATUS_PENDING, 't.gateway_id' => Transaction::GATEWAY_UPI_BANK])->count();
+        $pendingPayments = (int) \common\services\billing\InvoicePaymentService::awaitingReview()
+                        ->andWhere(['invoice_id' => Invoice::find()->select('id')->where(['user_id' => $userId])])->count();
         $domainCount = (int) Domains::find()->where(['user_id' => $userId, 'status' => Domains::STATUS_ACTIVE])->count();
         $hostingCount = (int) Hosting::find()->where(['user_id' => $userId, 'status' => Hosting::STATUS_ACTIVE])->count();
         $maintenanceCount = (int) Maintenance::find()->where(['user_id' => $userId, 'status' => Maintenance::STATUS_ACTIVE])->count();

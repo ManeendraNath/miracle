@@ -1,5 +1,7 @@
 <?php
 
+use common\models\BillingSettings;
+use common\models\InvoiceItem;
 use common\models\User;
 use common\models\Domains;
 use kartik\select2\Select2;
@@ -119,7 +121,7 @@ $users = ArrayHelper::map(
                     <?= $form->field($model, 'current_expiry_date')->input('date') ?>
                 </div>
                 <div class="col-md-4">
-                    <?= $form->field($model, 'renewal_base_amount')->textInput(['disabled' => !$canEditPricing, 'type' => 'number', 'min' => '0.01', 'step' => '0.01', 'placeholder' => 'Initial renewal amount']) ?>
+                    <?= $form->field($model, 'renewal_base_amount')->textInput(['disabled' => !$canEditPricing, 'type' => 'number', 'min' => '0.01', 'step' => '0.01', 'placeholder' => 'Initial renewal amount'])->hint(BillingSettings::baseAmountHint(InvoiceItem::TYPE_DOMAIN)) ?>
                 </div>
                 <div class="col-md-4">
                     <?= $form->field($model, 'next_renewal_amount')->textInput(['disabled' => !$canEditPricing, 'type' => 'number', 'min' => '0.01', 'step' => '0.01', 'placeholder' => 'Calculated'])->hint('One-time price for the next renewal invoice, e.g. a negotiated rate. Later renewals build on it. Cleared once that renewal is paid.') ?>
@@ -139,7 +141,7 @@ $users = ArrayHelper::map(
             <div class="row mt-3">
 
                 <div class="col-md-6">
-                    <?= $form->field($model, 'renewal_cycle_months')->textInput(['disabled' => !$canEditPricing, 'type' => 'number', 'min' => 1, 'placeholder' => 'Use global setting']) ?>
+                    <?= $form->field($model, 'renewal_cycle_months')->textInput(['disabled' => !$canEditPricing, 'type' => 'number', 'min' => 1, 'placeholder' => BillingSettings::cycleLabel(InvoiceItem::TYPE_DOMAIN)]) ?>
                 </div>
 
                 <div class="col-md-6">

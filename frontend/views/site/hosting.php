@@ -77,7 +77,7 @@ $questions = [
     <section id="hosting-tiers" class="py-5">
         <div class="container">
             <h2 class="mw-h2">Hosting plans</h2>
-            <p class="mw-lead mt-3 mb-4">Every plan runs on cPanel, with free SSL certificates, firewall protection and your customer portal. Pay monthly, yearly or for several years.</p>
+            <p class="mw-lead mt-3 mb-4">Every plan runs on cPanel, with free SSL certificates, firewall protection and your customer portal. Hosting is billed once a year.</p>
             <div class="row g-4">
                 <?php foreach ($plans as $plan): ?>
                     <div class="col-lg-4">
@@ -87,7 +87,7 @@ $questions = [
                             <?php endif; ?>
                             <h3><?= Html::encode($plan['name']) ?></h3>
                             <p class="mw-plan-for"><?= Html::encode($plan['for']) ?></p>
-                            <p class="mw-plan-price"><strong><?= Html::encode($plan['price']) ?></strong> / month</p>
+                            <p class="mw-plan-price"><strong><?= Html::encode($plan['price']) ?></strong> / month, billed yearly</p>
                             <dl class="mw-plan-specs">
                                 <?php foreach ($plan['specs'] as $label => $value): ?>
                                     <div><dt><?= Html::encode($label) ?></dt><dd><?= Html::encode($value) ?></dd></div>

@@ -23,9 +23,13 @@ use Yii;
 final class ServiceRenewalReminderService
 {
     private const REMINDER_DAYS = [60, 30, 15, 7, 3, 1];
+    private const ITEM_TYPES = ['domain' => InvoiceItem::TYPE_DOMAIN, 'hosting' => InvoiceItem::TYPE_HOSTING, 'maintenance' => InvoiceItem::TYPE_MAINTENANCE];
 
     /** Reminders and staff alerts that failed in the last run. */
     public int $failures = 0;
+
+    /** Services due a staff alert in this run, sent together as one email by sendStaffDigest(). @var array<int, array<string, mixed>> */
+    private array $staffDue = [];
 
     public function sendReminders(?DateTimeImmutable $today = null): int
     {
@@ -34,6 +38,7 @@ final class ServiceRenewalReminderService
         $count += $this->processDomains($today);
         $count += $this->processHosting($today);
         $count += $this->processMaintenance($today);
+        $this->sendStaffDigest($today);
         return $count;
     }
 
@@ -94,7 +99,7 @@ final class ServiceRenewalReminderService
             return false;
         }
         // As InvoicePaymentService::renewalState(): no invoice is coming for these, so don't promise one.
-        $itemType = ['domain' => InvoiceItem::TYPE_DOMAIN, 'hosting' => InvoiceItem::TYPE_HOSTING, 'maintenance' => InvoiceItem::TYPE_MAINTENANCE][$type];
+        $itemType = self::ITEM_TYPES[$type];
         $billable = $hasPrice && (bool) BillingSettings::forType($itemType)->is_active && CustomerBillingProfile::find()->where(['user_id' => $userId])->exists() && CronJob::isEnabled('cron/run-billing');
 
         return $this->sendReminder($type, $serviceId, $userId, $serviceName, $expiryDate, $daysUntilExpiry, $threshold, $billable);
@@ -146,8 +151,7 @@ final class ServiceRenewalReminderService
         $key = 'staff_' . $threshold . '@' . $expiryDate;
         try {
             if (!$this->logged($type, $serviceId, $key)) {
-                AdminAlertService::serviceExpiring($serviceName, $expiryDate, $hasPrice);
-                $this->log($type, $serviceId, $userId, $key, $daysBefore);
+                $this->staffDue[] = compact('type', 'serviceId', 'userId', 'serviceName', 'expiryDate', 'daysBefore', 'hasPrice', 'key');
             }
         } catch (\Throwable $e) {
             $this->failures++;
@@ -201,5 +205,83 @@ final class ServiceRenewalReminderService
             Yii::error(['serviceType' => $type, 'serviceId' => $serviceId, 'error' => $e->getMessage()], __METHOD__);
             return false;
         }
+    }
+
+    /** One email for everything due an alert today, grouped by customer, with each service's price or invoice. */
+    private function sendStaffDigest(DateTimeImmutable $today): void
+    {
+        if ($this->staffDue === []) {
+            return;
+        }
+        try {
+            $byCustomer = [];
+            foreach ($this->staffDue as $due) {
+                $byCustomer[$due['userId']][] = $due;
+            }
+            $blocks = [];
+            foreach ($byCustomer as $userId => $services) {
+                $user = User::findOne($userId);
+                $profile = CustomerBillingProfile::findOne(['user_id' => $userId]);
+                $lines = [sprintf('Customer: %s (%s)', $profile?->legal_name ?: ($user?->username ?? '#' . $userId), $user?->email ?? 'no email')];
+                foreach ($services as $due) {
+                    try {
+                        $lines[] = '- ' . $this->digestLine($due);
+                    } catch (\Throwable $e) {
+                        Yii::error(['message' => 'Expiry digest line failed.', 'serviceType' => $due['type'], 'serviceId' => $due['serviceId'], 'error' => $e->getMessage()], __METHOD__);
+                        $lines[] = sprintf('- %s %s: expires %s. Price could not be worked out, check the service.', ucfirst($due['type']), $due['serviceName'], $due['expiryDate']);
+                    }
+                }
+                $blocks[] = implode("\n", $lines);
+            }
+            AdminAlertService::servicesExpiring(count($this->staffDue), implode("\n\n", $blocks));
+            foreach ($this->staffDue as $due) {
+                $this->log($due['type'], $due['serviceId'], $due['userId'], $due['key'], $due['daysBefore']);
+            }
+        } catch (\Throwable $e) {
+            $this->failures++;
+            Yii::error(['message' => 'Staff expiry digest failed.', 'error' => $e->getMessage()], __METHOD__);
+        }
+        $this->staffDue = [];
+    }
+
+    /** @param array<string, mixed> $due */
+    private function digestLine(array $due): string
+    {
+        $labels = ['domain' => 'Domain', 'hosting' => 'Hosting', 'maintenance' => 'Maintenance'];
+        $when = $due['daysBefore'] === 0 ? 'today' : ($due['daysBefore'] === 1 ? 'tomorrow' : 'in ' . $due['daysBefore'] . ' days');
+        $line = sprintf('%s %s: expires %s (%s). ', $labels[$due['type']], $due['serviceName'], date('d M Y', (int) strtotime($due['expiryDate'])), $when);
+        $itemType = self::ITEM_TYPES[$due['type']];
+        $money = static fn(float $amount): string => '₹' . number_format($amount, 2);
+
+        $event = \common\models\BillingEvent::find()
+            ->where(['item_type' => $itemType, 'item_id' => $due['serviceId']])
+            ->andWhere(['>', 'period_start', $due['expiryDate']])
+            ->andWhere(['<>', 'status', \common\models\BillingEvent::STATUS_CANCELLED])
+            ->orderBy(['period_start' => SORT_ASC])
+            ->one();
+        $invoice = $event?->invoice_id ? \common\models\Invoice::findOne($event->invoice_id) : null;
+        if ($invoice !== null) {
+            return $line . sprintf('Renewal %s on invoice %s (%s, invoice total %s).', $money((float) $event->amount), $invoice->invoice_number, $invoice->statusLabel(), $money((float) $invoice->total_payable));
+        }
+        if (!$due['hasPrice']) {
+            return $line . 'No renewal price is set, so no invoice will be generated. Set the Renewal Base Amount.';
+        }
+        $service = ['domain' => Domains::class, 'hosting' => Hosting::class, 'maintenance' => Maintenance::class][$due['type']]::findOne($due['serviceId']);
+        if ($service === null) {
+            return $line;
+        }
+        if ($service->next_renewal_amount !== null) {
+            return $line . 'Renewal ' . $money((float) $service->next_renewal_amount) . ' (Next Renewal Price). No invoice yet.';
+        }
+        $settings = BillingSettings::forType($itemType);
+        $price = (new RenewalPriceCalculator())->calculate(
+            $itemType,
+            (int) $service->id,
+            (float) $service->renewal_base_amount,
+            $service->renewal_increase_percent !== null ? (float) $service->renewal_increase_percent : (float) $settings->renewal_increase_percent,
+            $service->renewal_cycle_months !== null ? (int) $service->renewal_cycle_months : (int) $settings->renewal_cycle_months
+        );
+
+        return $line . 'Renewal about ' . $money($price->amount) . '. No invoice yet.';
     }
 }

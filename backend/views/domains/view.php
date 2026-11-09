@@ -242,7 +242,7 @@ $model->renewal_base_amount !== null ? Yii::$app->formatter->asCurrency(
 
                             <?php else: ?>
                                 <span class="text-muted">
-                                    Global setting
+                                    <?= Html::encode(\common\models\BillingSettings::cycleLabel(\common\models\InvoiceItem::TYPE_DOMAIN)) ?>
                                 </span>
 
                             <?php endif; ?>

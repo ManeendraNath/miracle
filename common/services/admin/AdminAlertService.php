@@ -34,7 +34,7 @@ final class AdminAlertService extends AdminNotificationService
     {
         $title = 'Payment Submitted';
         $message = "Invoice: {$invoiceNumber}\n" . "Customer: {$customer}\n" . "Amount: ₹{$amount}";
-        self::send($title, $message, 'payment', '/transaction/index?' . http_build_query(['TransactionSearch' => ['status' => 'Pending']]));
+        self::send($title, $message, 'payment', '/transaction/index?' . http_build_query(['TransactionSearch' => ['status' => 'awaiting-review']]));
     }
 
     public static function leadCreated(string $name, string $email): void
@@ -53,14 +53,26 @@ final class AdminAlertService extends AdminNotificationService
 
     public static function testimonialSubmitted(string $clientName): void
     {
-        self::send('New Testimonial', "From: {$clientName}\nReview it before publishing.", 'lead', '/testimonial/index');
+        self::send('New Testimonial', "From: {$clientName}\nReview it before publishing.", 'testimonial', '/testimonial/index');
     }
 
-    public static function serviceExpiring(string $service, string $expiryDate, bool $hasPrice = true): void
+    /** So an unexpected change (someone else enrolling their phone with a stolen password) doesn't go unnoticed. */
+    public static function twoFactorChanged(string $username, string $change): void
     {
-        $title = 'Service Expiring';
-        $message = "Service: {$service}\n" . "Expiry Date: {$expiryDate}" . ($hasPrice ? '' : "\nNo renewal price is set: no invoice will be generated. Set the Renewal Base Amount.");
-        self::send($title, $message, 'renewal', '/renewal-monitoring/index');
+        self::send('Two-Factor Sign-In Changed', "Account: {$username}\nChange: {$change}\nIf you don't recognise this, check that account now.", 'security');
+    }
+
+    /** From the migration that made hosting yearly: prices staff may have entered for two years. */
+    public static function hostingPricesToCheck(string $list): void
+    {
+        self::send('Check Hosting Prices', "Hosting now renews every year. The next invoice of each service below uses the price shown for one year: its Next Renewal Price, or its Renewal Base Amount when it has no paid renewal yet. Halve any that is a two-year price:\n\n{$list}", 'billing', '/hosting/index');
+    }
+
+    /** The daily list from ServiceRenewalReminderService: one email, however many services. */
+    public static function servicesExpiring(int $count, string $details): void
+    {
+        $title = $count === 1 ? 'Service Expiring' : "{$count} Services Expiring";
+        self::send($title, $details, 'renewal', '/renewal-monitoring/index');
     }
 
     public static function invoiceGenerated(string $invoiceNumber, float $amount): void
@@ -230,10 +242,13 @@ final class AdminAlertService extends AdminNotificationService
         self::send('Disabled Service Still Billed', $message, 'billing', '/invoice/index');
     }
 
-    public static function billingDetailsChanged(int $profileId, string $customer, string $legalName, bool $created): void
+    /** @param string|null $countryChange e.g. "India to Nepal" */
+    public static function billingDetailsChanged(int $profileId, string $customer, string $legalName, bool $created, ?string $countryChange = null): void
     {
         $title = $created ? 'Customer Added Billing Details' : 'Customer Updated Billing Details';
-        $message = "Customer: {$customer}\n" . "Legal name: {$legalName}\n" . 'Review the profile and set GST applicability if needed.';
+        $message = "Customer: {$customer}\n" . "Legal name: {$legalName}\n"
+            . ($countryChange === null ? '' : "Country changed: {$countryChange}. Moving abroad turns GST off, and moving back doesn't turn it on again.\n")
+            . 'Review the profile and set GST applicability if needed.';
         self::send($title, $message, 'billing', '/customer-billing-profile/update?id=' . $profileId);
     }
 

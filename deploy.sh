@@ -186,6 +186,7 @@ on_fail()
                 echo "To restore: tables added by the migrations must go too, so empty the database first:"
                 echo "  mysql -N -e \"SELECT CONCAT('DROP TABLE IF EXISTS \\\`', table_name, '\\\`;') FROM information_schema.tables WHERE table_schema='<database>'\" | (echo 'SET FOREIGN_KEY_CHECKS=0;'; cat) | mysql <database>"
                 echo "  gunzip -c $BACKUP | mysql <database>"
+                echo "  rm -rf $APP/frontend/runtime/schema-cache $APP/backend/runtime/schema-cache $APP/console/runtime/schema-cache"
             fi
         fi
     elif [ -n "$SNAP" ]; then
@@ -228,6 +229,18 @@ fi
 # the request's Host header or lose their buttons.
 # After the restart above, so a fix to this check can't be blocked by the old one.
 grep -Eq '^[[:space:]]*(export[[:space:]]+)?FRONTEND_BASE_URL[[:space:]]*=[[:space:]]*["'"'"']?https?://[^[:space:]"'"'"'/]' "$APP/.env" || die "FRONTEND_BASE_URL (e.g. https://miraclewebtechnologies.com) is not set in $APP/.env"
+# A test or development .env on live would stop two-factor being required, fix the admin captcha or show
+# stack traces to visitors; without the key, two-factor can't be set up and is quietly not required.
+ENV_PROBLEMS=$(cd "$APP" && php -r '
+require "vendor/autoload.php";
+Dotenv\Dotenv::createImmutable(".")->safeLoad();
+$problems = [];
+if (($_ENV["YII_ENV"] ?? "prod") !== "prod") { $problems[] = "YII_ENV must be prod"; }
+if (($_ENV["YII_DEBUG"] ?? "false") === "true") { $problems[] = "YII_DEBUG must be false"; }
+if (strlen($_ENV["TWO_FACTOR_KEY"] ?? "") < 32) { $problems[] = "TWO_FACTOR_KEY must be at least 32 characters"; }
+echo implode("; ", $problems);
+exit($problems === [] ? 0 : 1);
+') || die "$APP/.env: $ENV_PROBLEMS"
 echo "Deploying commit $(git rev-parse --short HEAD)"
 TRACKED=$(git ls-files .env yii {common,frontend,backend,console}/config/params-local.php)
 [ -z "$TRACKED" ] || die "production-only files are tracked by Git: $TRACKED"

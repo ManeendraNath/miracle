@@ -1,6 +1,8 @@
 <?php
 
 use common\models\Hosting;
+use common\models\BillingSettings;
+use common\models\InvoiceItem;
 use common\models\User;
 use kartik\select2\Select2;
 use yii\helpers\ArrayHelper;
@@ -155,7 +157,7 @@ $users = ArrayHelper::map(
     'min' => 0,
     'step' => '0.01',
     'placeholder' => 'Initial renewal amount',
-]) ?>
+])->hint(BillingSettings::baseAmountHint(InvoiceItem::TYPE_HOSTING)) ?>
 
                 </div>
                 <div class="col-md-4">
@@ -184,7 +186,7 @@ $users = ArrayHelper::map(
                     <?= $form->field($model, 'renewal_cycle_months')->textInput(['disabled' => !$canEditPricing,
                         'type' => 'number',
                         'min' => 1,
-                        'placeholder' => 'Use global setting',
+                        'placeholder' => BillingSettings::cycleLabel(InvoiceItem::TYPE_HOSTING),
                     ]) ?>
 
                 </div>

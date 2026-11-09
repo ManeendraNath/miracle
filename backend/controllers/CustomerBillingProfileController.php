@@ -29,7 +29,7 @@ final class CustomerBillingProfileController extends BaseController
 
     /**
      * ?user_id= comes from creating a customer. Managers may only use this path, and only fill in what a customer
-     * could (no country, GST or discount): the customer scenario leaves those out.
+     * could (country and address, but no GST or discount): the customer scenario leaves those out.
      */
     public function actionCreate(?int $user_id = null)
     {

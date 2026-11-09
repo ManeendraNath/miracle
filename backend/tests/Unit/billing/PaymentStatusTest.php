@@ -300,11 +300,27 @@ final class PaymentStatusTest extends Unit
         $this->assertSame(1, $reminders());
     }
 
+    public function testManualPaymentsCountAsAwaitingReviewButUnpaidOnlineOrdersDoNot(): void
+    {
+        $pending = static fn(int $invoiceId): int => (int) InvoicePaymentService::awaitingReview()->andWhere(['invoice_id' => $invoiceId])->count();
+        $manual = $this->invoice(1000.00);
+        $this->payment($manual, Transaction::GATEWAY_MANUAL, Transaction::STATUS_PENDING);
+        $this->assertSame(1, $pending((int) $manual->id));
+
+        $online = $this->invoice(1000.00);
+        $this->payment($online, Transaction::GATEWAY_RAZORPAY, Transaction::STATUS_PENDING, 'order_' . bin2hex(random_bytes(4)));
+        $this->assertSame(0, $pending((int) $online->id));
+    }
+
     public function testAClosedInvoicePdfSaysSoAndHidesThePaymentDetails(): void
     {
         $invoice = $this->invoice(1000.00);
         $render = static fn(): string => Yii::$app->view->renderFile(Yii::getAlias('@common/mail/invoice-pdf.php'), ['invoice' => Invoice::findOne($invoice->id), 'capturedAmount' => 0.0, 'outstandingAmount' => 1000.0, 'carriedInto' => null]);
         $this->assertStringContainsString('Payment Details', $render());
+
+        Invoice::updateAll(['status' => Invoice::STATUS_PAID], ['id' => $invoice->id]);
+        $this->assertStringContainsString('Nothing more is due', $render());
+        $this->assertStringNotContainsString('Payment Details', $render());
 
         Invoice::updateAll(['status' => Invoice::STATUS_CANCELLED], ['id' => $invoice->id]);
         $this->assertStringContainsString('no longer payable', $render());

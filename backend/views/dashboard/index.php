@@ -37,8 +37,8 @@ $kpis = [
     ['bg-info', (int) $openSupportTickets, 'Open Support Requests', 'fas fa-headset', 'Review Support', ['/support-ticket/index', 'SupportTicketSearch' => ['status' => 'active']]],
     ['bg-danger', (int) $highPrioritySupportTickets, 'High Priority Support', 'fas fa-exclamation-triangle', 'Review Priority Tickets', ['/support-ticket/index', 'SupportTicketSearch' => ['priority' => SupportTicket::PRIORITY_HIGH, 'status' => 'active']]],
     ['bg-primary', (int) $metrics['totalClients'], 'Customer Accounts', 'fas fa-users', 'Manage Clients', ['/user/index']],
-    ['bg-success', Yii::$app->formatter->asCurrency((float) $metrics['totalRevenueCollected'], 'INR'), 'Total Revenue Settled', 'fas fa-cash-register', 'Review Paid Invoices', ['/invoice/index']],
-    ['bg-warning', Yii::$app->formatter->asCurrency((float) $metrics['unpaidBalance'], 'INR'), 'Outstanding Due Balance', 'fas fa-comments-dollar', 'Track Accounts Due', ['/invoice/index']],
+    ['bg-success', Yii::$app->formatter->asCurrency((float) $metrics['totalRevenueCollected'], 'INR'), 'Total Revenue Settled', 'fas fa-cash-register', 'Review Paid Invoices', ['/invoice/index', 'InvoiceSearch' => ['status' => \common\models\Invoice::STATUS_PAID]]],
+    ['bg-warning', Yii::$app->formatter->asCurrency((float) $metrics['unpaidBalance'], 'INR'), 'Outstanding Due Balance', 'fas fa-comments-dollar', 'Track Accounts Due', ['/invoice/index', 'InvoiceSearch' => ['status' => [\common\models\Invoice::STATUS_UNPAID, \common\models\Invoice::STATUS_PARTIALLY_PAID]]]],
     ['bg-secondary', (int) $metrics['totalInvoicesCount'], 'Invoices Generated', 'fas fa-file-invoice-dollar', 'View Billing History', ['/invoice/index']],
 ];
 // Managers don't see billing figures (they can't open those sections either).
@@ -147,8 +147,8 @@ $assets = [
                                 <small class="text-muted">Payment proofs awaiting verification</small>
                             </div>
                         </div>
-                        <?php if ($metrics['pendingUpiVerifications'] > 0): ?>
-                            <?= Html::a((int) $metrics['pendingUpiVerifications'] . ' Review Required', ['/transaction/index', 'TransactionSearch' => ['status' => 'Pending', 'gateway_id' => Transaction::GATEWAY_UPI_BANK]], ['class' => 'btn btn-sm btn-warning font-weight-bold']) ?>
+                        <?php if ($metrics['paymentsAwaitingReview'] > 0): ?>
+                            <?= Html::a((int) $metrics['paymentsAwaitingReview'] . ' Review Required', ['/transaction/index', 'TransactionSearch' => ['status' => \backend\models\searches\TransactionSearch::AWAITING_REVIEW]], ['class' => 'btn btn-sm btn-warning font-weight-bold']) ?>
                         <?php else: ?>
                             <span class="badge badge-success p-2"><i class="fas fa-check mr-1"></i>All Clear</span>
                         <?php endif; ?>

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 return [
     'id' => 'app-frontend-tests',
+    // Tests send forms straight after opening them.
+    'params' => ['formMinSeconds' => 0],
     'components' => [
         'assetManager' => [
             'basePath' => __DIR__ . '/../web/assets',

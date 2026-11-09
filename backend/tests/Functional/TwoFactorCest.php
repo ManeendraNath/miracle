@@ -229,6 +229,8 @@ final class TwoFactorCest
             $this->login($I, 'tf-manager');
             $I->amOnRoute('lead/index');
             $I->dontSeeInCurrentUrl('admin/account');
+            $I->seeInCurrentUrl('lead');
+            $I->dontSeeElement('#login-form');
         } finally {
             BaseController::$requireTwoFactor = false;
         }
@@ -244,5 +246,41 @@ final class TwoFactorCest
         $_SERVER['REMOTE_ADDR'] = '198.51.100.9';
         \PHPUnit\Framework\Assert::assertTrue(LoginThrottle::isLocked(LoginThrottle::SCOPE_ADMIN_CODE, $name));
         LoginThrottle::clear(LoginThrottle::SCOPE_ADMIN_CODE, $name);
+    }
+
+    public function backupCodeWorksOnceInPlaceOfTheApp(FunctionalTester $I): void
+    {
+        $id = $this->haveAdmin($I, 'tf-backup', Admin::getRoleSuperAdmin(), self::SECRET);
+        $codes = Admin::findOne($id)->generateBackupCodes();
+        $this->login($I, 'tf-backup');
+        $I->submitForm('#two-factor-form', ['TwoFactorForm[code]' => strtoupper($codes[0])]);
+        $I->see('Miracle Corporate Control Center');
+        $I->see('You signed in with a backup code. 9 left');
+
+        $this->post($I, ['/auth/logout']);
+        $this->login($I, 'tf-backup');
+        $I->submitForm('#two-factor-form', ['TwoFactorForm[code]' => $codes[0]]);
+        $I->see('That code is not valid.');
+    }
+
+    public function trustedDeviceSkipsTheCodeButNotThePassword(FunctionalTester $I): void
+    {
+        $this->haveAdmin($I, 'tf-trust', Admin::getRoleSuperAdmin(), self::SECRET);
+        $this->login($I, 'tf-trust');
+        $I->submitForm('#two-factor-form', ['TwoFactorForm[code]' => $this->currentCode(), 'TwoFactorForm[trustDevice]' => '1']);
+        $I->see('Miracle Corporate Control Center');
+
+        $this->post($I, ['/auth/logout']);
+        $this->login($I, 'tf-trust');
+        $I->see('Miracle Corporate Control Center');
+        $I->dontSeeElement('#two-factor-form');
+
+        // A new password ends the trust.
+        $admin = Admin::findOne(['username' => 'tf-trust']);
+        $admin->generateAuthKey();
+        $admin->updateAttributes(['auth_key' => $admin->auth_key]);
+        $this->post($I, ['/auth/logout']);
+        $this->login($I, 'tf-trust');
+        $I->seeElement('#two-factor-form');
     }
 }

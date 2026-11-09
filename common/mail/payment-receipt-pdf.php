@@ -92,7 +92,7 @@ $money = static fn(int|float|string|null $amount): string => 'INR ' . number_for
     </tr>
     <tr>
         <td>Confirmed Date</td>
-        <td><?= $transaction->paid_at ? Yii::$app->formatter->asDatetime($transaction->paid_at, 'php:d M Y, h:i A') : '-' ?>
+        <td><?= $transaction->paid_at ? Yii::$app->formatter->asDatetime($transaction->paid_at) : '-' ?>
         </td>
     </tr>
     <tr>

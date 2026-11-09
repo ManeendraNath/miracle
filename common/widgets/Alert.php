@@ -69,7 +69,8 @@ class Alert extends \yii\bootstrap5\Widget
             foreach ((array) $flash as $i => $message) {
                 echo BootstrapAlert::widget(
                     [
-                        'body' => $message,
+                        // Plain text: an exception message shown here must not become markup.
+                        'body' => \yii\helpers\Html::encode((string) $message),
                         'closeButton' => $this->closeButton,
                         'options' => [
                             ...$this->options,

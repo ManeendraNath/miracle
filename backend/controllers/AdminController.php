@@ -7,6 +7,7 @@ use common\components\LoginThrottle;
 use common\components\Totp;
 use common\models\Admin;
 use yii\web\NotFoundHttpException;
+use common\services\admin\AdminAlertService;
 use Yii;
 
 /**
@@ -16,6 +17,7 @@ class AdminController extends BaseController
 {
     /** Session key of a two-factor secret shown for setup but not yet confirmed. */
     private const TOTP_SETUP_KEY = 'adminTotpSetup';
+    private const BACKUP_CODES_KEY = 'adminBackupCodes';
 
     public function behaviors()
     {
@@ -142,6 +144,8 @@ class AdminController extends BaseController
         $setupSecret = $model->hasTwoFactor() ? null : Yii::$app->session->get(self::TOTP_SETUP_KEY);
         return $this->render('account', [
                     'model' => $model,
+                    // Shown once, straight after they were created.
+                    'backupCodes' => Yii::$app->session->remove(self::BACKUP_CODES_KEY),
                     'setupSecret' => $setupSecret,
                     'setupUri' => $setupSecret === null ? null : Totp::uri($setupSecret, $model->username, Yii::$app->name),
         ]);
@@ -185,16 +189,29 @@ class AdminController extends BaseController
                 $session->remove(self::TOTP_SETUP_KEY);
                 // New auth key: keep this session signed in.
                 Yii::$app->user->switchIdentity($model, 0);
-                $session->setFlash('success', 'Two-factor sign-in is on. You will need a code from your app at every login.');
+                $session->set(self::BACKUP_CODES_KEY, $model->generateBackupCodes());
+                $session->setFlash('success', 'Two-factor sign-in is on. Save your backup codes below now: they are shown only once.');
+                AdminAlertService::twoFactorChanged($model->username, 'turned on');
             } else {
                 $session->setFlash('error', 'That code is not valid. Check the time on your phone and try again.');
+            }
+        } elseif ($step === 'backup-codes' && $model->hasTwoFactor()) {
+            if (LoginThrottle::isLocked('backend', $model->username)) {
+                $session->setFlash('error', 'Too many failed attempts. Please try again in 15 minutes.');
+            } elseif (!$this->currentPasswordIsValid($model, $currentPassword)) {
+                $session->setFlash('error', 'Enter your current password to create new backup codes.');
+            } else {
+                $session->set(self::BACKUP_CODES_KEY, $model->generateBackupCodes());
+                $session->setFlash('success', 'New backup codes created. The old ones no longer work.');
+                AdminAlertService::twoFactorChanged($model->username, 'new backup codes created');
             }
         } elseif ($step === 'disable' && $model->hasTwoFactor()) {
             if (LoginThrottle::isLocked(LoginThrottle::SCOPE_ADMIN_CODE, $model->username)) {
                 $session->setFlash('error', 'Too many failed attempts. Please try again in 15 minutes.');
-            } elseif ($model->consumeTotpCode($code)) {
+            } elseif ($model->consumeTotpCode($code) || $model->consumeBackupCode($code)) {
                 $model->disableTwoFactor();
                 $session->setFlash('success', 'Two-factor sign-in is off.');
+                AdminAlertService::twoFactorChanged($model->username, 'turned off');
             } else {
                 LoginThrottle::fail(LoginThrottle::SCOPE_ADMIN_CODE, $model->username);
                 $session->setFlash('error', 'That code is not valid. Two-factor sign-in is still on.');
@@ -213,6 +230,7 @@ class AdminController extends BaseController
         // Signs out every session: whoever enrolled that phone may still be signed in.
         $model->generateAuthKey();
         $model->updateAttributes(['auth_key' => $model->auth_key]);
+        AdminAlertService::twoFactorChanged($model->username, 'reset by ' . Yii::$app->user->identity->username);
         Yii::warning("Two-factor sign-in reset for admin #{$model->id} by admin #" . Yii::$app->user->id, 'admin-auth');
         Yii::$app->session->setFlash('success', 'Two-factor sign-in is off for ' . $model->username . '.');
         return $this->redirect(['update', 'id' => $model->id]);

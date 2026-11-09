@@ -15,6 +15,7 @@ use Yii;
  * @property string|null $password_reset_token
  * @property string|null $totp_secret
  * @property int|null $totp_last_step
+ * @property string|null $totp_backup_codes
  * @property string $role
  * @property int $status
  * @property int $created_at
@@ -36,7 +37,7 @@ class Admin extends \yii\db\ActiveRecord
     public function rules()
     {
         return [
-            [['password_reset_token', 'totp_secret', 'totp_last_step'], 'default', 'value' => null],
+            [['password_reset_token', 'totp_secret', 'totp_last_step', 'totp_backup_codes'], 'default', 'value' => null],
             [['role'], 'default', 'value' => 'Manager'],
             [['status'], 'default', 'value' => 1],
             [['username', 'email', 'auth_key', 'password_hash', 'created_at', 'updated_at'], 'required'],

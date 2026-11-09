@@ -66,7 +66,7 @@ class LoginForm extends Model
         if (!$this->validate()) {
             return false;
         }
-        if ($this->getUser()->hasTwoFactor()) {
+        if ($this->getUser()->hasTwoFactor() && !TwoFactorForm::isTrustedDevice($this->getUser())) {
             // The throttle is cleared only after the code, so a known password
             // can't be used to reset the count while guessing codes.
             TwoFactorForm::start($this->getUser());

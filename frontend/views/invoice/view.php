@@ -243,7 +243,7 @@ JS);
                     </div>
                     <?php if ($canPayOnline): ?>
                         <p class="small text-body-secondary text-center mt-2 mb-0">
-                            Outside India? Pay online with an international card. The charge is in INR and your card issuer converts it. If your card is declined, <?= Html::a('raise a support ticket', ['/support/create', 'subject' => 'Paying from outside India']) ?>.
+                            Paying from outside India? <?= Html::a('Raise a support ticket', ['/support/create', 'subject' => 'Paying from outside India']) ?> and we'll confirm how to pay.
                         </p>
                     <?php endif; ?>
                     <p class="small text-body-secondary text-center mt-2 mb-0">

@@ -3,6 +3,8 @@
 declare(strict_types=1);
 
 use common\models\Maintenance;
+use common\models\BillingSettings;
+use common\models\InvoiceItem;
 use common\models\User;
 use kartik\select2\Select2;
 use yii\helpers\ArrayHelper;
@@ -94,7 +96,7 @@ $form = ActiveForm::begin([
             'min' => 0,
             'step' => '0.01',
             'placeholder' => 'Initial renewal amount',
-        ]) ?>
+        ])->hint(BillingSettings::baseAmountHint(InvoiceItem::TYPE_MAINTENANCE)) ?>
 
         <?= $form->field($model, 'next_renewal_amount')->input('number', ['disabled' => !$canEditPricing, 'min' => '0.01', 'step' => '0.01', 'placeholder' => 'Calculated'])->hint('One-time price for the next renewal invoice, e.g. a negotiated rate. Later renewals build on it. Cleared once that renewal is paid.') ?>
 
@@ -104,7 +106,7 @@ $form = ActiveForm::begin([
 
                 <?= $form->field($model, 'renewal_cycle_months')->input('number', ['disabled' => !$canEditPricing,
                     'min' => 1,
-                    'placeholder' => 'Use global setting',
+                    'placeholder' => BillingSettings::cycleLabel(InvoiceItem::TYPE_MAINTENANCE),
                 ]) ?>
 
             </div>

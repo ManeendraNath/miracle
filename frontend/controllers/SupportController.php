@@ -184,10 +184,12 @@ final class SupportController extends Controller
         $posted = Yii::$app->request->post('message', '');
         $message = is_string($posted) ? trim($posted) : '';
         if ($message === '' || mb_strlen($message) > 10000) {
-            Yii::$app->session->setFlash('error', 'Please enter a valid reply.');
+            Yii::$app->session->setFlash('error', 'Please enter a reply of up to 10,000 characters.');
+            Yii::$app->session->setFlash('replyDraft', mb_substr($message, 0, 20000));
             return $this->redirect(['view', 'number' => $number]);
         }
         if (SupportTicket::overPostLimit((int) Yii::$app->user->id)) {
+            Yii::$app->session->setFlash('replyDraft', $message);
             Yii::$app->session->setFlash('error', 'You have sent a lot of messages this hour. Please wait a while before sending more.');
             return $this->redirect(['view', 'number' => $number]);
         }

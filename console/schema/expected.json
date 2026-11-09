@@ -1,5 +1,5 @@
 {
-    "migrations": 63,
+    "migrations": 65,
     "columns": {
         "admin": {
             "auth_key": {
@@ -48,6 +48,12 @@
                 "type": "smallint",
                 "null": false,
                 "default": "1",
+                "extra": ""
+            },
+            "totp_backup_codes": {
+                "type": "text",
+                "null": true,
+                "default": null,
                 "extra": ""
             },
             "totp_last_step": {

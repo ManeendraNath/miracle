@@ -1198,3 +1198,12 @@ img[src*="captcha"] {
         transition: none !important;
     }
 }
+
+/* Trap field for form bots (FormGuard): off screen, never seen or tabbed to. */
+.mw-hp {
+    position: absolute !important;
+    left: -10000px;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+}

@@ -14,7 +14,7 @@ echo $this->render('_card', [
     'rows' => [
         ['Device', $device],
         ['IP address', (string) $login->ip_address],
-        ['Time', Yii::$app->formatter->asDatetime($login->logged_in_at, 'php:d M Y, h:i A')],
+        ['Time', Yii::$app->formatter->asDatetime($login->logged_in_at)],
     ],
     'note' => ['If this was you, you don\'t need to do anything. If it wasn\'t, reset your password now.'],
     'button' => ['Reset Password', Yii::$app->urlManager->createAbsoluteUrl(['site/request-password-reset'])],

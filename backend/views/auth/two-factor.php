@@ -12,16 +12,17 @@ $this->title = 'Two-factor sign-in';
     <div class="mt-6 col-lg-12">
         <h1><?= Html::encode($this->title) ?></h1>
 
-        <p>Enter the 6-digit code from your authenticator app.</p>
+        <p>Enter the 6-digit code from your authenticator app. Lost your phone? Enter one of your backup codes instead.</p>
 
         <?php $form = ActiveForm::begin(['id' => 'two-factor-form']); ?>
 
             <?= $form->field($model, 'code')->textInput([
                 'autofocus' => true,
                 'autocomplete' => 'one-time-code',
-                'inputmode' => 'numeric',
-                'maxlength' => 7,
+                'maxlength' => 12,
             ]) ?>
+
+            <?= $form->field($model, 'trustDevice')->checkbox()->hint('Skips the code on this browser until then. Not on a shared or public computer.') ?>
 
             <div class="form-group">
                 <?= Html::submitButton('Verify', ['class' => 'btn btn-primary btn-block', 'name' => 'verify-button']) ?>

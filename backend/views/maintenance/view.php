@@ -196,7 +196,7 @@ $this->params['actions'] = [
 
                             <?php else: ?>
                                 <span class="text-muted">
-                                    Global setting
+                                    <?= Html::encode(\common\models\BillingSettings::cycleLabel(\common\models\InvoiceItem::TYPE_MAINTENANCE)) ?>
                                 </span>
 
                             <?php endif; ?>

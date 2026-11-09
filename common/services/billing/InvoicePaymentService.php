@@ -198,8 +198,14 @@ final class InvoicePaymentService
     /** A payment awaiting review (UPI/bank proof or an admin-entered pending payment); unpaid online orders don't count. */
     public function hasPendingProof(int $invoiceId): bool
     {
-        return Transaction::find()->where(['invoice_id' => $invoiceId, 'status' => Transaction::STATUS_PENDING])
-            ->andWhere(RazorpayService::notUnpaidOrderCondition())->exists();
+        return self::awaitingReview()->andWhere(['invoice_id' => $invoiceId])->exists();
+    }
+
+    /** Payments that block their invoice until staff approve or reject them: proofs, manual entries, paid online orders. */
+    public static function awaitingReview(): \yii\db\ActiveQuery
+    {
+        return Transaction::find()->where(['status' => Transaction::STATUS_PENDING])
+            ->andWhere(RazorpayService::notUnpaidOrderCondition());
     }
 
     /** The invoice plus every invoice carried into it (followed back along arrears lines). @return int[] */

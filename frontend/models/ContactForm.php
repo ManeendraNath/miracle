@@ -52,8 +52,24 @@ class ContactForm extends Model
         ];
     }
 
+    /**
+     * Saved as Spam with no email or alert: random letter-and-digit strings in two or more fields (bots), or an
+     * opt-out line next to a link, which mass outreach carries and a real enquiry doesn't.
+     * Deliberately narrow: "SEO services" or "free trial" can be part of a real brief.
+     */
+    public function looksLikeSpam(): bool
+    {
+        $random = static fn(string $value): bool => mb_strlen(trim($value)) >= 12 && !preg_match('/\s/', trim($value))
+            && preg_match('/\d/', $value) === 1 && preg_match('/[a-z]/i', $value) === 1;
+        if (count(array_filter([$this->name, $this->subject, $this->body], $random)) >= 2) {
+            return true;
+        }
+
+        return preg_match('/\b(unsubscribe|opt[ -]?out)\b/i', $this->body) === 1 && preg_match('~https?://~i', $this->body) === 1;
+    }
+
     /** Keeps the enquiry in the admin panel (Leads), whatever happens to the email. */
-    public function saveAsLead(): bool
+    public function saveAsLead(bool $spam = false): bool
     {
         $lead = new \common\models\Lead();
         $lead->setAttributes([
@@ -62,7 +78,7 @@ class ContactForm extends Model
             'source' => \common\models\Lead::SOURCE_CONTACT_FORM,
             'subject' => mb_substr($this->subject, 0, 255),
             'message' => $this->body,
-            'status' => 'Pending',
+            'status' => $spam ? \common\models\Lead::STATUS_SPAM : 'Pending',
             'created_at' => time(),
             'updated_at' => time(),
         ], false);

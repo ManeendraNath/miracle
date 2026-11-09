@@ -104,7 +104,7 @@ final class InvoiceController extends Controller
                             'outstandingAmount' => $paymentService->getOutstanding($model),
                             'pendingPayment' => $pendingPayment,
                             'carriedInto' => $model->status === Invoice::STATUS_CARRIED_FORWARD ? $paymentService->openInvoiceCarrying((int) $model->id) : null,
-                            'razorpayEnabled' => (new RazorpayService())->isEnabled(),
+                            'razorpayEnabled' => (new RazorpayService())->acceptsCustomerPayments(),
                             'canChangeCoupon' => (new InvoiceCouponService())->blockReason($model) === null,
                         ]
         );
@@ -139,7 +139,7 @@ final class InvoiceController extends Controller
             $outstanding = (new InvoicePaymentService())->getOutstanding($invoice);
             $payable = in_array($invoice->status, [Invoice::STATUS_UNPAID, Invoice::STATUS_PARTIALLY_PAID], true) && $outstanding > 0;
             $proofPending = (new InvoicePaymentService())->hasPendingProof((int) $invoice->id);
-            if (!$razorpay->isEnabled() || !$payable || $proofPending) {
+            if (!$razorpay->acceptsCustomerPayments() || !$payable || $proofPending) {
                 $dbTransaction->rollBack();
                 Yii::$app->response->statusCode = 422;
                 return ['error' => $proofPending ? 'A payment for this invoice is already awaiting verification.' : 'Online payment is not available for this invoice.'];

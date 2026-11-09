@@ -8,6 +8,7 @@ use common\models\LoginForm;
 use common\models\AuditRequest;
 use common\components\CustomYii;
 use common\services\UserLoginHistoryService;
+use frontend\components\FormGuard;
 use frontend\models\ContactForm;
 use frontend\models\PasswordResetRequestForm;
 use frontend\models\ResendVerificationEmailForm;
@@ -149,24 +150,27 @@ class SiteController extends Controller
         if (is_string($subject)) {
             $model->subject = mb_substr($subject, 0, 255);
         }
+        $caught = Yii::$app->request->isPost && FormGuard::isBot('contact');
         if ($model->load(Yii::$app->request->post()) && $model->validate()) {
+            $spam = $caught || $model->looksLikeSpam();
             $adminEmail = CustomYii::getSetting('email_1', 'info@miraclewebtechnologies.com');
 
             // Sent from our own address (visitor addresses fail SPF/DMARC); Reply-To reaches the visitor.
             $saved = false;
             try {
-                $saved = $model->saveAsLead();
+                $saved = $model->saveAsLead($spam);
             } catch (\Throwable $e) {
                 Yii::error(['message' => 'Contact enquiry could not be saved.', 'error' => $e->getMessage()], __METHOD__);
             }
+            // Kept under Leads as Spam for a look later, without emailing or messaging anyone.
             $sent = false;
             try {
-                $sent = $model->sendEmail(Yii::$app->mailer, $adminEmail, Yii::$app->params['senderEmail'], Yii::$app->params['senderName']);
+                $sent = !$spam && $model->sendEmail(Yii::$app->mailer, $adminEmail, Yii::$app->params['senderEmail'], Yii::$app->params['senderName']);
             } catch (\Throwable $e) {
                 Yii::error(['message' => 'Contact form email failed.', 'error' => $e->getMessage()], __METHOD__);
             }
 
-            if ($saved) {
+            if ($saved && !$spam) {
                 try {
                     AdminAlertService::leadCreated($model->name, $model->email);
                 } catch (\Throwable $e) {
@@ -183,6 +187,7 @@ class SiteController extends Controller
             Yii::$app->session->setFlash('error', 'Your message could not be sent. Please try again, or call or email us using the details on this page.');
         }
 
+        FormGuard::shown('contact');
         return $this->render('contact', [
                     'model' => $model,
         ]);
@@ -194,6 +199,10 @@ class SiteController extends Controller
     public function actionAudit()
     {
         $model = new AuditRequest(['scenario' => AuditRequest::SCENARIO_PUBLIC]);
+        if (Yii::$app->request->isPost && FormGuard::isBot('audit')) {
+            Yii::$app->session->setFlash('success', 'Thank you. We have your website details and will reply by email.');
+            return $this->refresh();
+        }
         if ($model->load(Yii::$app->request->post())) {
             $model->user_ip = Yii::$app->request->userIP;
             $model->status = AuditRequest::STATUS_PENDING;
@@ -235,6 +244,7 @@ class SiteController extends Controller
                 return $this->refresh();
             }
         }
+        FormGuard::shown('audit');
         return $this->render('audit', ['model' => $model]);
     }
 

@@ -31,6 +31,7 @@ class Admin2faController extends Controller
         // Signs out every session: whoever enrolled that phone may still be signed in.
         $admin->generateAuthKey();
         $admin->updateAttributes(['auth_key' => $admin->auth_key]);
+        \common\services\admin\AdminAlertService::twoFactorChanged($admin->username, 'reset from the server command line');
         $this->stdout("Two-factor sign-in is now off for {$admin->username}.\n");
         return ExitCode::OK;
     }

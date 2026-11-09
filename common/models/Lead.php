@@ -22,6 +22,9 @@ class Lead extends base\Lead
     public const SCENARIO_STATUS = 'status';
     public const SOURCE_CONTACT_FORM = 'Contact Form';
 
+    /** Caught by ContactForm::looksLikeSpam(): saved without alerting anyone. */
+    public const STATUS_SPAM = 'Spam';
+
     public static function getStatuses(): array
     {
         return [
@@ -29,6 +32,7 @@ class Lead extends base\Lead
             'In Progress' => 'In Progress',
             'Completed' => 'Completed',
             'Rejected' => 'Rejected',
+            self::STATUS_SPAM => 'Spam',
         ];
     }
 

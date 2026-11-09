@@ -34,13 +34,15 @@ If a previous renewal was manually overridden, the overridden final
 amount becomes the base for the next percentage increase.
 
 The increase is not per renewal: it applies each time the renewals on the current cycle pass a block
-of time: a year for domains, two years for hosting, three years for maintenance. Hosting renews monthly,
-yearly or for several years (set per service) and goes up after every 24 monthly renewals, after every 2 yearly
+of time: a year for domains, two years for hosting, three years for maintenance. Hosting renews yearly by default (the global cycle; a service may set monthly
+or several years) and goes up after every 24 monthly renewals, after every 2 yearly
 ones (so the 3rd, 5th, ... billed here) and after each renewal of two years or longer, by one step whatever its length.
 Domains go up after each renewal of a year or longer; yearly maintenance after every 3 (the 4th, 7th, ...).
 The first renewal billed through this system is the base amount; the count starts there. If the cycle length changed since
 the previous renewal (e.g. yearly to monthly), the previous amount no longer fits, so the service's
-renewal base amount (set for the new cycle) is billed and the count starts again.
+renewal base amount (set for the new cycle) is billed and the count starts again. Exception: hosting
+moving from a multi-year renewal to yearly continues from the yearly share of the last billed amount,
+raised by the increase when that renewal ran two years or longer (e.g. ₹12,000 for two years, then ₹6,600 a year).
 
 An Admin can set a one-time **Next Renewal Price** on a domain, hosting or maintenance service
 (e.g. a negotiated rate). The next renewal is billed exactly that (a manual amount, so later

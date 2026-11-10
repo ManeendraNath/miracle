@@ -39,8 +39,8 @@ final class PayPalServiceTest extends Unit
         $this->_http = new MockTransport();
         $exists = (new \yii\db\Query())->from('{{%site_setting}}')->where(['id' => 1])->exists();
         $exists
-            ? Yii::$app->db->createCommand()->update('{{%site_setting}}', ['usd_inr_rate' => 85, 'usd_rate_auto' => 0, 'paypal_abroad' => 1], ['id' => 1])->execute()
-            : Yii::$app->db->createCommand()->insert('{{%site_setting}}', ['id' => 1, 'site_name' => 'Test', 'site_url' => 'https://example.test', 'mobile_1' => 9999999999, 'email_1' => 'test@example.test', 'usd_inr_rate' => 85, 'usd_rate_auto' => 0, 'paypal_abroad' => 1, 'updated_at' => time()])->execute();
+            ? Yii::$app->db->createCommand()->update('{{%site_setting}}', ['usd_inr_rate' => 85, 'usd_rate_auto' => 0, 'paypal_abroad' => 1, 'paypal_fee_percent' => 0, 'paypal_fee_fixed_usd' => 0], ['id' => 1])->execute()
+            : Yii::$app->db->createCommand()->insert('{{%site_setting}}', ['id' => 1, 'site_name' => 'Test', 'site_url' => 'https://example.test', 'mobile_1' => 9999999999, 'email_1' => 'test@example.test', 'usd_inr_rate' => 85, 'usd_rate_auto' => 0, 'paypal_abroad' => 1, 'paypal_fee_percent' => 0, 'paypal_fee_fixed_usd' => 0, 'updated_at' => time()])->execute();
         $this->resetSettings();
     }
 
@@ -67,9 +67,49 @@ final class PayPalServiceTest extends Unit
         $captured = $this->service()->captureOrder('PPORDER1');
 
         $this->assertSame([Transaction::STATUS_CAPTURED, 'CAPTURE1'], [$captured->status, $captured->gateway_payment_id]);
-        $this->assertEqualsWithDelta(187.00, (float) $captured->gateway_fee, 0.001, 'US$2.20 fee at ₹85');
+        $this->assertEqualsWithDelta(0.0, (float) $captured->gateway_fee, 0.001, 'the client paid PayPal\'s fee inside the dollar price');
+        $this->assertSame('2.20', json_decode((string) $captured->raw_payload, true)['fee_usd']);
         $this->assertSame(Invoice::STATUS_PAID, Invoice::findOne($this->_invoice->id)->status);
         $this->assertSame('capture-PPORDER1', $this->_http->flushRequests()[1]->getHeaders()->get('PayPal-Request-Id'), 'a retried capture never charges twice');
+    }
+
+    public function testPayPalsFeeIsBuiltIntoTheDollarPrice(): void
+    {
+        Yii::$app->db->createCommand()->update('{{%site_setting}}', ['paypal_fee_percent' => 4.4, 'paypal_fee_fixed_usd' => 0.3], ['id' => 1])->execute();
+        $this->resetSettings();
+
+        $charged = PayPalService::chargeFor(3500, 85);
+        $this->assertSame('43.39', $charged, '(₹3,500 / 85 + US$0.30) / (1 - 4.4%), rounded up');
+        // After PayPal keeps 4.4% + US$0.30, at least the invoice's dollar value is left.
+        $this->assertGreaterThanOrEqual(3500 / 85, (float) $charged * (1 - 0.044) - 0.3);
+    }
+
+    public function testTheDollarPriceSentInTheInvoiceHoldsUntilTheDueDate(): void
+    {
+        $this->_invoice->updateAttributes(['due_date' => date('Y-m-d', strtotime('+30 days'))]);
+        PayPalService::lockRate($this->_invoice);
+        $this->assertSame(85.0, (float) $this->_invoice->usd_rate_locked);
+        $this->assertSame(date('Y-m-d', strtotime('+30 days')), $this->_invoice->usd_rate_until);
+        $this->assertStringStartsWith('US$41.18 (this price holds until ', (string) PayPalService::lockedPrice($this->_invoice, 3500));
+
+        // The rate moves: the client still sees the price from the email.
+        Yii::$app->db->createCommand()->update('{{%site_setting}}', ['usd_inr_rate' => 90], ['id' => 1])->execute();
+        $this->resetSettings();
+        $this->assertSame(85.0, PayPalService::rateFor($this->_invoice));
+        PayPalService::lockRate($this->_invoice);
+        $this->assertSame(85.0, (float) $this->_invoice->usd_rate_locked, 'locked once');
+
+        // After the due date the live rate applies again.
+        $this->_invoice->updateAttributes(['usd_rate_until' => date('Y-m-d', strtotime('-1 day'))]);
+        $this->assertSame(90.0, PayPalService::rateFor($this->_invoice));
+        $this->assertNull(PayPalService::lockedPrice($this->_invoice, 3500));
+    }
+
+    public function testAnInvoiceInIndiaGetsNoDollarPrice(): void
+    {
+        $this->_invoice->updateAttributes(['client_country' => 'India']);
+        PayPalService::lockRate($this->_invoice);
+        $this->assertNull($this->_invoice->usd_rate_locked);
     }
 
     public function testADifferentAmountIsNotRecorded(): void
@@ -90,8 +130,29 @@ final class PayPalServiceTest extends Unit
         // Shown as a payment under review: no second PayPal order, no proof upload.
         $this->assertTrue((new \common\services\billing\InvoicePaymentService())->hasPendingProof((int) $this->_invoice->id));
 
+        // Overdue and older than the grace period, yet not moved to the next invoice while PayPal holds the payment.
+        $this->_invoice->updateAttributes(['due_date' => '2000-01-01', 'created_at' => strtotime('-30 days'), 'billing_run_id' => null]);
+        $run = new \common\models\BillingRun();
+        $run->setAttributes(['run_number' => 'TEST-RUN-' . bin2hex(random_bytes(4)), 'status' => \common\models\BillingRun::STATUS_RUNNING, 'started_at' => time(), 'created_at' => time(), 'updated_at' => time()], false);
+        $this->assertTrue($run->save(false));
+        $next = new Invoice();
+        $next->setAttributes(['user_id' => $this->_invoice->user_id, 'invoice_number' => 'TEST-PP-NEXT-' . bin2hex(random_bytes(3)), 'client_name' => 'Abroad Ltd', 'subtotal_amount' => 100, 'discount_amount' => 0, 'cgst_percent' => 0, 'sgst_percent' => 0, 'igst_percent' => 0, 'total_payable' => 100, 'status' => Invoice::STATUS_UNPAID, 'billing_run_id' => $run->id, 'created_at' => time(), 'updated_at' => time()], false);
+        $this->assertTrue($next->save(false));
+        $this->assertEqualsWithDelta(0.0, (new \common\services\billing\OutstandingBalanceService())->transferForUser($next), 0.001);
+
         $this->service()->record('PPORDER3', $this->completed('41.18', '2.20'));
         $this->assertSame(Transaction::STATUS_CAPTURED, Transaction::findOne($order->id)->status, 'recorded once PayPal completes it');
+    }
+
+    public function testAPaymentRefundedInPayPalBeforeItWasRecordedIsNotLeftUnderReview(): void
+    {
+        $order = $this->pendingOrder('PPORDER6');
+        $refunded = $this->completed('41.18', '2.20');
+        $refunded['purchase_units'][0]['payments']['captures'][0]['status'] = 'REFUNDED';
+        $this->service()->record('PPORDER6', $refunded);
+        $order->refresh();
+        $this->assertNull($order->gateway_payment_id);
+        $this->assertFalse((new \common\services\billing\InvoicePaymentService())->hasPendingProof((int) $this->_invoice->id));
     }
 
     public function testNothingIsTakenWhenTheInvoiceNoLongerOwesTheOrderAmount(): void

@@ -9,6 +9,11 @@ final class m261120_100000_create_testimonial_table extends Migration
 {
     public function safeUp(): void
     {
+        // MySQL DDL isn't transactional: each step is skipped when a failed run already did it.
+        if ($this->db->getTableSchema('{{%testimonial}}', true) !== null) {
+            $this->finishIndexes();
+            return;
+        }
         $this->createTable('{{%testimonial}}', [
             'id' => $this->primaryKey(),
             'user_id' => $this->integer()->null(),
@@ -23,9 +28,21 @@ final class m261120_100000_create_testimonial_table extends Migration
             'created_at' => $this->integer()->notNull(),
             'updated_at' => $this->integer()->notNull(),
         ]);
-        $this->createIndex('idx_testimonial_published', '{{%testimonial}}', ['is_published', 'sort_order']);
-        $this->createIndex('ux_testimonial_user', '{{%testimonial}}', 'user_id', true);
-        $this->addForeignKey('fk_testimonial_user', '{{%testimonial}}', 'user_id', '{{%user}}', 'id', 'SET NULL', 'CASCADE');
+        $this->finishIndexes();
+    }
+
+    private function finishIndexes(): void
+    {
+        $indexes = array_column($this->db->createCommand('SHOW INDEX FROM {{%testimonial}}')->queryAll(), 'Key_name');
+        if (!in_array('idx_testimonial_published', $indexes, true)) {
+            $this->createIndex('idx_testimonial_published', '{{%testimonial}}', ['is_published', 'sort_order']);
+        }
+        if (!in_array('ux_testimonial_user', $indexes, true)) {
+            $this->createIndex('ux_testimonial_user', '{{%testimonial}}', 'user_id', true);
+        }
+        if (!isset($this->db->getTableSchema('{{%testimonial}}', true)->foreignKeys['fk_testimonial_user'])) {
+            $this->addForeignKey('fk_testimonial_user', '{{%testimonial}}', 'user_id', '{{%user}}', 'id', 'SET NULL', 'CASCADE');
+        }
     }
 
     public function safeDown(): void

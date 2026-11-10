@@ -97,6 +97,11 @@ final class InvoiceReviewTest extends Unit
         $held = $this->renewalInvoice();
         $this->assertSame(Invoice::STATUS_UNPAID, Invoice::findOne($old->id)->status, 'still payable, with its reminders');
         $this->assertFalse(InvoiceItem::find()->where(['invoice_id' => $held->id, 'item_type' => InvoiceItem::TYPE_ARREARS])->exists());
+
+        // Sending the held invoice moves the overdue balance onto it.
+        (new InvoiceReviewService())->release(Invoice::findOne($held->id));
+        $this->assertSame(Invoice::STATUS_CARRIED_FORWARD, Invoice::findOne($old->id)->status);
+        $this->assertEqualsWithDelta((float) $held->total_payable + 500, (float) Invoice::findOne($held->id)->total_payable, 0.001);
     }
 
     public function testAnOverdueBalanceMovesOnlyAfterTheGracePeriod(): void

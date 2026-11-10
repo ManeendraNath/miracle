@@ -260,10 +260,13 @@ JS);
                 <?php elseif ($isPayable): ?>
                     <div class="d-grid gap-2 mt-3">
                         <?php if ($canPayPal): ?>
-                            <?php $usd = PayPalService::toUsd((float) $outstandingAmount, (float) $paypal['rate']); ?>
+                            <?php $usd = PayPalService::chargeFor((float) $outstandingAmount, (float) $paypal['rate']); ?>
                             <p class="small text-center mb-0">
                                 Pay <strong>US$<?= Html::encode($usd) ?></strong> with PayPal or a card
-                                (<?= $inr($outstandingAmount) ?> at ₹<?= Html::encode(rtrim(rtrim(number_format((float) $paypal['rate'], 4, '.', ''), '0'), '.')) ?> per US$1).
+                                for the <?= $inr($outstandingAmount) ?> due.
+                                <?php if (!empty($paypal['until'])): ?>
+                                    <br><span class="text-body-secondary">This price holds until <?= Html::encode(Yii::$app->formatter->asDate($paypal['until'], 'php:d M Y')) ?>.</span>
+                                <?php endif; ?>
                             </p>
                             <div id="paypal-buttons"
                                  data-order-url="<?= Url::to(['paypal-order', 'number' => $model->invoice_number]) ?>"

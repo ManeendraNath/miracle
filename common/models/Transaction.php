@@ -67,15 +67,12 @@ class Transaction extends base\Transaction
         return (string) preg_replace('/^REJECTED-\d+-/', '', (string) $this->gateway_payment_id);
     }
 
-    /** What a PayPal payer was charged, e.g. "US$41.18 at ₹85 per US$1"; null for any other payment. */
+    /** What a PayPal payer was charged, e.g. "US$41.18"; null for any other payment. */
     public function paidInUsd(): ?string
     {
         $payload = (int) $this->gateway_id === self::GATEWAY_PAYPAL ? json_decode((string) $this->raw_payload, true) : null;
-        if (!is_array($payload) || !isset($payload['usd'], $payload['rate'])) {
-            return null;
-        }
 
-        return 'US$' . $payload['usd'] . ' at ₹' . rtrim(rtrim(number_format((float) $payload['rate'], 4, '.', ''), '0'), '.') . ' per US$1';
+        return is_array($payload) && isset($payload['usd']) ? 'US$' . $payload['usd'] : null;
     }
 
     /** Paid through a checkout (Razorpay, PayPal), not a proof or a manual entry. */

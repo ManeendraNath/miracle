@@ -1,4 +1,6 @@
 # 🗄️ Miracle Web Technologies - Database Schema & Architecture Dictionary
+
+> **Out of date for newer tables and columns** (cron_job, testimonial, admin two-factor backup codes, invoice review, payment gateway, exchange rate and PayPal fee settings). The exact current schema is `console/schema/expected.json`, checked by `php yii schema/check`.
 **Last Structural Audit Sync:** October 01, 2026 | **Database Engine Matrix:** MariaDB / InnoDB & MyISAM Hybrid
 
 ---

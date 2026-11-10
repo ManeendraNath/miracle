@@ -272,7 +272,7 @@ final class AdminBillingCest
     public function onlyASuperadminCanSwitchACronJob(FunctionalTester $I): void
     {
         $I->amOnRoute('admin/cron-log');
-        $I->see('Razorpay sync');
+        $I->see('Online payment sync (Razorpay and PayPal)');
         $I->dontSee('Turn Off');
         $I->sendAjaxPostRequest('/admin/cron-switch', [Yii::$app->request->csrfParam => $I->grabAttributeFrom('meta[name=csrf-token]', 'content'), 'job' => 'cron/razorpay-sync', 'enabled' => '0']);
         $I->seeResponseCodeIs(403);
@@ -288,7 +288,7 @@ final class AdminBillingCest
         $I->see('Turn Off');
         $I->sendAjaxPostRequest('/admin/cron-switch', [Yii::$app->request->csrfParam => $I->grabAttributeFrom('meta[name=csrf-token]', 'content'), 'job' => 'cron/razorpay-sync', 'enabled' => '0']);
         $I->seeRecord(\common\models\CronJob::class, ['job' => 'cron/razorpay-sync', 'is_enabled' => 0, 'updated_by' => 'billing-super']);
-        $I->seeRecord(\common\models\AdminNotification::class, ['title' => 'Cron Job Turned Off: Razorpay sync']);
+        $I->seeRecord(\common\models\AdminNotification::class, ['title' => 'Cron Job Turned Off: Online payment sync (Razorpay and PayPal)']);
         $I->amOnRoute('admin/cron-log');
         $I->see('Turn On');
         $I->sendAjaxPostRequest('/admin/cron-switch', [Yii::$app->request->csrfParam => $I->grabAttributeFrom('meta[name=csrf-token]', 'content'), 'job' => 'no/such-job', 'enabled' => '0']);

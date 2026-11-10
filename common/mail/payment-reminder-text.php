@@ -18,6 +18,9 @@ Outstanding: INR <?= number_format(
 
 
 Due date: <?= $invoice->due_date ?>
+<?php if (($usd = \common\services\payment\PayPalService::lockedPrice($invoice, (float) $outstandingAmount)) !== null): ?>
+Or pay with PayPal: <?= $usd ?>
+<?php endif; ?>
 
 
 <?php if ($daysUntilDue > 0): ?>

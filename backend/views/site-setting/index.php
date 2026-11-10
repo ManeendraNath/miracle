@@ -76,9 +76,20 @@ $this->params['breadcrumbs'][] = $this->title;
                 <?= $form->field($model, 'usd_inr_rate')->input('number', ['step' => '0.0001', 'min' => 10])->hint('Used when the daily rate is off or could not be fetched.') ?>
             </div>
         </div>
+        <div class="row">
+            <div class="col-md-4 mb-3">
+                <?= $form->field($model, 'paypal_fee_percent')->input('number', ['step' => '0.01', 'min' => 0, 'max' => 15])->hint('PayPal\'s fee on payments from abroad (about 4.4%; add 18% GST if PayPal charges it on the fee, e.g. 5.2).') ?>
+            </div>
+            <div class="col-md-4 mb-3">
+                <?= $form->field($model, 'paypal_fee_fixed_usd')->input('number', ['step' => '0.01', 'min' => 0, 'max' => 5])->hint('PayPal\'s fixed fee per payment (about US$0.30).') ?>
+            </div>
+            <div class="col-md-4 mb-3 small text-muted">
+                Both fees are built into the US$ price the client sees (one total, never a separate "PayPal fee"), so you receive about the full rupee amount.
+            </div>
+        </div>
         <p class="small mb-3">
             <?= $rateNow > 0
-                ? 'PayPal now charges at <strong>₹' . Html::encode(rtrim(rtrim(number_format($rateNow, 4, '.', ''), '0'), '.')) . ' per US$1</strong>: a ₹10,000 invoice is <strong>US$' . PayPalService::toUsd(10000, $rateNow) . '</strong>.'
+                ? 'Now: ₹' . Html::encode(rtrim(rtrim(number_format($rateNow, 4, '.', ''), '0'), '.')) . ' per US$1 before fees. A ₹10,000 invoice is <strong>US$' . PayPalService::chargeFor(10000, $rateNow) . '</strong> with PayPal.'
                 : '<span class="text-danger">No exchange rate yet: PayPal stays hidden until one is fetched or set by hand.</span>' ?>
         </p>
 

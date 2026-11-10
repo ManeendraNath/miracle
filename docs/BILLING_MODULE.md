@@ -278,7 +278,7 @@ A Superadmin can turn any job on or off under **Cron Jobs & Logs** (the crontab 
 
 Failures are emailed to `ADMIN_EMAIL` and shown on the admin bell, at most once a day per job. A job that never starts (broken crontab) or a PHP crash mid-run can't report itself.
 
-`cron/razorpay-sync` looks back 30 days for unpaid orders. With it off, a payment whose callback and webhook were both lost is found only when the customer presses Pay Online again on that invoice (`RazorpayService::recoverPaidOrders`).
+`cron/razorpay-sync` ("Online payment sync") looks back 30 days for unpaid Razorpay orders and 3 days for unpaid PayPal orders, and records PayPal payments PayPal held once they complete (staff are alerted after 3 days). It is needed whenever Razorpay or PayPal is used. With it off, a payment whose callback and webhook were both lost is found only when the customer presses Pay Online again on that invoice (`RazorpayService::recoverPaidOrders`).
 
 Daily alerts (a failed job, a customer's failed invoice, the incomplete profile list) keep one bell row a day. Any admin alert whose email failed is sent again at the start of the next cron job, for 3 days (`AdminAlertService::retryUnsent`, `admin_notification.emailed_at`).
 

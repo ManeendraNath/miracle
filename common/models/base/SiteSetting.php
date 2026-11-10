@@ -22,6 +22,8 @@ use Yii;
  * @property string|null $usd_market_rate
  * @property int|null $usd_rate_checked_at
  * @property int|null $usd_rate_fetched_at
+ * @property string $paypal_fee_percent
+ * @property string $paypal_fee_fixed_usd
  * @property string $email_1
  * @property string|null $email_2
  * @property string|null $email_3
@@ -58,6 +60,10 @@ class SiteSetting extends \yii\db\ActiveRecord
             [['usd_inr_rate'], 'default', 'value' => null],
             [['usd_inr_rate'], 'number', 'min' => 10, 'max' => 999],
             [['usd_rate_margin'], 'default', 'value' => 3],
+            [['paypal_fee_percent'], 'default', 'value' => 4.4],
+            [['paypal_fee_fixed_usd'], 'default', 'value' => 0.3],
+            [['paypal_fee_percent'], 'number', 'min' => 0, 'max' => 15],
+            [['paypal_fee_fixed_usd'], 'number', 'min' => 0, 'max' => 5],
             [['usd_rate_margin'], 'number', 'min' => 0, 'max' => 20],
             [['site_name', 'site_url', 'email_1', 'email_2', 'email_3', 'address_line_1', 'address_line_2', 'address_line_3', 'facebook', 'x', 'youtube', 'linkedin', 'instagram'], 'string', 'max' => 255],
         ];

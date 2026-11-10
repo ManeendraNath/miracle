@@ -132,6 +132,17 @@ key; checked at most every 12 hours when needed) less a margin for PayPal's
 own conversion, or a rate typed in by hand. No rate, no button. The payment
 is recorded as the rupee amount; the PayPal fee is converted at the same rate.
 
+PayPal's own fee (Site Settings, default 4.4% + US$0.30) is built into the
+dollar price: (rupees / rate + fixed fee) / (1 - fee %), rounded up to the
+cent, so the payment still brings in about the invoice amount. The client
+sees one US$ total, never a separate PayPal fee (PayPal's terms generally
+forbid surcharging).
+
+The rate is locked on an invoice for a client abroad when its email is first
+sent (invoice.usd_rate_locked), until its due date or at least 15 days, so the
+email, invoice page and reminders quote the same dollar price. After that the
+live rate applies again.
+
 Keys in `.env`: `PAYPAL_MODE=live` (or `sandbox` for test accounts; a
 sandbox checkout never shows on live),
 `PAYPAL_CLIENT_ID`, `PAYPAL_SECRET` from PayPal Developer > Apps &
@@ -202,7 +213,7 @@ payment) gets a banner instead of being blocked, so a bill can always be paid; s
 invoice and payment pages, so a receipt stays reachable. An open ticket doesn't unlock the portal. Staff creating a
 customer send them a welcome email and are taken to the billing form next, with a **Customer Will Complete This** button
 to leave it. Managers may use that form for a customer created in the last 30 days, but can only enter what a customer
-could (no country, GST or discount), and admins are told to review GST.
+could (country, address, GSTIN and PAN, but not the GST flag or discount), and admins are told to review GST.
 Resending a verification email clears the password chosen at signup, because whoever signed up may not own the mailbox:
 the email tells the customer to use Forgot Password after confirming.
 
@@ -245,8 +256,7 @@ Until it is on, a staff account can only open My account to set it up.
   "remember me" logins on other devices.
 - **Login:** after the password, the panel asks for a code (5 minutes to enter it). Wrong
   codes count toward the normal login lock (5 failures → 15 minutes); 20 wrong codes lock the
-  account for 24 hours and alert admins. 20 wrong passwords from any addresses lock an account
-  for an hour. "Remember me" applies
+  account for 24 hours and alert admins. "Remember me" applies
   only after the code. Each code works once.
 - **Turn off:** My account → enter a current code → *Turn off*.
 - **Lost phone:** a Superadmin opens the admin's edit page → *Turn off two-factor*. If the

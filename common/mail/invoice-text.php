@@ -29,6 +29,10 @@ INR <?= number_format($outstanding, 2) ?>
 
 <?= $daysExpired === null ? 'Due Date' : 'Expiry Date (pay by)' ?>:
 <?= $invoice->due_date ?>
+<?php if (($usd = \common\services\payment\PayPalService::lockedPrice($invoice, $outstanding)) !== null): ?>
+
+Or pay with PayPal: <?= $usd ?>
+<?php endif; ?>
 
 
 A PDF copy of this invoice is attached.

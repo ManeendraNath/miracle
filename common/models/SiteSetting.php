@@ -44,6 +44,8 @@ class SiteSetting extends base\SiteSetting
             'usd_rate_auto' => 'Use the daily exchange rate',
             'usd_rate_margin' => 'Margin below the daily rate (%)',
             'usd_inr_rate' => 'Rate by hand (₹ per US$1)',
+            'paypal_fee_percent' => 'PayPal fee (%)',
+            'paypal_fee_fixed_usd' => 'PayPal fixed fee (US$)',
             'site_url' => 'Production Server Web Domain',
             'mobile_1' => 'Primary Technical Support Hotline',
             'mobile_2' => 'Alternative Backup Line',

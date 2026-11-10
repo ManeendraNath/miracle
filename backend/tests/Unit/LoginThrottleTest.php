@@ -8,21 +8,23 @@ use Codeception\Test\Unit;
 use common\components\LoginThrottle;
 use Yii;
 
-/** Staff accounts lock after 20 failures from any address, not only 5 from one. */
+/** Wrong authenticator codes lock the account after 20 from any address; passwords keep the per-address lock. */
 final class LoginThrottleTest extends Unit
 {
     public function testGuessesSpreadOverManyAddressesStillLockTheAccount(): void
     {
         $name = 'spread-' . bin2hex(random_bytes(4));
         for ($i = 0; $i < 20; $i++) {
+            LoginThrottle::fail(LoginThrottle::SCOPE_ADMIN_CODE, $name);
             LoginThrottle::fail('backend', $name);
-            // A new address each time: the per-address count never builds up.
+            // The 15-minute locks lapse in between: only the account-wide count builds up.
+            Yii::$app->cache->delete('login-throttle:' . LoginThrottle::SCOPE_ADMIN_CODE . ':' . $name . ':');
             Yii::$app->cache->delete('login-throttle:backend:' . $name . ':');
         }
-        $this->assertTrue(LoginThrottle::isLocked('backend', $name));
+        $this->assertTrue(LoginThrottle::isLocked(LoginThrottle::SCOPE_ADMIN_CODE, $name));
+        $this->assertFalse(LoginThrottle::isLocked('backend', $name), 'nobody can keep a staff member locked out by guessing passwords');
 
-        LoginThrottle::clear('backend', $name);
-        $this->assertFalse(LoginThrottle::isLocked('backend', $name), 'the right password clears it');
-        $this->assertFalse(LoginThrottle::isLocked('frontend', $name), 'customers keep the per-address lock only');
+        LoginThrottle::clear(LoginThrottle::SCOPE_ADMIN_CODE, $name);
+        $this->assertFalse(LoginThrottle::isLocked(LoginThrottle::SCOPE_ADMIN_CODE, $name), 'a right code clears it');
     }
 }

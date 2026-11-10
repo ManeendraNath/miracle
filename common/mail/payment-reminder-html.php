@@ -26,6 +26,7 @@ echo $this->render('_card', [
         ['Billed to', $invoice->client_name],
         ['Outstanding', Yii::$app->formatter->asCurrency($outstandingAmount, 'INR')],
         ['Due date', Yii::$app->formatter->asDate($invoice->due_date, 'php:d M Y'), 'accent'],
+        ...(($usd = \common\services\payment\PayPalService::lockedPrice($invoice, (float) $outstandingAmount)) !== null ? [['Or pay with PayPal', $usd]] : []),
     ],
     'button' => ['View Invoice & Pay', $invoiceUrl],
     'footnote' => 'Paying by bank transfer or UPI? Use ' . $invoice->invoice_number . ' as the payment reference.',

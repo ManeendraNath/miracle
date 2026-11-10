@@ -26,6 +26,11 @@ final class InvoiceDeliveryService
             throw new \DomainException('Invoice customer does not have a delivery email address.');
         }
 
+        try {
+            \common\services\payment\PayPalService::lockRate($invoice); // the dollar price quoted in this email holds until it is due
+        } catch (\Throwable $e) {
+            Yii::warning(['message' => 'Could not lock the PayPal rate.', 'invoiceId' => (int) $invoice->id, 'error' => $e->getMessage()], __METHOD__);
+        }
         $pdf = $this->pdfService->render($invoice);
 
         $message = Yii::$app->mailer

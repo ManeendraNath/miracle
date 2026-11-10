@@ -1,5 +1,5 @@
 {
-    "migrations": 67,
+    "migrations": 68,
     "columns": {
         "admin": {
             "auth_key": {
@@ -1434,6 +1434,18 @@
                 "default": null,
                 "extra": ""
             },
+            "usd_rate_locked": {
+                "type": "decimal(10,4)",
+                "null": true,
+                "default": null,
+                "extra": ""
+            },
+            "usd_rate_until": {
+                "type": "date",
+                "null": true,
+                "default": null,
+                "extra": ""
+            },
             "user_id": {
                 "type": "int",
                 "null": false,
@@ -1910,6 +1922,18 @@
                 "type": "tinyint",
                 "null": false,
                 "default": "0",
+                "extra": ""
+            },
+            "paypal_fee_fixed_usd": {
+                "type": "decimal(5,2)",
+                "null": false,
+                "default": "0.30",
+                "extra": ""
+            },
+            "paypal_fee_percent": {
+                "type": "decimal(5,2)",
+                "null": false,
+                "default": "4.40",
                 "extra": ""
             },
             "razorpay_abroad": {

@@ -147,7 +147,7 @@ final class AutoInvoiceService
             }
 
             // Not into an invoice held for review: the customer couldn't see or pay the balance until it is sent.
-            // The older invoice stays open (with its reminders) and is carried by a later run.
+            // The older invoice stays open (with its reminders); InvoiceReviewService::release() carries it then.
             if (!InvoiceReviewService::isOn()) {
                 $this->outstandingService->transferForUser($invoice);
             }

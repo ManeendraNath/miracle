@@ -26,6 +26,8 @@ use Yii;
  * @property int $created_at
  * @property int $updated_at
  * @property int|null $emailed_at
+ * @property string|null $usd_rate_locked
+ * @property string|null $usd_rate_until
  * @property int|null $written_off_at
  * @property int|null $billing_run_id
  * @property string|null $client_city

@@ -268,10 +268,15 @@ echo "== Deploying (maintenance mode on)"
 if [ -e "$MAINTENANCE_FLAG" ]; then PRIOR_FLAG=1; fi
 STAGE=code
 # Web entry points answer 503 and cron jobs skip while this exists.
-# ponytail: a cron run already in progress is not waited for; add a wait here if runs get long.
 # runtime/logs: crontab output (billing-cron.log, read by the admin Cron Log page).
 mkdir -p "$APP/runtime/logs"
 touch "$MAINTENANCE_FLAG"
+# New runs now skip; let one already running (e.g. a payment sync mid-capture) finish before the code changes under it.
+for i in $(seq 1 60); do
+    pgrep -f "$APP/yii (cron|backup)/" >/dev/null || break
+    if [ "$i" -eq 1 ]; then echo "Waiting for a running cron job to finish (up to 5 minutes)..."; fi
+    sleep 5
+done
 
 sync_code "$REPO"
 for d in "${DIRS[@]}"; do
@@ -324,8 +329,9 @@ health_check
 
 trap - ERR INT TERM HUP
 rm -rf "${SNAP:?}"
-# A job that never starts can't report itself, and a new job needs its line added by hand. Razorpay sync is optional.
-for job in cron/run-billing cron/payment-reminders cron/send-reminders cron/profile-reminders cron/whatsapp-cleanup backup/run; do
+# A job that never starts can't report itself, and a new job needs its line added by hand.
+# cron/razorpay-sync also records PayPal payments that PayPal held, so it is needed whenever either gateway is used.
+for job in cron/run-billing cron/payment-reminders cron/send-reminders cron/profile-reminders cron/razorpay-sync cron/whatsapp-cleanup backup/run; do
     crontab -l 2>/dev/null | grep -q "$job" || echo "WARNING: no crontab line for $job. See docs/BILLING_MODULE.md section 14."
 done
 echo "Deployment completed successfully."

@@ -68,21 +68,73 @@ final class PayPalService
         return (new ExchangeRateService())->usdRate();
     }
 
-    /** The US dollar amount PayPal charges for $inr, as PayPal writes it ("41.18"). */
+    /** Rupees per US dollar for this invoice: the rate locked when it was sent, until usd_rate_until; else today's. */
+    public static function rateFor(Invoice $invoice): float
+    {
+        if ((float) $invoice->usd_rate_locked > 0 && (string) $invoice->usd_rate_until >= date('Y-m-d')) {
+            return (float) $invoice->usd_rate_locked;
+        }
+
+        return self::usdRate();
+    }
+
+    /**
+     * When an invoice for a client abroad is first sent: fixes its dollar price until the due date (at least the
+     * carry-forward grace from today, for an invoice sent late), so the email, page and reminders quote one figure.
+     * The rate is locked, not the amount: a part payment or coupon still converts correctly.
+     */
+    public static function lockRate(Invoice $invoice): void
+    {
+        if (!$invoice->isExport() || $invoice->usd_rate_locked !== null || !(new self())->acceptsCustomerPayments()) {
+            return;
+        }
+        $rate = self::usdRate();
+        if ($rate <= 0) {
+            return;
+        }
+        $until = max((string) $invoice->due_date, date('Y-m-d', strtotime('+' . \common\services\billing\OutstandingBalanceService::CARRY_FORWARD_GRACE_DAYS . ' days')));
+        $invoice->updateAttributes(['usd_rate_locked' => $rate, 'usd_rate_until' => $until]);
+    }
+
+    /** "US$43.39 (this price holds until 30 Dec 2026)" for an email, while the invoice's locked rate applies; else null. */
+    public static function lockedPrice(Invoice $invoice, float $inr): ?string
+    {
+        if ($inr <= 0 || (float) $invoice->usd_rate_locked <= 0 || (string) $invoice->usd_rate_until < date('Y-m-d') || !(new self())->acceptsCustomerPayments()) {
+            return null;
+        }
+
+        return 'US$' . self::chargeFor($inr, (float) $invoice->usd_rate_locked) . ' (this price holds until ' . date('d M Y', (int) strtotime((string) $invoice->usd_rate_until)) . ')';
+    }
+
+    /** A dollar amount as PayPal writes it ("41.18"). */
     public static function toUsd(float $inr, float $rate): string
     {
         return number_format(round($inr / $rate, 2), 2, '.', '');
     }
 
+    /**
+     * What a client abroad is charged for $inr: the dollar amount at $rate plus PayPal's own fee (Site Settings,
+     * default 4.4% + US$0.30), so after PayPal's fee the payment still brings in about $inr. One total, rounded up
+     * to the cent: it is the price in dollars, not a surcharge shown on top.
+     */
+    public static function chargeFor(float $inr, float $rate): string
+    {
+        $percent = min(50.0, max(0.0, (float) CustomYii::getSetting('paypal_fee_percent', 0)));
+        $fixed = max(0.0, (float) CustomYii::getSetting('paypal_fee_fixed_usd', 0));
+        $usd = ($inr / $rate + $fixed) / (1 - $percent / 100);
+
+        return number_format(ceil(round($usd * 100, 6)) / 100, 2, '.', '');
+    }
+
     /** A Pending PayPal transaction with a new order for $amount rupees, charged in USD. */
     public function createOrder(Invoice $invoice, float $amount): Transaction
     {
-        $rate = self::usdRate();
+        $rate = self::rateFor($invoice);
         if (!$this->isEnabled() || $rate <= 0) {
             throw new \DomainException('PayPal is not available.');
         }
         $amount = round($amount, 2);
-        $usd = self::toUsd($amount, $rate);
+        $usd = self::chargeFor($amount, $rate);
         if ((float) $usd < 1) {
             throw new \DomainException('The remaining balance is below the US$1 minimum for PayPal. Please contact support.');
         }
@@ -128,13 +180,26 @@ final class PayPalService
      */
     public function captureOrder(string $orderId): Transaction
     {
-        $refused = $this->refuseReason($orderId);
-        if ($refused !== null) {
-            return $refused;
+        // The order and invoice stay locked until PayPal answers: a second order (another tab) or a Razorpay
+        // payment for the same invoice waits, then sees it paid and is refused.
+        // ponytail: the rows stay locked during the PayPal call (up to 20 s if PayPal is slow).
+        $dbTransaction = Yii::$app->db->beginTransaction();
+        try {
+            $refused = $this->refuseReason($orderId);
+            if ($refused !== null) {
+                $dbTransaction->commit();
+                return $refused;
+            }
+            // The request id makes a repeated capture (double click, retry) return the first result, never charge twice.
+            $response = $this->api()->post('v2/checkout/orders/' . rawurlencode($orderId) . '/capture', null, ['PayPal-Request-Id' => 'capture-' . $orderId])
+                ->setContent('{}')->addHeaders(['content-type' => 'application/json'])->send();
+            $dbTransaction->commit();
+        } catch (\Throwable $e) {
+            if ($dbTransaction->isActive) {
+                $dbTransaction->rollBack();
+            }
+            throw $e;
         }
-        // The request id makes a repeated capture (double click, retry) return the first result, never charge twice.
-        $response = $this->api()->post('v2/checkout/orders/' . rawurlencode($orderId) . '/capture', null, ['PayPal-Request-Id' => 'capture-' . $orderId])
-            ->setContent('{}')->addHeaders(['content-type' => 'application/json'])->send();
         $order = $response->isOk ? $response->data : null;
         if (!is_array($order) && str_contains((string) $response->content, 'ORDER_ALREADY_CAPTURED')) {
             $order = $this->fetchOrder($orderId);
@@ -166,11 +231,16 @@ final class PayPalService
             }
             return $transaction;
         }
-        if ($status !== 'COMPLETED') {
+        if ($status === 'PENDING') {
             // Held by PayPal (e.g. review, eCheck): the capture id marks the row as a payment awaiting completion.
             if ($transaction->status === Transaction::STATUS_PENDING && (string) $transaction->gateway_payment_id === '') {
                 $transaction->updateAttributes(['gateway_payment_id' => $capture['id'], 'updated_at' => time()]);
             }
+            return $transaction;
+        }
+        if ($status !== 'COMPLETED') {
+            // E.g. REFUNDED in PayPal before the app recorded it: never left looking "under review".
+            $this->alertNotRecorded($transaction, 'PayPal reports this payment as ' . $status . '. Check it in PayPal and record it by hand if money was kept.');
             return $transaction;
         }
         $expected = json_decode((string) $transaction->raw_payload, true);
@@ -179,13 +249,19 @@ final class PayPalService
         if (($capture['amount']['currency_code'] ?? '') !== 'USD' || $usd === '' || self::toUsd((float) ($capture['amount']['value'] ?? 0), 1) !== $usd) {
             throw new \DomainException('Payment amount does not match: PayPal captured ' . ($capture['amount']['currency_code'] ?? '?') . ' ' . ($capture['amount']['value'] ?? '?') . ', expected USD ' . $usd . '.');
         }
-        $feeUsd = $capture['seller_receivable_breakdown']['paypal_fee']['value'] ?? null;
-        $feeMinor = is_numeric($feeUsd) && $rate > 0 ? (int) round((float) $feeUsd * $rate * 100) : null;
         $paidAt = isset($capture['create_time']) ? (strtotime((string) $capture['create_time']) ?: null) : null;
 
         // RazorpayService::capture() is the shared recorder: it settles the invoice from the order's transaction row,
         // whatever the gateway (locks, unapplied and superseded orders, confirmation email).
-        return (new RazorpayService([]))->capture($orderId, $capture['id'], null, $feeMinor, $paidAt);
+        // No gateway_fee: the client paid PayPal's fee inside the dollar price (chargeFor), so the rupee amount is
+        // what came in. PayPal's fee is kept in raw_payload for reference.
+        $recorded = (new RazorpayService([]))->capture($orderId, $capture['id'], null, null, $paidAt);
+        $feeUsd = $capture['seller_receivable_breakdown']['paypal_fee']['value'] ?? null;
+        if (is_numeric($feeUsd) && is_array($expected) && !isset($expected['fee_usd'])) {
+            $recorded->updateAttributes(['raw_payload' => json_encode($expected + ['fee_usd' => (string) $feeUsd, 'rate' => $rate], JSON_THROW_ON_ERROR)]);
+        }
+
+        return $recorded;
     }
 
     /**

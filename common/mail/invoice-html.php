@@ -26,6 +26,7 @@ echo $this->render('_card', [
         ['Total payable', Yii::$app->formatter->asCurrency($invoice->total_payable, 'INR')],
         ...($outstanding < (float) $invoice->total_payable ? [['Outstanding after payments received', Yii::$app->formatter->asCurrency($outstanding, 'INR')]] : []),
         [$dueLabel, $dueOn, 'accent'],
+        ...(($usd = \common\services\payment\PayPalService::lockedPrice($invoice, $outstanding)) !== null ? [['Or pay with PayPal', $usd]] : []),
     ],
     'button' => $baseUrl !== '' ? ['View Invoice & Pay', $baseUrl . '/invoice/view?number=' . rawurlencode($invoice->invoice_number)] : null,
     'footnote' => 'You can pay online from the customer portal, or by bank transfer / UPI using the details on the invoice and then upload the payment screenshot. '

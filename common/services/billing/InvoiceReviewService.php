@@ -39,6 +39,10 @@ final class InvoiceReviewService
             // Dated the day it is sent (the invoice date, GST report and reminders all use created_at).
             // The due date stays the expiry date set when it was made (or what staff changed it to).
             // ponytail: the number keeps the financial year it was made in; a Draft held across 31 March keeps last year's series.
+            // Overdue balances waited for this invoice to be sent (AutoInvoiceService skips them while it is held).
+            if ($locked->billing_run_id !== null && (new OutstandingBalanceService())->transferForUser($locked) > 0) {
+                (new AutoInvoiceService())->calculateInvoiceTotals($locked);
+            }
             $locked->status = Invoice::STATUS_UNPAID;
             $locked->created_at = time();
             $locked->updated_at = time();

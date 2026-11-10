@@ -23,7 +23,7 @@ services:
     image: mysql:8.0
     container_name: miracle-yii-stack-mysql-1
     ports:
-      - "3307:3306"
+      - "127.0.0.1:3307:3306"
     environment:
       MYSQL_ROOT_PASSWORD: verysecret
       MYSQL_DATABASE: miracle

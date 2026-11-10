@@ -12,8 +12,9 @@ use yii\web\Request;
  * Locks a username+IP pair for LOCK_SECONDS after MAX_FAILURES failed logins.
  * Keyed on the pair (not the username alone) so an attacker can't lock the
  * real user out.
- * Staff accounts also have an account-wide limit (ACCOUNT_LIMITS, any IP): guesses spread over many
- * addresses still stop, and a run of wrong authenticator codes locks the account for a day and alerts admins.
+ * Authenticator codes also have an account-wide limit (ACCOUNT_LIMITS, any IP): a run of wrong codes locks the
+ * account for a day and alerts admins. Not for passwords: anyone knowing a username could keep its owner
+ * locked out, and every staff account has two-factor anyway.
  * ponytail: per-server FileCache counters; switch to a shared cache if the app runs on several hosts.
  */
 final class LoginThrottle
@@ -23,7 +24,7 @@ final class LoginThrottle
     private const MAX_FAILURES = 5;
     private const LOCK_SECONDS = 900;
     /** scope => [failures from any IP, then locked for this many seconds after the last failure]. */
-    private const ACCOUNT_LIMITS = ['backend' => [20, 3600], self::SCOPE_ADMIN_CODE => [20, 86400]];
+    private const ACCOUNT_LIMITS = [self::SCOPE_ADMIN_CODE => [20, 86400]];
     /** Hash of a random value nobody knows, same bcrypt cost as real passwords. */
     private const NOBODY_HASH = '$2y$13$uazifTpQx.6hhBxafktGD.8o6XxERVEQNmKS6KUy2I/JCGly/VvfW';
 

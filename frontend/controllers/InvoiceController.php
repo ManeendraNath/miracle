@@ -110,7 +110,7 @@ final class InvoiceController extends Controller
                             'carriedInto' => $model->status === Invoice::STATUS_CARRIED_FORWARD ? $paymentService->openInvoiceCarrying((int) $model->id) : null,
                             'razorpayEnabled' => (new RazorpayService())->acceptsCustomerPayments($model->isExport()),
                             // Clients abroad: PayPal in US dollars.
-                            'paypal' => $model->isExport() && $paypal->acceptsCustomerPayments() ? ['clientId' => $paypal->getClientId(), 'rate' => PayPalService::usdRate()] : null,
+                            'paypal' => $model->isExport() && $paypal->acceptsCustomerPayments() ? ['clientId' => $paypal->getClientId(), 'rate' => PayPalService::rateFor($model), 'until' => PayPalService::rateFor($model) === (float) $model->usd_rate_locked ? $model->usd_rate_until : null] : null,
                             'canChangeCoupon' => (new InvoiceCouponService())->blockReason($model) === null,
                         ]
         );
@@ -297,7 +297,7 @@ final class InvoiceController extends Controller
         try {
             $captured = (new PayPalService())->captureOrder($orderId);
             if ($captured->status === Transaction::STATUS_FAILED) {
-                $session->setFlash('warning', 'PayPal did not take this payment (' . rtrim(lcfirst(preg_replace('/^Not taken: /', '', (string) $captured->user_payment_notes)), '.') . '). Please reload the page and check the amount due.');
+                $session->setFlash('warning', 'PayPal did not take this payment. ' . ucfirst((string) preg_replace('/^Not taken: /', '', (string) $captured->user_payment_notes)) . ' Please reload the page and check the amount due.');
             } elseif ($captured->status === Transaction::STATUS_PENDING) {
                 $session->setFlash('warning', 'PayPal is still processing your payment. We will confirm it once PayPal completes it, so please do not pay again.');
             } elseif ($captured->isUnapplied()) {

@@ -14,27 +14,34 @@ final class m261125_100000_add_paypal extends Migration
     public function safeUp(): void
     {
         $razorpayOn = (int) filter_var($_ENV['RAZORPAY_ENABLED'] ?? false, FILTER_VALIDATE_BOOLEAN);
-        foreach ($this->columns($razorpayOn) as $name => $type) {
+        $added = [];
+        foreach ($this->columns() as $name => $type) {
             if ($this->db->getTableSchema('{{%site_setting}}', true)->getColumn($name) === null) {
                 $this->addColumn('{{%site_setting}}', $name, $type);
+                $added[] = $name;
             }
+        }
+        // The setting row, not the column default: a default taken from .env made the schema differ per server.
+        $switches = array_intersect(['razorpay_india', 'razorpay_abroad'], $added);
+        if ($razorpayOn === 1 && $switches !== []) {
+            $this->update('{{%site_setting}}', array_fill_keys($switches, 1));
         }
     }
 
     public function safeDown(): void
     {
-        foreach (array_keys($this->columns(0)) as $name) {
+        foreach (array_keys($this->columns()) as $name) {
             if ($this->db->getTableSchema('{{%site_setting}}', true)->getColumn($name) !== null) {
                 $this->dropColumn('{{%site_setting}}', $name);
             }
         }
     }
 
-    private function columns(int $razorpayOn): array
+    private function columns(): array
     {
         return [
-            'razorpay_india' => $this->boolean()->notNull()->defaultValue($razorpayOn),
-            'razorpay_abroad' => $this->boolean()->notNull()->defaultValue($razorpayOn),
+            'razorpay_india' => $this->boolean()->notNull()->defaultValue(0),
+            'razorpay_abroad' => $this->boolean()->notNull()->defaultValue(0),
             'paypal_abroad' => $this->boolean()->notNull()->defaultValue(0),
             'usd_rate_auto' => $this->boolean()->notNull()->defaultValue(1),
             'usd_rate_margin' => $this->decimal(5, 2)->notNull()->defaultValue(3),

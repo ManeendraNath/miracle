@@ -103,6 +103,11 @@ final class PayPalServiceTest extends Unit
         $this->_invoice->updateAttributes(['usd_rate_until' => date('Y-m-d', strtotime('-1 day'))]);
         $this->assertSame(90.0, PayPalService::rateFor($this->_invoice));
         $this->assertNull(PayPalService::lockedPrice($this->_invoice, 3500));
+
+        // Resent after the lock ended: today's rate is locked for the new email.
+        PayPalService::lockRate($this->_invoice);
+        $this->assertSame(90.0, (float) $this->_invoice->usd_rate_locked);
+        $this->assertNotNull(PayPalService::lockedPrice($this->_invoice, 3500));
     }
 
     public function testAnInvoiceInIndiaGetsNoDollarPrice(): void
@@ -114,9 +119,15 @@ final class PayPalServiceTest extends Unit
 
     public function testADifferentAmountIsNotRecorded(): void
     {
-        $this->pendingOrder('PPORDER2');
-        $this->expectException(\DomainException::class);
-        $this->service()->record('PPORDER2', $this->completed('1.00', '0.30'));
+        $this->pendingOrder('PPORDER2')->updateAttributes(['gateway_payment_id' => 'CAPTURE1']); // written early by captureOrder()
+        try {
+            $this->service()->record('PPORDER2', $this->completed('1.00', '0.30'));
+            $this->fail('A capture for a different amount must not settle the invoice.');
+        } catch (\DomainException) {
+        }
+        $row = Transaction::findOne(['gateway_order_id' => 'PPORDER2']);
+        $this->assertSame([Transaction::STATUS_PENDING, null], [$row->status, $row->gateway_payment_id], 'not "under review", still found before a new payment');
+        $this->assertSame(Invoice::STATUS_UNPAID, Invoice::findOne($this->_invoice->id)->status);
     }
 
     public function testAPaymentPayPalHasNotCompletedStaysPending(): void

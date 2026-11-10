@@ -575,7 +575,7 @@ final class RazorpayService
             // carry-forward or cancel can't change the status between this check and settling.
             $db->createCommand('SELECT id FROM {{%invoice}} WHERE id = :id FOR UPDATE')->bindValue(':id', (int) $transaction->invoice_id)->queryScalar();
             $invoice = Invoice::findOne((int) $transaction->invoice_id);
-            $unapplied = $invoice !== null && in_array($invoice->status, [Invoice::STATUS_CANCELLED, Invoice::STATUS_CARRIED_FORWARD, Invoice::STATUS_PAID, Invoice::STATUS_REFUNDED], true);
+            $unapplied = $invoice !== null && in_array($invoice->status, [Invoice::STATUS_CANCELLED, Invoice::STATUS_CARRIED_FORWARD, Invoice::STATUS_PAID, Invoice::STATUS_REFUNDED, Invoice::STATUS_DRAFT], true);
             if ($unapplied) {
                 $transaction->is_unapplied = 1;
                 $transaction->user_payment_notes = trim($transaction->user_payment_notes . "\n" . Transaction::UNAPPLIED_NOTE_PREFIX . ' invoice was ' . $invoice->statusLabel() . ' when this was recorded.');
@@ -599,9 +599,9 @@ final class RazorpayService
                     }
                 }
                 if ($unapplied) {
-                    Yii::warning(['message' => 'Razorpay payment captured on a non-payable invoice.', 'transactionId' => (int) $transaction->id, 'invoice' => $invoice->invoice_number, 'status' => $invoice->status], __METHOD__);
-                    AdminAlertService::paymentUnapplied($invoice->invoice_number, (string) $invoice->status, (float) $transaction->amount, $paymentId);
-                    (new NotificationService())->create((int) $invoice->user_id, 'payment', 'Payment Received: Not Yet Applied', 'We received your payment of ₹' . number_format((float) $transaction->amount, 2) . ' for invoice ' . $invoice->invoice_number . ', but that invoice was already settled or closed. We will refund it or apply it to another invoice.', '/payment/view?id=' . (int) $transaction->id);
+                    Yii::warning(['message' => 'Razorpay payment captured on a non-payable invoice.', 'transactionId' => (int) $transaction->id, 'invoice' => $invoice->reference(), 'status' => $invoice->status], __METHOD__);
+                    AdminAlertService::paymentUnapplied($invoice->reference(), (string) $invoice->status, (float) $transaction->amount, $paymentId);
+                    (new NotificationService())->create((int) $invoice->user_id, 'payment', 'Payment Received: Not Yet Applied', 'We received your payment of ₹' . number_format((float) $transaction->amount, 2) . ' for ' . $invoice->customerReference() . ', but that invoice was already settled or closed. We will refund it or apply it to another invoice.', '/payment/view?id=' . (int) $transaction->id);
                     (new PaymentConfirmationService())->sendHeld($invoice, (float) $transaction->amount);
                 }
             } catch (\Throwable $e) {

@@ -261,7 +261,7 @@ final class ServiceRenewalReminderService
             ->one();
         $invoice = $event?->invoice_id ? \common\models\Invoice::findOne($event->invoice_id) : null;
         if ($invoice !== null) {
-            return $line . sprintf('Renewal %s on invoice %s (%s, invoice total %s).', $money((float) $event->amount), $invoice->invoice_number, $invoice->statusLabel(), $money((float) $invoice->total_payable));
+            return $line . sprintf('Renewal %s on invoice %s (%s, invoice total %s).', $money((float) $event->amount), $invoice->reference(), $invoice->statusLabel(), $money((float) $invoice->total_payable));
         }
         if (!$due['hasPrice']) {
             return $line . 'No renewal price is set, so no invoice will be generated. Set the Renewal Base Amount.';

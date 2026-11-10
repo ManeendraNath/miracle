@@ -24,7 +24,9 @@ $statusClass = match ($model->status) {
     default => 'bg-secondary-subtle text-secondary-emphasis',
 };
 $details = [
-    'Invoice' => Html::a(Html::encode($model->invoice->invoice_number), ['/invoice/view', 'number' => $model->invoice->invoice_number], ['class' => 'fw-semibold text-decoration-none']),
+    'Invoice' => str_starts_with((string) $model->invoice->invoice_number, 'TMP-')
+        ? Html::encode(ucfirst($model->invoice->customerReference()))
+        : Html::a(Html::encode($model->invoice->invoice_number), ['/invoice/view', 'number' => $model->invoice->invoice_number], ['class' => 'fw-semibold text-decoration-none']),
     'Method' => Html::encode($methods[(int) $model->gateway_id] ?? '-'),
     'Reference' => '<span class="text-break">' . Html::encode($model->customerReference() ?: '-') . '</span>',
     'Submitted' => $formatter->asDatetime($model->created_at),

@@ -178,7 +178,7 @@ class TransactionController extends BaseController
             }
             // E.g. paid online meanwhile. The money did arrive, so as in RazorpayService::capture() it is recorded
             // but held off the invoice, for staff to refund or apply. Reject is there for a proof that isn't real.
-            $unapplied = $invoice->status === Invoice::STATUS_PAID || in_array($invoice->status, InvoicePaymentService::CLOSED_STATUSES, true);
+            $unapplied = in_array($invoice->status, [Invoice::STATUS_PAID, Invoice::STATUS_DRAFT, ...InvoicePaymentService::CLOSED_STATUSES], true);
             $now = time();
             $paymentTransaction->status = Transaction::STATUS_CAPTURED;
             $paymentTransaction->paid_at = $now;
@@ -196,10 +196,10 @@ class TransactionController extends BaseController
             $excess = $unapplied ? 0.0 : (new InvoicePaymentService())->getCapturedAmount((int) $invoice->id) - (float) $invoice->total_payable;
             $dbTransaction->commit();
             if ($unapplied) {
-                Yii::$app->session->setFlash('warning', 'Invoice ' . $invoice->invoice_number . ' could not accept this payment (' . $invoice->statusLabel() . '), so it is held on the payment. Refund it or apply it to another invoice.');
+                Yii::$app->session->setFlash('warning', 'Invoice ' . $invoice->reference() . ' could not accept this payment (' . $invoice->statusLabel() . '), so it is held on the payment. Refund it or apply it to another invoice.');
                 try {
-                    AdminAlertService::paymentApprovedOnClosedInvoice($invoice->invoice_number, $invoice->statusLabel(), (float) $paymentTransaction->amount, (int) $paymentTransaction->id);
-                    (new NotificationService())->create((int) $invoice->user_id, 'payment', 'Payment Received: Not Yet Applied', 'We received your payment of ₹' . number_format((float) $paymentTransaction->amount, 2) . ' for invoice ' . $invoice->invoice_number . ', which can no longer take payments. We will refund it or apply it to another invoice.', '/invoice/view?number=' . rawurlencode((string) $invoice->invoice_number));
+                    AdminAlertService::paymentApprovedOnClosedInvoice($invoice->reference(), $invoice->statusLabel(), (float) $paymentTransaction->amount, (int) $paymentTransaction->id);
+                    (new NotificationService())->create((int) $invoice->user_id, 'payment', 'Payment Received: Not Yet Applied', 'We received your payment of ₹' . number_format((float) $paymentTransaction->amount, 2) . ' for ' . $invoice->customerReference() . ', which can no longer take payments. We will refund it or apply it to another invoice.', '/payment/view?id=' . (int) $paymentTransaction->id);
                     (new PaymentConfirmationService())->sendHeld($invoice, (float) $paymentTransaction->amount);
                 } catch (\Throwable $alertError) {
                     Yii::error(['message' => 'Unapplied approval alert failed.', 'transactionId' => $id, 'error' => $alertError->getMessage()], __METHOD__);
@@ -279,12 +279,13 @@ class TransactionController extends BaseController
             // Its unpaid balance moved to a newer invoice as a fixed arrears line; refunding it while that is
             // open would leave the line short. Once settled nothing is left to get wrong. An unapplied
             // payment was never part of the arrears, so it can always go back.
-            // A refund already made in the Razorpay dashboard can still be recorded: that money has gone either way.
+            // A refund already made in the Razorpay dashboard, or in PayPal (always refunded there first), can still be
+            // recorded: that money has gone either way.
             // ponytail: refused while open; raise the arrears on the newer invoice if this case gets common.
             $carrying = ($invoice->status ?? null) === Invoice::STATUS_CARRIED_FORWARD && !$model->isUnapplied() ? $paymentService->openInvoiceCarrying((int) $invoice->id) : null;
             $razorpay = new RazorpayService();
             $viaRazorpay = (int) $model->gateway_id === Transaction::GATEWAY_RAZORPAY && (string) $model->gateway_payment_id !== '' && $razorpay->isEnabled();
-            if ($carrying !== null && !($viaRazorpay && $razorpay->isAlreadyRefunded((string) $model->gateway_payment_id, (int) round($amount * 100), (int) round((float) $model->refunded_amount * 100)))) {
+            if ($carrying !== null && (int) $model->gateway_id !== Transaction::GATEWAY_PAYPAL && !($viaRazorpay && $razorpay->isAlreadyRefunded((string) $model->gateway_payment_id, (int) round($amount * 100), (int) round((float) $model->refunded_amount * 100)))) {
                 throw new \DomainException('This invoice was carried forward into ' . $carrying->invoice_number . ', so its payments cannot be refunded until that invoice is paid or written off.');
             }
             $canReconcile = $invoice !== null && !in_array($invoice->status, InvoicePaymentService::CLOSED_STATUSES, true);
@@ -350,8 +351,8 @@ class TransactionController extends BaseController
             if ($invoice !== null) {
                 // Recorded: a failed message must not look like a failed refund.
                 try {
-                    (new NotificationService())->create((int) $invoice->user_id, 'payment', 'Payment Refunded', '₹' . number_format($amount, 2) . ' for invoice ' . $invoice->invoice_number . ' has been refunded.', '/invoice/view?number=' . rawurlencode((string) $invoice->invoice_number));
-                    (new PaymentConfirmationService())->sendRefund(Invoice::findOne((int) $invoice->id), $amount, $viaRazorpay || (int) $model->gateway_id === Transaction::GATEWAY_PAYPAL);
+                    (new NotificationService())->create((int) $invoice->user_id, 'payment', 'Payment Refunded', '₹' . number_format($amount, 2) . ' for ' . $invoice->customerReference() . ' has been refunded.', '/payment/view?id=' . (int) $model->id);
+                    (new PaymentConfirmationService())->sendRefund(Invoice::findOne((int) $invoice->id), $amount, $viaRazorpay || (int) $model->gateway_id === Transaction::GATEWAY_PAYPAL, (int) $model->gateway_id === Transaction::GATEWAY_PAYPAL);
                 } catch (\Throwable $e) {
                     Yii::error(['message' => 'Refund was recorded but the customer could not be told.', 'transactionId' => $id, 'error' => $e->getMessage()], __METHOD__);
                     Yii::$app->session->addFlash('warning', 'The refund is recorded, but the email to the customer could not be sent.');

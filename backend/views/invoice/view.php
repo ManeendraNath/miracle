@@ -32,7 +32,10 @@ if ($model->status === Invoice::STATUS_DRAFT) {
         'class' => 'btn btn-success',
         'data' => ['confirm' => 'Send this invoice to the customer now? They will see it in the portal and get it by email, dated today and due on the expiry date shown.', 'method' => 'post'],
     ]);
-    $this->params['actions'][] = Html::a('<i class="fas fa-edit me-1"></i> Update', ['update', 'id' => $model->id], ['class' => 'btn btn-primary']);
+    // Renewal lines can't be edited by hand (InvoiceController::actionUpdate refuses them).
+    if (!\common\models\BillingEvent::find()->where(['invoice_id' => $model->id])->exists()) {
+        $this->params['actions'][] = Html::a('<i class="fas fa-edit me-1"></i> Update', ['update', 'id' => $model->id], ['class' => 'btn btn-primary']);
+    }
     $this->params['actions'][] = Html::a('<i class="fas fa-ban me-1"></i> Cancel Invoice', ['cancel', 'id' => $model->id], [
         'class' => 'btn btn-outline-danger',
         'data' => [
@@ -73,7 +76,7 @@ $this->params['actions'][] = Html::button('<i class="fas fa-print me-1"></i> Pri
 
 <div class="container-fluid py-4">
     <?php if ($model->status === Invoice::STATUS_DRAFT): ?>
-        <div class="alert alert-warning">Waiting for review: the customer can't see or pay this invoice, and gets no email or reminder, until you click Send to customer.</div>
+        <div class="alert alert-warning">Waiting for review: the customer can't see or pay this invoice, and gets no email or reminder, until you click Send to customer. It gets its invoice number then. To change a renewal price, cancel this invoice, set the service's Next Renewal Price, and the next billing run invoices it again.</div>
     <?php endif; ?>
     <?php if ($model->emailed_at === null && in_array($model->status, [Invoice::STATUS_UNPAID, Invoice::STATUS_PARTIALLY_PAID], true)): ?>
         <div class="alert alert-warning">No email is recorded for this invoice, so the customer may not have received it. Check their email address, then use Resend Invoice.</div>

@@ -109,7 +109,25 @@ class Invoice extends base\Invoice
      */
     public static function forCustomer(): \yii\db\ActiveQuery
     {
-        return self::find()->andWhere(['<>', self::tableName() . '.status', self::STATUS_DRAFT]);
+        return self::find()->andWhere(['<>', self::tableName() . '.status', self::STATUS_DRAFT])
+            // A held invoice cancelled before it was sent keeps its TMP- number: it was never issued.
+            ->andWhere(['not like', self::tableName() . '.invoice_number', 'TMP-%', false]);
+    }
+
+    /** How staff text names the invoice: one still held for review only has a temporary TMP- number. */
+    public function reference(): string
+    {
+        if (!str_starts_with((string) $this->invoice_number, 'TMP-')) {
+            return (string) $this->invoice_number;
+        }
+
+        return '#' . $this->id . ($this->status === self::STATUS_DRAFT ? ' (waiting for review)' : ' (cancelled before sending)');
+    }
+
+    /** How a customer message names it: one never sent has no number they could look up. */
+    public function customerReference(): string
+    {
+        return str_starts_with((string) $this->invoice_number, 'TMP-') ? 'your upcoming renewal invoice' : 'invoice ' . $this->invoice_number;
     }
 
     /**

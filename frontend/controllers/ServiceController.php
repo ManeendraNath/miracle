@@ -71,6 +71,8 @@ final class ServiceController extends Controller
         $latestEvent = BillingEvent::find()
             ->where(['user_id' => $userId, 'item_type' => $itemType, 'item_id' => $id])
             ->andWhere(['not in', 'id', (new \common\services\billing\RenewalFulfilmentService())->refundedEventIds($itemType, $id)])
+            // A renewal on an invoice the customer never received (held for review, or cancelled while held) is not shown.
+            ->andWhere(['or', ['invoice_id' => null], ['not in', 'invoice_id', Invoice::find()->select('id')->where(['or', ['status' => Invoice::STATUS_DRAFT], ['like', 'invoice_number', 'TMP-%', false]])]])
             ->orderBy(['id' => SORT_DESC])
             ->one();
         $invoice = Invoice::find()
@@ -78,6 +80,7 @@ final class ServiceController extends Controller
             ->innerJoin(['ii' => InvoiceItem::tableName()], 'ii.invoice_id = i.id')
             ->where(['i.user_id' => $userId, 'ii.item_type' => $itemType, 'ii.item_id' => $id])
             ->andWhere(['<>', 'i.status', Invoice::STATUS_DRAFT])
+            ->andWhere(['not like', 'i.invoice_number', 'TMP-%', false])
             ->orderBy(['i.id' => SORT_DESC])
             ->one();
         return $this->render('view', [

@@ -45,6 +45,8 @@ final class PaymentController extends Controller
                 ['not', ['t.gateway_id' => Transaction::ONLINE_GATEWAYS]],
                 ['t.gateway_id' => null],
                 ['t.status' => [Transaction::STATUS_CAPTURED, Transaction::STATUS_REFUNDED]],
+                // Held by PayPal: a payment awaiting completion, as the dashboard counts it.
+                ['and', ['t.status' => Transaction::STATUS_PENDING], ['not', ['t.gateway_payment_id' => null]]],
             ])
             ->with('invoice')
             ->orderBy([

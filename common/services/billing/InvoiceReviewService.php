@@ -38,7 +38,6 @@ final class InvoiceReviewService
             }
             // Dated the day it is sent (the invoice date, GST report and reminders all use created_at).
             // The due date stays the expiry date set when it was made (or what staff changed it to).
-            // ponytail: the number keeps the financial year it was made in; a Draft held across 31 March keeps last year's series.
             // Overdue balances waited for this invoice to be sent (AutoInvoiceService skips them while it is held).
             if ($locked->billing_run_id !== null && (new OutstandingBalanceService())->transferForUser($locked) > 0) {
                 (new AutoInvoiceService())->calculateInvoiceTotals($locked);
@@ -49,6 +48,8 @@ final class InvoiceReviewService
             if (!$locked->save(false, ['status', 'created_at', 'updated_at'])) {
                 throw new \RuntimeException('Invoice could not be released.');
             }
+            // Numbered now, in the financial year of today's date (held invoices keep their TMP- number until sent).
+            (new InvoiceNumberService())->assign($locked);
             (new NotificationService())->create(
                 (int) $locked->user_id,
                 'invoice',

@@ -11,8 +11,8 @@ echo $this->render('_card', [
     'title' => 'We received your payment',
     'intro' => 'This invoice can no longer take payments, so the money has not been applied to it. Our team will refund it or apply it to another of your invoices.',
     'rows' => [
-        ['Invoice', $invoice->invoice_number],
+        ['Invoice', ucfirst($invoice->customerReference())],
         ['Received', Yii::$app->formatter->asCurrency($amount, 'INR')],
     ],
-    'button' => ['View Invoice', $invoiceUrl],
+    'button' => [str_starts_with((string) $invoice->invoice_number, 'TMP-') ? 'View Payments' : 'View Invoice', $invoiceUrl],
 ]);

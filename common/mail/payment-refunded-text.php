@@ -5,6 +5,7 @@ declare(strict_types=1);
 /** @var common\models\Invoice $invoice */
 /** @var float $amount */
 /** @var bool $viaGateway */
+/** @var bool $viaPayPal */
 /** @var float $stillDue */
 /** @var string $invoiceUrl */
 ?>
@@ -14,11 +15,11 @@ We have refunded your payment.
 
 
 Invoice:
-<?= $invoice->invoice_number ?>
+<?= ucfirst($invoice->customerReference()) ?>
 
 
 Refunded:
-INR <?= number_format($amount, 2) ?>
+INR <?= number_format($amount, 2) ?><?= !empty($viaPayPal) ? ' (returned to your PayPal account in US dollars)' : '' ?>
 
 <?php if ($stillDue > 0): ?>
 
@@ -27,5 +28,5 @@ INR <?= number_format($stillDue, 2) ?>
 
 <?php endif; ?>
 
-View Invoice:
+<?= str_starts_with((string) $invoice->invoice_number, 'TMP-') ? 'View Payments' : 'View Invoice' ?>:
 <?= $invoiceUrl ?>

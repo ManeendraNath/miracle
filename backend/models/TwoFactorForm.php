@@ -99,7 +99,7 @@ final class TwoFactorForm extends Model
             'value' => $admin->id . ':' . $expires . ':' . self::deviceSignature($admin, $expires),
             'expire' => $expires,
             'httpOnly' => true,
-            'secure' => Yii::$app->request->isSecureConnection,
+            'secure' => (bool) (Yii::$app->request->csrfCookie['secure'] ?? false) || Yii::$app->request->isSecureConnection, // same setting as the session and CSRF cookies
             'sameSite' => \yii\web\Cookie::SAME_SITE_LAX,
         ]));
     }

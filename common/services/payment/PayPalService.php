@@ -85,7 +85,8 @@ final class PayPalService
      */
     public static function lockRate(Invoice $invoice): void
     {
-        if (!$invoice->isExport() || $invoice->usd_rate_locked !== null || !(new self())->acceptsCustomerPayments()) {
+        $stillLocked = $invoice->usd_rate_locked !== null && (string) $invoice->usd_rate_until >= date('Y-m-d');
+        if (!$invoice->isExport() || $stillLocked || !(new self())->acceptsCustomerPayments()) {
             return;
         }
         $rate = self::usdRate();
@@ -193,6 +194,14 @@ final class PayPalService
             // The request id makes a repeated capture (double click, retry) return the first result, never charge twice.
             $response = $this->api()->post('v2/checkout/orders/' . rawurlencode($orderId) . '/capture', null, ['PayPal-Request-Id' => 'capture-' . $orderId])
                 ->setContent('{}')->addHeaders(['content-type' => 'application/json'])->send();
+            // Still under the lock: the capture id makes the order a payment in progress (hasPendingProof, carry-forward),
+            // so a second tab's order or a carry-forward waiting on this invoice is refused before record() settles it.
+            // A capture record() then refuses (amount mismatch) has the id taken off there, never left "under review".
+            $capture = $response->isOk ? ($response->data['purchase_units'][0]['payments']['captures'][0] ?? null) : null;
+            $captureId = is_array($capture) && in_array($capture['status'] ?? '', ['COMPLETED', 'PENDING'], true) ? ($capture['id'] ?? null) : null;
+            if (is_string($captureId) && $captureId !== '') {
+                Transaction::updateAll(['gateway_payment_id' => $captureId, 'updated_at' => time()], ['gateway_order_id' => $orderId, 'gateway_id' => Transaction::GATEWAY_PAYPAL, 'status' => Transaction::STATUS_PENDING, 'gateway_payment_id' => null]);
+            }
             $dbTransaction->commit();
         } catch (\Throwable $e) {
             if ($dbTransaction->isActive) {
@@ -247,7 +256,13 @@ final class PayPalService
         $usd = is_array($expected) ? (string) ($expected['usd'] ?? '') : '';
         $rate = is_array($expected) ? (float) ($expected['rate'] ?? 0) : 0.0;
         if (($capture['amount']['currency_code'] ?? '') !== 'USD' || $usd === '' || self::toUsd((float) ($capture['amount']['value'] ?? 0), 1) !== $usd) {
-            throw new \DomainException('Payment amount does not match: PayPal captured ' . ($capture['amount']['currency_code'] ?? '?') . ' ' . ($capture['amount']['value'] ?? '?') . ', expected USD ' . $usd . '.');
+            $reason = 'Payment amount does not match: PayPal captured ' . ($capture['amount']['currency_code'] ?? '?') . ' ' . ($capture['amount']['value'] ?? '?') . ', expected USD ' . $usd . '.';
+            // Money was taken but not as ordered: the early capture id comes off, so it is not shown "under review",
+            // while the row stays an unpaid order that recoverPaidOrders() finds again and refuses a new payment for.
+            if ($transaction->status === Transaction::STATUS_PENDING && (string) $transaction->gateway_payment_id !== '') {
+                $transaction->updateAttributes(['gateway_payment_id' => null, 'updated_at' => time()]);
+            }
+            throw new \DomainException($reason);
         }
         $paidAt = isset($capture['create_time']) ? (strtotime((string) $capture['create_time']) ?: null) : null;
 

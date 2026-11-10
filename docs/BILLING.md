@@ -89,8 +89,11 @@ expiry is due at once and its email says how many days ago the service expired.
 
 With "Check renewal invoices before they are sent" on, a new renewal invoice
 is a Draft ("Waiting for review"): not in the portal, not emailed, no
-reminders. Staff send it from the invoice page: it is then dated that day,
-and its due date stays the expiry date. An overdue balance is never moved
+reminders, and keeps a TMP- number. Staff send it from the invoice page: it is
+then dated and numbered that day (so a held invoice sent in April is in the new
+financial year's series, and one cancelled while held uses no number), and its
+due date stays the expiry date. Its renewal lines can't be edited: to change a
+price, cancel it, set the service's Next Renewal Price, and the next run bills it. An overdue balance is never moved
 onto a held invoice. Staff get one alert a day while drafts wait.
 
 ### Overdue balances move to the next invoice after 15 days
@@ -130,7 +133,7 @@ amount in US dollars when Site Settings > Payments switches PayPal on. The
 rate is the European Central Bank USD/INR rate from Frankfurter (free, no
 key; checked at most every 12 hours when needed) less a margin for PayPal's
 own conversion, or a rate typed in by hand. No rate, no button. The payment
-is recorded as the rupee amount; the PayPal fee is converted at the same rate.
+is recorded as the rupee amount, with no gateway fee: the client paid PayPal's fee inside the dollar price. PayPal's fee in dollars is kept on the payment (raw_payload fee_usd).
 
 PayPal's own fee (Site Settings, default 4.4% + US$0.30) is built into the
 dollar price: (rupees / rate + fixed fee) / (1 - fee %), rounded up to the
@@ -151,7 +154,8 @@ the 30-minute `cron/razorpay-sync` (and the next Pay on that invoice)
 records an order whose browser was lost.
 
 Refunds: refund in the PayPal account first, then record the rupee amount
-on the transaction page.
+on the transaction page. Recording is allowed even when the invoice was carried
+forward into one still open, since the money has already gone back.
 
 ## Disabling instead of deleting
 

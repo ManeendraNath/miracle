@@ -91,7 +91,8 @@ final class PaymentConfirmationService
         }
     }
 
-    public function sendRefund(Invoice $invoice, float $amount, bool $viaGateway): void
+    /** @param bool $viaPayPal refunded in US dollars through PayPal (the client paid in dollars) */
+    public function sendRefund(Invoice $invoice, float $amount, bool $viaGateway, bool $viaPayPal = false): void
     {
         $client = User::findOne((int) $invoice->user_id);
         if ($client === null || empty($client->email)) {
@@ -104,6 +105,7 @@ final class PaymentConfirmationService
                     'invoice' => $invoice,
                     'amount' => $amount,
                     'viaGateway' => $viaGateway,
+                    'viaPayPal' => $viaPayPal,
                     // A refund without closing the invoice makes it due again, and reminders will follow.
                     'stillDue' => in_array($invoice->status, [Invoice::STATUS_UNPAID, Invoice::STATUS_PARTIALLY_PAID], true) ? (new InvoicePaymentService())->getOutstanding($invoice) : 0.0,
                     'invoiceUrl' => $this->getInvoiceUrl($invoice),
@@ -111,7 +113,7 @@ final class PaymentConfirmationService
             )
             ->setFrom([Yii::$app->params['senderEmail'] => Yii::$app->params['senderName']])
             ->setTo($client->email)
-            ->setSubject('Refund issued - ' . $invoice->invoice_number)
+            ->setSubject('Refund issued - ' . ucfirst($invoice->customerReference()))
             ->send();
         if (!$sent) {
             throw new \RuntimeException('Refund email could not be sent.');
@@ -132,7 +134,7 @@ final class PaymentConfirmationService
             )
             ->setFrom([Yii::$app->params['senderEmail'] => Yii::$app->params['senderName']])
             ->setTo($client->email)
-            ->setSubject('Payment received, not yet applied - ' . $invoice->invoice_number)
+            ->setSubject('Payment received, not yet applied - ' . ucfirst($invoice->customerReference()))
             ->send();
         if (!$sent) {
             throw new \RuntimeException('Held payment email could not be sent.');
@@ -147,6 +149,7 @@ final class PaymentConfirmationService
             throw new \RuntimeException('Frontend base URL is not configured.');
         }
 
-        return $baseUrl . '/invoice/view?number=' . rawurlencode((string) $invoice->invoice_number);
+        // An invoice never sent (TMP- number) has no page the customer can open yet.
+        return str_starts_with((string) $invoice->invoice_number, 'TMP-') ? $baseUrl . '/payment/index' : $baseUrl . '/invoice/view?number=' . rawurlencode((string) $invoice->invoice_number);
     }
 }

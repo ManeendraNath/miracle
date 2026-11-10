@@ -77,6 +77,8 @@ final class InvoicePaymentService
                 [
                             Invoice::STATUS_CANCELLED,
                             Invoice::STATUS_CARRIED_FORWARD,
+                            // Not sent yet: it becomes payable only through InvoiceReviewService::release().
+                            Invoice::STATUS_DRAFT,
                             // Closed by an admin with closeAsRefunded(): nothing more is owed.
                             Invoice::STATUS_REFUNDED,
                         ],
@@ -282,6 +284,9 @@ final class InvoicePaymentService
     {
         if ($invoice->status === Invoice::STATUS_PAID || in_array($invoice->status, self::CLOSED_STATUSES, true)) {
             throw new \DomainException('Invoice ' . $invoice->invoice_number . ' is already ' . Invoice::labelOf($invoice) . '. Reject this payment, or refund it if the money was received.');
+        }
+        if ($invoice->status === Invoice::STATUS_DRAFT) {
+            throw new \DomainException('Invoice ' . $invoice->reference() . ' is waiting for review. Send it to the customer first.');
         }
     }
 }

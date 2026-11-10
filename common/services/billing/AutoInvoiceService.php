@@ -184,7 +184,11 @@ final class AutoInvoiceService
                 }
             }
 
-            $this->numberService->assign($invoice);
+            // A held invoice gets its number when it is sent (InvoiceReviewService::release()), in the financial year it
+            // is dated: one cancelled while held uses no number, so the series has no gaps.
+            if (!InvoiceReviewService::isOn()) {
+                $this->numberService->assign($invoice);
+            }
 
             if (InvoiceReviewService::isOn()) {
                 // Last, so coupons and carry-forward above worked on a payable invoice. The customer hears at release.

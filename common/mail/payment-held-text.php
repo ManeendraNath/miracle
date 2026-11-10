@@ -11,12 +11,12 @@ We received your payment.
 This invoice can no longer take payments, so the money has not been applied to it. Our team will refund it or apply it to another of your invoices.
 
 Invoice:
-<?= $invoice->invoice_number ?>
+<?= ucfirst($invoice->customerReference()) ?>
 
 
 Received:
 INR <?= number_format($amount, 2) ?>
 
 
-View Invoice:
+<?= str_starts_with((string) $invoice->invoice_number, 'TMP-') ? 'View Payments' : 'View Invoice' ?>:
 <?= $invoiceUrl ?>

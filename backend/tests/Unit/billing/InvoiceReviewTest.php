@@ -83,6 +83,39 @@ final class InvoiceReviewTest extends Unit
         $this->assertStringContainsString('Pay by (expiry date)', $mailer->render('invoice-html', ['invoice' => Invoice::findOne($invoice->id), 'outstanding' => 0.0]));
     }
 
+    public function testAHeldInvoiceIsNumberedWhenSentAndCannotBePaidBefore(): void
+    {
+        $invoice = $this->renewalInvoice();
+        $this->assertStringStartsWith('TMP-', $invoice->invoice_number, 'no number used while held');
+        $this->assertSame('#' . $invoice->id . ' (waiting for review)', $invoice->reference(), 'staff never see the TMP- number');
+        // Money that reaches a held invoice anyway (a crafted staff payment, a capture) is kept off it for staff to apply.
+        $order = new \common\models\Transaction();
+        $order->setAttributes(['invoice_id' => $invoice->id, 'user_id' => $invoice->user_id, 'gateway_id' => \common\models\Transaction::GATEWAY_RAZORPAY, 'gateway_order_id' => 'order_held', 'amount' => (float) $invoice->total_payable, 'status' => \common\models\Transaction::STATUS_PENDING, 'created_at' => time(), 'updated_at' => time()], false);
+        $this->assertTrue($order->save(false));
+        $captured = (new \common\services\payment\RazorpayService())->capture('order_held', 'pay_held');
+        $this->assertSame([\common\models\Transaction::STATUS_CAPTURED, 1], [$captured->status, (int) $captured->is_unapplied]);
+        $this->assertSame(Invoice::STATUS_DRAFT, Invoice::findOne($invoice->id)->status);
+        $captured->delete();
+        try {
+            (new \common\services\billing\InvoicePaymentService())->assertPayable($invoice);
+            $this->fail('A payment must not be applied to an invoice waiting for review.');
+        } catch (\DomainException $e) {
+            $this->assertStringContainsString('waiting for review', $e->getMessage());
+        }
+
+        (new InvoiceReviewService())->release(Invoice::findOne($invoice->id));
+        $sent = Invoice::findOne($invoice->id);
+        $this->assertStringStartsWith('MWT' . \common\services\billing\InvoiceNumberService::financialYear(time()) . '-', $sent->invoice_number, 'numbered in the financial year it is sent');
+    }
+
+    public function testAHeldInvoiceCancelledBeforeSendingIsNeverShownToTheCustomer(): void
+    {
+        $invoice = $this->renewalInvoice();
+        (new \common\services\billing\InvoiceCancellationService())->cancel($invoice, 'Not needed.');
+        $this->assertSame(Invoice::STATUS_CANCELLED, Invoice::findOne($invoice->id)->status);
+        $this->assertFalse(Invoice::forCustomer()->andWhere(['id' => $invoice->id])->exists());
+    }
+
     public function testSendingDatesTheInvoiceToday(): void
     {
         $invoice = $this->renewalInvoice();

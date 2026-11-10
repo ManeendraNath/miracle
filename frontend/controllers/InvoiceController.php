@@ -65,7 +65,7 @@ final class InvoiceController extends Controller
         $filter = array_key_exists($filter, $filters) ? $filter : 'all';
         $userId = (int) Yii::$app->user->id;
 
-        $byStatus = Invoice::forCustomer()->select(['COUNT(*)', 'status'])->where(['user_id' => $userId])->groupBy('status')->indexBy('status')->column();
+        $byStatus = Invoice::forCustomer()->select(['COUNT(*)', 'status'])->andWhere(['user_id' => $userId])->groupBy('status')->indexBy('status')->column();
         $counts = [];
         foreach ($filters as $key => $statuses) {
             $counts[$key] = $statuses === null ? array_sum($byStatus) : array_sum(array_intersect_key($byStatus, array_flip($statuses)));
@@ -110,7 +110,7 @@ final class InvoiceController extends Controller
                             'carriedInto' => $model->status === Invoice::STATUS_CARRIED_FORWARD ? $paymentService->openInvoiceCarrying((int) $model->id) : null,
                             'razorpayEnabled' => (new RazorpayService())->acceptsCustomerPayments($model->isExport()),
                             // Clients abroad: PayPal in US dollars.
-                            'paypal' => $model->isExport() && $paypal->acceptsCustomerPayments() ? ['clientId' => $paypal->getClientId(), 'rate' => PayPalService::rateFor($model), 'until' => PayPalService::rateFor($model) === (float) $model->usd_rate_locked ? $model->usd_rate_until : null] : null,
+                            'paypal' => $model->isExport() && $paypal->acceptsCustomerPayments() ? ['clientId' => $paypal->getClientId(), 'rate' => PayPalService::rateFor($model), 'until' => (float) $model->usd_rate_locked > 0 && (string) $model->usd_rate_until >= date('Y-m-d') ? $model->usd_rate_until : null] : null,
                             'canChangeCoupon' => (new InvoiceCouponService())->blockReason($model) === null,
                         ]
         );
@@ -307,7 +307,9 @@ final class InvoiceController extends Controller
             }
         } catch (\Throwable $e) {
             Yii::error(['message' => 'PayPal capture failed.', 'invoice' => $invoice->invoice_number, 'orderId' => $orderId, 'error' => $e->getMessage()], __METHOD__);
-            $session->setFlash('warning', 'We could not confirm your PayPal payment yet. If PayPal shows it as paid, it will be recorded shortly, so please do not pay again. Reference: ' . $orderId);
+            $session->setFlash('warning', $e instanceof \DomainException
+                ? 'PayPal took a payment we could not match to this invoice. Our team will check it and contact you, so please do not pay again. Reference: ' . $orderId
+                : 'We could not confirm your PayPal payment yet. If PayPal shows it as paid, it will be recorded shortly, so please do not pay again. Reference: ' . $orderId);
             if ($e instanceof \DomainException) {
                 try {
                     $row = Transaction::findOne(['gateway_order_id' => $orderId]);

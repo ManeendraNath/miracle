@@ -3,7 +3,24 @@
 namespace backend\controllers;
 
 use backend\models\Admin;
+use common\models\{
+    BillingEvent,
+    Domains,
+    Hosting,
+    Invoice,
+    InvoiceItem,
+    Maintenance
+};
+use common\services\{
+    admin\AdminAlertService,
+    billing\AutoBillingService,
+    billing\InvoicePaymentService,
+    billing\RenewalFulfilmentService,
+    billing\RenewalPeriodCalculator,
+    billing\RenewalReleaseService
+};
 use Yii;
+use yii\db\ActiveRecord;
 use yii\web\Controller;
 use yii\web\ErrorAction;
 use yii\filters\AccessControl;
@@ -69,7 +86,7 @@ class BaseController extends Controller
      * $model->load() for the domain/hosting/maintenance forms, ignoring posted renewal
      * pricing from roles below Admin (the form shows it read-only to them).
      */
-    protected function loadService(\common\models\Domains|\common\models\Hosting|\common\models\Maintenance $model): bool
+    protected function loadService(Domains|Hosting|Maintenance $model): bool
     {
         $kept = [];
         foreach (self::RENEWAL_PRICING_ATTRIBUTES as $attribute) {
@@ -81,7 +98,7 @@ class BaseController extends Controller
         if (!self::canEditRenewalPricing()) {
             $model->setAttributes($kept, false);
         }
-        if ($model instanceof \common\models\Hosting && !self::canAccess(Yii::$app->user->identity, 'hosting', 'cpanel-password')) {
+        if ($model instanceof Hosting && !self::canAccess(Yii::$app->user->identity, 'hosting', 'cpanel-password')) {
             $model->new_cpanel_password = null;
         }
         $expiryChanged = $model->isAttributeChanged('current_expiry_date', false);
@@ -90,7 +107,7 @@ class BaseController extends Controller
         // Overdue (maintenance) are about non-payment: the renewal is still owed.
         // A blank status ("Select Status") is not a disable: it saves as the default, Active.
         $status = $model->getAttribute('status');
-        $disabled = ($status !== '' && (int) $status === 0) || ($model instanceof \common\models\Domains && (int) $model->status === \common\models\Domains::STATUS_DELETED);
+        $disabled = ($status !== '' && (int) $status === 0) || ($model instanceof Domains && (int) $model->status === Domains::STATUS_DELETED);
         $disabling = $disabled && $model->isAttributeChanged('status', false);
         $locked = false;
         if (!$model->getIsNewRecord() && ($expiryChanged || $customerChanged || $disabling)) {
@@ -106,18 +123,18 @@ class BaseController extends Controller
         }
         // Disabled from the edit form (as with the toggle): the service is not renewed.
         if (!$model->getIsNewRecord() && $disabling) {
-            $model->on(\yii\db\ActiveRecord::EVENT_AFTER_UPDATE, function () use ($model): void {
+            $model->on(ActiveRecord::EVENT_AFTER_UPDATE, function () use ($model): void {
                 $this->releaseDisabledService($model);
             });
         }
         // Staff set the expiry: that day becomes the renewal day (renewals themselves keep it).
         if ($expiryChanged && (string) $model->current_expiry_date !== '') {
-            $model->renewal_anchor_day = \common\services\billing\RenewalPeriodCalculator::anchorDayFor((string) $model->current_expiry_date);
+            $model->renewal_anchor_day = RenewalPeriodCalculator::anchorDayFor((string) $model->current_expiry_date);
         }
         // Handlers run in order, so this comes after the ones above. A save that fails validation
         // releases at the end of the request (Mutex::$autoRelease).
         if ($locked) {
-            $model->on(\yii\db\ActiveRecord::EVENT_AFTER_UPDATE, function (): void {
+            $model->on(ActiveRecord::EVENT_AFTER_UPDATE, function (): void {
                 $this->unlockBillingRun();
             });
         }
@@ -128,21 +145,21 @@ class BaseController extends Controller
      * Releases a disabled service's renewal. Invoices are Admin work: below Admin they are only reported,
      * to an Admin as well since the Manager can't open them.
      */
-    protected function releaseDisabledService(\common\models\Domains|\common\models\Hosting|\common\models\Maintenance $model): void
+    protected function releaseDisabledService(Domains|Hosting|Maintenance $model): void
     {
         [$type, $service] = match (true) {
-            $model instanceof \common\models\Domains => [\common\models\InvoiceItem::TYPE_DOMAIN, (string) $model->domain_url],
-            $model instanceof \common\models\Hosting => [\common\models\InvoiceItem::TYPE_HOSTING, (string) $model->primary_domain],
-            default => [\common\models\InvoiceItem::TYPE_MAINTENANCE, (string) $model->website_url],
+            $model instanceof Domains => [InvoiceItem::TYPE_DOMAIN, (string) $model->domain_url],
+            $model instanceof Hosting => [InvoiceItem::TYPE_HOSTING, (string) $model->primary_domain],
+            default => [InvoiceItem::TYPE_MAINTENANCE, (string) $model->website_url],
         };
         $canCancel = self::canEditRenewalPricing();
-        $warning = (new \common\services\billing\RenewalReleaseService())->releaseForDisabledService($type, (int) $model->id, $canCancel);
+        $warning = (new RenewalReleaseService())->releaseForDisabledService($type, (int) $model->id, $canCancel);
         if ($warning === null) {
             return;
         }
         if (!$canCancel) {
             try {
-                \common\services\admin\AdminAlertService::renewalLeftOpen($service, (string) Yii::$app->user->identity->username, $warning);
+                AdminAlertService::renewalLeftOpen($service, (string) Yii::$app->user->identity->username, $warning);
             } catch (\Throwable $e) {
                 Yii::error($e, __METHOD__);
             }
@@ -157,12 +174,12 @@ class BaseController extends Controller
      */
     protected function lockBillingRun(): bool
     {
-        return Yii::$app->get('mutex')->acquire(\common\services\billing\AutoBillingService::LOCK_NAME, 0);
+        return Yii::$app->get('mutex')->acquire(AutoBillingService::LOCK_NAME, 0);
     }
 
     protected function unlockBillingRun(): void
     {
-        Yii::$app->get('mutex')->release(\common\services\billing\AutoBillingService::LOCK_NAME);
+        Yii::$app->get('mutex')->release(AutoBillingService::LOCK_NAME);
     }
 
     /**
@@ -174,32 +191,33 @@ class BaseController extends Controller
      * never be billed again), unless the money went back: a fully refunded renewal is released instead.
      * A renewal not invoiced yet is released after the save; the next run re-dates it.
      */
-    private function guardOpenRenewal(\common\models\Domains|\common\models\Hosting|\common\models\Maintenance $model, bool $expiryChanged, bool $customerChanged): bool
+    private function guardOpenRenewal(Domains|Hosting|Maintenance $model, bool $expiryChanged, bool $customerChanged): bool
     {
         $type = match (true) {
-            $model instanceof \common\models\Domains => \common\models\InvoiceItem::TYPE_DOMAIN,
-            $model instanceof \common\models\Hosting => \common\models\InvoiceItem::TYPE_HOSTING,
-            default => \common\models\InvoiceItem::TYPE_MAINTENANCE,
+            $model instanceof Domains => InvoiceItem::TYPE_DOMAIN,
+            $model instanceof Hosting => InvoiceItem::TYPE_HOSTING,
+            default => InvoiceItem::TYPE_MAINTENANCE,
         };
         $where = ['item_type' => $type, 'item_id' => (int) $model->id];
         // Moving a service to another customer: a renewal already granted is still owed on an open invoice.
-        $invoiced = [\common\models\BillingEvent::STATUS_INVOICED];
-        $fulfilled = [\common\models\BillingEvent::STATUS_FULFILLED];
-        $billedOn = static fn(array $statuses, array $eventStatuses): \yii\db\ActiveQuery => \common\models\Invoice::find()->alias('i')
-            ->innerJoin(['e' => \common\models\BillingEvent::tableName()], 'e.invoice_id = i.id')
+        $invoiced = [BillingEvent::STATUS_INVOICED];
+        $fulfilled = [BillingEvent::STATUS_FULFILLED];
+        $billedOn = static fn(array $statuses, array $eventStatuses): \yii\db\ActiveQuery => Invoice::find()->alias('i')
+            ->innerJoin(['e' => BillingEvent::tableName()], 'e.invoice_id = i.id')
             ->where(['e.item_type' => $type, 'e.item_id' => (int) $model->id, 'e.status' => $eventStatuses])
             ->andWhere(['i.status' => $statuses]);
-        $open = $billedOn([\common\models\Invoice::STATUS_UNPAID, \common\models\Invoice::STATUS_PARTIALLY_PAID], $customerChanged ? [...$invoiced, ...$fulfilled] : $invoiced)->one();
+        // A held (Draft) invoice counts: once sent and paid it would renew whichever customer has the service then.
+        $open = $billedOn([Invoice::STATUS_DRAFT, Invoice::STATUS_UNPAID, Invoice::STATUS_PARTIALLY_PAID], $customerChanged ? [...$invoiced, ...$fulfilled] : $invoiced)->one();
         $attribute = $expiryChanged ? 'current_expiry_date' : 'user_id';
         if ($open !== null) {
-            $model->addError($attribute, 'Renewal invoice ' . $open->invoice_number . ' is open for this service. It must be paid or cancelled before the expiry date or customer can change.');
+            $model->addError($attribute, 'Renewal invoice ' . $open->reference() . ' is open for this service. It must be ' . ($open->status === Invoice::STATUS_DRAFT ? 'sent and paid' : 'paid') . ' or cancelled before the expiry date or customer can change.');
             return false;
         }
-        $payments = new \common\services\billing\InvoicePaymentService();
-        $carried = $billedOn([\common\models\Invoice::STATUS_CARRIED_FORWARD], $invoiced)->one();
+        $payments = new InvoicePaymentService();
+        $carried = $billedOn([Invoice::STATUS_CARRIED_FORWARD], $invoiced)->one();
         // A granted renewal on a carried invoice stays Carried Forward once paid: only owed if the newer invoice is open again.
         if ($carried === null && $customerChanged) {
-            foreach ($billedOn([\common\models\Invoice::STATUS_CARRIED_FORWARD], $fulfilled)->all() as $paid) {
+            foreach ($billedOn([Invoice::STATUS_CARRIED_FORWARD], $fulfilled)->all() as $paid) {
                 if ($payments->openInvoiceCarrying((int) $paid->id) !== null) {
                     $carried = $paid;
                     break;
@@ -208,34 +226,34 @@ class BaseController extends Controller
         }
         if ($carried !== null && $customerChanged) {
             $newer = $payments->openInvoiceCarrying((int) $carried->id);
-            $model->addError('user_id', 'This renewal\'s balance is owed on invoice ' . ($newer->invoice_number ?? $carried->invoice_number) . ' by the current customer. It must be paid before the customer can change.');
+            $model->addError('user_id', 'This renewal\'s balance is owed on invoice ' . ($newer?->reference() ?? $carried->reference()) . ' by the current customer. It must be paid before the customer can change.');
             return false;
         }
         if ($expiryChanged) {
-            $refunded = (new \common\services\billing\RenewalFulfilmentService())->refundedEventIds($type, (int) $model->id);
-            $paidUntil = \common\models\BillingEvent::find()->select('MAX(period_end)')
-                ->where($where + ['status' => \common\models\BillingEvent::STATUS_FULFILLED])->andWhere(['not in', 'id', $refunded])->scalar();
+            $refunded = (new RenewalFulfilmentService())->refundedEventIds($type, (int) $model->id);
+            $paidUntil = BillingEvent::find()->select('MAX(period_end)')
+                ->where($where + ['status' => BillingEvent::STATUS_FULFILLED])->andWhere(['not in', 'id', $refunded])->scalar();
             if (is_string($paidUntil) && (string) $model->current_expiry_date < $paidUntil) {
                 $model->addError($attribute, 'A paid renewal runs until ' . Yii::$app->formatter->asDate($paidUntil, 'php:d M Y') . '. The expiry date cannot be earlier.');
                 return false;
             }
             // Every renewal still Invoiced here is a carried one: open invoices were refused above.
-            $carriedEnd = \common\models\BillingEvent::find()->select('MAX(period_end)')->where($where + ['status' => \common\models\BillingEvent::STATUS_INVOICED])->scalar();
+            $carriedEnd = BillingEvent::find()->select('MAX(period_end)')->where($where + ['status' => BillingEvent::STATUS_INVOICED])->scalar();
             // Only once the change is saved: an edit that fails validation must not release anything.
-            $model->on(\yii\db\ActiveRecord::EVENT_AFTER_UPDATE, static function () use ($where, $model, $refunded, $carriedEnd): void {
-                \common\models\BillingEvent::updateAll(
-                    ['status' => \common\models\BillingEvent::STATUS_CANCELLED, 'notes' => 'Expiry date changed by staff; the next billing run re-dates the renewal.', 'updated_at' => time()],
-                    $where + ['status' => \common\models\BillingEvent::STATUS_PENDING, 'invoice_id' => null]
+            $model->on(ActiveRecord::EVENT_AFTER_UPDATE, static function () use ($where, $model, $refunded, $carriedEnd): void {
+                BillingEvent::updateAll(
+                    ['status' => BillingEvent::STATUS_CANCELLED, 'notes' => 'Expiry date changed by staff; the next billing run re-dates the renewal.', 'updated_at' => time()],
+                    $where + ['status' => BillingEvent::STATUS_PENDING, 'invoice_id' => null]
                 );
                 // The period of a refunded renewal is billable again once the expiry is back before its end.
-                $released = ['and', ['id' => $refunded, 'status' => \common\models\BillingEvent::STATUS_FULFILLED], ['>', 'period_end', (string) $model->current_expiry_date]];
+                $released = ['and', ['id' => $refunded, 'status' => BillingEvent::STATUS_FULFILLED], ['>', 'period_end', (string) $model->current_expiry_date]];
                 // Its one-time price was cleared when it was paid, and still applies to the re-billed renewal: the next one billed is the earliest.
-                $next = \common\models\BillingEvent::find()->where($released)->orderBy(['period_end' => SORT_ASC])->one();
+                $next = BillingEvent::find()->where($released)->orderBy(['period_end' => SORT_ASC])->one();
                 if ($next !== null && (int) $next->is_manual_amount === 1 && $model->next_renewal_amount === null) {
                     $model->updateAttributes(['next_renewal_amount' => $next->amount]);
                 }
-                \common\models\BillingEvent::updateAll(
-                    ['status' => \common\models\BillingEvent::STATUS_CANCELLED, 'notes' => 'Renewal refunded; expiry set back by staff.', 'updated_at' => time()],
+                BillingEvent::updateAll(
+                    ['status' => BillingEvent::STATUS_CANCELLED, 'notes' => 'Renewal refunded; expiry set back by staff.', 'updated_at' => time()],
                     $released
                 );
                 if (is_string($carriedEnd) && (string) $model->current_expiry_date < $carriedEnd) {

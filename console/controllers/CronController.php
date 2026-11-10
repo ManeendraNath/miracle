@@ -48,6 +48,11 @@ class CronController extends Controller
             if (!$locked) {
                 $this->stdout("Billing cron already running.\n", Console::FG_YELLOW);
                 $this->alertFailure('Billing run', 'Skipped: another run or a staff save held the billing lock. If this repeats, a process may be stuck.');
+                try {
+                    $this->alertDraftsWaiting(); // the daily reminder still goes out on a skipped day
+                } catch (\Throwable $alertError) {
+                    Yii::error($alertError, __METHOD__);
+                }
                 return ExitCode::OK;
             }
             Yii::info('Automatic billing cron started.', __METHOD__);

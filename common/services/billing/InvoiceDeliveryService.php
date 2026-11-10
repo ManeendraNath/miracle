@@ -25,6 +25,29 @@ final class InvoiceDeliveryService
         if ($client === null || empty($client->email)) {
             throw new \DomainException('Invoice customer does not have a delivery email address.');
         }
+        // Claimed before sending: staff clicking Send while the nightly run mails the same invoice send it once.
+        // ponytail: a crash mid-send leaves it marked sent; staff can resend from the invoice page.
+        $claimed = time();
+        if (!$force && Invoice::updateAll(['emailed_at' => $claimed], ['id' => (int) $invoice->id, 'emailed_at' => null]) === 0) {
+            return;
+        }
+        try {
+            $this->deliver($invoice, $client);
+        } catch (\Throwable $e) {
+            if (!$force) {
+                // Only this claim: a resend that succeeded meanwhile keeps its time.
+                Invoice::updateAll(['emailed_at' => null], ['id' => (int) $invoice->id, 'emailed_at' => $claimed]);
+            }
+            throw $e;
+        }
+        if ($force) {
+            Invoice::updateAll(['emailed_at' => $claimed], ['id' => (int) $invoice->id]);
+        }
+        $invoice->emailed_at = $claimed;
+    }
+
+    private function deliver(Invoice $invoice, User $client): void
+    {
 
         try {
             \common\services\payment\PayPalService::lockRate($invoice); // the dollar price quoted in this email holds until it is due
@@ -56,10 +79,6 @@ final class InvoiceDeliveryService
         AdminMailHelper::addBillingBcc($message);
         if (!$message->send()) {
             throw new \RuntimeException('Invoice email could not be sent.');
-        }
-        $invoice->emailed_at = time();
-        if (!$invoice->save(false, ['emailed_at'])) {
-            throw new \RuntimeException('Invoice email delivery state could not be recorded.');
         }
     }
 }

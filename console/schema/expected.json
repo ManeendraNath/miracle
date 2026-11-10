@@ -1939,13 +1939,13 @@
             "razorpay_abroad": {
                 "type": "tinyint",
                 "null": false,
-                "default": "1",
+                "default": "0",
                 "extra": ""
             },
             "razorpay_india": {
                 "type": "tinyint",
                 "null": false,
-                "default": "1",
+                "default": "0",
                 "extra": ""
             },
             "review_invoices": {

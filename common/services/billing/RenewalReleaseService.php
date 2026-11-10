@@ -32,20 +32,20 @@ final class RenewalReleaseService
             if ($invoice->status === Invoice::STATUS_CARRIED_FORWARD) {
                 $newer = (new InvoicePaymentService())->openInvoiceCarrying((int) $invoice->id);
                 if ($newer !== null) {
-                    $leftOpen[] = $newer->invoice_number;
+                    $leftOpen[] = $newer->reference();
                 }
                 continue;
             }
             $otherLines = InvoiceItem::find()->where(['invoice_id' => $invoice->id])
                 ->andWhere(['not', ['item_type' => $itemType, 'item_id' => $itemId]])->exists();
             if ($otherLines || !$cancelInvoices) {
-                $leftOpen[] = $invoice->invoice_number;
+                $leftOpen[] = $invoice->reference();
                 continue;
             }
             try {
                 (new InvoiceCancellationService())->cancel($invoice, 'Service disabled by staff.');
             } catch (\DomainException) {
-                $leftOpen[] = $invoice->invoice_number; // e.g. a payment already made: staff decide (refund)
+                $leftOpen[] = $invoice->reference(); // e.g. a payment already made: staff decide (refund)
             }
         }
 

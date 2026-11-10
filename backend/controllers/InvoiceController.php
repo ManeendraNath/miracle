@@ -246,8 +246,12 @@ class InvoiceController extends BaseController
                 : 'The invoice is now visible to the customer, but the email could not be sent. Use Resend Invoice to try again.');
         } catch (\DomainException $e) {
             Yii::$app->session->setFlash('error', $e->getMessage());
+        } catch (\Throwable $e) {
+            Yii::error(['message' => 'Sending a held invoice failed.', 'invoiceId' => $id, 'error' => $e->getMessage()], __METHOD__);
+            Yii::$app->session->setFlash('error', 'The invoice could not be sent. Please try again; the app log has the details.');
         }
-        return $this->redirect(['view', 'number' => $invoice->invoice_number]);
+        // Reloaded: it may have just been numbered, here or by someone else clicking Send at the same time.
+        return $this->redirect(['view', 'number' => $this->findModel($id)->invoice_number]);
     }
 
     public function actionResendInvoice(int $id)

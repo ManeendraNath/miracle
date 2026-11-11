@@ -160,6 +160,131 @@ class UserController extends BaseController
     }
 
     /**
+     * A one-off email to the customer (any subject: a corrected invoice, a service notice, a reply), written by staff
+     * from a prefilled draft and sent in the standard email design with a copy to billing. With $invoice the draft is
+     * about that invoice (billing staff only).
+     */
+    public function actionEmail(int $id, ?int $invoice = null)
+    {
+        $client = $this->findModel($id);
+        $about = null;
+        if ($invoice !== null) {
+            $about = \common\models\Invoice::findOne(['id' => $invoice, 'user_id' => (int) $client->id]);
+            if ($about === null || !self::canAccess(Yii::$app->user->identity, 'invoice')) {
+                throw new NotFoundHttpException('The requested page does not exist.');
+            }
+            // Held for review, or cancelled while held: the customer never got it and it only has a temporary number.
+            // (A Draft held before held invoices got TMP- numbers has a real one.)
+            if ($about->status === \common\models\Invoice::STATUS_DRAFT || str_starts_with((string) $about->invoice_number, 'TMP-')) {
+                Yii::$app->session->setFlash('error', $about->status === \common\models\Invoice::STATUS_DRAFT
+                    ? 'This invoice is waiting for review: the customer can\'t see it yet. Send it to the customer first.'
+                    : 'This invoice was cancelled before it was sent, so the customer never received it.');
+
+                return $this->redirect(['/invoice/view', 'number' => $about->invoice_number]);
+            }
+        }
+        $mail = new \common\services\mail\CustomerEmailService();
+        $templates = $mail->templates($client, $about);
+        $first = reset($templates);
+        $form = new \yii\base\DynamicModel(['subject' => $first['subject'], 'message' => $first['message']]);
+        $form->addRule(['subject', 'message'], 'trim')
+            ->addRule(['subject', 'message'], 'required')
+            ->addRule('subject', 'string', ['max' => 200])
+            ->addRule('message', 'string', ['max' => 5000])
+            ->addRule(['subject', 'message'], function (string $attribute) use ($form): void {
+                if (str_contains((string) $form[$attribute], '[EDIT')) {
+                    $form->addError($attribute, 'Replace the [EDIT: ...] part with your own words before sending.');
+                }
+            });
+        $back = $about !== null ? ['/invoice/view', 'number' => $about->invoice_number] : ['view', 'id' => $client->id];
+        if ($this->request->isPost && $form->load($this->request->post()) && $form->validate()) {
+            try {
+                $mail->send($client, (string) $form['subject'], (string) $form['message'], $about !== null);
+                Yii::info(['message' => 'Staff emailed a customer.', 'userId' => (int) $client->id, 'invoiceId' => $about?->id, 'adminId' => Yii::$app->user->id, 'subject' => $form['subject']], __METHOD__);
+                Yii::$app->session->setFlash('success', 'Email sent to ' . $client->email . '.');
+
+                return $this->redirect($back);
+            } catch (\Throwable $e) {
+                Yii::error(['message' => 'Customer email failed.', 'userId' => (int) $client->id, 'error' => $e->getMessage()], __METHOD__);
+                Yii::$app->session->setFlash('error', $e instanceof \DomainException ? $e->getMessage() : 'The email could not be sent. Please try again.');
+            }
+        }
+
+        return $this->render('email', ['client' => $client, 'invoice' => $about, 'form' => $form, 'back' => $back, 'templates' => $templates]);
+    }
+
+    /**
+     * One email to all active customers or to the ones picked (one or more). Each gets their own copy, greeted by
+     * name, so no customer sees another's address; billing gets one copy listing who got it.
+     * ponytail: sent one by one in this request; queue it if the customer list grows to hundreds.
+     */
+    public function actionEmailMany()
+    {
+        $mail = new \common\services\mail\CustomerEmailService();
+        $templates = $mail->templates(null);
+        $first = reset($templates);
+        $form = new \yii\base\DynamicModel(['recipients' => 'selected', 'subject' => $first['subject'], 'message' => $first['message']]);
+        $form->defineAttribute('user_ids');
+        $form->addRule(['subject', 'message'], 'trim')
+            ->addRule(['recipients', 'subject', 'message'], 'required')
+            ->addRule('recipients', 'in', ['range' => ['all', 'selected']])
+            ->addRule('user_ids', 'each', ['rule' => ['integer']])
+            ->addRule('subject', 'string', ['max' => 200])
+            ->addRule('message', 'string', ['max' => 5000])
+            ->addRule(['subject', 'message'], function (string $attribute) use ($form): void {
+                if (str_contains((string) $form[$attribute], '[EDIT')) {
+                    $form->addError($attribute, 'Replace the [EDIT: ...] part with your own words before sending.');
+                }
+            })
+            ->addRule('user_ids', function () use ($form): void {
+                if ($form['recipients'] === 'selected' && empty($form['user_ids'])) {
+                    $form->addError('user_ids', 'Choose at least one client.');
+                }
+            }, ['skipOnEmpty' => false]);
+        $active = static fn (): \yii\db\ActiveQuery => User::find()->where(['status' => User::getStatusActive()])->andWhere(['<>', 'email', '']);
+        if ($this->request->isPost && $form->load($this->request->post()) && $form->validate()) {
+            $query = $active();
+            if ($form['recipients'] === 'selected') {
+                $query->andWhere(['id' => array_map('intval', (array) $form['user_ids'])]);
+            }
+            $sent = [];
+            $failed = [];
+            foreach ($query->orderBy(['id' => SORT_ASC])->all() as $client) {
+                try {
+                    $mail->send($client, (string) $form['subject'], (string) $form['message'], false, false);
+                    $sent[] = $client->username;
+                } catch (\Throwable $e) {
+                    $failed[] = $client->username;
+                    Yii::error(['message' => 'Customer email failed.', 'userId' => (int) $client->id, 'error' => $e->getMessage()], __METHOD__);
+                }
+            }
+            Yii::info(['message' => 'Staff emailed customers.', 'adminId' => Yii::$app->user->id, 'subject' => $form['subject'], 'sent' => count($sent), 'failed' => count($failed)], __METHOD__);
+            if ($sent !== []) {
+                try {
+                    $mail->sendCopy((string) $form['subject'], (string) $form['message'], $sent);
+                } catch (\Throwable $e) {
+                    Yii::error(['message' => 'Billing copy of a customer email failed.', 'error' => $e->getMessage()], __METHOD__);
+                }
+            }
+            if ($failed !== []) {
+                Yii::$app->session->setFlash('warning', 'Sent to ' . count($sent) . ' client(s). Not sent to: ' . implode(', ', $failed) . '. Try them again.');
+            } elseif ($sent === []) {
+                Yii::$app->session->setFlash('error', 'No active client with an email address matched.');
+            } else {
+                Yii::$app->session->setFlash('success', 'Email sent to ' . count($sent) . ' client(s).');
+            }
+
+            return $this->redirect(['email-many']);
+        }
+        $clients = [];
+        foreach ($active()->orderBy(['username' => SORT_ASC])->all() as $client) {
+            $clients[$client->id] = $client->username . ' (' . $client->email . ')';
+        }
+
+        return $this->render('email-many', ['form' => $form, 'templates' => $templates, 'clients' => $clients]);
+    }
+
+    /**
      * Finds the User model based on its primary key value.
      * If the model is not found, a 404 HTTP exception will be thrown.
      * @param int $id System ID Reference

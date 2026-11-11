@@ -188,7 +188,7 @@ GridViewHelper::register($this);
                      * Shared CRUD actions.
                      */
                     GridActionHelper::crudColumn(
-                        template: '{view} {update}',
+                        template: '{view} {update} {resend-invoice}',
                         urlCreator: static function (string $action, Invoice $model): array {
                             if ($action === 'view') {
                                 return ['view', 'number' => $model->invoice_number];
@@ -198,6 +198,8 @@ GridViewHelper::register($this);
                         // Same rule as the Update button on the view page.
                         visibleButtons: [
                             'update' => static fn (Invoice $model): bool => $model->status === Invoice::STATUS_UNPAID,
+                            // Same rule as Resend Invoice on the view page.
+                            'resend-invoice' => static fn (Invoice $model): bool => in_array($model->status, [Invoice::STATUS_UNPAID, Invoice::STATUS_PARTIALLY_PAID], true),
                         ],
                     ),
                 ],

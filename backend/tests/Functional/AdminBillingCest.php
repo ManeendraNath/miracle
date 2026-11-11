@@ -417,6 +417,74 @@ final class AdminBillingCest
         $I->seeRecord(\common\models\Hosting::class, ['id' => $hostingId, 'user_id' => $userId]);
     }
 
+    public function staffCanEmailTheCustomerAboutAnInvoice(FunctionalTester $I): void
+    {
+        $invoiceId = $this->invoice($I, Invoice::STATUS_CANCELLED);
+        $invoice = Invoice::findOne($invoiceId);
+        $number = $invoice->invoice_number;
+        $url = '/user/email?id=' . $invoice->user_id . '&invoice=' . $invoiceId;
+        $I->amOnPage($url);
+        $I->seeInField('DynamicModel[subject]', 'Invoice ' . $number . ' cancelled – please do not pay it');
+        $csrf = $I->grabAttributeFrom('meta[name=csrf-token]', 'content');
+
+        // Sent as prefilled, the [EDIT: ...] part would reach the customer.
+        $I->sendAjaxPostRequest($url, [Yii::$app->request->csrfParam => $csrf, 'DynamicModel' => ['subject' => 'Hello', 'message' => 'Dear X, [EDIT: reason]']]);
+        $I->see('Replace the [EDIT: ...] part');
+        $I->dontSeeEmailIsSent();
+
+        $I->sendAjaxPostRequest($url, [Yii::$app->request->csrfParam => $csrf, 'DynamicModel' => ['subject' => 'Corrected invoice', 'message' => "Dear X,\n\nInvoice {$number} showed the wrong period. Please do not pay it."]]);
+        $I->seeEmailIsSent(1);
+        $mail = quoted_printable_decode((string) $I->grabLastSentEmail()->toString());
+        $I->assertStringContainsString('showed the wrong period', $mail);
+        $I->assertStringContainsString('Corrected invoice', $mail);
+
+        // A reminder for an invoice not yet due doesn't call the customer late.
+        $due = $this->invoice($I, Invoice::STATUS_UNPAID);
+        Invoice::updateAll(['due_date' => date('Y-m-d', strtotime('+14 days'))], ['id' => $due]);
+        $I->amOnPage('/user/email?id=' . Invoice::findOne($due)->user_id . '&invoice=' . $due);
+        $I->see(' is due on ' . date('j F Y', strtotime('+14 days')));
+        $I->dontSee(' was due on ');
+
+        // Cancelled before it was ever sent: only a temporary number, nothing to write to the customer about.
+        Invoice::updateAll(['invoice_number' => 'TMP-' . bin2hex(random_bytes(8))], ['id' => $invoiceId]);
+        $I->amOnPage($url);
+        $I->see('cancelled before it was sent');
+
+        // Held for review with a real number (from before TMP- numbers): the customer can't see it either.
+        $held = $this->invoice($I, Invoice::STATUS_DRAFT);
+        $I->amOnPage('/user/email?id=' . Invoice::findOne($held)->user_id . '&invoice=' . $held);
+        $I->see('waiting for review');
+
+        // Any other message, from the client page.
+        $I->amOnRoute('user/email', ['id' => $invoice->user_id]);
+        $I->seeInField('DynamicModel[subject]', '');
+        $I->see('Scheduled maintenance', '#email-template option');
+        $I->sendAjaxPostRequest('/user/email?id=' . $invoice->user_id, [Yii::$app->request->csrfParam => $csrf, 'DynamicModel' => ['subject' => 'Server maintenance', 'message' => 'Dear X, the server is down tonight.']]);
+        $I->seeEmailIsSent(2);
+        $I->assertStringContainsString('Go to Your Account', quoted_printable_decode((string) $I->grabLastSentEmail()->toString()));
+    }
+
+    public function staffCanEmailSeveralClientsEachTheirOwnCopy(FunctionalTester $I): void
+    {
+        $a = (int) Invoice::findOne($this->invoice($I, Invoice::STATUS_PAID))->user_id;
+        $b = (int) Invoice::findOne($this->invoice($I, Invoice::STATUS_PAID))->user_id;
+        $I->amOnRoute('user/email-many');
+        $I->see('All active clients');
+        $I->sendAjaxPostRequest('/user/email-many', [
+            Yii::$app->request->csrfParam => $I->grabAttributeFrom('meta[name=csrf-token]', 'content'),
+            'DynamicModel' => ['recipients' => 'selected', 'user_ids' => [$a, $b], 'subject' => 'Office closed', 'message' => "Dear {name},\n\nOur office is closed on Monday."],
+        ]);
+        $mails = array_map(static fn ($m): string => quoted_printable_decode((string) $m->toString()), $I->grabSentEmails());
+        $toClients = array_values(array_filter($mails, static fn (string $m): bool => !str_contains($m, '[Copy]')));
+        $I->assertCount(2, $toClients, 'one email per client');
+        foreach ([$a, $b] as $i => $id) {
+            $client = User::findOne($id);
+            $I->assertStringContainsString($client->email, $toClients[$i]);
+            $I->assertStringContainsString('Dear ' . $client->username, $toClients[$i], '{name} filled in for each client');
+            $I->assertStringNotContainsString(User::findOne($i === 0 ? $b : $a)->email, $toClients[$i], 'no client sees another\'s address');
+        }
+    }
+
     public function aRejectedProofEmailsTheCustomer(FunctionalTester $I): void
     {
         $invoiceId = $this->invoice($I, Invoice::STATUS_UNPAID);

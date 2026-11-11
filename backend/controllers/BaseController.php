@@ -53,6 +53,8 @@ class BaseController extends Controller
         'razorpay-test' => 'Admin',
         // Setting a customer's password or email lets staff sign in as them and see billing hidden from Managers.
         'user/credentials' => 'Admin',
+        // One email to every customer is a big step: billing staff and up.
+        'user/email-many' => 'Admin',
         // Managers can see leads; changing or deleting them is Admin work.
         'lead/update' => 'Admin',
         'lead/delete' => 'Admin',

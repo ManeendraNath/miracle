@@ -20,6 +20,7 @@ final class GridActionHelper
         'delete' => ['fa-trash', 'danger', 'Delete'],
         'disable' => ['fa-ban', 'warning', 'Disable'],
         'enable' => ['fa-check', 'success', 'Enable'],
+        'resend' => ['fa-paper-plane', 'secondary', 'Resend Invoice'],
     ];
 
     private function __construct()
@@ -75,6 +76,9 @@ final class GridActionHelper
                         'data' => ['confirm' => $enabled ? 'Disable this record?' : 'Enable this record?', 'method' => 'post'],
                     ]);
                 },
+                'resend-invoice' => static fn (string|array $url): string => self::button('resend', $url, [
+                    'data' => ['confirm' => 'Send this invoice to the customer again?', 'method' => 'post'],
+                ]),
                 'delete' => static fn (string|array $url): string => self::button('delete', $url, [
                     'data' => ['confirm' => $deleteMessage, 'method' => 'post'],
                 ]),

@@ -278,7 +278,8 @@ class InvoiceController extends BaseController
             );
             Yii::$app->session->setFlash('error', 'Invoice email could not be sent. The invoice itself was not changed.');
         }
-        return $this->redirect(['view', 'number' => $invoice->invoice_number]);
+        // Back to the list when sent from there (filters and page kept), otherwise to the invoice.
+        return $this->redirect(Yii::$app->request->referrer ?: ['view', 'number' => $invoice->invoice_number]);
     }
 
     /**

@@ -46,6 +46,7 @@ $this->params['subtitle'] = 'User account details';
 $this->params['actions'] = [
     Html::a('<i class="fas fa-arrow-left me-1"></i> Back', ['index'], ['class' => 'btn btn-light border']),
     Html::a('<i class="fas fa-edit me-1"></i> Update', ['update', 'id' => $model->id], ['class' => 'btn btn-primary']),
+    Html::a('<i class="fas fa-envelope me-1"></i> Email customer', ['email', 'id' => $model->id], ['class' => 'btn btn-outline-secondary']),
 ];
 if (\backend\controllers\BaseController::canAccess(Yii::$app->user->identity, 'customer-preference', 'index')) {
     $this->params['actions'][] = Html::a('<i class="fas fa-bell me-1"></i> Preferences', ['/customer-preference/update', 'userId' => $model->id], ['class' => 'btn btn-outline-secondary']);

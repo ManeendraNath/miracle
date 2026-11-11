@@ -30,6 +30,9 @@ $this->registerJsFile(
         ]
 );
 $this->title = 'Miracle Corporate Control Center';
+if (\backend\controllers\BaseController::canAccess(Yii::$app->user->identity, 'user', 'email-many')) {
+    $this->params['actions'][] = Html::a('<i class="fas fa-envelope me-1"></i> Send email', ['/user/email-many'], ['class' => 'btn btn-primary']);
+}
 ?>
 
 <?php

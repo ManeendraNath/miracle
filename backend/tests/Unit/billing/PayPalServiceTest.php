@@ -22,12 +22,16 @@ final class PayPalServiceTest extends Unit
     private const CONFIG = ['clientId' => 'unit-client', 'secret' => 'unit-secret', 'sandbox' => true];
 
     private ?DbTransaction $_dbTransaction = null;
+    private array $_params = [];
     private Invoice $_invoice;
     private MockTransport $_http;
 
     protected function _before(): void
     {
         parent::_before();
+        // The static helpers (lockRate, rateFor) read the app's keys: test ones, whatever this machine's .env has.
+        $this->_params = Yii::$app->params['paypal'] ?? [];
+        Yii::$app->params['paypal'] = self::CONFIG;
         $this->_dbTransaction = Yii::$app->db->beginTransaction();
         $suffix = bin2hex(random_bytes(4));
         $user = new User(['username' => 'paypal-' . $suffix, 'email' => 'paypal-' . $suffix . '@example.test', 'status' => User::getStatusActive(), 'created_at' => time(), 'updated_at' => time()]);
@@ -49,6 +53,7 @@ final class PayPalServiceTest extends Unit
         if ($this->_dbTransaction !== null && $this->_dbTransaction->isActive) {
             $this->_dbTransaction->rollBack();
         }
+        Yii::$app->params['paypal'] = $this->_params;
         $this->resetSettings();
         parent::_after();
     }

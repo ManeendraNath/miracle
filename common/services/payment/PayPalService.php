@@ -415,7 +415,7 @@ final class PayPalService
     {
         return Transaction::find()
             ->where(['gateway_id' => Transaction::GATEWAY_PAYPAL, 'gateway_payment_id' => null])
-            ->andWhere(['or', ['status' => Transaction::STATUS_PENDING], ['status' => Transaction::STATUS_FAILED, 'user_payment_notes' => RazorpayService::SUPERSEDED_NOTE]])
+            ->andWhere(['or', ['status' => Transaction::STATUS_PENDING], ['status' => Transaction::STATUS_FAILED, 'user_payment_notes' => RazorpayService::RECORDABLE_FAILED_NOTES]])
             ->andWhere(['>=', 'created_at', time() - $maxAge])
             ->andWhere($condition)
             ->orderBy(['id' => SORT_ASC])

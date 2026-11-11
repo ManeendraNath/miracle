@@ -153,6 +153,14 @@ Credentials. No webhook: the server captures the approved order itself, and
 the 30-minute `cron/razorpay-sync` (and the next Pay on that invoice)
 records an order whose browser was lost.
 
+Stuck online payments (Razorpay or PayPal, still Pending): the payment page has
+**Check with Razorpay/PayPal**, which asks the gateway now and records the payment
+if it was made, and **Close as not paid**, which checks first and then closes it.
+A closed order is still recorded if the money arrives later (a checkout left open,
+a late webhook) and the customer gets the usual confirmation; staff are alerted
+only if the invoice no longer needed it (held for a refund, as for any late payment). A payment PayPal is holding can't
+be closed: it is recorded when PayPal completes it, or marked failed if PayPal declines it.
+
 Refunds: refund in the PayPal account first, then record the rupee amount
 on the transaction page. Recording is allowed even when the invoice was carried
 forward into one still open, since the money has already gone back.

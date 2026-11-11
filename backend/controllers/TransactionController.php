@@ -425,6 +425,105 @@ class TransactionController extends BaseController
         return $this->redirect(['view', 'id' => $id]);
     }
 
+    /** "Check with Razorpay/PayPal" on a pending online order: asks the gateway now and records the payment if made. */
+    public function actionCheckGateway(int $id)
+    {
+        $model = $this->findModel($id);
+        try {
+            if ($model->status !== Transaction::STATUS_PENDING || !$model->isOnline()) {
+                throw new \DomainException('Only a pending online payment can be checked.');
+            }
+            $found = $this->askGateway($model);
+            if ($found === null) {
+                throw new \DomainException(((int) $model->gateway_id === Transaction::GATEWAY_RAZORPAY ? 'Razorpay' : 'PayPal') . ' is not set up here (no keys in .env), so it can\'t be asked.');
+            }
+            $model = $this->findModel($id);
+            $name = (int) $model->gateway_id === Transaction::GATEWAY_RAZORPAY ? 'Razorpay' : 'PayPal';
+            if ($model->status === Transaction::STATUS_FAILED) {
+                Yii::$app->session->setFlash('info', $name . ' did not take this payment, so it is now marked failed. ' . (string) $model->user_payment_notes);
+            } elseif ($model->status === Transaction::STATUS_CAPTURED) {
+                Yii::$app->session->setFlash('success', 'Payment found and recorded.');
+            } elseif ($found) {
+                Yii::$app->session->setFlash('info', $name . ' is still holding this payment; it stays pending until ' . $name . ' completes or declines it.');
+            } else {
+                Yii::$app->session->setFlash('info', $name . ' has no completed payment for this order. If the customer has given up, use Close as not paid.');
+            }
+        } catch (\Throwable $e) {
+            Yii::error(['message' => 'Gateway check failed.', 'transactionId' => $id, 'error' => $e->getMessage()], __METHOD__);
+            Yii::$app->session->setFlash('error', $e instanceof \DomainException ? $e->getMessage() : 'Could not reach the payment gateway: ' . $e->getMessage() . ' Try again later.');
+        }
+
+        return $this->redirect(['view', 'id' => $id]);
+    }
+
+    /**
+     * "Close as not paid": a pending online order the customer never paid (or PayPal never completed) stops showing
+     * as pending or under review. The gateway is asked first; money that arrives later is still recorded
+     * (RazorpayService::CLOSED_NOTE), so closing can't lose a payment.
+     */
+    public function actionCloseOnline(int $id)
+    {
+        $model = $this->findModel($id);
+        try {
+            if ($model->status !== Transaction::STATUS_PENDING || !$model->isOnline()) {
+                throw new \DomainException('Only a pending online payment can be closed.');
+            }
+            // Held by PayPal (it has the money and may still complete it): closing would let the customer pay again.
+            if ((string) $model->gateway_payment_id !== '') {
+                throw new \DomainException('PayPal is holding this payment, so it can\'t be closed. Check it in PayPal: it is recorded when PayPal completes it, or marked failed if PayPal declines it.');
+            }
+            // Gateway not set up here (e.g. Razorpay switched off): nothing to ask; a later payment is still recorded.
+            // Whatever the answer, the check may have recorded, declined or held it: look at the row again.
+            $this->askGateway($model);
+            $model = $this->findModel($id);
+            if ($model->status !== Transaction::STATUS_PENDING || (string) $model->gateway_payment_id !== '') {
+                Yii::$app->session->setFlash($model->status === Transaction::STATUS_CAPTURED ? 'success' : 'info', match (true) {
+                    $model->status === Transaction::STATUS_CAPTURED => 'The gateway shows this payment was made, so it was recorded instead of closed.',
+                    $model->status === Transaction::STATUS_FAILED => 'The gateway did not take this payment, so it is now marked failed. ' . (string) $model->user_payment_notes,
+                    default => 'PayPal is holding a payment for this order, so it was not closed. It is recorded when PayPal completes it.',
+                });
+
+                return $this->redirect(['view', 'id' => $id]);
+            }
+            $closed = Transaction::updateAll(
+                ['status' => Transaction::STATUS_FAILED, 'user_payment_notes' => RazorpayService::CLOSED_NOTE, 'updated_at' => time()],
+                // Not if a capture landed meanwhile (it sets the payment id under the row lock).
+                ['id' => $id, 'status' => Transaction::STATUS_PENDING, 'gateway_payment_id' => null],
+            );
+            if ($closed === 0) {
+                throw new \DomainException('This payment changed meanwhile. Check it again.');
+            }
+            Yii::info(['message' => 'Online payment closed as not paid.', 'transactionId' => $id, 'adminId' => Yii::$app->user->id], __METHOD__);
+            Yii::$app->session->setFlash('success', 'Closed as not paid. If the money arrives after all, it is still recorded against the invoice, and the customer gets the usual confirmation.');
+        } catch (\Throwable $e) {
+            Yii::error(['message' => 'Closing an online payment failed.', 'transactionId' => $id, 'error' => $e->getMessage()], __METHOD__);
+            Yii::$app->session->setFlash('error', $e instanceof \DomainException ? $e->getMessage() : 'Could not reach the payment gateway, so the payment was not closed: ' . $e->getMessage() . ' Try again later.');
+        }
+
+        return $this->redirect(['view', 'id' => $id]);
+    }
+
+    /**
+     * Asks Razorpay or PayPal about one pending order and records it if paid. Null when that gateway has no keys here;
+     * else true when the gateway has a payment (recorded, or still held by PayPal), false when it has none.
+     */
+    private function askGateway(Transaction $model): ?bool
+    {
+        if ((int) $model->gateway_id === Transaction::GATEWAY_RAZORPAY) {
+            $razorpay = new RazorpayService();
+
+            return $razorpay->isEnabled() ? $razorpay->checkOrder($model) : null;
+        }
+        $paypal = new \common\services\payment\PayPalService();
+        if (!$paypal->isEnabled()) {
+            return null;
+        }
+        // Only an order the customer still has open in checkout may be captured now (within a day, as the sync does).
+        $synced = $paypal->sync($model, (int) $model->created_at >= time() - 86400);
+
+        return $synced !== null && ($synced->status === Transaction::STATUS_CAPTURED || (string) $synced->gateway_payment_id !== '');
+    }
+
     /**
      * Counts an unapplied payment (taken after its invoice was settled or closed) on a payable invoice of the
      * same customer, which may be its own once that is payable again. POST target_invoice = invoice number.

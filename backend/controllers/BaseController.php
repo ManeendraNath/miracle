@@ -329,6 +329,8 @@ class BaseController extends Controller
                     'delete' => ['POST'],
                     'approve' => ['POST'],
                     'reject' => ['POST'],
+                    'check-gateway' => ['POST'],
+                    'close-online' => ['POST'],
                     'refund' => ['POST'],
                     'apply' => ['POST'],
                     'cancel' => ['POST'],

@@ -32,6 +32,10 @@ final class RazorpayService
 
     /** Marks an unpaid order replaced after a coupon changed the invoice total (InvoiceCouponService). */
     public const SUPERSEDED_NOTE = 'SUPERSEDED: invoice total changed by a coupon before this order was paid.';
+    /** Closed by staff (TransactionController::actionCloseOnline) after the gateway showed no payment. */
+    public const CLOSED_NOTE = 'CLOSED: marked as not paid by staff after checking the payment gateway.';
+    /** Failed online orders that are still recorded if money arrives after all (a checkout left open, a late webhook). */
+    public const RECORDABLE_FAILED_NOTES = [self::SUPERSEDED_NOTE, self::CLOSED_NOTE];
 
     /** Set by recoverPaidOrders(). */
     public bool $paidButNotRecorded = false;
@@ -285,7 +289,7 @@ final class RazorpayService
         $orders = Transaction::find()
             ->where(['gateway_id' => Transaction::GATEWAY_RAZORPAY])
             ->andWhere(['not', ['gateway_order_id' => null]])
-            ->andWhere(['or', ['status' => Transaction::STATUS_PENDING], ['status' => Transaction::STATUS_FAILED, 'user_payment_notes' => self::SUPERSEDED_NOTE]])
+            ->andWhere(['or', ['status' => Transaction::STATUS_PENDING], ['status' => Transaction::STATUS_FAILED, 'user_payment_notes' => self::RECORDABLE_FAILED_NOTES]])
             ->andWhere(['between', 'created_at', $now - $maxAge, $now - $minAge])
             ->orderBy(['id' => SORT_DESC])
             ->all();
@@ -385,7 +389,7 @@ final class RazorpayService
         $orders = Transaction::find()
             ->where(['invoice_id' => $invoiceId, 'gateway_id' => Transaction::GATEWAY_RAZORPAY, 'gateway_payment_id' => null])
             ->andWhere(['not', ['gateway_order_id' => null]])
-            ->andWhere(['or', ['status' => Transaction::STATUS_PENDING], ['status' => Transaction::STATUS_FAILED, 'user_payment_notes' => self::SUPERSEDED_NOTE]])
+            ->andWhere(['or', ['status' => Transaction::STATUS_PENDING], ['status' => Transaction::STATUS_FAILED, 'user_payment_notes' => self::RECORDABLE_FAILED_NOTES]])
             ->orderBy(['id' => SORT_DESC])
             ->limit(5)
             ->all();
@@ -412,6 +416,21 @@ final class RazorpayService
         }
 
         return $recorded;
+    }
+
+    /**
+     * Staff "Check with Razorpay" on one order: records it if Razorpay has a captured payment for it.
+     * True when one was recorded; throws when Razorpay can't be asked or refuses the record.
+     */
+    public function checkOrder(Transaction $order): bool
+    {
+        $payment = $this->capturedPayment((string) $order->gateway_order_id);
+        if ($payment === null) {
+            return false;
+        }
+        $this->recordFound((string) $order->gateway_order_id, $payment);
+
+        return true;
     }
 
     /** The order's captured payment as Razorpay reports it, or null. */
@@ -550,9 +569,12 @@ final class RazorpayService
             }
             // A superseded order can still be paid from a checkout that was already open.
             // The customer was charged, so record it; the invoice is reconciled against its new total.
+            // So can an order staff closed as not paid: the money arrived after all.
             $superseded = $transaction->status === Transaction::STATUS_FAILED
                 && $transaction->user_payment_notes === self::SUPERSEDED_NOTE;
-            if ($transaction->status !== Transaction::STATUS_PENDING && !$superseded) {
+            $recordable = $transaction->status === Transaction::STATUS_FAILED
+                && in_array($transaction->user_payment_notes, self::RECORDABLE_FAILED_NOTES, true);
+            if ($transaction->status !== Transaction::STATUS_PENDING && !$recordable) {
                 throw new \DomainException('Payment transaction is not pending.');
             }
             if ($amountMinor !== null && $this->toMinor((float) $transaction->amount) !== $amountMinor) {

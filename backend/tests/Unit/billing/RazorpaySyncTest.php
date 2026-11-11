@@ -64,6 +64,37 @@ final class RazorpaySyncTest extends Unit
         $this->assertStringEndsWith('orders/' . $order->gateway_order_id . '/payments', $this->_http->flushRequests()[0]->getFullUrl());
     }
 
+    public function testStaffCheckRecordsAPaidOrderAndReportsAnUnpaidOne(): void
+    {
+        $order = $this->transaction(Transaction::STATUS_PENDING, 'order_check_' . bin2hex(random_bytes(4)), time() - 60);
+        $this->reply(['items' => [['id' => 'pay_check_failed', 'status' => 'failed', 'amount' => 100000]]]);
+        $this->assertFalse($this->service()->checkOrder($order), 'nothing captured yet');
+        $this->assertSame(Transaction::STATUS_PENDING, Transaction::findOne($order->id)->status);
+
+        $this->reply(['items' => [['id' => 'pay_check_ok', 'status' => 'captured', 'amount' => 100000]]]);
+        $this->assertTrue($this->service()->checkOrder($order));
+        $this->assertSame([Transaction::STATUS_CAPTURED, 'pay_check_ok'], [Transaction::findOne($order->id)->status, Transaction::findOne($order->id)->gateway_payment_id]);
+    }
+
+    public function testAnOrderStaffClosedAsNotPaidIsStillRecordedWhenTheMoneyArrives(): void
+    {
+        $order = $this->transaction(Transaction::STATUS_FAILED, 'order_closed_' . bin2hex(random_bytes(4)), time() - 3600);
+        $order->updateAttributes(['user_payment_notes' => RazorpayService::CLOSED_NOTE]);
+
+        // A late webhook or a checkout left open.
+        $this->service()->capture((string) $order->gateway_order_id, 'pay_late', 100000);
+        $this->assertSame(Transaction::STATUS_CAPTURED, Transaction::findOne($order->id)->status);
+        $this->assertSame(Invoice::STATUS_PAID, Invoice::findOne($this->_invoice->id)->status);
+
+        // And the sync still looks at closed orders.
+        $other = $this->transaction(Transaction::STATUS_FAILED, 'order_closed2_' . bin2hex(random_bytes(4)), time() - 3600);
+        $other->updateAttributes(['user_payment_notes' => RazorpayService::CLOSED_NOTE]);
+        $this->reply(['items' => [['id' => 'pay_late2', 'status' => 'captured', 'amount' => 100000]]]);
+        $this->service()->syncPending();
+        $late = Transaction::findOne($other->id);
+        $this->assertSame([Transaction::STATUS_CAPTURED, 1], [$late->status, (int) $late->is_unapplied], 'recorded, unapplied: the invoice is already paid');
+    }
+
     public function testSyncFillsInTheFeeOfAPaymentRecordedFromTheBrowser(): void
     {
         $payment = $this->transaction(Transaction::STATUS_CAPTURED, 'order_fee_' . bin2hex(random_bytes(4)), time(), 'pay_fee_' . bin2hex(random_bytes(4)));

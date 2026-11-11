@@ -29,6 +29,21 @@ if ($model->status === Transaction::STATUS_PENDING && !$model->isOnline()) {
         ],
     ]);
 }
+if ($model->status === Transaction::STATUS_PENDING && $model->isOnline()) {
+    $gateway = (int) $model->gateway_id === Transaction::GATEWAY_RAZORPAY ? 'Razorpay' : 'PayPal';
+    $this->params['actions'][] = Html::a('<i class="fas fa-sync me-1"></i> Check with ' . $gateway, ['check-gateway', 'id' => $model->id], [
+        'class' => 'btn btn-outline-primary',
+        'data' => ['method' => 'post'],
+    ]);
+    // Not while PayPal holds the money (a capture id): it may still complete.
+    $this->params['actions'][] = (string) $model->gateway_payment_id !== '' ? '' : Html::a('<i class="fas fa-ban me-1"></i> Close as not paid', ['close-online', 'id' => $model->id], [
+        'class' => 'btn btn-outline-danger',
+        'data' => [
+            'confirm' => 'Close this ' . $gateway . ' payment as not paid? ' . $gateway . ' is checked first, and if the money arrives later it is still recorded.',
+            'method' => 'post',
+        ],
+    ]);
+}
 $refundable = round((float) $model->amount - (float) $model->refunded_amount, 2);
 // Razorpay payments are refunded through Razorpay by the form itself; others are returned by hand first.
 $viaRazorpay = (int) $model->gateway_id === Transaction::GATEWAY_RAZORPAY && (string) $model->gateway_payment_id !== '' && (new RazorpayService())->isEnabled();

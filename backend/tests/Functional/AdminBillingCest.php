@@ -459,6 +459,7 @@ final class AdminBillingCest
         $I->amOnRoute('user/email', ['id' => $invoice->user_id]);
         $I->seeInField('DynamicModel[subject]', '');
         $I->see('Scheduled maintenance', '#email-template option');
+        $I->see('Festival wishes', '#email-template option');
         $I->sendAjaxPostRequest('/user/email?id=' . $invoice->user_id, [Yii::$app->request->csrfParam => $csrf, 'DynamicModel' => ['subject' => 'Server maintenance', 'message' => 'Dear X, the server is down tonight.']]);
         $I->seeEmailIsSent(2);
         $I->assertStringContainsString('Go to Your Account', quoted_printable_decode((string) $I->grabLastSentEmail()->toString()));

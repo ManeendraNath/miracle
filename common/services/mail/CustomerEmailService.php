@@ -67,11 +67,16 @@ final class CustomerEmailService
                 . 'Please reply to this email with it.'],
             'project-update' => ['Website project update', 'Update on [EDIT: your website project]',
                 "Here is an update on your website project:\n\n[EDIT: what has been done]\n\nNext steps: [EDIT: what happens next]."],
+            // No "any questions" line: a greeting, not a business email.
+            'festival' => ['Festival wishes', 'Happy [EDIT: festival name] from Miracle Web Technologies',
+                "Wishing you and your family a very happy [EDIT: festival name]. May it bring you joy, good health and success.\n\n"
+                . 'Thank you for your trust in us. We look forward to working with you.', false],
         ];
         $name = $invoice?->client_name ?: ($client !== null ? $this->nameOf($client) : '{name}');
-        $signOff = "\n\nIf you have any questions, just reply to this email.\n\nWarm regards,\n" . Yii::$app->params['senderName'];
+        $sender = Yii::$app->params['senderName'];
 
-        return array_map(static fn (array $t): array => ['label' => $t[0], 'subject' => $t[1], 'message' => 'Dear ' . $name . ",\n\n" . $t[2] . $signOff], $list);
+        return array_map(static fn (array $t): array => ['label' => $t[0], 'subject' => $t[1], 'message' => 'Dear ' . $name . ",\n\n" . $t[2]
+            . (($t[3] ?? true) ? "\n\nIf you have any questions, just reply to this email." : '') . "\n\nWarm regards,\n" . $sender], $list);
     }
 
     public function nameOf(User $client): string

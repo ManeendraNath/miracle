@@ -79,3 +79,20 @@
     height: calc(1.8125rem + 2px) !important;
     top: 0 !important;
 }
+
+/* Website logo: full logo when the sidebar is open, the round mark when it is collapsed (AdminLTE hides .brand-text). */
+.brand-logo .brand-full {
+    height: 36px;
+    width: auto;
+    max-width: 100%;
+}
+.brand-logo .brand-mark {
+    display: none;
+    float: none;
+    margin: 0;
+    max-height: 33px;
+    box-shadow: none;
+}
+.sidebar-collapse:not(.sidebar-is-opening) .main-sidebar:not(:hover) .brand-logo .brand-mark {
+    display: inline-block;
+}

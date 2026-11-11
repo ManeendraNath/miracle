@@ -450,7 +450,9 @@ class TransactionController extends BaseController
             }
         } catch (\Throwable $e) {
             Yii::error(['message' => 'Gateway check failed.', 'transactionId' => $id, 'error' => $e->getMessage()], __METHOD__);
-            Yii::$app->session->setFlash('error', $e instanceof \DomainException ? $e->getMessage() : 'Could not reach the payment gateway: ' . $e->getMessage() . ' Try again later.');
+            $unknown = $this->offerUncheckedClose($model, $e);
+            Yii::$app->session->setFlash('error', $e instanceof \DomainException ? $e->getMessage() : 'Could not check with the payment gateway: ' . $e->getMessage()
+                . ($unknown ? ' Razorpay does not know this order (e.g. it was made with other keys): check the Razorpay dashboard, then use Close without checking.' : ' Try again later.'));
         }
 
         return $this->redirect(['view', 'id' => $id]);
@@ -474,7 +476,14 @@ class TransactionController extends BaseController
             }
             // Gateway not set up here (e.g. Razorpay switched off): nothing to ask; a later payment is still recorded.
             // Whatever the answer, the check may have recorded, declined or held it: look at the row again.
-            $this->askGateway($model);
+            // Skipped only right after Razorpay answered that it does not know this order (offerUncheckedClose):
+            // a later payment is still recorded (CLOSED_UNCHECKED_NOTE).
+            $session = Yii::$app->session;
+            $skipCheck = (int) $model->gateway_id === Transaction::GATEWAY_RAZORPAY && $this->request->post('skip_check') && $session->get('close-unchecked') === $id;
+            if (!$skipCheck) {
+                $this->askGateway($model);
+            }
+            $session->remove('close-unchecked');
             $model = $this->findModel($id);
             if ($model->status !== Transaction::STATUS_PENDING || (string) $model->gateway_payment_id !== '') {
                 Yii::$app->session->setFlash($model->status === Transaction::STATUS_CAPTURED ? 'success' : 'info', match (true) {
@@ -486,21 +495,44 @@ class TransactionController extends BaseController
                 return $this->redirect(['view', 'id' => $id]);
             }
             $closed = Transaction::updateAll(
-                ['status' => Transaction::STATUS_FAILED, 'user_payment_notes' => RazorpayService::CLOSED_NOTE, 'updated_at' => time()],
+                ['status' => Transaction::STATUS_FAILED, 'user_payment_notes' => $skipCheck ? RazorpayService::CLOSED_UNCHECKED_NOTE : RazorpayService::CLOSED_NOTE, 'updated_at' => time()],
                 // Not if a capture landed meanwhile (it sets the payment id under the row lock).
                 ['id' => $id, 'status' => Transaction::STATUS_PENDING, 'gateway_payment_id' => null],
             );
             if ($closed === 0) {
                 throw new \DomainException('This payment changed meanwhile. Check it again.');
             }
-            Yii::info(['message' => 'Online payment closed as not paid.', 'transactionId' => $id, 'adminId' => Yii::$app->user->id], __METHOD__);
+            Yii::info(['message' => 'Online payment closed as not paid.', 'transactionId' => $id, 'adminId' => Yii::$app->user->id, 'checked' => !$skipCheck], __METHOD__);
             Yii::$app->session->setFlash('success', 'Closed as not paid. If the money arrives after all, it is still recorded against the invoice, and the customer gets the usual confirmation.');
         } catch (\Throwable $e) {
             Yii::error(['message' => 'Closing an online payment failed.', 'transactionId' => $id, 'error' => $e->getMessage()], __METHOD__);
-            Yii::$app->session->setFlash('error', $e instanceof \DomainException ? $e->getMessage() : 'Could not reach the payment gateway, so the payment was not closed: ' . $e->getMessage() . ' Try again later.');
+            if ($e instanceof \DomainException) {
+                Yii::$app->session->setFlash('error', $e->getMessage());
+            } else {
+                $unknown = $this->offerUncheckedClose($model, $e);
+                Yii::$app->session->setFlash('error', 'Could not check with the payment gateway, so the payment was not closed: ' . $e->getMessage()
+                    . ($unknown ? ' Razorpay does not know this order (e.g. it was made with other keys): check the Razorpay dashboard, then use Close without checking.' : ' Try again later.'));
+            }
         }
 
         return $this->redirect(['view', 'id' => $id]);
+    }
+
+    /**
+     * After a failed check: Razorpay answering 400 or 404 means it does not know the order (made with other keys), which
+     * no retry fixes, so "Close without checking" is offered for it (view.php). Not after a timeout or a server error,
+     * and never for PayPal, where a capture may have gone through without the app hearing back.
+     */
+    private function offerUncheckedClose(Transaction $model, \Throwable $e): bool
+    {
+        $unknown = (int) $model->gateway_id === Transaction::GATEWAY_RAZORPAY
+            && (string) $model->gateway_payment_id === ''
+            && preg_match('/^HTTP (400|404)\b/', $e->getMessage()) === 1;
+        if ($unknown) {
+            Yii::$app->session->set('close-unchecked', (int) $model->id);
+        }
+
+        return $unknown;
     }
 
     /**

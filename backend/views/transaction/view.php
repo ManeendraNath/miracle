@@ -43,6 +43,17 @@ if ($model->status === Transaction::STATUS_PENDING && $model->isOnline()) {
             'method' => 'post',
         ],
     ]);
+    // Only right after a check with the gateway failed for this payment (TransactionController::actionCloseOnline).
+    if ((int) $model->gateway_id === Transaction::GATEWAY_RAZORPAY && (string) $model->gateway_payment_id === '' && Yii::$app->session->get('close-unchecked') === (int) $model->id) {
+        $this->params['actions'][] = Html::a('<i class="fas fa-ban me-1"></i> Close without checking', ['close-online', 'id' => $model->id], [
+            'class' => 'btn btn-danger',
+            'data' => [
+                'confirm' => 'Close this payment without asking Razorpay? Check in the Razorpay dashboard first that no money was taken. If it arrives later it is still recorded.',
+                'method' => 'post',
+                'params' => ['skip_check' => 1],
+            ],
+        ]);
+    }
 }
 $refundable = round((float) $model->amount - (float) $model->refunded_amount, 2);
 // Razorpay payments are refunded through Razorpay by the form itself; others are returned by hand first.

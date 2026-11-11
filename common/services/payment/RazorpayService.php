@@ -34,8 +34,10 @@ final class RazorpayService
     public const SUPERSEDED_NOTE = 'SUPERSEDED: invoice total changed by a coupon before this order was paid.';
     /** Closed by staff (TransactionController::actionCloseOnline) after the gateway showed no payment. */
     public const CLOSED_NOTE = 'CLOSED: marked as not paid by staff after checking the payment gateway.';
+    /** Closed by staff without the check: Razorpay answered that it does not know the order (e.g. made with other keys). */
+    public const CLOSED_UNCHECKED_NOTE = 'CLOSED: marked as not paid by staff; Razorpay did not know this order, so it was not checked.';
     /** Failed online orders that are still recorded if money arrives after all (a checkout left open, a late webhook). */
-    public const RECORDABLE_FAILED_NOTES = [self::SUPERSEDED_NOTE, self::CLOSED_NOTE];
+    public const RECORDABLE_FAILED_NOTES = [self::SUPERSEDED_NOTE, self::CLOSED_NOTE, self::CLOSED_UNCHECKED_NOTE];
 
     /** Set by recoverPaidOrders(). */
     public bool $paidButNotRecorded = false;

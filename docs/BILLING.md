@@ -160,6 +160,9 @@ A closed order is still recorded if the money arrives later (a checkout left ope
 a late webhook) and the customer gets the usual confirmation; staff are alerted
 only if the invoice no longer needed it (held for a refund, as for any late payment). A payment PayPal is holding can't
 be closed: it is recorded when PayPal completes it, or marked failed if PayPal declines it.
+If Razorpay answers that it doesn't know an order (for example one made with other
+keys), **Close without checking** appears after that failed check; check the Razorpay
+dashboard first. Not for PayPal, and not after a timeout: try again later then.
 
 Refunds: refund in the PayPal account first, then record the rupee amount
 on the transaction page. Recording is allowed even when the invoice was carried

@@ -159,6 +159,15 @@ class Admin extends base\Admin implements IdentityInterface
         return $this->totp_secret !== null;
     }
 
+    /**
+     * TWO_FACTOR_PAUSED=true in a development .env: sign in without the authenticator code and without being made to
+     * set it up. Never on the live site (YII_ENV=prod there, which deploy.sh checks).
+     */
+    public static function twoFactorPaused(): bool
+    {
+        return YII_ENV_DEV && filter_var($_ENV['TWO_FACTOR_PAUSED'] ?? false, FILTER_VALIDATE_BOOLEAN);
+    }
+
     /** Whether TWO_FACTOR_KEY is set, so new secrets can be stored encrypted. */
     public static function canStoreTwoFactor(): bool
     {

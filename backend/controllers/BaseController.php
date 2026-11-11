@@ -285,6 +285,7 @@ class BaseController extends Controller
         }
         $user = Yii::$app->user->identity;
         $required = self::$requireTwoFactor
+            && !Admin::twoFactorPaused()
             && $user instanceof Admin
             && !$user->hasTwoFactor()
             && Admin::canStoreTwoFactor();

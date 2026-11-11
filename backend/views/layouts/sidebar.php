@@ -7,10 +7,10 @@ use yii\helpers\Html;
 
 <aside class="main-sidebar sidebar-dark-primary elevation-4">
     <!-- Brand Logo Displays Link -->
-    <!-- The full logo (white lettering for the dark sidebar); only the round mark while the sidebar is collapsed. -->
+    <!-- One full logo (white lettering for the dark sidebar): the collapsed sidebar crops it to the round mark, so
+         nothing swaps while the sidebar slides. -->
     <a href="<?= Url::to(['/dashboard/index']) ?>" class="brand-link brand-logo" title="Miracle Web Technologies">
-        <img src="<?= Url::to('@web/images/logo.png') ?>" alt="Miracle Web Technologies" class="brand-image brand-mark">
-        <span class="brand-text"><img src="<?= Url::to('@web/images/logo-full-white.svg') ?>" alt="Miracle Web Technologies" class="brand-full"></span>
+        <img src="<?= Url::to('@web/images/logo-full-white.svg') ?>" alt="Miracle Web Technologies" class="brand-full">
     </a>
 
     <!-- Sidebar Wrapper -->

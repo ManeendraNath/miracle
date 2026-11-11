@@ -80,19 +80,16 @@
     top: 0 !important;
 }
 
-/* Website logo: full logo when the sidebar is open, the round mark when it is collapsed (AdminLTE hides .brand-text). */
+/* Website logo: one image, cropped to its round mark by the collapsed sidebar (no swap while it slides).
+   Height 48px makes it 182px wide with the mark in its first ~65px, which fits the 4.6rem collapsed sidebar.
+   Less padding keeps the bar at the top navbar's 57px. */
+.main-sidebar .brand-link.brand-logo {
+    padding: 4px 0 4px 6px;
+    overflow: hidden;
+    white-space: nowrap;
+}
 .brand-logo .brand-full {
-    height: 36px;
+    height: 48px;
     width: auto;
-    max-width: 100%;
-}
-.brand-logo .brand-mark {
-    display: none;
-    float: none;
-    margin: 0;
-    max-height: 33px;
-    box-shadow: none;
-}
-.sidebar-collapse:not(.sidebar-is-opening) .main-sidebar:not(:hover) .brand-logo .brand-mark {
-    display: inline-block;
+    max-width: none;
 }

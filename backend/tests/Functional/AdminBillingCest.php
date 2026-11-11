@@ -469,8 +469,12 @@ final class AdminBillingCest
     {
         $a = (int) Invoice::findOne($this->invoice($I, Invoice::STATUS_PAID))->user_id;
         $b = (int) Invoice::findOne($this->invoice($I, Invoice::STATUS_PAID))->user_id;
+        // Any client can be picked, not only active ones.
+        User::updateAll(['status' => User::getStatusInactive()], ['id' => $b]);
         $I->amOnRoute('user/email-many');
         $I->see('All active clients');
+        $I->see('All clients – active, inactive, suspended and deleted');
+        $I->see(User::findOne($b)->username . ' (' . User::findOne($b)->email . ') – Inactive', 'option');
         $I->sendAjaxPostRequest('/user/email-many', [
             Yii::$app->request->csrfParam => $I->grabAttributeFrom('meta[name=csrf-token]', 'content'),
             'DynamicModel' => ['recipients' => 'selected', 'user_ids' => [$a, $b], 'subject' => 'Office closed', 'message' => "Dear {name},\n\nOur office is closed on Monday."],

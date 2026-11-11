@@ -7,9 +7,10 @@ use yii\helpers\Html;
 
 <aside class="main-sidebar sidebar-dark-primary elevation-4">
     <!-- Brand Logo Displays Link -->
-    <a href="<?= Url::to(['/dashboard/index']) ?>" class="brand-link">
-        <img src="<?= $assetDir ?>/img/AdminLTELogo.png" alt="Miracle" class="brand-image img-circle elevation-3" style="opacity: .8">
-        <span class="brand-text font-weight-light">Miracle Console</span>
+    <!-- The full logo (white lettering for the dark sidebar); only the round mark while the sidebar is collapsed. -->
+    <a href="<?= Url::to(['/dashboard/index']) ?>" class="brand-link brand-logo" title="Miracle Web Technologies">
+        <img src="<?= Url::to('@web/images/logo.png') ?>" alt="Miracle Web Technologies" class="brand-image brand-mark">
+        <span class="brand-text"><img src="<?= Url::to('@web/images/logo-full-white.svg') ?>" alt="Miracle Web Technologies" class="brand-full"></span>
     </a>
 
     <!-- Sidebar Wrapper -->

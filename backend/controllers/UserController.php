@@ -227,7 +227,7 @@ class UserController extends BaseController
         $form->defineAttribute('user_ids');
         $form->addRule(['subject', 'message'], 'trim')
             ->addRule(['recipients', 'subject', 'message'], 'required')
-            ->addRule('recipients', 'in', ['range' => ['all', 'selected']])
+            ->addRule('recipients', 'in', ['range' => ['all', 'everyone', 'selected']])
             ->addRule('user_ids', 'each', ['rule' => ['integer']])
             ->addRule('subject', 'string', ['max' => 200])
             ->addRule('message', 'string', ['max' => 5000])
@@ -241,10 +241,14 @@ class UserController extends BaseController
                     $form->addError('user_ids', 'Choose at least one client.');
                 }
             }, ['skipOnEmpty' => false]);
-        $active = static fn (): \yii\db\ActiveQuery => User::find()->where(['status' => User::getStatusActive()])->andWhere(['<>', 'email', '']);
+        // "all" = active clients; "everyone" = every client with an email address, whatever the status (inactive,
+        // suspended, deleted); "selected" = any of those, picked by hand.
+        $withEmail = static fn (): \yii\db\ActiveQuery => User::find()->where(['<>', 'email', '']);
         if ($this->request->isPost && $form->load($this->request->post()) && $form->validate()) {
-            $query = $active();
-            if ($form['recipients'] === 'selected') {
+            $query = $withEmail();
+            if ($form['recipients'] === 'all') {
+                $query->andWhere(['status' => User::getStatusActive()]);
+            } elseif ($form['recipients'] === 'selected') {
                 $query->andWhere(['id' => array_map('intval', (array) $form['user_ids'])]);
             }
             $sent = [];
@@ -269,7 +273,7 @@ class UserController extends BaseController
             if ($failed !== []) {
                 Yii::$app->session->setFlash('warning', 'Sent to ' . count($sent) . ' client(s). Not sent to: ' . implode(', ', $failed) . '. Try them again.');
             } elseif ($sent === []) {
-                Yii::$app->session->setFlash('error', 'No active client with an email address matched.');
+                Yii::$app->session->setFlash('error', 'No client with an email address matched.');
             } else {
                 Yii::$app->session->setFlash('success', 'Email sent to ' . count($sent) . ' client(s).');
             }
@@ -277,11 +281,15 @@ class UserController extends BaseController
             return $this->redirect(['email-many']);
         }
         $clients = [];
-        foreach ($active()->orderBy(['username' => SORT_ASC])->all() as $client) {
-            $clients[$client->id] = $client->username . ' (' . $client->email . ')';
+        $activeCount = 0;
+        $statuses = User::getStatuses();
+        foreach ($withEmail()->orderBy(['username' => SORT_ASC])->all() as $client) {
+            $isActive = (int) $client->status === User::getStatusActive();
+            $activeCount += (int) $isActive;
+            $clients[$client->id] = $client->username . ' (' . $client->email . ')' . ($isActive ? '' : ' – ' . ($statuses[(int) $client->status] ?? 'Status ' . $client->status));
         }
 
-        return $this->render('email-many', ['form' => $form, 'templates' => $templates, 'clients' => $clients]);
+        return $this->render('email-many', ['form' => $form, 'templates' => $templates, 'clients' => $clients, 'activeCount' => $activeCount]);
     }
 
     /**

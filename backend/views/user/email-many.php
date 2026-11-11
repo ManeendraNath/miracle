@@ -9,7 +9,8 @@ use yii\helpers\Html;
 /** @var yii\web\View $this */
 /** @var yii\base\DynamicModel $form */
 /** @var array<string, array{label: string, subject: string, message: string}> $templates */
-/** @var array<int, string> $clients id => "username (email)", active clients with an email address */
+/** @var array<int, string> $clients id => "username (email)", every client with an email address (status shown unless Active) */
+/** @var int $activeCount */
 $this->title = 'Email customers';
 $this->params['breadcrumbs'][] = ['label' => 'Clients', 'url' => ['index']];
 $this->params['breadcrumbs'][] = $this->title;
@@ -29,7 +30,8 @@ $this->params['breadcrumbs'][] = $this->title;
             <?php $active = ActiveForm::begin(); ?>
             <?= $active->field($form, 'recipients')->radioList([
                 'selected' => 'Selected clients (one or more)',
-                'all' => 'All active clients (' . count($clients) . ')',
+                'all' => 'All active clients (' . $activeCount . ')',
+                'everyone' => 'All clients – active, inactive, suspended and deleted (' . count($clients) . ')',
             ])->label('Send to') ?>
             <div id="email-pick">
                 <?= $active->field($form, 'user_ids')->widget(Select2::class, [
@@ -51,20 +53,20 @@ $this->params['breadcrumbs'][] = $this->title;
 </div>
 <?php
 $this->registerJs('const t = ' . json_encode($templates, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) . ';
-const total = ' . count($clients) . ';
+const totals = {all: ' . $activeCount . ', everyone: ' . count($clients) . '};
 document.getElementById("email-template").addEventListener("change", (e) => {
     document.getElementById("dynamicmodel-subject").value = t[e.target.value].subject;
     document.getElementById("dynamicmodel-message").value = t[e.target.value].message;
 });
 const pick = () => {
-    const all = document.querySelector("input[name=\'DynamicModel[recipients]\']:checked")?.value === "all";
-    document.getElementById("email-pick").style.display = all ? "none" : "";
+    const choice = document.querySelector("input[name=\'DynamicModel[recipients]\']:checked")?.value;
+    document.getElementById("email-pick").style.display = choice === "selected" ? "" : "none";
 };
 document.querySelectorAll("input[name=\'DynamicModel[recipients]\']").forEach((r) => r.addEventListener("change", pick));
 pick();
 document.getElementById("email-send").addEventListener("click", (e) => {
-    const all = document.querySelector("input[name=\'DynamicModel[recipients]\']:checked")?.value === "all";
-    const n = all ? total : $("#dynamicmodel-user_ids").val().length;
+    const choice = document.querySelector("input[name=\'DynamicModel[recipients]\']:checked")?.value;
+    const n = choice === "selected" ? $("#dynamicmodel-user_ids").val().length : totals[choice];
     if (!confirm("Send this email to " + n + " client(s)?")) {
         e.preventDefault();
     }

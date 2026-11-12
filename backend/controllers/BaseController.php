@@ -340,6 +340,7 @@ class BaseController extends Controller
                     'toggle-status' => ['POST'],
                     'cpanel-password' => ['POST'],
                     'verify' => ['POST'],
+                    'upload-image' => ['POST'],
                 ],
             ],
         ];

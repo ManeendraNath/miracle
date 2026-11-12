@@ -94,6 +94,12 @@ use yii\helpers\Html;
                         'url' => ['/testimonial/index'],
                         'active' => Yii::$app->controller->id === 'testimonial'
                     ],
+                    [
+                        'label' => 'Blog',
+                        'icon' => 'pen-nib',
+                        'url' => ['/blog-post/index'],
+                        'active' => in_array(Yii::$app->controller->id, ['blog-post', 'blog-category'], true)
+                    ],
                     // =====================================================================
                     // 🚀 1.1. CUSTOMER SUPPORT
                     // =====================================================================

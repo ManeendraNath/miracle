@@ -24,7 +24,7 @@ MAINTENANCE_FLAG=$APP/runtime/maintenance.flag
 BACKUP_NOTE=$APP/runtime/pre-migration-backup
 DIRS=(common frontend backend console)
 # Excluded from copy and from --delete: these live only on the server.
-KEEP=(--exclude=/runtime/ --exclude=/web/assets/ --exclude=/config/params-local.php --exclude=error_log --exclude=.user.ini --exclude=php.ini)
+KEEP=(--exclude=/runtime/ --exclude=/web/assets/ --exclude=/web/uploads/ --exclude=/config/params-local.php --exclude=error_log --exclude=.user.ini --exclude=php.ini)
 COMPOSER=(composer install --prefer-dist --no-dev --no-interaction --optimize-autoloader)
 
 STAGE=prep          # prep: nothing changed yet; code: $APP is being changed
@@ -71,7 +71,7 @@ publish_public()
 {
     local item cpanel
     for item in "$APP/frontend/web"/*; do
-        case "${item##*/}" in index.php|assets|favicon.ico|error_log) continue ;; esac
+        case "${item##*/}" in index.php|assets|uploads|favicon.ico|error_log) continue ;; esac
         rsync -a --delete "$item" "$PUBLIC/" || return 1
     done
 
@@ -79,6 +79,9 @@ publish_public()
     [ -L "$PUBLIC/favicon.ico" ] || rm -f "$PUBLIC/favicon.ico"
     ln -sfn ../miracle/frontend/web/assets "$PUBLIC/assets" || return 1
     ln -sfn ../miracle/frontend/web/favicon.ico "$PUBLIC/favicon.ico" || return 1
+    # Blog images are saved by the app under $APP/frontend/web/uploads; never replace a real folder here.
+    mkdir -p "$APP/frontend/web/uploads" || return 1
+    ln -sfn ../miracle/frontend/web/uploads "$PUBLIC/uploads" || return 1
 
     cat > "$PUBLIC/index.php" <<'PHP' || return 1
 <?php
@@ -247,6 +250,11 @@ TRACKED=$(git ls-files .env yii {common,frontend,backend,console}/config/params-
 
 # The locked Symfony packages need this; composer would otherwise fail only once the site is in maintenance.
 php -r 'exit(version_compare(PHP_VERSION, "8.4.1", ">=") ? 0 : 1);' || die "PHP 8.4.1 or newer is required (found $(php -r 'echo PHP_VERSION;'))"
+
+# Blog images live in $APP/frontend/web/uploads and public_html/uploads links to them; a real folder there would block the link.
+if [ -e "$PUBLIC/uploads" ] && [ ! -L "$PUBLIC/uploads" ]; then
+    die "$PUBLIC/uploads is a real folder: move its files into $APP/frontend/web/uploads, then remove it"
+fi
 
 echo "== Checking PHP syntax"
 if ! LINT=$(find "${DIRS[@]}" -name '*.php' -not -path '*/runtime/*' -not -path '*/web/assets/*' -print0 \

@@ -100,3 +100,6 @@ phpunit.phar
 
 # Customer payment receipts and other uploads
 /storage/
+
+# Blog images uploaded from the admin (served by the web server)
+/frontend/web/uploads/

@@ -29,10 +29,14 @@ $description = $this->params['meta_description']
     ?? 'Custom shopping carts, web applications and websites, built to your brief.';
 $this->registerMetaTag(['name' => 'description', 'content' => $description]);
 $this->registerMetaTag(['property' => 'og:site_name', 'content' => $siteName]);
-$this->registerMetaTag(['property' => 'og:type', 'content' => 'website']);
+$this->registerMetaTag(['property' => 'og:type', 'content' => $this->params['og_type'] ?? 'website']);
 $this->registerMetaTag(['property' => 'og:title', 'content' => $this->title]);
 $this->registerMetaTag(['property' => 'og:description', 'content' => $description]);
-$this->registerMetaTag(['property' => 'og:image', 'content' => Url::to('@web/images/og.png', true)]);
+$this->registerMetaTag(['property' => 'og:image', 'content' => $this->params['og_image'] ?? Url::to('@web/images/og.png', true)]);
+if (!empty($this->params['canonical'])) {
+    $this->registerLinkTag(['rel' => 'canonical', 'href' => $this->params['canonical']]);
+    $this->registerMetaTag(['property' => 'og:url', 'content' => $this->params['canonical']]);
+}
 $this->registerMetaTag(['name' => 'twitter:card', 'content' => 'summary_large_image']);
 if (!empty($this->params['meta_keywords'])) {
     $this->registerMetaTag(

@@ -21,6 +21,7 @@ use yii\bootstrap5\NavBar;
         ['label' => 'Our work', 'url' => ['/site/index', '#' => 'work'], 'active' => false],
         ['label' => 'Website upgrades', 'url' => ['/site/audit']],
         ['label' => 'Hosting', 'url' => ['/site/hosting']],
+        ['label' => 'Blog', 'url' => ['/blog/index'], 'active' => Yii::$app->controller->id === 'blog'],
         ['label' => 'About', 'url' => ['/site/about']],
         ['label' => 'Contact', 'url' => ['/site/contact']],
     ];

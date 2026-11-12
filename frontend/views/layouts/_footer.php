@@ -64,6 +64,7 @@ $socials = array_filter([
                     <li class="mb-2"><?= Html::a('Website upgrades', ['/site/audit']) ?></li>
                     <li class="mb-2"><?= Html::a('Hosting and domains', ['/site/hosting']) ?></li>
                     <li class="mb-2"><?= Html::a('About us', ['/site/about']) ?></li>
+                    <li class="mb-2"><?= Html::a('Blog', ['/blog/index']) ?></li>
                     <li class="mb-2"><?= Html::a('Contact us', ['/site/contact']) ?></li>
                     <li class="mb-2"><?= Yii::$app->user->isGuest ? Html::a('Customer login', ['/site/login']) : Html::a('My account', ['/dashboard/index']) ?></li>
                 </ul>

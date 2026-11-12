@@ -96,6 +96,12 @@ return [
             'enablePrettyUrl' => true,
             'showScriptName' => false,
             'rules' => [
+                // The category rule first: links to a category use it rather than /blog?category=…
+                'blog/category/<category:[a-z0-9-]+>' => 'blog/index',
+                'blog' => 'blog/index',
+                'blog/feed' => 'blog/feed',
+                'blog/<slug:[a-z0-9-]+>' => 'blog/view',
+                'sitemap.xml' => 'sitemap/index',
                 '<action>' => 'site/<action>',
                 '<controller:[\w\-]+>/<id:\d+>' => '<controller>/view',
                 '<controller:[\w\-]+>/<action:[\w\-]+>/<id:\d+>' => '<controller>/<action>',

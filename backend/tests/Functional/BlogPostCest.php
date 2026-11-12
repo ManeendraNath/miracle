@@ -35,6 +35,7 @@ final class BlogPostCest
             'BlogPost[publishAt]' => '',
         ]);
         $I->see('Post published.');
+        $I->see('Request indexing.');
         $post = BlogPost::findOne(['slug' => 'hiring-an-offshore-developer']);
         $I->assertNotNull($post);
         $I->assertTrue($post->isPublic());

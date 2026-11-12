@@ -22,14 +22,23 @@ $socials = array_filter([
 <footer class="site-footer footer mt-auto pt-5 pb-4 text-white">
     <div class="container">
         <div class="row g-4">
-            <div class="col-lg-5">
+            <div class="col-lg-4">
                 <div class="d-flex align-items-center mb-3">
                     <?= Html::img('@web/images/logo.svg', ['alt' => '', 'width' => 54, 'height' => 40, 'class' => 'me-2']) ?>
                     <h2 class="h5 fw-bold m-0"><?= Html::encode($siteName) ?></h2>
                 </div>
-                <p class="small footer-muted mb-0">
+                <p class="small footer-muted mb-3">
                     Shopping carts, web applications and websites, built to your brief. Based in Delhi, India.
                 </p>
+                <?php if ($socials): ?>
+                    <div class="d-flex gap-2">
+                        <?php foreach ($socials as $label => [$icon, $url]): ?>
+                            <a href="<?= Html::encode($url) ?>" target="_blank" rel="noopener" class="footer-social" title="<?= $label ?>" aria-label="<?= $label ?>">
+                                <i class="<?= $icon ?>"></i>
+                            </a>
+                        <?php endforeach; ?>
+                    </div>
+                <?php endif; ?>
             </div>
 
             <div class="col-sm-6 col-lg-4">
@@ -56,9 +65,9 @@ $socials = array_filter([
                 </ul>
             </div>
 
-            <div class="col-sm-6 col-lg-3">
+            <div class="col-sm-6 col-lg-4">
                 <h2 class="h6 fw-bold footer-heading mb-3">Quick links</h2>
-                <ul class="list-unstyled small mb-3">
+                <ul class="list-unstyled small mb-0 footer-links">
                     <li class="mb-2"><?= Html::a('What we build', ['/site/index', '#' => 'services']) ?></li>
                     <li class="mb-2"><?= Html::a('Our work', ['/site/index', '#' => 'work']) ?></li>
                     <li class="mb-2"><?= Html::a('Website upgrades', ['/site/audit']) ?></li>
@@ -68,15 +77,6 @@ $socials = array_filter([
                     <li class="mb-2"><?= Html::a('Contact us', ['/site/contact']) ?></li>
                     <li class="mb-2"><?= Yii::$app->user->isGuest ? Html::a('Customer login', ['/site/login']) : Html::a('My account', ['/dashboard/index']) ?></li>
                 </ul>
-                <?php if ($socials): ?>
-                    <div class="d-flex gap-2">
-                        <?php foreach ($socials as $label => [$icon, $url]): ?>
-                            <a href="<?= Html::encode($url) ?>" target="_blank" rel="noopener" class="footer-social" title="<?= $label ?>" aria-label="<?= $label ?>">
-                                <i class="<?= $icon ?>"></i>
-                            </a>
-                        <?php endforeach; ?>
-                    </div>
-                <?php endif; ?>
             </div>
         </div>
 

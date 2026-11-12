@@ -68,6 +68,7 @@ class BlogPostController extends BaseController
 
     private function saveForm(BlogPost $model): Response|string
     {
+        $wasPublic = $model->isPublic();
         if ($model->load(Yii::$app->request->post())) {
             $cover = UploadedFile::getInstance($model, 'cover_image');
             try {
@@ -77,9 +78,11 @@ class BlogPostController extends BaseController
                     $model->cover_image = null;
                 }
                 if ($model->save()) {
+                    // Google finds new posts through the sitemap within days; asking it directly takes about a day.
+                    $indexing = 'Ask Google to index it: click Search Console above, then URL inspection > paste ' . $this->publicUrl('blog/' . $model->slug) . ' > Request indexing.';
                     Yii::$app->session->setFlash('success', match ($model->stateLabel()) {
-                        'Published' => 'Post published.',
-                        'Scheduled' => 'Post saved. It goes live on ' . Yii::$app->formatter->asDatetime($model->published_at, 'php:d M Y, H:i') . '.',
+                        'Published' => $wasPublic ? 'Post saved.' : 'Post published. ' . $indexing,
+                        'Scheduled' => 'Post saved. It goes live on ' . Yii::$app->formatter->asDatetime($model->published_at, 'php:d M Y, H:i') . '. Once it is live: ' . lcfirst($indexing),
                         default => 'Draft saved. Visitors can\'t see it until you publish it.',
                     });
 

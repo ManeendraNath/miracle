@@ -975,6 +975,16 @@ a.desc:after {
     border-color: rgba(255, 255, 255, .15);
 }
 
+/* Quick links in two short columns, level with the other footer columns. */
+.site-footer .footer-links {
+    columns: 2;
+    column-gap: 1.5rem;
+}
+
+.site-footer .footer-links li {
+    break-inside: avoid;
+}
+
 .site-footer .footer-social {
     width: 36px;
     height: 36px;

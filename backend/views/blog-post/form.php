@@ -18,6 +18,7 @@ $this->params['breadcrumbs'][] = $this->title;
 $this->params['actions'] = [Html::a('<i class="fas fa-arrow-left me-1"></i> Back', ['index'], ['class' => 'btn btn-light border'])];
 if (!$model->isNewRecord) {
     $this->params['actions'][] = Html::a('<i class="fas fa-eye me-1"></i> Preview', ['preview', 'id' => $model->id], ['class' => 'btn btn-outline-secondary']);
+    $this->params['actions'][] = Html::a('<i class="fab fa-google me-1"></i> Search Console', Yii::$app->params['searchConsoleUrl'], ['class' => 'btn btn-outline-secondary', 'target' => '_blank', 'rel' => 'noopener']);
 }
 $this->params['help'] = [
     'Title' => 'What the post answers, in words a client abroad would search for, e.g. "How much does a custom web app cost in 2026?".',
@@ -28,6 +29,7 @@ $this->params['help'] = [
     'Cover image' => 'Shown on the blog list, at the top of the post, and when the post is shared on LinkedIn or WhatsApp. About 1600 x 900 works best.',
     'Search result title' => 'Optional, up to 70 characters, for when the title is too long for Google. Leave empty to use the title.',
     'Preview' => 'Shows the post as visitors will see it, drafts too. Save first to preview your latest changes.',
+    'Search Console' => 'Opens Google Search Console for this website. New posts reach Google through the sitemap within days; to speed it up, after publishing: URL inspection > paste the post address > Request indexing. The message after publishing shows the address.',
 ];
 
 // The editor (Quill) from jsDelivr, pinned with integrity hashes; its scripts get the page's CSP nonce.

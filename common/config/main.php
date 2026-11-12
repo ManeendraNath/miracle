@@ -35,6 +35,9 @@ return [
             'class' => \yii\caching\FileCache::class,
             'cachePath' => '@runtime/schema-cache',
         ],
+        'view' => [
+            'class' => \common\components\View::class,
+        ],
         'response' => [
             'on beforeSend' => static function (\yii\base\Event $event): void {
                 header_remove('X-Powered-By');
@@ -44,8 +47,16 @@ return [
                     ->set('Referrer-Policy', 'strict-origin-when-cross-origin')
                     ->set('Strict-Transport-Security', 'max-age=31536000')
                     // Safe on every page (no inline-script rules): no plugins, no <base> hijack, never framed.
-                    // ponytail: no script-src yet; it needs the inline scripts moved out first.
                     ->set('Content-Security-Policy', "base-uri 'self'; object-src 'none'; frame-ancestors 'none'");
+                // Only scripts the app registered (nonce, common\components\View) and what they load ('strict-dynamic':
+                // Razorpay, PayPal). Report-only for now: browsers report what it would block to /site/csp-report.
+                // 'unsafe-inline' and https: only matter to browsers too old for nonces, which ignore the rest.
+                // ponytail: report-only; enforce (rename the header) once the CSP log stays empty for a week.
+                if (\Yii::$app->has('view') && \Yii::$app->view instanceof \common\components\View && \Yii::$app->request instanceof \yii\web\Request) {
+                    $event->sender->headers->set('Content-Security-Policy-Report-Only', "script-src 'nonce-" . \Yii::$app->view->getNonce()
+                        . "' 'strict-dynamic' https: 'unsafe-inline'; object-src 'none'; base-uri 'self'; report-uri "
+                        . \Yii::$app->params['frontendBaseUrl'] . '/site/csp-report');
+                }
             },
         ],
         'formatter' => [

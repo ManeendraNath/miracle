@@ -67,6 +67,7 @@ class SiteController extends Controller
                 'class' => VerbFilter::class,
                 'actions' => [
                     'logout' => ['post'],
+                    'csp-report' => ['post'],
                 ],
             ],
         ];
@@ -86,6 +87,34 @@ class SiteController extends Controller
                 'fixedVerifyCode' => YII_ENV_TEST ? 'testme' : null,
             ],
         ];
+    }
+
+    public function beforeAction($action): bool
+    {
+        // Browsers post CSP reports without a CSRF token (and from the admin site too).
+        if ($action->id === 'csp-report') {
+            $this->enableCsrfValidation = false;
+        }
+
+        return parent::beforeAction($action);
+    }
+
+    /**
+     * Where browsers report scripts the Content-Security-Policy-Report-Only header would block (common/config/main.php),
+     * from this site and the admin. Logged to runtime/logs/csp.log; nothing is stored.
+     */
+    public function actionCspReport(): \yii\web\Response
+    {
+        $report = json_decode(substr((string) Yii::$app->request->getRawBody(), 0, 4000), true);
+        $report = is_array($report) ? ($report['csp-report'] ?? $report) : null;
+        if (is_array($report)) {
+            $fields = array_intersect_key($report, array_flip(['document-uri', 'violated-directive', 'effective-directive', 'blocked-uri', 'source-file', 'line-number', 'script-sample']));
+            // Anyone can post here: keep each value one plain line so a report can't fake log entries.
+            Yii::warning(array_map(fn ($v) => preg_replace('/[\x00-\x1F\x7F]+/', ' ', is_scalar($v) ? (string) $v : (string) json_encode($v)), $fields), 'csp');
+        }
+        Yii::$app->response->statusCode = 204;
+
+        return Yii::$app->response;
     }
 
     /**

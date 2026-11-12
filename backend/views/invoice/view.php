@@ -74,7 +74,8 @@ if (in_array($model->status, [Invoice::STATUS_UNPAID, Invoice::STATUS_PARTIALLY_
 if ($model->status !== Invoice::STATUS_DRAFT && !str_starts_with((string) $model->invoice_number, 'TMP-')) {
     $this->params['actions'][] = Html::a('<i class="fas fa-envelope me-1"></i> Email customer', ['/user/email', 'id' => $model->user_id, 'invoice' => $model->id], ['class' => 'btn btn-outline-secondary']);
 }
-$this->params['actions'][] = Html::button('<i class="fas fa-print me-1"></i> Print / Save PDF', ['class' => 'btn btn-outline-secondary', 'onclick' => 'window.print();']);
+$this->params['actions'][] = Html::button('<i class="fas fa-print me-1"></i> Print / Save PDF', ['class' => 'btn btn-outline-secondary', 'id' => 'invoice-print']);
+$this->registerJs('document.getElementById("invoice-print").addEventListener("click", () => window.print());');
 ?>
 
 <div class="container-fluid py-4">

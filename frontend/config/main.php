@@ -68,6 +68,15 @@ return [
                 [
                     'class' => 'yii\log\FileTarget',
                     'levels' => ['error', 'warning'],
+                    'except' => ['csp'],
+                    'logVars' => [],
+                ],
+                // SiteController::actionCspReport
+                [
+                    'class' => 'yii\log\FileTarget',
+                    'categories' => ['csp'],
+                    'levels' => ['warning'],
+                    'logFile' => '@runtime/logs/csp.log',
                     'logVars' => [],
                 ],
             ],

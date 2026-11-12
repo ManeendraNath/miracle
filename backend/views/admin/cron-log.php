@@ -85,7 +85,7 @@ $this->params['breadcrumbs'][] = $this->title;
     <div class="card card-dark shadow">
         <div class="card-header d-flex justify-content-between align-items-center py-3">
             <h3 class="card-title m-0 text-monospace small"><i class="fas fa-terminal text-warning mr-2"></i> tail -n 150 <?= Html::encode($logPath) ?></h3>
-            <button onclick="window.location.reload();" class="btn btn-xs btn-outline-light rounded-pill px-3 ml-auto"><i class="fas fa-sync-alt mr-1"></i> Refresh Live Terminal</button>
+            <button id="cron-log-reload" class="btn btn-xs btn-outline-light rounded-pill px-3 ml-auto"><i class="fas fa-sync-alt mr-1"></i> Refresh Live Terminal</button>
         </div>
         <div class="card-body bg-black p-4 text-monospace" style="max-height: 500px; overflow-y: auto; background-color: #1e1e1e; border-radius: 0 0 4px 4px;">
             <div class="terminal-shell-lines text-sm" style="line-height: 1.8; font-family: 'Courier New', Courier, monospace;">
@@ -110,3 +110,4 @@ $this->params['breadcrumbs'][] = $this->title;
         </div>
     </div>
 </div>
+<?php $this->registerJs('document.getElementById("cron-log-reload")?.addEventListener("click", () => window.location.reload());'); ?>

@@ -44,9 +44,11 @@ $money = static function (int|float|string|null $amount): string {
     <div class="row align-items-center mb-5">
         <div class="col-md-6">
             <?= Html::img('@web/images/logo-full.svg', ['alt' => 'Miracle Web Technologies', 'style' => 'height: 64px; width: auto;']) ?>
-            <p class="text-muted text-sm mt-1 mb-0">
-                Premium Enterprise Engineering & Systems Architectures<br>
-                Support Line: admin@miraclewebtechnologies.com
+            <p class="text-muted text-sm mt-2 mb-0">
+                Website development, hosting &amp; maintenance
+                <?php foreach (Invoice::supplierLines() as $line): ?>
+                    <br><?= Html::encode($line) ?>
+                <?php endforeach; ?>
                 <?php if (Invoice::supplierGstin() !== ''): ?>
                     <br>GSTIN: <?= Html::encode(Invoice::supplierGstin()) ?>
                 <?php endif; ?>

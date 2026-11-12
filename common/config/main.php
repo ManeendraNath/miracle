@@ -45,7 +45,7 @@ return [
                     ->set('X-Frame-Options', 'DENY')
                     ->set('X-Content-Type-Options', 'nosniff')
                     ->set('Referrer-Policy', 'strict-origin-when-cross-origin')
-                    ->set('Strict-Transport-Security', 'max-age=31536000')
+                    ->set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains')
                     // Safe on every page (no inline-script rules): no plugins, no <base> hijack, never framed.
                     ->set('Content-Security-Policy', "base-uri 'self'; object-src 'none'; frame-ancestors 'none'");
                 // Only scripts the app registered (nonce, common\components\View) and what they load ('strict-dynamic':

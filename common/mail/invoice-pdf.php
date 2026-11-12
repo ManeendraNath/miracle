@@ -108,11 +108,12 @@ $igstAmount = $tax['igstAmount'];
     <table>
         <tr>
             <td>
-                <div class="company">Miracle Web Technologies</div>
-
-                <div>
-                    Delhi, India
-                </div>
+                <?php /* PNG: the PDF library drops the SVG logo's gradients. Made from frontend/web/images/logo-full.svg. */ ?>
+                <img src="<?= Html::encode(Yii::getAlias('@common/mail/images/logo-full.png')) ?>" alt="Miracle Web Technologies" style="height: 16mm;">
+                <div>Website development, hosting &amp; maintenance</div>
+                <?php foreach (Invoice::supplierLines() as $line): ?>
+                    <div><?= Html::encode($line) ?></div>
+                <?php endforeach; ?>
                 <?php if (Invoice::supplierGstin() !== ''): ?>
                     <div>GSTIN: <?= Html::encode(Invoice::supplierGstin()) ?></div>
                 <?php endif; ?>

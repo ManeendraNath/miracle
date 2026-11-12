@@ -68,6 +68,21 @@ class Invoice extends base\Invoice
         return trim((string) (\Yii::$app->params['billing']['supplierGstin'] ?? ''));
     }
 
+    /**
+     * Our address and contact lines for the invoice header, from Site Settings (as the website shows them).
+     * @return string[]
+     */
+    public static function supplierLines(): array
+    {
+        $setting = static fn(string $name): string => trim((string) \common\components\CustomYii::getSetting($name), ' ,');
+        $address = array_filter([$setting('address_line_1'), $setting('address_line_2'), $setting('address_line_3')]);
+
+        return array_values(array_filter([
+            implode(', ', $address),
+            implode(' | ', array_filter([$setting('email_1'), $setting('mobile_1') !== '' ? \common\components\CustomYii::formatPhone($setting('mobile_1')) : ''])),
+        ]));
+    }
+
     /** Line every export invoice must carry; null for clients in India. */
     public function getExportNote(): ?string
     {

@@ -48,7 +48,7 @@ GridViewHelper::register($this);
             ],
             [
                 'attribute' => 'id',
-                'label' => 'System ID Reference',
+                'label' => 'ID',
                 'headerOptions' => ['class' => 'text-primary font-weight-bold'],
                 'format' => 'raw',
                 'value' => function ($model) {
@@ -57,7 +57,7 @@ GridViewHelper::register($this);
             ],
             [
                 'attribute' => 'username',
-                'label' => 'Unique Profile Handle',
+                'label' => 'Username',
                 'headerOptions' => ['class' => 'text-primary font-weight-bold'],
                 'format' => 'raw',
                 'value' => function ($model) {

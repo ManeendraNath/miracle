@@ -99,7 +99,7 @@ class AdminController extends BaseController
                 if ((int) $model->id === (int) Yii::$app->user->id && (string) ($this->request->post($model->formName())['password'] ?? '') !== '') {
                     Yii::$app->user->switchIdentity($model, 0); // own password changed: stay signed in here
                 }
-                Yii::$app->session->setFlash('success', 'Administrative security profile parameters updated perfectly.');
+                Yii::$app->session->setFlash('success', 'Staff account updated.');
                 return $this->redirect(['view', 'id' => $model->id]);
             }
         }

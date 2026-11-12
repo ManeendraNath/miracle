@@ -180,6 +180,7 @@ class Coupon extends base\Coupon
             'uses_per_user' => 'Usage Limit Per Customer',
             'applies_to' => 'Applies To',
             'assigned_user_ids' => 'Only For These Customers',
+            'is_active' => 'Active',
         ];
         return ArrayHelper::merge(parent::attributeLabels(), $attributes);
     }

@@ -62,4 +62,16 @@ class Maintenance extends base\Maintenance
     {
         return preg_match('~^https?://~i', (string) $this->website_url) ? $this->website_url : null;
     }
+
+    /** Plain names on forms and errors instead of the column names. */
+    public function attributeLabels(): array
+    {
+        return \yii\helpers\ArrayHelper::merge(parent::attributeLabels(), [
+            'user_id' => 'Client',
+            'website_url' => 'Website',
+            'renewal_cycle_months' => 'Renewal Cycle (Months)',
+            'renewal_increase_percent' => 'Renewal Increase (%)',
+            'renewal_base_amount' => 'Base Renewal Amount',
+        ]);
+    }
 }

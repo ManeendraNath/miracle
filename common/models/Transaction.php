@@ -120,4 +120,15 @@ class Transaction extends base\Transaction
             ['gateway_id', 'in', 'range' => [self::GATEWAY_MANUAL, self::GATEWAY_UPI_BANK], 'on' => self::SCENARIO_ADMIN_ENTRY, 'message' => 'Online payments are recorded by Razorpay or PayPal, not by hand.'],
         ]);
     }
+
+    /** Plain names on forms and errors instead of the column names. */
+    public function attributeLabels(): array
+    {
+        return \yii\helpers\ArrayHelper::merge(parent::attributeLabels(), [
+            'invoice_id' => 'Invoice',
+            'gateway_id' => 'Payment Method',
+            'gateway_payment_id' => 'Payment Reference (UTR)',
+            'gateway_order_id' => 'Gateway Order Reference',
+        ]);
+    }
 }

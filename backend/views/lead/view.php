@@ -21,7 +21,7 @@ $this->params['help'] = [
     'Update Status' => 'Move the lead to its current stage (Admins only). Nothing is sent to the person.',
     'Email' => 'Click the address to reply from your own email program. They get no automatic answer.',
     'Subject' => 'What they typed. The website\'s "Get a quote" buttons start it as "Project enquiry", and a hosting plan\'s "Ask about" button as "Hosting enquiry:" plus the plan name.',
-    'Status' => 'Pending means new and not yet looked at. Spam means it looked automated, so nobody was emailed about it.',
+    'Status' => 'Pending Review means new and not yet looked at. Spam means it looked automated, so nobody was emailed about it.',
 ];
 ?>
 <div class="lead-view">
@@ -40,7 +40,7 @@ $this->params['help'] = [
                     [
                         'attribute' => 'status',
                         'format' => 'raw',
-                        'value' => Html::tag('span', Html::encode($model->status), ['class' => 'badge bg-secondary']),
+                        'value' => Html::tag('span', Html::encode(\common\models\Lead::getStatuses()[$model->status] ?? $model->status), ['class' => 'badge bg-secondary']),
                     ],
                     [
                         'attribute' => 'created_at',

@@ -8,7 +8,7 @@ use yii\bootstrap5\Html;
 use yii\helpers\Url;
 
 /** @var yii\web\View $this */
-/** @var array $metrics Summary metrics dictionary evaluated from SiteController query scopes */
+/** @var array $metrics Summary figures from DashboardController */
 /** @var bool $canBilling Admin+ only: Managers get no money figures */
 $assetDir = Yii::$app->assetManager->getPublishedUrl('@vendor/hail812/yii2-adminlte3/src/assets');
 
@@ -43,7 +43,7 @@ if ($canBilling) {
 }
 $this->params['help']['Infrastructure Assets / Inbound Pipeline'] = 'Counts of active domains, hosting and maintenance plans, and of audit requests and website enquiries still Pending. The arrow icon or the count opens the list.';
 if ($canBilling) {
-    $this->params['help']['Recent Coupons'] = 'The 4 newest coupons. Paused means the coupon is inactive.';
+    $this->params['help']['Recent Coupons'] = 'The 4 newest coupons, Active or Inactive.';
 }
 ?>
 
@@ -282,7 +282,7 @@ $assets = [
                                     <td class="font-weight-bold"><?= Html::encode($coupon->code) ?></td>
                                     <td><?= $coupon->isTypeP() ? number_format((float) $coupon->amount, 2) . '%' : Yii::$app->formatter->asCurrency((float) $coupon->amount, 'INR') ?> off</td>
                                     <td class="text-center">
-                                        <span class="badge <?= $coupon->isIsActiveY() ? 'badge-success' : 'badge-secondary' ?>"><?= $coupon->isIsActiveY() ? 'Active' : 'Paused' ?></span>
+                                        <span class="badge <?= $coupon->isIsActiveY() ? 'badge-success' : 'badge-secondary' ?>"><?= $coupon->isIsActiveY() ? 'Active' : 'Inactive' ?></span>
                                     </td>
                                 </tr>
                             <?php endforeach; ?>

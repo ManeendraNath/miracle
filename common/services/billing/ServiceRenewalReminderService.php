@@ -263,10 +263,12 @@ final class ServiceRenewalReminderService
         if ($invoice !== null) {
             return $line . sprintf('Renewal %s on invoice %s (%s, invoice total %s).', $money((float) $event->amount), $invoice->reference(), $invoice->statusLabel(), $money((float) $invoice->total_payable));
         }
+        $class = ['domain' => Domains::class, 'hosting' => Hosting::class, 'maintenance' => Maintenance::class][$due['type']];
         if (!$due['hasPrice']) {
-            return $line . 'No renewal price is set, so no invoice will be generated. Set the Renewal Base Amount.';
+            // Named as that service's form labels it.
+            return $line . 'No renewal price is set, so no invoice will be generated. Set the ' . (new $class())->getAttributeLabel('renewal_base_amount') . '.';
         }
-        $service = ['domain' => Domains::class, 'hosting' => Hosting::class, 'maintenance' => Maintenance::class][$due['type']]::findOne($due['serviceId']);
+        $service = $class::findOne($due['serviceId']);
         if ($service === null) {
             return $line;
         }

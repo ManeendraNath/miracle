@@ -8,7 +8,7 @@ $this->params['breadcrumbs'][] = ['label' => 'Invoices', 'url' => ['index']];
 $this->params['breadcrumbs'][] = $this->title;
 $this->params['help'] = [
     'Bill a customer by hand for anything that is not an automatic renewal, such as project work. The invoice is issued as Unpaid straight away and emailed to the customer.',
-    'User ID' => 'The customer. They need a billing profile first: their address and GST rates are taken from it.',
+    'Client' => 'The customer. They need a billing profile first: their address and GST rates are taken from it.',
     'Due Date' => 'When payment is due. After this date the invoice counts as overdue on the dashboard.',
     'Category / Service type' => 'The category text is printed on the invoice. The drop-down under it only matters for coupons limited to certain services.',
     'Add Item / red X' => 'Add another line, or remove one. At least one line stays.',

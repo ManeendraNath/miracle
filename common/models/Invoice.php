@@ -176,4 +176,17 @@ class Invoice extends base\Invoice
             self::STATUS_DRAFT => 'Waiting for review',
         ];
     }
+
+    /** Plain names on forms and errors instead of the column names. */
+    public function attributeLabels(): array
+    {
+        return \yii\helpers\ArrayHelper::merge(parent::attributeLabels(), [
+            'user_id' => 'Client',
+            'coupon_id' => 'Coupon',
+            'cgst_percent' => 'CGST (%)',
+            'sgst_percent' => 'SGST (%)',
+            'igst_percent' => 'IGST (%)',
+            'billing_run_id' => 'Billing Run',
+        ]);
+    }
 }

@@ -26,7 +26,7 @@ $this->params['help'] = [
     'Minimum Order Amount' => 'The invoice lines must add up to at least this before discount and GST. 0 means no minimum.',
     'Starts At / Expires At' => 'Optional. Outside these dates the code is refused.',
     'Total Usage Limit / Usage Limit Per Customer' => 'How many invoices in all, and per customer, can use it; 0 means no limit.',
-    'Is Active' => 'An Inactive coupon is refused when anyone enters it.',
+    'Active' => 'An Inactive coupon is refused when anyone enters it.',
     'Applies To' => 'Tick service types to discount only those invoice lines; leave all unticked for every line.',
     'Only For These Customers' => 'Leave empty for anyone. Customers chosen here also get the coupon put on their renewal invoices automatically. Only one coupon goes on an invoice (the newest usable one), and none if the invoice already has a discount, such as the customer\'s Default Discount Amount.',
 ];

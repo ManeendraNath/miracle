@@ -43,9 +43,7 @@ $money = static function (int|float|string|null $amount): string {
     <!-- 🏢 Brand Heading & Company Metadata Row -->
     <div class="row align-items-center mb-5">
         <div class="col-md-6">
-            <h2 class="text-primary fw-bold m-0" style="letter-spacing: -0.5px;">
-                <i class="fas fa-cubes me-2"></i>MIRACLE WEB TECHNOLOGIES
-            </h2>
+            <?= Html::img('@web/images/logo-full.svg', ['alt' => 'Miracle Web Technologies', 'style' => 'height: 64px; width: auto;']) ?>
             <p class="text-muted text-sm mt-1 mb-0">
                 Premium Enterprise Engineering & Systems Architectures<br>
                 Support Line: admin@miraclewebtechnologies.com

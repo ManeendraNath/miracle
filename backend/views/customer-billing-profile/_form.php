@@ -25,7 +25,7 @@ $form = ActiveForm::begin([
 
         <?= $form->field($model, 'user_id')->widget(Select2::class, [
             'data' => $usersList,
-            'disabled' => !$canSetEverything,
+            'disabled' => !$canSetEverything || !$model->isNewRecord,
             'options' => [
                 'placeholder' => 'Select Client',
             ],
@@ -33,7 +33,7 @@ $form = ActiveForm::begin([
                 'allowClear' => false,
                 'width' => '100%',
             ],
-        ]) ?>
+        ])->hint($model->isNewRecord ? '' : 'Locked: this profile\'s company name, GST number and address belong to this client. To fix wrong details, correct them below; another client\'s details go in their own profile.') ?>
 
         <?= $form->field($model, 'legal_name')->textInput([
             'maxlength' => true,

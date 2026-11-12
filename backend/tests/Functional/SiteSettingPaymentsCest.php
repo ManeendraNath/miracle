@@ -32,7 +32,7 @@ final class SiteSettingPaymentsCest
         $I->seeResponseCodeIs(200);
         $I->see('Razorpay for clients in India');
         $I->see('PayPal for clients abroad');
-        $I->submitForm('#site-branding-matrix-form', ['SiteSetting[razorpay_india]' => '1', 'SiteSetting[razorpay_abroad]' => '0', 'SiteSetting[paypal_abroad]' => '1', 'SiteSetting[usd_rate_auto]' => '0', 'SiteSetting[usd_rate_margin]' => '3', 'SiteSetting[usd_inr_rate]' => '85']);
+        $I->submitForm('#site-settings-form', ['SiteSetting[razorpay_india]' => '1', 'SiteSetting[razorpay_abroad]' => '0', 'SiteSetting[paypal_abroad]' => '1', 'SiteSetting[usd_rate_auto]' => '0', 'SiteSetting[usd_rate_margin]' => '3', 'SiteSetting[usd_inr_rate]' => '85']);
         $I->seeRecord(\common\models\SiteSetting::class, ['id' => 1, 'razorpay_india' => 1, 'razorpay_abroad' => 0, 'paypal_abroad' => 1, 'usd_rate_auto' => 0]);
     }
 }

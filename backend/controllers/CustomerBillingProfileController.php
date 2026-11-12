@@ -68,8 +68,12 @@ final class CustomerBillingProfileController extends BaseController
     public function actionUpdate(int $id)
     {
         $model = $this->findModel($id);
+        $owner = $model->user_id;
 
-        if ($this->request->isPost && $model->load($this->request->post()) && $model->save()) {
+        // The client is fixed once the profile exists: moving it would put this company's GST details on another customer's invoices.
+        $loaded = $this->request->isPost && $model->load($this->request->post());
+        $model->user_id = $owner;
+        if ($loaded && $model->save()) {
             Yii::$app->session->setFlash('success', 'Customer billing profile updated successfully.');
 
             return $this->redirect(['index']);

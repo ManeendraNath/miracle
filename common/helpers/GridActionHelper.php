@@ -44,6 +44,7 @@ final class GridActionHelper
 
     /**
      * @param callable|null $isEnabled fn($model): bool, used by the {toggle-status} button
+     * @param callable|null $enableConfirm fn($model): string, the question asked before enabling (default: 'Enable this record?')
      * @param callable|null $urlCreator fn(string $action, $model): array, when the routes aren't the default [action, 'id' => id]
      * @param array<string, callable|bool> $visibleButtons action => fn($model): bool, to hide a button on some rows
      */
@@ -53,6 +54,7 @@ final class GridActionHelper
         ?callable $urlCreator = null,
         ?callable $isEnabled = null,
         array $visibleButtons = [],
+        ?callable $enableConfirm = null,
     ): array {
         $column = [
             'class' => ActionColumn::class,
@@ -69,11 +71,11 @@ final class GridActionHelper
             'buttons' => [
                 'view' => static fn (string|array $url): string => self::button('view', $url),
                 'update' => static fn (string|array $url): string => self::button('update', $url),
-                'toggle-status' => static function (string|array $url, $model) use ($isEnabled): string {
+                'toggle-status' => static function (string|array $url, $model) use ($isEnabled, $enableConfirm): string {
                     $enabled = $isEnabled !== null ? (bool) $isEnabled($model) : true;
 
                     return self::button($enabled ? 'disable' : 'enable', $url, [
-                        'data' => ['confirm' => $enabled ? 'Disable this record?' : 'Enable this record?', 'method' => 'post'],
+                        'data' => ['confirm' => $enabled ? 'Disable this record?' : ($enableConfirm !== null ? $enableConfirm($model) : 'Enable this record?'), 'method' => 'post'],
                     ]);
                 },
                 'resend-invoice' => static fn (string|array $url): string => self::button('resend', $url, [

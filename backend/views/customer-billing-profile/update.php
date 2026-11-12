@@ -11,6 +11,7 @@ $this->params['breadcrumbs'][] = [
 
 $this->params['breadcrumbs'][] = $this->title;
 $this->params['help'] = [
+    'Client' => 'Locked once the profile exists. The profile holds this customer\'s company name, GST number and address, and moving it would put them on another customer\'s invoices and leave this customer with none. If the details are wrong, correct them here; another customer\'s details belong in their own profile.',
     'Changes' => 'Invoices already made keep the old details. The new ones are used from the next invoice.',
     'Country' => 'Outside India means export of services: no GST is charged, and State, GSTIN and PAN are not used.',
     'State' => 'Sets the GST state code. When GST applies, a customer in our state pays CGST and SGST; any other state pays IGST.',

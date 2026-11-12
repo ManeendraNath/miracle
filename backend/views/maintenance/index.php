@@ -20,7 +20,7 @@ $this->params['help'] = [
     'Eye icon' => 'Open the contract\'s details.',
     'Pencil icon' => 'Edit the contract, including its expiry date, status and renewal prices.',
     'Ban icon (Disable)' => 'Shown on Active contracts. Makes the contract Cancelled so it is not renewed: its renewal not invoiced yet is dropped, and an unpaid renewal invoice for only this contract is cancelled (by Admins; for other staff an Admin is told).',
-    'Check icon (Enable)' => 'Shown on Cancelled and Overdue contracts. Makes the contract Active again, so automatic invoices and reminders start again.',
+    'Check icon (Enable)' => 'Shown on Cancelled and Overdue contracts. Makes the contract Active again, so automatic invoices and reminders start again. It asks first, says no payment is recorded, and says whether a renewal invoice is already open or when the billing run will make one.',
     'Statuses' => 'Active: invoiced and reminded automatically. Overdue: held for non-payment, not invoiced automatically; it turns Active by itself when a renewal invoice for it is paid. Cancelled: not renewed.',
 ];
 
@@ -196,7 +196,8 @@ $users = ArrayHelper::map(User::find()->orderBy(['username' => SORT_ASC])->all()
                         ],
                         GridActionHelper::crudColumn(
                             template: '{view} {update} {toggle-status}',
-                            isEnabled: static fn($model): bool => (int) $model->status === \common\models\Maintenance::STATUS_ACTIVE
+                            isEnabled: static fn($model): bool => (int) $model->status === \common\models\Maintenance::STATUS_ACTIVE,
+                            enableConfirm: \common\services\billing\ServiceEnableNotice::confirm(...),
                         ),
                     ],
                 ])

@@ -21,7 +21,7 @@ $this->params['help'] = [
     'Eye icon' => 'Open the domain\'s details.',
     'Pencil icon' => 'Edit the domain, including its expiry date, status and renewal prices.',
     'Ban icon (Disable)' => 'Shown on Active domains. Makes the domain Inactive so it is not renewed: its renewal not invoiced yet is dropped, and an unpaid renewal invoice for only this domain is cancelled (by Admins; for other staff an Admin is told).',
-    'Check icon (Enable)' => 'Shown on Inactive or Deleted domains. Makes the domain Active again, so automatic invoices and reminders start again.',
+    'Check icon (Enable)' => 'Shown on Inactive or Deleted domains. Makes the domain Active again, so automatic invoices and reminders start again. It asks first, says no payment is recorded, and says whether a renewal invoice is already open or when the billing run will make one.',
     'Statuses' => 'Active: invoiced and reminded automatically. Inactive: not renewed. Deleted: not renewed and hidden from the customer\'s list of services.',
 ];
 
@@ -147,7 +147,7 @@ $users = ArrayHelper::map(User::find()->orderBy(['username' => SORT_ASC])->all()
                     /*
                      * CRUD actions
                      */
-                    GridActionHelper::crudColumn(template: '{view} {update} {toggle-status}', isEnabled: static fn($model): bool => (int) $model->status === \common\models\Domains::STATUS_ACTIVE),
+                    GridActionHelper::crudColumn(template: '{view} {update} {toggle-status}', isEnabled: static fn($model): bool => (int) $model->status === \common\models\Domains::STATUS_ACTIVE, enableConfirm: \common\services\billing\ServiceEnableNotice::confirm(...)),
                 ],
             ])
             ?>

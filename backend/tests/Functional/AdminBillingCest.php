@@ -135,6 +135,25 @@ final class AdminBillingCest
         $I->dontSeeRecord(User::class, ['id' => $customer, 'auth_key' => 'attacker-key']);
     }
 
+    public function aBillingProfileKeepsItsClient(FunctionalTester $I): void
+    {
+        $suffix = bin2hex(random_bytes(4));
+        $owner = $I->haveRecord(User::class, ['username' => 'profile-owner-' . $suffix, 'email' => 'owner-' . $suffix . '@example.test', 'auth_key' => 'x', 'password_hash' => 'x', 'status' => User::getStatusActive(), 'created_at' => time(), 'updated_at' => time()]);
+        $other = $I->haveRecord(User::class, ['username' => 'profile-other-' . $suffix, 'email' => 'other-' . $suffix . '@example.test', 'auth_key' => 'x', 'password_hash' => 'x', 'status' => User::getStatusActive(), 'created_at' => time(), 'updated_at' => time()]);
+        $profile = $I->haveRecord(\common\models\CustomerBillingProfile::class, ['user_id' => $owner, 'legal_name' => 'Owner Ltd', 'state' => 'Delhi', 'state_code' => '07', 'country' => 'India', 'is_gst_applicable' => 0, 'default_discount_amount' => 0, 'created_at' => time(), 'updated_at' => time()]);
+
+        $I->amOnRoute('customer-billing-profile/update', ['id' => $profile]);
+        $I->see('Locked: this profile');
+        $I->sendAjaxPostRequest('/customer-billing-profile/update?id=' . $profile, [
+            Yii::$app->request->csrfParam => $I->grabAttributeFrom('meta[name=csrf-token]', 'content'),
+            'CustomerBillingProfile[user_id]' => (string) $other,
+            'CustomerBillingProfile[legal_name]' => 'Owner Renamed Ltd',
+            'CustomerBillingProfile[state]' => 'Delhi',
+            'CustomerBillingProfile[country]' => 'India',
+        ]);
+        $I->seeRecord(\common\models\CustomerBillingProfile::class, ['id' => $profile, 'user_id' => $owner, 'legal_name' => 'Owner Renamed Ltd']);
+    }
+
     public function partialRefundCanCloseTheInvoiceKeepingTheRest(FunctionalTester $I): void
     {
         $payment = $this->transaction($I, $this->invoice($I, Invoice::STATUS_PAID), Transaction::GATEWAY_UPI_BANK, Transaction::STATUS_CAPTURED);

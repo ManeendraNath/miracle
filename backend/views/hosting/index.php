@@ -20,7 +20,7 @@ $this->params['help'] = [
     'Eye icon' => 'Open the account\'s details, including cPanel access.',
     'Pencil icon' => 'Edit the account, including its expiry date, status and renewal prices.',
     'Ban icon (Disable)' => 'Shown on Active accounts. Makes the account Inactive so it is not renewed: its renewal not invoiced yet is dropped, and an unpaid renewal invoice for only this account is cancelled (by Admins; for other staff an Admin is told).',
-    'Check icon (Enable)' => 'Shown on Inactive and Suspended / Expired accounts. Makes the account Active again, so automatic invoices and reminders start again.',
+    'Check icon (Enable)' => 'Shown on Inactive and Suspended / Expired accounts. Makes the account Active again, so automatic invoices and reminders start again. It asks first, says no payment is recorded, and says whether a renewal invoice is already open or when the billing run will make one.',
     'Statuses' => 'Active: invoiced and reminded automatically. Suspended / Expired: held for non-payment, not invoiced automatically; it turns Active by itself when a renewal invoice for it is paid. Inactive: not renewed.',
 ];
 
@@ -185,7 +185,8 @@ $users = ArrayHelper::map(User::find()->orderBy(['username' => SORT_ASC])->all()
                         ],
                         GridActionHelper::crudColumn(
                             template: '{view} {update} {toggle-status}',
-                            isEnabled: static fn($model): bool => (int) $model->status === \common\models\Hosting::STATUS_ACTIVE
+                            isEnabled: static fn($model): bool => (int) $model->status === \common\models\Hosting::STATUS_ACTIVE,
+                            enableConfirm: \common\services\billing\ServiceEnableNotice::confirm(...),
                         ),
                     ],
                 ])

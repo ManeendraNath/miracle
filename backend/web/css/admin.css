@@ -93,3 +93,15 @@
     width: auto;
     max-width: none;
 }
+
+/* Site Settings: one card per section, a light box per payment gateway, and a save bar that stays in view. */
+.settings-card { border: 0; border-radius: .75rem; }
+.settings-card > .card-header { border-bottom: 1px solid #eef1f5; border-radius: .75rem .75rem 0 0; padding: 1rem 1.25rem; }
+.settings-card .card-title { float: none; font-size: 1.05rem; margin: 0; display: flex; align-items: center; }
+.settings-about { margin: .25rem 0 0 2.75rem; }
+.settings-icon { display: inline-flex; align-items: center; justify-content: center; width: 2.1rem; height: 2.1rem; margin-right: .65rem; border-radius: .5rem; background: #e8f1ff; color: #0d6efd; font-size: .95rem; }
+.settings-box { background: #f8fafc; border: 1px solid #e5e9f0; border-radius: .6rem; padding: 1rem 1.1rem; }
+.settings-subhead { font-weight: 600; text-transform: uppercase; letter-spacing: .04em; font-size: .78rem; color: #64748b; margin: .25rem 0 .75rem; }
+.settings-save { position: sticky; bottom: 0; z-index: 5; display: flex; justify-content: flex-end; align-items: center; gap: 1rem; padding: .75rem 1.25rem; background: #fff; border-top: 1px solid #e5e9f0; border-radius: .75rem; box-shadow: 0 -4px 12px rgba(15, 23, 42, .06); }
+.settings-rate { background: #eef6ff; border: 1px solid #cfe2ff; color: #0b3b75; border-radius: .6rem; padding: .85rem 1.1rem; }
+.settings-rate-missing { background: #fdecec; border-color: #f5c2c7; color: #842029; }

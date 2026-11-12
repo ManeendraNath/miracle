@@ -97,7 +97,7 @@ JS);
                     <?= $form->field($model, 'status')->dropDownList(BlogPost::statuses()) ?>
                     <?= $form->field($model, 'publishAt')->input('datetime-local')->hint('Leave empty to publish as soon as it is saved as Published.') ?>
                     <?= $form->field($model, 'category_id')->dropDownList(BlogCategory::options(), ['prompt' => 'No category'])->hint(Html::a('Manage categories', ['/blog-category/index'])) ?>
-                    <?= $form->field($model, 'slug')->textInput(['maxlength' => 220, 'placeholder' => 'Made from the title'])->hint('/blog/' . Html::encode($model->slug ?: 'made-from-the-title')) ?>
+                    <?= $form->field($model, 'slug', ['enableClientValidation' => false])->textInput(['maxlength' => 220, 'placeholder' => 'Made from the title'])->hint('/blog/' . Html::encode($model->slug ?: 'made-from-the-title')) ?>
                     <?= Html::submitButton('<i class="fas fa-save me-1"></i> Save', ['class' => 'btn btn-primary w-100']) ?>
                 </div>
             </div>

@@ -6,6 +6,7 @@ namespace backend\tests\Functional;
 
 use backend\tests\Support\FunctionalTester;
 use common\models\Admin;
+use common\models\BlogCategory;
 use common\models\BlogPost;
 use Yii;
 
@@ -48,5 +49,12 @@ final class BlogPostCest
         $I->sendAjaxPostRequest('/blog-post/upload-image', [Yii::$app->request->csrfParam => $I->grabAttributeFrom('meta[name=csrf-token]', 'content')]);
         $I->seeResponseCodeIs(422);
         $I->seeInSource('Choose an image to upload.');
+    }
+
+    public function aCategoryGetsItsWebAddressFromTheName(FunctionalTester $I): void
+    {
+        $I->amOnRoute('blog-category/create');
+        $I->submitForm('form[action*="blog-category/create"]', ['BlogCategory[name]' => 'Case Studies', 'BlogCategory[slug]' => '']);
+        $I->seeRecord(BlogCategory::class, ['name' => 'Case Studies', 'slug' => 'case-studies']);
     }
 }

@@ -20,7 +20,7 @@ $this->params['help'] = [
     <div class="card-body">
         <?php $form = ActiveForm::begin(); ?>
         <?= $form->field($model, 'name')->textInput(['maxlength' => 100]) ?>
-        <?= $form->field($model, 'slug')->textInput(['maxlength' => 120, 'placeholder' => 'Made from the name']) ?>
+        <?= $form->field($model, 'slug', ['enableClientValidation' => false])->textInput(['maxlength' => 120, 'placeholder' => 'Made from the name']) ?>
         <?= Html::submitButton('Save', ['class' => 'btn btn-primary']) ?>
         <?= Html::a('Cancel', ['index'], ['class' => 'btn btn-light border ms-2']) ?>
         <?php ActiveForm::end(); ?>

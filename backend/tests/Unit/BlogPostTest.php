@@ -64,4 +64,13 @@ final class BlogPostTest extends Unit
         $this->assertSame('feed', $post->slug);
         $this->assertTrue($post->hasErrors('slug'));
     }
+
+    public function testAFormCannotSetTheCoverAuthorOrPublishTime(): void
+    {
+        $post = new BlogPost(['cover_image' => 'uploads/blog/2026-11/a.jpg', 'author_id' => 1, 'published_at' => 100]);
+        // The cover file input always posts an empty cover_image next to the file.
+        $post->load(['BlogPost' => ['title' => 'T', 'cover_image' => '', 'author_id' => 2, 'published_at' => 200]]);
+        $this->assertSame('T', $post->title);
+        $this->assertSame(['uploads/blog/2026-11/a.jpg', 1, 100], [$post->cover_image, $post->author_id, $post->published_at]);
+    }
 }

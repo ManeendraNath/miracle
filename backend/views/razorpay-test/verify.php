@@ -17,6 +17,13 @@ $this->params['breadcrumbs'][] = 'Result';
 $this->params['actions'][] = Html::a('<i class="fas fa-redo mr-1"></i> Another test', ['index'], ['class' => 'btn btn-primary']);
 
 $captured = ($payment['status'] ?? null) === 'captured';
+$this->params['help'] = [
+    'Payment captured and verified' => 'Everything works: the checkout, the key secret on the server, and Razorpay took the test payment.',
+    'Signature valid, but not captured' => 'The keys are right, but Razorpay has not taken the money. Look the payment up in Razorpay\'s test dashboard.',
+    'Signature check failed' => 'The key secret on the server doesn\'t match the key ID, the server no longer has test keys, or this page was opened without paying. Check both keys in .env.',
+    'Lookup error' => 'Shown when Razorpay couldn\'t be asked about the payment; the message says why.',
+    'Another test' => 'Back to the test page. Nothing from this test was saved.',
+];
 ?>
 
 <div class="card card-outline <?= $signatureValid && $captured ? 'card-success' : 'card-danger' ?> shadow-sm">

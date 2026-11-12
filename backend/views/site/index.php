@@ -10,6 +10,10 @@ use yii\helpers\Html;
 
 $this->title = 'Dashboard';
 $username = Yii::$app->user->identity?->username;
+$this->params['help'] = [
+    'This is a leftover sample page from the admin theme. The 150 New Orders box is example content, not real data, and its More info link goes nowhere.',
+    'Use the Dashboard (the first page after signing in) for real figures.',
+];
 
 // This forces Yii to automatically publish and load all AdminLTE 3 CSS, JS, and Plugins
 AdminLteAsset::register($this);

@@ -10,7 +10,7 @@ use yii\bootstrap4\Breadcrumbs;
     <div class="content-header">
         <div class="container-fluid">
             <div class="row mb-2">
-                <div class="col-sm-6">
+                <div class="col-md" style="min-width: 16rem">
                     <h1 class="m-0">
                         <?php
                         if (!is_null($this->title)) {
@@ -25,7 +25,7 @@ use yii\bootstrap4\Breadcrumbs;
                         <div class="text-muted mt-1"><?= $this->params['subtitle'] ?></div>
                     <?php endif; ?>
                 </div><!-- /.col -->
-                <div class="col-sm-6">
+                <div class="col-md-auto mw-100"><?php /* As wide as its buttons, so they stay on one line when they fit; drops below the title when they don't. */ ?>
                     <?php
                     echo Breadcrumbs::widget([
                         'links' => isset($this->params['breadcrumbs']) ? $this->params['breadcrumbs'] : [],
@@ -36,10 +36,33 @@ use yii\bootstrap4\Breadcrumbs;
                     ?>
                     <?php if (!empty($this->params['actions'])): ?>
                         <div class="clearfix"></div>
-                        <div class="d-flex flex-wrap justify-content-sm-end gap-2 mt-2"><?= implode("\n", (array) $this->params['actions']) ?></div>
+                        <?php
+                        // A button without its own tooltip gets the help text written for its label (see 'help' below).
+                        $help = (array) ($this->params['help'] ?? []);
+                        $actions = array_map(static function (string $button) use ($help): string {
+                            $label = trim(html_entity_decode(strip_tags($button)));
+                            if (!is_string($help[$label] ?? null) || preg_match('/^<[^>]*\stitle=/', $button)) {
+                                return $button;
+                            }
+
+                            return (string) preg_replace('/^<(a|button)\b/', '<$1 title="' . \yii\helpers\Html::encode($help[$label]) . '"', $button, 1);
+                        }, (array) $this->params['actions']);
+                        ?>
+                        <div class="d-flex flex-wrap justify-content-sm-end gap-2 mt-2"><?= implode("\n", $actions) ?></div>
                     <?php endif; ?>
                 </div><!-- /.col -->
             </div><!-- /.row -->
+            <?php /* Pages set $this->params['help']: ['Button or term' => 'what it does', 'A plain note', ...]. Plain text, encoded here. */ ?>
+            <?php if (!empty($this->params['help'])): ?>
+                <details class="page-help card card-body py-2 mb-0 small">
+                    <summary class="text-primary"><i class="fas fa-question-circle me-1"></i> How this page works</summary>
+                    <ul class="mb-1 mt-2 ps-3">
+                        <?php foreach ((array) $this->params['help'] as $term => $text): ?>
+                            <li><?= is_string($term) ? '<strong>' . \yii\helpers\Html::encode($term) . ':</strong> ' : '' ?><?= \yii\helpers\Html::encode($text) ?></li>
+                        <?php endforeach; ?>
+                    </ul>
+                </details>
+            <?php endif; ?>
         </div><!-- /.container-fluid -->
     </div>
     <!-- /.content-header -->

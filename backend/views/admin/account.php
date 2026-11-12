@@ -13,6 +13,20 @@ use yii\widgets\ActiveForm;
 
 $this->title = 'My Account';
 $this->params['breadcrumbs'][] = $this->title;
+$this->params['help'] = [
+    'Save' => 'Changes your email or password. Your current password is always needed. A new password signs you out on every other device.',
+    'Two-factor sign-in' => 'Required for every staff account: until it is on, every other page brings you back here.',
+];
+if ($model->hasTwoFactor()) {
+    $this->params['help']['Backup codes'] = 'Each one signs you in once without your phone. Create new backup codes if you used most of them or think someone saw them; the old ones stop working.';
+    $this->params['help']['Turn off'] = 'Needs a current code or a backup code. Lost your phone and your backup codes? Ask a Superadmin to turn it off for you.';
+} elseif ($setupSecret !== null) {
+    $this->params['help']['Confirm and turn on'] = 'Scan the QR code with your authenticator app, then enter your current password and the 6-digit code it shows. Save the backup codes shown next.';
+    $this->params['help']['Code not accepted'] = 'Check that the time on your phone is set automatically, then try the newest code.';
+} else {
+    $this->params['help']['Set up two-factor sign-in'] = 'Shows a QR code to scan with an authenticator app such as Google Authenticator or Microsoft Authenticator.';
+}
+$this->params['help']['Too many failed attempts'] = 'After repeated wrong passwords or codes, changes are blocked for 15 minutes.';
 ?>
 <div class="card card-outline card-primary shadow-sm" style="max-width: 640px;">
     <div class="card-header">
@@ -27,7 +41,7 @@ $this->params['breadcrumbs'][] = $this->title;
         <?= $form->field($model, 'password')->passwordInput([
             'autocomplete' => 'new-password',
             'placeholder' => 'Leave blank to keep your current password',
-        ])->hint('Minimum 8 characters.') ?>
+        ])->hint('At least 8 characters, including a letter and a number.') ?>
         <div class="form-group">
             <?= Html::label('Current password', 'current-password', ['class' => 'form-label']) ?>
             <?= Html::passwordInput('current_password', '', ['id' => 'current-password', 'class' => 'form-control', 'autocomplete' => 'current-password', 'required' => true]) ?>

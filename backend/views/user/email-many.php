@@ -14,6 +14,13 @@ use yii\helpers\Html;
 $this->title = 'Email customers';
 $this->params['breadcrumbs'][] = ['label' => 'Clients', 'url' => ['index']];
 $this->params['breadcrumbs'][] = $this->title;
+$this->params['help'] = [
+    'Send to' => 'Selected clients: only the ones you pick below. All active clients: everyone who can sign in. All clients: also inactive, suspended and deleted accounts, so use it rarely.',
+    'Template' => 'Pick a ready-made message. Choosing one replaces whatever is in Subject and Message.',
+    '{name}' => 'Becomes each client\'s name (their billing legal name, or username if they have none).',
+    '[EDIT: ...]' => 'Parts you must replace with your own words. The email will not send while one is left.',
+    'Send email' => 'Asks how many clients it will go to, then sends each one separately. If some fail, their usernames are listed so you can try them again with Selected clients.',
+];
 ?>
 <div class="container-fluid py-4">
     <div class="card">

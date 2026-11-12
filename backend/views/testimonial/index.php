@@ -16,6 +16,13 @@ use yii\helpers\StringHelper;
 
 $this->title = 'Testimonials';
 $this->params['breadcrumbs'][] = $this->title;
+$this->params['help'] = [
+    'Status' => 'Published quotes show on the home page, up to six, lowest Display Order (first column) first. Hidden ones don\'t show. With none published, the section is hidden.',
+    'From' => 'Customer: sent by the customer from Share Feedback in their account, agreeing to it being published. It arrives Hidden and staff get an alert. Staff: added here.',
+    'Pencil icon' => 'Edit the wording or order, or tick or untick Show on the website to publish or hide it.',
+    'Trash icon' => 'Delete it for good. Each customer can send only one quote; once theirs is deleted they can send a new one.',
+    'Add Testimonial' => 'Add a quote a client gave you another way, such as by email. Only with their permission to publish it.',
+];
 GridViewHelper::register($this);
 ?>
 <div class="testimonial-index">

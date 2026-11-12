@@ -18,6 +18,12 @@ use yii\helpers\Html;
  */
 $this->title = 'Notification Preferences';
 $this->params['breadcrumbs'][] = $this->title;
+$this->params['help'] = [
+    'What this is' => 'Which automatic emails each customer has chosen to receive. Customers change these themselves in their account; you can change them here.',
+    'Who is listed' => 'A customer appears here once a reminder has been checked for them or their settings were opened. Anyone not listed gets everything; reach them with the Preferences button on their user page.',
+    'Pencil icon' => 'Turn a customer\'s renewal, payment or support emails on or off.',
+    'Disabled' => 'The customer gets none of those messages. New invoices are still emailed to them, and staff still get their own renewal alerts.',
+];
 
 GridViewHelper::register($this);
 

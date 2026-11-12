@@ -9,6 +9,12 @@ use yii\helpers\Html;
 
 $this->title = 'Admin Notifications';
 $this->params['breadcrumbs'][] = $this->title;
+$this->params['help'] = [
+    'What this is' => 'Alerts the system raises for staff: new tickets and leads, payments to review, invoices waiting for review, billing problems, cron job and two-factor changes. Each one is also emailed to the admin address.',
+    'Bold title' => 'Not opened yet. Read and Unread are shared: once any staff member opens one, it shows as Read for everyone.',
+    'Eye icon' => 'Marks it Read and takes you to the page it is about, such as the ticket or the invoice list, so you can act on it (or back here when there is none).',
+    'Who sees what' => 'Managers do not see billing, payment, testimonial or security alerts; Admins and Superadmins see everything.',
+];
 
 GridViewHelper::register($this);
 // No search model here: the page-size dropdown sets the size the controller's provider uses.

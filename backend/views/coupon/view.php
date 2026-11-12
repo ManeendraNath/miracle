@@ -21,6 +21,14 @@ $this->params['actions'] = [
     Html::a('<i class="fas fa-edit me-1"></i> Update', ['update', 'id' => $model->id], ['class' => 'btn btn-primary']),
 ];
 
+$this->params['help'] = [
+    'Update' => 'Change the coupon\'s rules. Its code is locked once it has been used.',
+    'Applies To' => 'All services, or only invoice lines of the listed service types get the discount.',
+    'Customers' => 'Any customer, or only the listed ones. Listed customers also get their newest usable coupon put on their renewal invoices automatically, unless the invoice already has a discount, such as the customer\'s Default Discount Amount.',
+    'Used' => 'How many invoices have used the code, out of the Total Usage Limit.',
+    'To stop the coupon' => 'Use the ban icon (Disable) on the coupon list. Invoices that already have it keep their discount.',
+];
+
 $formatter = Yii::$app->formatter;
 $used = (int) CouponRedemption::find()->where(['coupon_id' => $model->id])->count();
 $limit = (int) $model->uses_per_coupon;

@@ -11,6 +11,17 @@ $canSwitch = \backend\controllers\BaseController::canAccess(Yii::$app->user->ide
 
 $this->title = 'Cron Jobs & Logs';
 $this->params['breadcrumbs'][] = $this->title;
+$this->params['help'] = [
+    'Cron Jobs' => 'The automatic tasks the server runs on a schedule: billing, reminders, payment checks and backups. Last changed shows who last switched a job and when.',
+];
+if ($canSwitch) {
+    $this->params['help']['Turn Off / Turn On'] = 'Pauses or restarts a job. The confirm box says what stops while it is off. Every switch is emailed to the admin address.';
+} else {
+    $this->params['help']['Switching jobs'] = 'Only a Superadmin can turn a job off or on.';
+}
+$this->params['help']['Counts'] = 'Counted from the last 150 log lines only, by words in each line, so they are a rough guide: read the red lines below for real problems.';
+$this->params['help']['Log'] = 'The newest lines are at the top. Green: finished, yellow: skipped, red: an error or failure. Refresh Live Terminal reloads the page.';
+$this->params['help']['A job seems not to run'] = 'A job that is Off still writes "Turned off in the admin panel: skipping" each time it would run. If a job writes no lines at all, the server is not starting it: ask whoever manages the server.';
 ?>
 <div class="cron-log-viewer container-fluid">
     <div class="card shadow-sm mb-4">

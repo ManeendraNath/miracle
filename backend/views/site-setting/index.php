@@ -10,6 +10,16 @@ use common\services\payment\RazorpayService;
 
 $this->title = 'Global Systems Branding Settings';
 $this->params['breadcrumbs'][] = $this->title;
+$this->params['help'] = [
+    'Base Identity Parameters' => 'Agency Corporate Name is shown in the public website\'s header, footer and policy pages. "Check renewal invoices before they are sent" holds new renewal invoices under Invoices (Waiting for review) until you send them.',
+    'Payments: who sees which gateway' => 'Decided by the country on the invoice, taken from the client\'s billing profile. India (or no country): Razorpay, if "Razorpay for clients in India" is ticked. Abroad: Razorpay and/or PayPal, whichever of their boxes is ticked.',
+    'Payment keys' => 'Gateway keys are never entered here: they stay in the .env file on the server. The badge shows Keys missing, Test keys or Live keys; on the live site customers never get a checkout that uses test keys.',
+    'Exchange rate' => 'PayPal charges in US$. With "Use the daily exchange rate" ticked, the European Central Bank rate less the margin is used; otherwise, or if the daily rate stops updating, "Rate by hand" is used. With no rate at all, PayPal is hidden.',
+    'PayPal fees' => 'Built into the US$ price the client sees, so you receive about the full rupee amount. The line below them shows what a ₹10,000 invoice costs with PayPal today.',
+    'Prices already sent' => 'Once an invoice for a client abroad is emailed, its dollar rate is locked until its due date, so changing the rate here doesn\'t change it. A change to the PayPal fee does apply to it.',
+    'Support & Communication Links, Address, Social Profiles' => 'Shown on the public website (home and contact pages, footer). Primary Helpdesk Inbound Email also receives the contact-form and audit-request emails. Phone numbers take digits only. Leave a social link empty to hide its icon.',
+    'Commit Changes to Infrastructure Matrix' => 'Saves every section on this page at once.',
+];
 ?>
 <div class="setting-index">
     

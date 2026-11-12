@@ -10,6 +10,16 @@ $this->params['subtitle'] = 'Sign-in details, role and two-factor status.';
 $this->params['breadcrumbs'][] = ['label' => 'Admins', 'url' => ['index']];
 $this->params['breadcrumbs'][] = ['label' => $model->username, 'url' => ['view', 'id' => $model->id]];
 $this->params['breadcrumbs'][] = 'Update';
+$this->params['help'] = [
+    'Username' => 'What they type to sign in.',
+    'Role' => 'Start with the lowest role that does the job: Manager for day-to-day work, Admin for billing and payments, Superadmin only for people who manage staff and site settings.',
+    'Account Status' => 'Only Active can sign in. Suspended blocks sign-in but keeps the account.',
+    'New Password' => 'Leave blank to keep the current one. If you set a new one, tell them yourself: no email is sent.',
+    'Save' => 'At least one active Superadmin must remain, so the last one cannot be demoted or blocked.',
+];
+if ($model->hasTwoFactor()) {
+    $this->params['help']['Turn off two-factor'] = 'Only when they lost their authenticator app. It signs them out everywhere; they then sign in with just a password and must set two-factor up again.';
+}
 ?>
 <div class="admin-profile-form card card-outline card-danger p-4 shadow-sm">
     <?= $this->render('_form', [

@@ -16,6 +16,15 @@ use yii\helpers\Url;
 
 $this->title = 'Admins';
 $this->params['breadcrumbs'][] = $this->title;
+$this->params['help'] = [
+    'What this is' => 'The staff accounts that can sign in to this admin panel. Only Superadmins can open this page.',
+    'Role' => 'Manager: customers, services, support and leads. Admin: also billing, payments, coupons, login history and cron jobs. Superadmin: also staff accounts and site settings.',
+    'Status' => 'Only Active staff can sign in. Set someone Suspended to block them but keep the account.',
+    'Create Admin' => 'Add a staff member. Tell them their username and password yourself: no email is sent. They must set up two-factor sign-in before they can use the panel.',
+    'Eye icon' => 'Open the account.',
+    'Pencil icon' => 'Change the username, email, role, status or password, or turn off two-factor sign-in for someone who lost their phone.',
+    'Trash icon' => 'Deletes the account for good. You cannot delete yourself or the last active Superadmin.',
+];
 
 GridViewHelper::register($this);
 ?>

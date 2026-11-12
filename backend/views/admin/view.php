@@ -14,7 +14,12 @@ $this->params['breadcrumbs'][] = $this->title;
 $this->params['actions'] = [
     Html::a('<i class="fas fa-arrow-left me-1"></i> Back', ['index'], ['class' => 'btn btn-light border']),
     Html::a('<i class="fas fa-edit me-1"></i> Update', ['update', 'id' => $model->id], ['class' => 'btn btn-primary']),
-    Html::a('<i class="fas fa-trash me-1"></i> Delete', ['delete', 'id' => $model->id], ['class' => 'btn btn-danger', 'data' => ['confirm' => 'Are you sure you want to delete this item?', 'method' => 'post']]),
+    Html::a('<i class="fas fa-trash me-1"></i> Delete', ['delete', 'id' => $model->id], ['class' => 'btn btn-danger', 'data' => ['confirm' => 'Delete this staff account permanently? To block someone but keep the account, set its status to Suspended instead.', 'method' => 'post']]),
+];
+$this->params['help'] = [
+    'Update' => 'Change the username, email, role, status or password, or turn off two-factor sign-in for someone who lost their phone.',
+    'Delete' => 'Removes the account for good. You cannot delete yourself or the last active Superadmin. To block someone but keep the account, set its status to Suspended instead.',
+    'Role' => 'Manager: customers, services, support and leads. Admin: also billing and payments. Superadmin: also staff accounts and site settings.',
 ];
 ?>
 <div class="admin-view">

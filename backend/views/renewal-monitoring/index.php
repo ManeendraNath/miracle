@@ -12,6 +12,15 @@ use yii\helpers\Html;
 
 $this->title = 'Renewal Monitoring';
 $this->params['breadcrumbs'][] = $this->title;
+$this->params['help'] = [
+    'What is listed' => 'Domains, hosting and maintenance by expiry date. Hosting that is Suspended / Expired and maintenance that is Overdue are included; Inactive, Cancelled and Deleted services and deleted customers are left out.',
+    'Count boxes' => 'They follow Service Type and Customer but not Expiry Window. They overlap: Expiring Within 30 Days includes the 7-day ones.',
+    'Expiry Window' => 'Next 60 Days unless you choose otherwise. Expired shows services already past their expiry date; All Expiries shows everything.',
+    'Apply / Clear Filters' => 'Apply shows the services matching the filters; Clear Filters goes back to all services in the next 60 days.',
+    'Remaining' => 'Red: expired or due within 7 days. Yellow: within 30 days. Blue: later.',
+    'Eye icon' => 'Open the service to change its expiry date, price or status.',
+    'Renewals' => 'This page only shows dates. Active services with a price are invoiced automatically before they expire, and paying the invoice moves the expiry on. To stop a renewal, disable the service.',
+];
 
 GridViewHelper::register($this);
 

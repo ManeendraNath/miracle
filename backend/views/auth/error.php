@@ -8,6 +8,8 @@
 use yii\helpers\Html;
 
 $this->title = $name;
+// Set by the page that failed: its buttons and help don't belong here.
+unset($this->params['actions'], $this->params['help'], $this->params['subtitle']);
 ?>
 <div class="site-error">
 

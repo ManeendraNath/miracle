@@ -54,6 +54,19 @@ if (\backend\controllers\BaseController::canAccess(Yii::$app->user->identity, 'c
 if (BaseController::canAccess(Yii::$app->user->identity, 'user-login-history')) {
     $this->params['actions'][] = Html::a('<i class="fas fa-shield-alt me-1"></i> Login History', ['/user-login-history/index', 'UserLoginHistorySearch' => ['user_id' => $model->id]], ['class' => 'btn btn-outline-secondary']);
 }
+$this->params['help'] = [
+    'Update' => BaseController::canAccess(Yii::$app->user->identity, 'user', 'credentials')
+        ? 'Change the username, email, password or account status.'
+        : 'Change the account status. Only an Admin can change the username, email or password.',
+    'Email customer' => 'Write one email to this customer from ready-made templates. A copy goes to the billing address.',
+];
+if (BaseController::canAccess(Yii::$app->user->identity, 'customer-preference', 'index')) {
+    $this->params['help']['Preferences'] = 'Turn this customer\'s renewal, payment and support emails on or off.';
+}
+if (BaseController::canAccess(Yii::$app->user->identity, 'user-login-history')) {
+    $this->params['help']['Login History'] = 'Every time this customer signed in to the website, with IP address and browser.';
+}
+$this->params['help']['Account Status'] = 'Only Active customers can sign in. Suspended or Inactive customers are still billed and reminded for their active services; Deleted ones are not.';
 ?>
 
 <div class="user-view">

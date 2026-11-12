@@ -36,7 +36,7 @@ $roles = Admin::getRoles();
             $form->field($model, 'password')->passwordInput([
                 'autocomplete' => 'new-password',
                 'placeholder' => $model->isNewRecord ? '' : 'Leave blank to keep current password',
-            ])->hint('Minimum 8 characters.')
+            ])->hint('At least 8 characters, including a letter and a number.')
             ?>
         </div>
     </div>

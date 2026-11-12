@@ -16,6 +16,14 @@ use yii\helpers\Html;
 /** @var yii\data\ActiveDataProvider $dataProvider */
 $this->title = 'Domains Registry';
 $this->params['breadcrumbs'][] = $this->title;
+$this->params['help'] = [
+    'Add Domain' => 'Record a client\'s domain with its expiry date and renewal price. Active domains with a price are invoiced automatically a set number of days before they expire.',
+    'Eye icon' => 'Open the domain\'s details.',
+    'Pencil icon' => 'Edit the domain, including its expiry date, status and renewal prices.',
+    'Ban icon (Disable)' => 'Shown on Active domains. Makes the domain Inactive so it is not renewed: its renewal not invoiced yet is dropped, and an unpaid renewal invoice for only this domain is cancelled (by Admins; for other staff an Admin is told).',
+    'Check icon (Enable)' => 'Shown on Inactive or Deleted domains. Makes the domain Active again, so automatic invoices and reminders start again.',
+    'Statuses' => 'Active: invoiced and reminded automatically. Inactive: not renewed. Deleted: not renewed and hidden from the customer\'s list of services.',
+];
 
 GridViewHelper::register($this);
 

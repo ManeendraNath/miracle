@@ -15,6 +15,13 @@ use yii\helpers\Url;
 $this->title = 'Razorpay Test';
 $this->params['breadcrumbs'][] = $this->title;
 $this->params['subtitle'] = 'Try a payment with test keys. No invoice, customer or transaction is created or changed.';
+$this->params['help'] = [
+    'What it is for' => 'Checking that Razorpay\'s checkout works with the keys on the server, without touching any invoice. Nothing is saved.',
+    'Needs Razorpay test keys' => 'Shown when the server has live keys or none. Keys stay in the .env file on the server; this page only works with test keys (rzp_test_…).',
+    'Create test order and pay' => 'Creates a Razorpay test order for the amount (at least ₹1) and opens Razorpay\'s checkout. No real money moves.',
+    'Test details' => 'Use these in the checkout to make a payment succeed or fail on purpose.',
+    'After paying' => 'You are taken to the result page. If the payment fails, a pop-up shows Razorpay\'s reason instead.',
+];
 ?>
 
 <div class="razorpay-test-index">

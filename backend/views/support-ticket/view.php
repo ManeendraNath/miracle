@@ -38,6 +38,21 @@ if ($model->status === SupportTicket::STATUS_RESOLVED || $model->status === Supp
 if ($model->status !== SupportTicket::STATUS_CLOSED) {
     $this->params['actions'][] = Html::a('Close', ['close', 'number' => $model->ticket_number], ['class' => 'btn btn-outline-danger', 'data' => ['method' => 'post', 'confirm' => 'Close this support request?']]);
 }
+$this->params['help'] = [];
+if ($model->status !== SupportTicket::STATUS_CLOSED) {
+    $this->params['help']['Send Reply'] = 'Adds your answer to the conversation and moves the request to In Progress. The customer gets a notice in their account, and an email if their "Support request updates" setting is on.';
+}
+if ($model->status === SupportTicket::STATUS_RESOLVED || $model->status === SupportTicket::STATUS_CLOSED) {
+    $this->params['help']['Reopen'] = 'Sets the request back to Open so the conversation can carry on. The customer gets a notice in their account, but no email.';
+} else {
+    $this->params['help']['Resolve'] = 'Use when the problem is fixed. The customer is notified, and emailed if their "Support request updates" setting is on; if they reply, it opens again by itself.';
+}
+if ($model->status !== SupportTicket::STATUS_CLOSED) {
+    $this->params['help']['Close'] = 'Ends the request: neither you nor the customer can reply until it is reopened. The customer is notified, and emailed if their "Support request updates" setting is on.';
+} else {
+    $this->params['help'][] = 'This request is closed, so the reply box is hidden. Click Reopen to write to the customer again.';
+}
+$this->params['help']['Service'] = 'The service the customer picked when opening the request; General Support when they picked none.';
 ?>
 
 <div class="support-ticket-view">

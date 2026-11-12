@@ -20,6 +20,14 @@ use yii\helpers\Html;
  */
 $this->title = 'Login & Security History';
 $this->params['breadcrumbs'][] = $this->title;
+$this->params['help'] = [
+    'What this is' => 'One row for every successful customer sign-in to the website. Failed attempts and staff sign-ins are not listed.',
+    'Customer filter' => 'Type part of a username or email. Hover a name to see the email.',
+    'Browser / Device' => 'Hover to see the full browser text.',
+    'Eye icon' => 'Open the full record.',
+    'New device emails' => 'When a customer signs in from a browser not used for their account before (except their very first sign-in), they are emailed about it automatically.',
+    'Something looks wrong' => 'Sign-ins from an unexpected place or device may mean someone else knows the password. Contact the customer, and an Admin can set a new password on their user page.',
+];
 
 GridViewHelper::register($this);
 ?>

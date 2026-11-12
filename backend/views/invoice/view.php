@@ -15,7 +15,7 @@ use yii\helpers\Html;
 $this->title = 'Invoice #' . $model->invoice_number;
 $this->params['breadcrumbs'][] = ['label' => 'Invoices', 'url' => ['index']];
 $this->params['breadcrumbs'][] = $this->title;
-$this->params['subtitle'] = 'Review client billing metrics or compile print configurations';
+$this->params['subtitle'] = 'The invoice, its payments, and what you can do with it.';
 $this->params['actions'] = [Html::a('<i class="fas fa-arrow-left me-1"></i> Back', ['index'], ['class' => 'btn btn-light border'])];
 if ($model->status === Invoice::STATUS_PARTIALLY_PAID) {
     $this->params['actions'][] = Html::a('<i class="fas fa-times-circle me-1"></i> Write Off Balance', ['close', 'id' => $model->id], [
@@ -39,7 +39,7 @@ if ($model->status === Invoice::STATUS_DRAFT) {
     $this->params['actions'][] = Html::a('<i class="fas fa-ban me-1"></i> Cancel Invoice', ['cancel', 'id' => $model->id], [
         'class' => 'btn btn-outline-danger',
         'data' => [
-            'confirm' => 'Cancel this invoice? Any renewal on it will be billed again by the next billing run. To stop that, make the service inactive as well.',
+            'confirm' => 'Cancel this invoice? Any renewal on it will be billed again (by the next billing run if the service is Active). To stop that, make the service inactive as well.',
             'method' => 'post',
         ],
     ]);
@@ -49,7 +49,7 @@ if ($model->status === Invoice::STATUS_UNPAID) {
     $this->params['actions'][] = Html::a('<i class="fas fa-ban me-1"></i> Cancel Invoice', ['cancel', 'id' => $model->id], [
         'class' => 'btn btn-outline-danger',
         'data' => [
-            'confirm' => 'Cancel this invoice? Any renewal on it will be billed again by the next billing run. To stop that, make the service inactive as well.',
+            'confirm' => 'Cancel this invoice? Any renewal on it will be billed again (by the next billing run if the service is Active). To stop that, make the service inactive as well.',
             'method' => 'post',
         ],
     ]);
@@ -76,11 +76,28 @@ if ($model->status !== Invoice::STATUS_DRAFT && !str_starts_with((string) $model
 }
 $this->params['actions'][] = Html::button('<i class="fas fa-print me-1"></i> Print / Save PDF', ['class' => 'btn btn-outline-secondary', 'id' => 'invoice-print']);
 $this->registerJs('document.getElementById("invoice-print").addEventListener("click", () => window.print());');
+$this->params['help'] = [
+    'Send to customer' => 'Only on an invoice waiting for review. Approves it: it gets its invoice number, is emailed, and the customer can see and pay it. Any older invoice of this customer that is past its due date, was sent at least 15 days ago and has no payment waiting for review is added to it at that moment; if one is, this invoice can no longer be cancelled.',
+    'Update' => 'Edit an invoice made by hand while nothing is paid on it. Renewal and carried-forward lines can\'t be edited. Cancel the invoice first (or Write Off where Cancel is refused, always the case once an older balance is carried in), then change the service: its price, expiry date or customer. It is invoiced again by a billing run once the service is Active and its expiry date is within the invoicing window.',
+    'Cancel Invoice' => 'For an invoice that nothing has happened on yet. It is refused, with the reason shown, if money was received, an older balance is carried into it, a payment is waiting for review, or a renewal on it was already granted (for example after a Refund (Still Owed)). Approve or reject a waiting payment first; in the other cases use Write Off. The record is kept, marked Cancelled. Its renewals are billed again unless the service is made inactive: by the next billing run if the service is Active, or once a suspended or overdue service is set Active again.',
+    'Write Off / Write Off Balance' => 'Nothing more is owed; money already received is kept. It shows as Closed (balance written off). Use it when an invoice should not be cancelled. Its unpaid renewals are billed again in full, with no credit for money kept, unless the service is disabled: by the next billing run if the service is Active, or once a suspended or overdue service is set Active again.',
+    'Resend Invoice' => 'Emails the invoice to the customer again (unpaid or part-paid only).',
+    'Email customer' => 'Write to this customer about this invoice, with ready-made templates.',
+    'Print / Save PDF' => 'Opens the browser print window; choose Save as PDF there for a file.',
+    'Payment Activity' => 'Every payment against this invoice, with refunds and receipts. Customers pay online, or upload UPI / bank transfer proof in their portal; open such a payment on the Transactions page to approve or reject it.',
+];
 ?>
 
 <div class="container-fluid py-4">
     <?php if ($model->status === Invoice::STATUS_DRAFT): ?>
-        <div class="alert alert-warning">Waiting for review: the customer can't see or pay this invoice, and gets no email or reminder, until you click Send to customer. It gets its invoice number then. To change a renewal price, cancel this invoice, set the service's Next Renewal Price, and the next billing run invoices it again.</div>
+        <div class="alert alert-warning">
+            <strong>Waiting for review.</strong> The customer can't see or pay this invoice, and gets no email or reminder, until you send it. Check the lines, periods and total, then:
+            <ul class="mb-0 mt-1">
+                <li><strong>Approve:</strong> click <strong>Send to customer</strong>. It gets its invoice number, is emailed, and the customer can see and pay it. Any older invoice of this customer that is past its due date, was sent at least 15 days ago and has no payment waiting for review is added to it at that moment, so the total sent can be higher than shown here, and then it can no longer be cancelled.</li>
+                <li><strong>Reject:</strong> click <strong>Cancel Invoice</strong>. The renewal is billed again unless the service is made inactive: by the next billing run if the service is Active, or once a suspended or overdue service is set Active again.</li>
+                <li><strong>Wrong renewal price:</strong> renewal invoices can't be edited. Cancel this invoice, set the service's <strong>Next Renewal Price</strong>, and the next billing run invoices it again.</li>
+            </ul>
+        </div>
     <?php endif; ?>
     <?php if ($model->emailed_at === null && in_array($model->status, [Invoice::STATUS_UNPAID, Invoice::STATUS_PARTIALLY_PAID], true)): ?>
         <div class="alert alert-warning">No email is recorded for this invoice, so the customer may not have received it. Check their email address, then use Resend Invoice.</div>

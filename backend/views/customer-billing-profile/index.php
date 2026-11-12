@@ -19,6 +19,13 @@ use yii\helpers\ArrayHelper;
 
 $this->title = 'Customer Billing Profiles';
 $this->params['breadcrumbs'][] = $this->title;
+$this->params['help'] = [
+    'What this is' => 'The name, address and tax details printed on each customer\'s invoices. A customer without one gets no renewal invoices and is reminded daily to complete it.',
+    'Add Billing Profile' => 'Add details for a customer who has none yet. Each customer can have only one.',
+    'Pencil icon' => 'Edit a customer\'s details, GST setting or default discount.',
+    'Changes' => 'Invoices keep a copy of the details from when they were made, so an edit only affects invoices made afterwards.',
+    'State / Country' => 'Shows the country for customers outside India, who are not charged GST.',
+];
 
 GridViewHelper::register($this);
 

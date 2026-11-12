@@ -15,6 +15,14 @@ use yii\helpers\Html;
 
 $this->title = 'Hosting Subscriptions';
 $this->params['breadcrumbs'][] = $this->title;
+$this->params['help'] = [
+    'Add Hosting' => 'Record a client\'s hosting account with its expiry date and renewal price. Active accounts with a price are invoiced automatically a set number of days before they expire.',
+    'Eye icon' => 'Open the account\'s details, including cPanel access.',
+    'Pencil icon' => 'Edit the account, including its expiry date, status and renewal prices.',
+    'Ban icon (Disable)' => 'Shown on Active accounts. Makes the account Inactive so it is not renewed: its renewal not invoiced yet is dropped, and an unpaid renewal invoice for only this account is cancelled (by Admins; for other staff an Admin is told).',
+    'Check icon (Enable)' => 'Shown on Inactive and Suspended / Expired accounts. Makes the account Active again, so automatic invoices and reminders start again.',
+    'Statuses' => 'Active: invoiced and reminded automatically. Suspended / Expired: held for non-payment, not invoiced automatically; it turns Active by itself when a renewal invoice for it is paid. Inactive: not renewed.',
+];
 
 GridViewHelper::register($this);
 
@@ -188,4 +196,3 @@ $users = ArrayHelper::map(User::find()->orderBy(['username' => SORT_ASC])->all()
     </div>
 
 </div>
-`

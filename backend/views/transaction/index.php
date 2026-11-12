@@ -14,6 +14,15 @@ use yii\grid\GridView;
 /** @var yii\data\ActiveDataProvider $dataProvider */
 $this->title = 'Transactions';
 $this->params['breadcrumbs'][] = $this->title;
+$this->params['help'] = [
+    'Every payment is listed here: Razorpay and PayPal payments, UPI / bank payment proofs sent by customers, and payments entered by staff. Payments are never deleted.',
+    'Eye icon' => 'Open the payment to approve or reject a proof, check a stuck online payment, refund it, or apply an unapplied payment.',
+    'Pencil icon' => 'Edit a pending UPI / bank or manual payment. Any other payment can\'t be edited and shows an error instead.',
+    'Pending' => 'UPI / bank: a proof waiting for you to check and approve. Razorpay / PayPal: the customer started paying but no payment is confirmed yet.',
+    'Captured / Failed / Refunded' => 'Captured: money received. Failed: a rejected proof, or an online payment that was declined or closed as not paid. Refunded: all of it was given back; a part refund shows in red under the amount.',
+    'Unapplied' => 'Money received after its invoice was already paid or closed, so it counts on no invoice. Open it (eye icon) to refund it or apply it to another unpaid invoice of the same customer.',
+    'Payment Date' => 'When the money was confirmed. Awaiting Settlement means it has not been received yet.',
+];
 
 GridViewHelper::register($this);
 ?>

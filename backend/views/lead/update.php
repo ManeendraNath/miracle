@@ -14,6 +14,10 @@ $this->params['breadcrumbs'][] = ['label' => 'Leads', 'url' => ['index']];
 $this->params['breadcrumbs'][] = ['label' => $model->lead_name, 'url' => ['view', 'id' => $model->id]];
 $this->params['breadcrumbs'][] = 'Update';
 $this->params['subtitle'] = 'Move the lead to its current stage.';
+$this->params['help'] = [
+    'Status' => 'Pending Review (new), In Progress (you are talking to them), Completed, Rejected, or Spam. Only the status can be changed here.',
+    'Save' => 'Saves the status and goes back to the lead. Nothing is sent to the person.',
+];
 ?>
 <div class="lead-update">
     <div class="card card-outline card-primary shadow-sm" style="max-width: 600px;">

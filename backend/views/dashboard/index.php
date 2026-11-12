@@ -32,6 +32,18 @@ $this->registerJsFile(
 $this->title = 'Miracle Corporate Control Center';
 if (\backend\controllers\BaseController::canAccess(Yii::$app->user->identity, 'user', 'email-many')) {
     $this->params['actions'][] = Html::a('<i class="fas fa-envelope me-1"></i> Send email', ['/user/email-many'], ['class' => 'btn btn-primary']);
+    $this->params['help']['Send email'] = 'Write one email to the clients you pick, all active clients, or all clients. Each gets their own copy, greeted by name, and billing gets one copy listing who received it.';
+}
+$this->params['help']['Coloured boxes'] = 'Live totals. The link at the bottom of each box opens the matching list. Open Support Requests counts open and in-progress tickets.';
+$this->params['help']['Recent Support Requests'] = 'The 5 most recently updated tickets. The speech-bubble icon opens the conversation.';
+if ($canBilling) {
+    $this->params['help']['Accounts Receivable'] = 'What customers still owe on unpaid and part-paid invoices, and how many are past their due date. When payments wait for your approval, click Review Required to see them.';
+    $this->params['help']['Revenue'] = 'Money received and counted on invoices, less refunds, GST included. The chart compares each of the last 6 months with the same month last year.';
+    $this->params['help']['received but unapplied'] = 'Shows when money came in for an invoice that was already paid or closed. Click Review, open each payment, and refund it or apply it to another invoice.';
+}
+$this->params['help']['Infrastructure Assets / Inbound Pipeline'] = 'Counts of active domains, hosting and maintenance plans, and of audit requests and website enquiries still Pending. The arrow icon or the count opens the list.';
+if ($canBilling) {
+    $this->params['help']['Recent Coupons'] = 'The 4 newest coupons. Paused means the coupon is inactive.';
 }
 ?>
 

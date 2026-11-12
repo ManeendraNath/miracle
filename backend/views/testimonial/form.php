@@ -11,6 +11,16 @@ use yii\helpers\Html;
 $this->title = $model->isNewRecord ? 'Add Testimonial' : 'Update Testimonial';
 $this->params['breadcrumbs'][] = ['label' => 'Testimonials', 'url' => ['index']];
 $this->params['breadcrumbs'][] = $this->title;
+$this->params['help'] = [
+    'Role, Company, Country' => 'Optional. Shown under the client\'s name on the home page; leave out anything the client doesn\'t want shown.',
+    'Quote' => 'The client\'s own words, up to 1000 characters. Fix typos only; don\'t change what they said.',
+    'Display Order' => 'Lower numbers show first. Only the first six published quotes appear on the home page.',
+    'Show on the website' => 'Tick to publish it on the home page; untick to hide it without deleting it.',
+    'Save' => 'Saves and goes back to the list. Cancel goes back without saving.',
+];
+if ($model->user_id) {
+    $this->params['help'][] = 'The customer sent this quote themselves and agreed to it being published.';
+}
 ?>
 <div class="testimonial-form">
     <div class="card card-outline card-primary shadow-sm" style="max-width: 760px;">

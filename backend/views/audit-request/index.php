@@ -15,6 +15,15 @@ use yii\helpers\Html;
 /** @var yii\data\ActiveDataProvider $dataProvider */
 $this->title = 'Audit Requests';
 $this->params['breadcrumbs'][] = $this->title;
+$this->params['help'] = [
+    'Where these come from' => 'The form on the public "Website upgrades" page. Each new one emails the Primary Helpdesk Inbound Email from Site Settings and alerts staff.',
+    'Eye icon' => 'Open the request: client details, website, framework, hosting and their message. Hover a client name in the list to see their email.',
+    'Pencil icon' => 'Edit the request or change its status (Admins only).',
+    'Trash icon' => 'Delete the request for good (Admins only).',
+    'Add Audit Request' => 'Record a request that came in another way, such as by phone or email (Admins only).',
+    'Statuses' => 'Pending (new), In Review, Contacted, Closed. They are for your own tracking: changing one sends nothing to the client.',
+    'To reply' => 'The client gets no automatic answer. Open the request and click their email address to write to them.',
+];
 
 GridViewHelper::register($this);
 ?>

@@ -12,6 +12,13 @@ use yii\helpers\Html;
 
 $this->title = 'Reports';
 $this->params['breadcrumbs'][] = $this->title;
+$this->params['help'] = [
+    'From / To' => 'The dates to export, both days included. They start as last month. Up to ' . AccountingReportService::MAX_RANGE_DAYS . ' days per file.',
+    'Invoices CSV' => 'One row per invoice issued in those dates, cancelled ones included; invoices still waiting for review are left out. For sales totals add up Invoice Value (excl. arrears), not Total Payable, so carried-forward balances are not counted twice.',
+    'Payments CSV' => 'One row per payment received or refunded in those dates, with method, reference, gateway fee and refunds. Unapplied payments are marked (unapplied).',
+    'Refunds across months' => 'A payment refunded in a later month appears in both months\' files. Add up Refunded In Period across files, as it only counts refunds in that file\'s dates.',
+    'The files open in Excel or Google Sheets, for your accountant\'s GST filing.',
+];
 ?>
 
 <div class="card card-outline card-primary shadow-sm">

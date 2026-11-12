@@ -20,6 +20,11 @@ if ($invoice !== null) {
     $this->params['breadcrumbs'][] = ['label' => $client->username, 'url' => $back];
 }
 $this->params['breadcrumbs'][] = 'Email customer';
+$this->params['help'] = [
+    'Template' => 'Pick a ready-made message' . ($invoice !== null ? ', including ones for this invoice that fit its status (payment reminder, thank you, or cancelled notice)' : '') . '. Choosing one replaces whatever is in Subject and Message.',
+    '[EDIT: ...]' => 'Parts you must replace with your own words. The email will not send while one is left.',
+    'Send email' => 'Sends it to the customer\'s email address with a button to their ' . ($invoice !== null ? 'invoices' : 'account') . '. A copy goes to the billing address as a record.',
+];
 ?>
 <div class="container-fluid py-4">
     <div class="card">

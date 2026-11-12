@@ -14,6 +14,16 @@ use yii\helpers\Html;
 /** @var yii\data\ActiveDataProvider $dataProvider */
 $this->title = 'Invoices';
 $this->params['breadcrumbs'][] = $this->title;
+$this->params['help'] = [
+    'Waiting for review' => \common\services\billing\InvoiceReviewService::isOn()
+        ? 'New renewal invoices are held here first. The customer sees nothing until you open the invoice (eye icon) and click Send to customer to approve it, or Cancel Invoice to reject it.'
+        : 'Off now: new renewal invoices go to the customer straight away. To check them first, a Superadmin can tick "Check renewal invoices before they are sent" in Site Settings.',
+    'Eye icon' => 'Open the invoice with all its buttons.',
+    'Pencil icon' => 'Edit an unpaid invoice made by hand.',
+    'Paper plane icon' => 'Email an unpaid or part-paid invoice to the customer again.',
+    'Create Invoice' => 'Bill a customer by hand for anything that is not an automatic renewal (for example project work).',
+    'Statuses' => 'Unpaid, Partially Paid, Paid; Carried Forward means the balance moved to a newer invoice; Cancelled; Refunded or Closed (balance written off).',
+];
 
 GridViewHelper::register($this);
 ?>

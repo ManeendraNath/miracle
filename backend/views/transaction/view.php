@@ -63,6 +63,48 @@ $refundStep = match (true) {
     (int) $model->gateway_id === Transaction::GATEWAY_PAYPAL => 'Refund it in your PayPal account first (Activity, the payment, Issue a refund), then record the rupee amount here.',
     default => 'Only do this after the money has been returned (bank / UPI).',
 };
+$this->params['help'] = [
+    'Invoice' => 'Click the invoice number in the table to open the invoice this payment belongs to.',
+];
+if ($model->status === Transaction::STATUS_PENDING && !$model->isOnline()) {
+    $this->params['help']['Approve Payment'] = 'First check the money really arrived (match the UTR / reference and amount). It then counts on the invoice and the customer gets a confirmation email. If the invoice was already paid or closed, it is kept as an unapplied payment instead.';
+    $this->params['help']['Reject / Fail'] = 'For a proof you can\'t match to real money. The payment is marked Failed, and a customer who uploaded a proof is emailed to submit it again.';
+    if (!empty($model->payment_receipt_file)) {
+        $this->params['help']['View Receipt'] = 'Opens the screenshot or file the customer uploaded as proof, in a new tab.';
+    }
+}
+if ($model->status === Transaction::STATUS_PENDING && $model->isOnline()) {
+    $this->params['help']['Pending online payment'] = 'The customer started paying by ' . $gateway . ' but no payment is confirmed yet. Payments are normally recorded automatically.';
+    $this->params['help']['Check with ' . $gateway] = 'Asks ' . $gateway . ' about this order now. If it was paid, the payment is recorded; if it was declined, it is marked Failed; otherwise it stays Pending.';
+    if ((string) $model->gateway_payment_id === '') {
+        $this->params['help']['Close as not paid'] = 'For a customer who gave up paying. ' . $gateway . ' is checked first, then the order is marked Failed. If the money arrives later it is still recorded.';
+    } elseif ((int) $model->gateway_id === Transaction::GATEWAY_PAYPAL) {
+        $this->params['help'][] = 'PayPal is holding this payment, so it can\'t be closed. It is recorded when PayPal completes it, or marked Failed if PayPal declines it.';
+    }
+    if ((int) $model->gateway_id === Transaction::GATEWAY_RAZORPAY && (string) $model->gateway_payment_id === '') {
+        $this->params['help']['Close without checking'] = 'Appears only right after Razorpay answers that it doesn\'t know this order (for example it was made with other keys). Check in the Razorpay dashboard that no money was taken first. If money arrives later it is still recorded.';
+    }
+}
+if ($model->status === Transaction::STATUS_CAPTURED && $model->isUnapplied()) {
+    $this->params['help']['Unapplied payment'] = 'This money arrived after its invoice was settled or closed, so it counts on no invoice. Pick an unpaid invoice of the same customer and click Apply to invoice, or refund it.';
+}
+if ($model->status === Transaction::STATUS_CAPTURED && $refundable > 0) {
+    // Same condition as the refund buttons below.
+    if (in_array($model->invoice->status ?? null, \common\services\billing\InvoicePaymentService::CLOSED_STATUSES, true)) {
+        $this->params['help']['Refund'] = $refundStep . ' The customer is emailed. The invoice is closed and stays as it is.';
+        $carrying = ($model->invoice->status ?? null) === Invoice::STATUS_CARRIED_FORWARD && !$model->isUnapplied() ? (new \common\services\billing\InvoicePaymentService())->openInvoiceCarrying((int) $model->invoice_id) : null;
+        if ($carrying !== null && (int) $model->gateway_id !== Transaction::GATEWAY_PAYPAL) {
+            $this->params['help']['Refund'] = 'Not yet: this invoice\'s balance moved to ' . $carrying->invoice_number . ', which is still open. The refund can\'t be recorded until that invoice is paid or written off (unless Razorpay already shows the refund), so don\'t return the money before then.';
+        }
+    } elseif ($model->isUnapplied()) {
+        $this->params['help']['Refund (Still Owed)'] = $refundStep . ' Use this one: this payment was not counted on the invoice, so its balance does not change. The customer is emailed.';
+        $this->params['help']['Refund & Close Invoice'] = 'Not for this payment: it would close the whole invoice as Refunded, and is refused while the invoice\'s own payments are kept.';
+    } else {
+        $this->params['help']['Refund (Still Owed)'] = $refundStep . ' For example a wrong payment was returned: the refunded amount becomes due again on the invoice. The customer is emailed.';
+        $this->params['help']['Refund & Close Invoice'] = 'Nothing more is owed: the invoice is closed as Refunded and reminders stop. Not possible while other payments on the invoice are kept; use Write Off on the invoice then. An unpaid renewal on it is billed again in full, with no credit for money kept, unless the service is disabled: by the next billing run if the service is Active, or once a suspended or overdue service is set Active again. Renewals already given are not undone, so disable the service if needed.';
+    }
+    $this->params['help'][] = 'Enter a smaller amount for a part refund.';
+}
 ?>
 <div class="transaction-view container-fluid pt-3">
     <div class="mb-4">

@@ -31,6 +31,18 @@ $this->params['actions'] = [
     Html::a('<i class="fas fa-arrow-left mr-1"></i> Back', ['index'], ['class' => 'btn btn-light border']),
     Html::a('<i class="fas fa-edit mr-1"></i> Update', ['update', 'id' => $model->id], ['class' => 'btn btn-primary']),
 ];
+$this->params['help'] = [
+    'Update' => 'Edit the domain, including its expiry date, status and renewal prices. The one-time Next Renewal Price is only shown there.',
+    'Current Expiry' => 'Moves forward automatically when the customer pays a renewal invoice. Active domains with a price are invoiced a set number of days before it.',
+    'Renewal & Billing' => 'Base Renewal Amount is the price of the first renewal billed here; later renewals continue from the last price billed. "Global setting" means the standard cycle or increase is used.',
+    'Renewal Monitoring' => 'Lists this customer\'s domains by expiry date.',
+    'To stop renewing' => 'Set the status to Inactive with Update, or use the Disable icon on the list.',
+];
+if ($status !== Domains::STATUS_ACTIVE) {
+    $this->params['help'][] = 'This domain is not Active, so it is not invoiced or reminded automatically.';
+} elseif ((float) $model->renewal_base_amount <= 0 && (float) $model->next_renewal_amount <= 0) {
+    $this->params['help'][] = 'This domain has no renewal price, so it is not invoiced automatically. Set one with Update.';
+}
 ?>
 
 <div class="domains-view">

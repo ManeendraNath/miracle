@@ -32,6 +32,13 @@ $this->params['actions'] = [
 if (\backend\controllers\BaseController::canAccess(Yii::$app->user->identity, 'audit-request', 'update')) {
     $this->params['actions'][] = Html::a('<i class="fas fa-edit mr-1"></i> Update', ['update', 'id' => $model->id], ['class' => 'btn btn-primary']);
 }
+$this->params['help'] = [
+    'Update' => 'Edit the details or change the status (Admins only). Changing the status sends nothing to the client.',
+    'Email' => 'Click the address to write to the client from your own email program. They get no automatic reply.',
+    'Website' => 'Opens the client\'s site in a new tab, so you can look at it before replying.',
+    'IP Address' => 'Where the public form was sent from. Shows - for requests added by staff.',
+    'Status' => 'Pending (new), In Review, Contacted, Closed: for your own tracking.',
+];
 ?>
 
 <div class="audit-request-view">

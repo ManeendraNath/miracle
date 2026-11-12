@@ -15,6 +15,15 @@ use yii\helpers\Html;
 /** @var yii\data\ActiveDataProvider $dataProvider */
 $this->title = 'Leads';
 $this->params['breadcrumbs'][] = $this->title;
+$this->params['help'] = [
+    'Where these come from' => 'The Contact page on the public website (Source: Website Contact Form). Each one emails the Primary Helpdesk Inbound Email from Site Settings and alerts staff.',
+    'Spam' => 'Messages that look automated are still saved, as Spam, but nobody is emailed or alerted. Filter Status by Spam now and then in case a real one was caught.',
+    'Eye icon' => 'Open the lead to read the full message and subject.',
+    'Pencil icon' => 'Change the lead\'s status (Admins only).',
+    'Trash icon' => 'Delete the lead for good (Admins only).',
+    'Statuses' => 'Pending Review (new), In Progress, Completed, Rejected, Spam. For your own tracking: changing one sends nothing to the person.',
+    'To reply' => 'They get no automatic answer. Open the lead and click their email address to write to them.',
+];
 
 /*
  * Registers shared GridView functionality:

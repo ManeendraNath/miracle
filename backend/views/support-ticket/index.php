@@ -13,6 +13,13 @@ use yii\helpers\Html;
 
 $this->title = 'Support Requests';
 $this->params['breadcrumbs'][] = $this->title;
+$this->params['help'] = [
+    'Where these come from' => 'Customers open them from Support Tickets in their account. Staff get an alert when a request is opened or the customer replies.',
+    'Eye icon or ticket number' => 'Open the conversation to reply, resolve, close or reopen it.',
+    'Priority' => 'Chosen by the customer when they opened it.',
+    'Statuses' => 'Open (new, or the customer wrote back after it was resolved), In Progress (you replied), Resolved, Closed (no more replies from either side).',
+    'Last Updated' => 'When anyone last wrote or the status last changed. Hover a customer name to see their email.',
+];
 
 GridViewHelper::register($this);
 ?>

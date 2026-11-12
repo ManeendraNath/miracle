@@ -19,6 +19,12 @@ $this->params['breadcrumbs'][] = [
 ];
 
 $this->params['breadcrumbs'][] = $user->username;
+$this->params['help'] = [
+    'Renewal reminders' => 'Reminders (email and account bell) before a domain, hosting or maintenance service expires.',
+    'Payment reminders' => 'Reminders about unpaid invoices before and after the due date. The invoice itself is still emailed when it is sent.',
+    'Support notifications' => 'Emails when staff reply to, resolve or close one of the customer\'s support tickets.',
+    'Save Preferences' => 'Takes effect from the next reminder. The customer can change these again in their own account.',
+];
 ?>
 
 <div class="customer-preference-update">

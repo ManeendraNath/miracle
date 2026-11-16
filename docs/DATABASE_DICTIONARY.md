@@ -22,11 +22,6 @@ These tables form the operational core of the Yii2 Advanced Template framework. 
 *   **Relationships:** Has a one-to-many relationship with `user_visit_log`, `domains`, and `hosting`.
 *   **Engineering Rules:** All passwords migrated via SQL are stored as SHA-256 signatures; users must utilize the frontend "Forgot Password" workflow on their initial session initialization to automatically upgrade their keys to production-grade Bcrypt arrays.
 
-### 🛡️ RBAC Authorization Matrix (`auth_assignment`, `auth_item`, `auth_item_child`, `auth_item_group`, `auth_rule`)
-*   **Engine Type:** `InnoDB`
-*   **Operational Purpose:** Implements Yii2's native Role-Based Access Control (RBAC). It maps exact controller actions (e.g., `/user-management/*`, `/cache/flush-all`) directly to defined permission hierarchies.
-*   **Relational Links:** `auth_assignment.user_id` acts as a strict foreign key pointing directly to `user.id`.
-
 ### 🧭 `migration`
 *   **Engine Type:** `InnoDB`
 *   **Operational Purpose:** The version tracking log used by Yii's core command-line utility. It ensures schema definitions remain identical when pushing updates between local Docker containers and production cPanel reseller nodes.
@@ -94,7 +89,7 @@ These dynamic relational tables track the financial transaction pipeline, tax ma
 ## 🎟️ 4. Promotional Modules, Marketing & Communications
 These tables handle secondary operational features. They are currently active but can be safely left unmapped until specialized frontend dashboards are deployed.
 
-### 🏷️ Coupons (`coupons`, `coupon_email_track`, `coupon_redeem_track`)
+### 🏷️ Coupons (`coupon` and its related tables; use is recorded in `coupon_redemption`)
 *   **Engine Type:** `InnoDB`
 *   **Operational Purpose:** Stores promotional campaign metrics and tracking codes (e.g., code `MIT50` tracking a 50% discount).
 

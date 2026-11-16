@@ -114,7 +114,7 @@ final class m261129_100000_add_first_blog_posts extends Migration
 <p>Moving to PHP 8.4 or 8.5 now buys you two or three more years before the next upgrade. Newer versions are usually a little faster too.</p>
 
 <h2>Need a hand?</h2>
-<p>We upgrade older websites and applications to current PHP versions, including custom code that nobody has touched in years. Tell us what your site runs on and we will tell you what the upgrade involves before any work starts.</p>
+<p>Our own servers already run PHP 8.5. We upgrade older websites and applications to current PHP versions, including custom code that nobody has touched in years. Tell us what your site runs on and we will tell you what the upgrade involves before any work starts.</p>
 HTML,
             ],
             [

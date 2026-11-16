@@ -1,5 +1,5 @@
 {
-    "migrations": 71,
+    "migrations": 72,
     "columns": {
         "admin": {
             "auth_key": {
@@ -206,142 +206,6 @@
             },
             "user_ip": {
                 "type": "varchar(50)",
-                "null": true,
-                "default": null,
-                "extra": ""
-            }
-        },
-        "auth_assignment": {
-            "created_at": {
-                "type": "int",
-                "null": true,
-                "default": null,
-                "extra": ""
-            },
-            "item_name": {
-                "type": "varchar(64)",
-                "null": false,
-                "default": null,
-                "extra": ""
-            },
-            "user_id": {
-                "type": "int",
-                "null": false,
-                "default": null,
-                "extra": ""
-            }
-        },
-        "auth_item": {
-            "created_at": {
-                "type": "int",
-                "null": true,
-                "default": null,
-                "extra": ""
-            },
-            "data": {
-                "type": "text",
-                "null": true,
-                "default": null,
-                "extra": ""
-            },
-            "description": {
-                "type": "text",
-                "null": true,
-                "default": null,
-                "extra": ""
-            },
-            "group_code": {
-                "type": "varchar(64)",
-                "null": true,
-                "default": null,
-                "extra": ""
-            },
-            "name": {
-                "type": "varchar(64)",
-                "null": false,
-                "default": null,
-                "extra": ""
-            },
-            "rule_name": {
-                "type": "varchar(64)",
-                "null": true,
-                "default": null,
-                "extra": ""
-            },
-            "type": {
-                "type": "int",
-                "null": false,
-                "default": null,
-                "extra": ""
-            },
-            "updated_at": {
-                "type": "int",
-                "null": true,
-                "default": null,
-                "extra": ""
-            }
-        },
-        "auth_item_child": {
-            "child": {
-                "type": "varchar(64)",
-                "null": false,
-                "default": null,
-                "extra": ""
-            },
-            "parent": {
-                "type": "varchar(64)",
-                "null": false,
-                "default": null,
-                "extra": ""
-            }
-        },
-        "auth_item_group": {
-            "code": {
-                "type": "varchar(64)",
-                "null": false,
-                "default": null,
-                "extra": ""
-            },
-            "created_at": {
-                "type": "int",
-                "null": true,
-                "default": null,
-                "extra": ""
-            },
-            "name": {
-                "type": "varchar(255)",
-                "null": false,
-                "default": null,
-                "extra": ""
-            },
-            "updated_at": {
-                "type": "int",
-                "null": true,
-                "default": null,
-                "extra": ""
-            }
-        },
-        "auth_rule": {
-            "created_at": {
-                "type": "int",
-                "null": true,
-                "default": null,
-                "extra": ""
-            },
-            "data": {
-                "type": "text",
-                "null": true,
-                "default": null,
-                "extra": ""
-            },
-            "name": {
-                "type": "varchar(64)",
-                "null": false,
-                "default": null,
-                "extra": ""
-            },
-            "updated_at": {
-                "type": "int",
                 "null": true,
                 "default": null,
                 "extra": ""
@@ -846,88 +710,6 @@
                 "type": "int",
                 "null": false,
                 "default": null,
-                "extra": ""
-            }
-        },
-        "coupon_email_track": {
-            "coupon_id": {
-                "type": "int",
-                "null": false,
-                "default": "0",
-                "extra": ""
-            },
-            "customer_id_sent": {
-                "type": "int",
-                "null": false,
-                "default": "0",
-                "extra": ""
-            },
-            "date_sent": {
-                "type": "datetime",
-                "null": false,
-                "default": null,
-                "extra": ""
-            },
-            "emailed_to": {
-                "type": "varchar(32)",
-                "null": true,
-                "default": null,
-                "extra": ""
-            },
-            "sent_firstname": {
-                "type": "varchar(32)",
-                "null": true,
-                "default": null,
-                "extra": ""
-            },
-            "sent_lastname": {
-                "type": "varchar(32)",
-                "null": true,
-                "default": null,
-                "extra": ""
-            },
-            "unique_id": {
-                "type": "int",
-                "null": false,
-                "default": null,
-                "extra": "auto_increment"
-            }
-        },
-        "coupon_redeem_track": {
-            "coupon_id": {
-                "type": "int",
-                "null": false,
-                "default": "0",
-                "extra": ""
-            },
-            "order_id": {
-                "type": "int",
-                "null": false,
-                "default": "0",
-                "extra": ""
-            },
-            "redeem_date": {
-                "type": "datetime",
-                "null": false,
-                "default": "0001-01-01 00:00:00",
-                "extra": ""
-            },
-            "redeem_id": {
-                "type": "int",
-                "null": false,
-                "default": null,
-                "extra": "auto_increment"
-            },
-            "redeem_ip": {
-                "type": "varchar(32)",
-                "null": false,
-                "default": "",
-                "extra": ""
-            },
-            "user_id": {
-                "type": "int",
-                "null": false,
-                "default": "0",
                 "extra": ""
             }
         },
@@ -2735,23 +2517,6 @@
             "id": "primary",
             "status": "index"
         },
-        "auth_assignment": {
-            "item_name,user_id": "primary",
-            "user_id": "index"
-        },
-        "auth_item": {
-            "name": "primary",
-            "type": "index"
-        },
-        "auth_item_child": {
-            "parent,child": "primary"
-        },
-        "auth_item_group": {
-            "code": "primary"
-        },
-        "auth_rule": {
-            "name": "primary"
-        },
         "billing_event": {
             "billing_run_id,user_id": "index",
             "due_date": "index",
@@ -2792,12 +2557,6 @@
             "coupon_id,user_id": "unique",
             "id": "primary",
             "user_id": "index"
-        },
-        "coupon_email_track": {
-            "unique_id": "primary"
-        },
-        "coupon_redeem_track": {
-            "redeem_id": "primary"
         },
         "coupon_redemption": {
             "coupon_id": "index",

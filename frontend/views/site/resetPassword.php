@@ -21,44 +21,12 @@ $labelOptions = ['class' => 'form-label fw-semibold small'];
     <div class="card border-0 overflow-hidden login-split-card">
         <div class="row g-0">
 
-            <!-- Brand panel -->
-            <div class="col-md-5 d-none d-md-flex login-brand-panel text-white">
-                <div class="d-flex flex-column justify-content-between p-4 p-lg-5 w-100">
-                    <div>
-                        <?= Html::img(
-                            Yii::getAlias('@web/images/logo.png'),
-                            [
-                                'alt' => 'Miracle Web Technologies',
-                                'class' => 'mb-4',
-                                'height' => 64,
-                            ],
-                        ) ?>
-                    </div>
-                    <div>
-                        <p class="fw-bold mb-3 login-brand-title">
-                            New<br>Password
-                        </p>
-                        <p class="opacity-75 mb-0 login-brand-text">
-                            Choose a strong password to keep your account secure.
-                        </p>
-                    </div>
-                </div>
-            </div>
+            <?= $this->render('_auth_panel', ['title' => 'Choose a new password', 'text' => 'Pick a strong password to keep your account secure.', 'portal' => false]) ?>
 
             <!-- Form panel -->
             <div class="col-md-7">
                 <div class="p-4 p-lg-5">
                     <div class="text-center mb-4">
-                        <div class="d-md-none mb-3">
-                            <?= Html::img(
-                                Yii::getAlias('@web/images/logo.png'),
-                                [
-                                    'alt' => 'Miracle Web Technologies',
-                                    'class' => 'login-mobile-logo',
-                                    'height' => 48,
-                                ],
-                            ) ?>
-                        </div>
                         <h1 class="h3 fw-bold mb-1"><?= Html::encode($this->title) ?></h1>
                         <p class="text-body-secondary small">Please choose a new password for your account</p>
                     </div>
@@ -79,7 +47,7 @@ $labelOptions = ['class' => 'form-label fw-semibold small'];
 
                     <div class="d-grid">
                         <?= Html::submitButton(
-                            'Save',
+                            'Save new password',
                             [
                                 'class' => 'btn login-btn btn-lg rounded-3 text-white',
                             ],

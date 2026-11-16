@@ -72,12 +72,30 @@ class BlogPostController extends BaseController
         if ($model->load(Yii::$app->request->post())) {
             $cover = UploadedFile::getInstance($model, 'cover_image');
             try {
+                $stored = null;
                 if ($cover !== null) {
-                    $model->cover_image = (new BlogImageService())->store($cover);
+                    $model->cover_image = $stored = (new BlogImageService())->store($cover);
                 } elseif (Yii::$app->request->post('remove_cover')) {
                     $model->cover_image = null;
                 }
-                if ($model->save()) {
+                try {
+                    $saved = $model->save();
+                } catch (\Throwable $e) {
+                    if ($stored !== null) {
+                        @unlink(Yii::getAlias('@frontend/web/' . $stored));
+                    }
+                    throw $e;
+                }
+                if (!$saved) {
+                    // The form shows the cover as saved; a removal stays ticked (the view reads remove_cover).
+                    $model->cover_image = $model->getOldAttribute('cover_image');
+                    if ($stored !== null) {
+                        // The form can't carry the new file back: drop it and ask for it again, rather than lose it silently.
+                        @unlink(Yii::getAlias('@frontend/web/' . $stored));
+                        $model->addError('cover_image', 'Fix the errors above, then choose the cover image again.');
+                    }
+                }
+                if ($saved) {
                     // Google finds new posts through the sitemap within days; asking it directly takes about a day.
                     $indexing = 'Ask Google to index it: click Search Console above, then URL inspection > paste ' . $this->publicUrl('blog/' . $model->slug) . ' > Request indexing.';
                     Yii::$app->session->setFlash('success', match ($model->stateLabel()) {

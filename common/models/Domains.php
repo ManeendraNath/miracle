@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace common\models;
 
 use common\models\traits\AutoTimestampTrait;
+use common\models\traits\CustomerNotDeletedTrait;
 use yii\helpers\ArrayHelper;
 
 /**
@@ -26,6 +27,7 @@ use yii\helpers\ArrayHelper;
 class Domains extends base\Domains
 {
     use AutoTimestampTrait;
+    use CustomerNotDeletedTrait;
 
     public const STATUS_INACTIVE = 0;
     public const STATUS_ACTIVE = 1;
@@ -54,6 +56,8 @@ class Domains extends base\Domains
         return ArrayHelper::merge(
             parent::rules(),
             [
+                // A deleted customer is never billed: their services can only be inactive.
+                ['status', 'validateCustomerNotDeleted'],
                             [['registered_date', 'current_expiry_date'], 'required'],
                             [['registered_date', 'current_expiry_date'], 'date', 'format' => 'php:Y-m-d'],
                             ['renewal_cycle_months', 'integer', 'min' => 1],

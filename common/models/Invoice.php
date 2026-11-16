@@ -189,4 +189,26 @@ class Invoice extends base\Invoice
             'billing_run_id' => 'Billing Run',
         ]);
     }
+
+    /** Renewal and carried-forward lines are made by the system: an invoice with any can't be edited by hand. */
+    public function hasSystemItems(): bool
+    {
+        return self::idsWithSystemItems([(int) $this->id]) !== [];
+    }
+
+    /**
+     * hasSystemItems() for a whole page of invoices in one query.
+     *
+     * @param int[] $ids
+     * @return int[]
+     */
+    public static function idsWithSystemItems(array $ids): array
+    {
+        return $ids === [] ? [] : array_map('intval', InvoiceItem::find()
+            ->select('invoice_id')
+            ->distinct()
+            ->where(['invoice_id' => $ids])
+            ->andWhere(['or', ['not', ['billing_event_id' => null]], ['not', ['source_invoice_id' => null]]])
+            ->column());
+    }
 }

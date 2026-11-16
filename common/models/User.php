@@ -87,8 +87,28 @@ class User extends base\User implements IdentityInterface
             ['email', 'email'],
             ['mobile', 'match', 'pattern' => '/^[0-9]{10,15}$/', 'message' => 'Enter a valid mobile number.'],
             ['whatsapp', 'match', 'pattern' => '/^[0-9]{10,15}$/', 'message' => 'Enter a valid whatsapp number.'],
+            // A deleted customer is never billed: their active services would run on unpaid.
+            ['status', 'validateNoActiveServices'],
         ];
         return ArrayHelper::merge(parent::rules(), $this->getBaseIdentityRules(), $this->getPasswordRules(), $rules);
+    }
+
+    /** Deleting a customer needs every domain, hosting and maintenance plan of theirs made inactive first (none still renewing). */
+    public function validateNoActiveServices(string $attribute): void
+    {
+        if ((int) $this->status !== self::getStatusDeleted() || (int) $this->getOldAttribute('status') === self::getStatusDeleted() || $this->isNewRecord) {
+            return;
+        }
+        $active = [];
+        foreach ([Domains::class => 'domain', Hosting::class => 'hosting', Maintenance::class => 'maintenance plan'] as $class => $label) {
+            $count = (int) $class::find()->where(['user_id' => (int) $this->id, 'status' => $class::RENEWABLE_STATUSES])->count();
+            if ($count > 0) {
+                $active[] = $count . ' ' . $label . ($count > 1 && $label !== 'hosting' ? 's' : '');
+            }
+        }
+        if ($active !== []) {
+            $this->addError($attribute, 'This customer still has active services (' . implode(', ', $active) . '). Make them inactive first, then delete the customer.');
+        }
     }
 
     /**

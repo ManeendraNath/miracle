@@ -35,6 +35,14 @@ trait ToggleStatusTrait
             return $this->redirect(Yii::$app->request->referrer ?: ['index']);
         }
         $model->$attribute = $enable ? $on : $off;
+        // Saved without validation below: the one rule that matters here, checked by hand.
+        if ($enable && method_exists($model, 'runsForDeletedCustomer') && $model->runsForDeletedCustomer()) {
+            if ($locked) {
+                $this->unlockBillingRun();
+            }
+            Yii::$app->session->setFlash('error', 'This customer is deleted, so their services can only be inactive.');
+            return $this->redirect(Yii::$app->request->referrer ?: ['index']);
+        }
         $model->updated_at = time();
 
         if ($model->save(false, [$attribute, 'updated_at'])) {

@@ -552,6 +552,9 @@ class TransactionController extends BaseController
         }
         // Only an order the customer still has open in checkout may be captured now (within a day, as the sync does).
         $synced = $paypal->sync($model, (int) $model->created_at >= time() - 86400);
+        if ($paypal->paidButNotRecorded) {
+            throw new \DomainException('Another payment for this invoice may have been taken but is not recorded yet (see the payment alert), so this order was not captured. Sort that one out first.');
+        }
 
         return $synced !== null && ($synced->status === Transaction::STATUS_CAPTURED || (string) $synced->gateway_payment_id !== '');
     }

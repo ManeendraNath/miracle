@@ -28,6 +28,8 @@ use Yii;
  * @property int|null $emailed_at
  * @property string|null $usd_rate_locked
  * @property string|null $usd_rate_until
+ * @property string|null $usd_fee_percent_locked
+ * @property string|null $usd_fee_fixed_locked
  * @property int|null $written_off_at
  * @property int|null $billing_run_id
  * @property string|null $client_city

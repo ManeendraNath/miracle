@@ -31,9 +31,9 @@ use yii\bootstrap5\NavBar;
         // One account menu: a user icon that opens Dashboard and Sign out (in the phone menu it opens in place).
         $username = Html::encode(Yii::$app->user->identity->username);
         $menuItems[] = '<li class="nav-item dropdown">'
-                . '<a class="nav-link dropdown-toggle" href="#" id="account-menu" role="button" data-bs-toggle="dropdown" aria-expanded="false" title="My account">'
+                . '<a class="nav-link dropdown-toggle" href="#" id="account-dropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false" title="My account">'
                 . '<i class="fas fa-user-circle fa-lg" aria-hidden="true"></i><span class="nav-icon-text">My account</span></a>'
-                . '<ul class="dropdown-menu dropdown-menu-end" aria-labelledby="account-menu">'
+                . '<ul class="dropdown-menu dropdown-menu-end" aria-labelledby="account-dropdown">'
                 . '<li><span class="dropdown-item-text small text-muted">Signed in as <strong>' . $username . '</strong></span></li>'
                 . '<li><hr class="dropdown-divider"></li>'
                 . '<li>' . Html::a('<i class="fas fa-th-large fa-fw me-2" aria-hidden="true"></i>Dashboard', ['/dashboard/index'], ['class' => 'dropdown-item']) . '</li>'

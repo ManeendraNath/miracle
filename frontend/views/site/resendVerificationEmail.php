@@ -21,44 +21,12 @@ $labelOptions = ['class' => 'form-label fw-semibold small'];
     <div class="card border-0 overflow-hidden login-split-card">
         <div class="row g-0">
 
-            <!-- Brand panel -->
-            <div class="col-md-5 d-none d-md-flex login-brand-panel text-white">
-                <div class="d-flex flex-column justify-content-between p-4 p-lg-5 w-100">
-                    <div>
-                        <?= Html::img(
-                            Yii::getAlias('@web/images/logo.png'),
-                            [
-                                'alt' => 'Miracle Web Technologies',
-                                'height' => 64,
-                                'class' => 'mb-4',
-                            ],
-                        ) ?>
-                    </div>
-                    <div>
-                        <p class="fw-bold mb-3 login-brand-title">
-                            Verify Your<br>Email
-                        </p>
-                        <p class="opacity-75 mb-0 login-brand-text">
-                            We will send a new verification email to confirm your account.
-                        </p>
-                    </div>
-                </div>
-            </div>
+            <?= $this->render('_auth_panel', ['title' => 'Verify your email', 'text' => 'We will send a new verification email to confirm your account.', 'portal' => false]) ?>
 
             <!-- Form panel -->
             <div class="col-md-7">
                 <div class="p-4 p-lg-5">
                     <div class="text-center mb-4">
-                        <div class="d-md-none mb-3">
-                            <?= Html::img(
-                                Yii::getAlias('@web/images/logo.png'),
-                                [
-                                    'alt' => 'Miracle Web Technologies',
-                                    'class' => 'login-mobile-logo',
-                                    'height' => 48,
-                                ],
-                            ) ?>
-                        </div>
                         <h1 class="h3 fw-bold mb-1"><?= Html::encode($this->title) ?></h1>
                         <p class="text-body-secondary small">Enter your email to receive a new verification link</p>
                     </div>
@@ -74,7 +42,7 @@ $labelOptions = ['class' => 'form-label fw-semibold small'];
                                 'class' => 'form-control',
                                 'placeholder' => 'email@example.com',
                             ],
-                        ])->textInput()->label('Your Email', $labelOptions) ?>
+                        ])->textInput()->label('Email', $labelOptions) ?>
                     </div>
 
                     <div class="mb-4">
@@ -85,7 +53,7 @@ $labelOptions = ['class' => 'form-label fw-semibold small'];
 
                     <div class="d-grid">
                         <?= Html::submitButton(
-                            'Send',
+                            'Send verification email',
                             [
                                 'class' => 'btn login-btn btn-lg rounded-3 text-white',
                             ],
@@ -95,7 +63,7 @@ $labelOptions = ['class' => 'form-label fw-semibold small'];
                     <?php ActiveForm::end(); ?>
 
                     <div class="text-body-secondary text-center mt-3 small">
-                        Already verified? <?= Html::a('Login', ['site/login']) ?>
+                        Already verified? <?= Html::a('Log in', ['site/login']) ?>
                     </div>
 
                 </div>

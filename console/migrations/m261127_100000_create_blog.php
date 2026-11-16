@@ -38,8 +38,17 @@ final class m261127_100000_create_blog extends Migration
                 'created_at' => $this->integer()->notNull(),
                 'updated_at' => $this->integer()->notNull(),
             ], $options);
+        }
+        // Each on its own: MySQL can't undo a table creation, so a run that stopped after it must still add these.
+        $indexes = array_column($this->db->createCommand('SHOW INDEX FROM {{%blog_post}}')->queryAll(), 'Key_name');
+        if (!in_array('idx-blog_post-status-published_at', $indexes, true)) {
             $this->createIndex('idx-blog_post-status-published_at', '{{%blog_post}}', ['status', 'published_at']);
+        }
+        $foreignKeys = $this->db->getTableSchema('{{%blog_post}}', true)->foreignKeys;
+        if (!isset($foreignKeys['fk-blog_post-category'])) {
             $this->addForeignKey('fk-blog_post-category', '{{%blog_post}}', 'category_id', '{{%blog_category}}', 'id', 'SET NULL', 'CASCADE');
+        }
+        if (!isset($foreignKeys['fk-blog_post-author'])) {
             $this->addForeignKey('fk-blog_post-author', '{{%blog_post}}', 'author_id', '{{%admin}}', 'id', 'SET NULL', 'CASCADE');
         }
     }

@@ -111,7 +111,8 @@ class BlogPost extends base\BlogPost
         }
         if ($this->publishAt) {
             $this->published_at = (int) strtotime((string) $this->publishAt);
-        } elseif ((int) $this->status === self::STATUS_PUBLISHED && !$this->published_at) {
+        } elseif ((int) $this->status === self::STATUS_PUBLISHED && (!$this->published_at || ($this->publishAt === '' && (int) $this->published_at > time()))) {
+            // Publish on left empty means now; a scheduled post whose date was cleared on the form ('') too.
             $this->published_at = time();
         }
 

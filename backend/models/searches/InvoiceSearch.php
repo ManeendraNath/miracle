@@ -14,8 +14,10 @@ use common\models\traits\DateRangeSearchTrait;
 class InvoiceSearch extends Invoice
 {
     use \common\models\traits\ScalarInputTrait;
-
     use DateRangeSearchTrait;
+
+    /** Status filter value for Unpaid and Partially Paid together (filters take one value). */
+    public const OUTSTANDING = 'outstanding';
 
     public ?string $due_date_range = null;
     public ?string $created_at_range = null;
@@ -74,7 +76,8 @@ class InvoiceSearch extends Invoice
         $query->andFilterWhere([
             'id' => $this->id,
             'user_id' => $this->user_id,
-            'status' => $this->status,
+            // "outstanding" = the dashboard's due balance: everything still to be paid.
+            'status' => $this->status === self::OUTSTANDING ? [Invoice::STATUS_UNPAID, Invoice::STATUS_PARTIALLY_PAID] : $this->status,
             'total_payable' => $this->total_payable,
         ]);
 

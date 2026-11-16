@@ -147,7 +147,7 @@ class UserController extends BaseController
         }
         $services = 0;
         foreach ([\common\models\Domains::class, \common\models\Hosting::class, \common\models\Maintenance::class] as $class) {
-            $services += (int) $class::find()->where(['user_id' => (int) $model->id, 'status' => 1])->count();
+            $services += (int) $class::find()->where(['user_id' => (int) $model->id, 'status' => $class::RENEWABLE_STATUSES])->count();
         }
         $invoices = (int) \common\models\Invoice::find()->where(['user_id' => (int) $model->id, 'status' => [\common\models\Invoice::STATUS_DRAFT, \common\models\Invoice::STATUS_UNPAID, \common\models\Invoice::STATUS_PARTIALLY_PAID]])->count();
         if ($services === 0 && $invoices === 0) {

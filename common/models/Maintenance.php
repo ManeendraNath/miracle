@@ -3,6 +3,7 @@
 namespace common\models;
 
 use common\models\traits\AutoTimestampTrait;
+use common\models\traits\CustomerNotDeletedTrait;
 
 /**
  * This is the model class for table "maintenance".
@@ -22,6 +23,7 @@ use common\models\traits\AutoTimestampTrait;
 class Maintenance extends base\Maintenance
 {
     use AutoTimestampTrait;
+    use CustomerNotDeletedTrait;
 
     /** Standard yearly price (₹), prefilled on new services; a service's own Renewal Base Amount decides what it pays. */
     public const STANDARD_YEARLY_AMOUNT = 4000.00;
@@ -45,6 +47,8 @@ class Maintenance extends base\Maintenance
     public function rules(): array
     {
         return array_merge(parent::rules(), [
+            // A deleted customer is never billed: their services can only be inactive.
+            ['status', 'validateCustomerNotDeleted'],
             [['start_date', 'current_expiry_date'], 'date', 'format' => 'php:Y-m-d'],
             // Rendered as a link for staff: only http(s), never javascript: or app-relative paths.
             ['website_url', 'url', 'defaultScheme' => 'https'],

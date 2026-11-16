@@ -84,8 +84,8 @@ final class LoginCest
     {
         $I->submitForm('#login-form', $this->formParams('erau', 'password_0'));
         $I->see('Signed in as erau');
-        $I->dontSeeLink('Login');
-        $I->dontSeeLink('Signup');
+        $I->dontSeeLink('Log in');
+        $I->dontSeeLink('Create an account');
     }
 
     public function newDeviceSendsOneEmailButFirstEverLoginDoesNot(FunctionalTester $I): void

@@ -1000,19 +1000,42 @@ a.desc:after {
     max-width: 960px;
 }
 
-.login-brand-panel {
-    background: var(--mw-ink);
+.auth-panel {
     min-height: 480px;
 }
 
-.login-brand-title {
-    color: var(--mw-on-ink);
-    font-size: 1.75rem;
-    line-height: 1.3;
+/* The site's gem, small in the bottom corner, clear of the text. */
+.auth-panel.mw-glow::after {
+    top: auto;
+    right: -4rem;
+    bottom: -3rem;
+    width: 16rem;
+    height: 14rem;
+    transform: none;
+    opacity: .25;
 }
 
-.login-brand-text {
-    font-size: .9375rem;
+.auth-panel-title {
+    color: var(--mw-on-ink);
+    font-size: 1.875rem;
+    font-weight: 700;
+    line-height: 1.2;
+}
+
+.auth-panel-list li {
+    display: flex;
+    gap: .625rem;
+    margin-bottom: .625rem;
+    color: var(--mw-on-ink);
+}
+
+.auth-panel-list .fa-check {
+    margin-top: .3rem;
+    color: var(--mw-brand);
+}
+
+.auth-panel-help a {
+    color: var(--mw-on-ink);
 }
 
 .login-btn {

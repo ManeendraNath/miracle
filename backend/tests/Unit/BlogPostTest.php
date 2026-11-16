@@ -73,4 +73,11 @@ final class BlogPostTest extends Unit
         $this->assertSame('T', $post->title);
         $this->assertSame(['uploads/blog/2026-11/a.jpg', 1, 100], [$post->cover_image, $post->author_id, $post->published_at]);
     }
+
+    public function testClearingPublishOnPublishesAScheduledPostNow(): void
+    {
+        $post = new BlogPost(['status' => BlogPost::STATUS_PUBLISHED, 'published_at' => time() + 86400, 'publishAt' => '']);
+        $post->beforeSave(false);
+        $this->assertLessThanOrEqual(time(), $post->published_at);
+    }
 }

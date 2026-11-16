@@ -22,6 +22,8 @@ $isNew = $model->isNewRecord;
  */
 $users = ArrayHelper::map(
     User::find()
+        // Deleted customers can't own a running service (only the current owner stays listed).
+        ->where(['or', ['<>', 'status', User::getStatusDeleted()], ['id' => (int) $model->user_id]])
                 ->orderBy([
                     'username' => SORT_ASC,
                 ])

@@ -32,8 +32,8 @@ if ($model->status === Invoice::STATUS_DRAFT) {
         'class' => 'btn btn-success',
         'data' => ['confirm' => 'Send this invoice to the customer now? They will see it in the portal and get it by email, dated today and due on the expiry date shown.', 'method' => 'post'],
     ]);
-    // Renewal lines can't be edited by hand (InvoiceController::actionUpdate refuses them).
-    if (!\common\models\BillingEvent::find()->where(['invoice_id' => $model->id])->exists()) {
+    // Renewal and carried-forward lines can't be edited by hand (InvoiceController::actionUpdate refuses them).
+    if (!$model->hasSystemItems()) {
         $this->params['actions'][] = Html::a('<i class="fas fa-edit me-1"></i> Update', ['update', 'id' => $model->id], ['class' => 'btn btn-primary']);
     }
     $this->params['actions'][] = Html::a('<i class="fas fa-ban me-1"></i> Cancel Invoice', ['cancel', 'id' => $model->id], [
@@ -45,7 +45,9 @@ if ($model->status === Invoice::STATUS_DRAFT) {
     ]);
 }
 if ($model->status === Invoice::STATUS_UNPAID) {
-    $this->params['actions'][] = Html::a('<i class="fas fa-edit me-1"></i> Update', ['update', 'id' => $model->id], ['class' => 'btn btn-primary']);
+    if (!$model->hasSystemItems()) {
+        $this->params['actions'][] = Html::a('<i class="fas fa-edit me-1"></i> Update', ['update', 'id' => $model->id], ['class' => 'btn btn-primary']);
+    }
     $this->params['actions'][] = Html::a('<i class="fas fa-ban me-1"></i> Cancel Invoice', ['cancel', 'id' => $model->id], [
         'class' => 'btn btn-outline-danger',
         'data' => [

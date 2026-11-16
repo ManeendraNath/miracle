@@ -9,7 +9,7 @@ declare(strict_types=1);
 use yii\bootstrap5\ActiveForm;
 use yii\bootstrap5\Html;
 
-$this->title = 'Login to your account';
+$this->title = 'Log in to your account';
 $this->params['breadcrumbs'][] = $this->title;
 $this->params['meta_description'] = 'Log in to your Miracle Web Technologies customer account.';
 $htmlIcon = <<<HTML
@@ -21,45 +21,12 @@ $labelOptions = ['class' => 'form-label fw-semibold small'];
     <div class="card border-0 overflow-hidden login-split-card">
         <div class="row g-0">
 
-            <!-- Brand panel -->
-            <div class="col-md-5 d-none d-md-flex login-brand-panel text-white">
-                <div class="d-flex flex-column justify-content-between p-4 p-lg-5 w-100">
-                    <div>
-                        <?= Html::img(
-                            Yii::getAlias('@web/images/logo.png'),
-                            [
-                                'alt' => 'Miracle Web Technologies',
-                                'class' => 'mb-4',
-                                'height' => 64,
-                            ],
-                        ) ?>
-                    </div>
-                    <div>
-                        <p class="fw-bold mb-3 login-brand-title">
-                            Welcome<br>Back
-                        </p>
-                        <p class="opacity-75 mb-0 login-brand-text">
-                            Log in to manage your services, invoices and support requests.
-                        </p>
-                    </div>
-                </div>
-            </div>
+            <?= $this->render('_auth_panel', ['title' => 'Welcome back', 'text' => 'Sign in to see everything about your services with us, in one place.', 'portal' => true]) ?>
 
             <!-- Form panel -->
             <div class="col-md-7">
                 <div class="p-4 p-lg-5">
                     <div class="text-center mb-4">
-                        <!-- Mobile-only logo -->
-                        <div class="d-md-none mb-3">
-                            <?= Html::img(
-                                Yii::getAlias('@web/images/logo.png'),
-                                [
-                                    'alt' => 'Miracle Web Technologies',
-                                    'class' => 'login-mobile-logo',
-                                    'height' => 48,
-                                ],
-                            ) ?>
-                        </div>
                         <h1 class="h3 fw-bold mb-1"><?= Html::encode($this->title) ?></h1>
                         <p class="text-body-secondary small">Enter your credentials to continue</p>
                     </div>
@@ -72,10 +39,10 @@ $labelOptions = ['class' => 'form-label fw-semibold small'];
                             'template' => sprintf($htmlIcon, '<i class="fas fa-user"></i>'),
                             'inputOptions' => [
                                 'class' => 'form-control',
-                                'placeholder' => 'username',
+                                'placeholder' => 'Your username',
                                 'autofocus' => true,
                             ],
-                        ])->textInput()->label('Your Username', $labelOptions) ?>
+                        ])->textInput()->label('Username', $labelOptions) ?>
                     </div>
 
                     <div class="mb-3">
@@ -84,9 +51,9 @@ $labelOptions = ['class' => 'form-label fw-semibold small'];
                             'template' => sprintf($htmlIcon, '<i class="fas fa-lock"></i>'),
                             'inputOptions' => [
                                 'class' => 'form-control',
-                                'placeholder' => 'Password',
+                                'placeholder' => 'Your password',
                             ],
-                        ])->passwordInput()->label('Your Password', $labelOptions) ?>
+                        ])->passwordInput()->label('Password', $labelOptions) ?>
                     </div>
 
                     <div class="mb-4">
@@ -95,7 +62,7 @@ $labelOptions = ['class' => 'form-label fw-semibold small'];
 
                     <div class="d-grid">
                         <?= Html::submitButton(
-                            'Login',
+                            'Log in',
                             [
                                 'class' => 'btn login-btn btn-lg rounded-3 text-white',
                                 'name' => 'login-button',

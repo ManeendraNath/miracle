@@ -41,7 +41,7 @@ if ($canBilling) {
     $this->params['help']['Revenue'] = 'Money received and counted on invoices, less refunds, GST included. The chart compares each of the last 6 months with the same month last year.';
     $this->params['help']['received but unapplied'] = 'Shows when money came in for an invoice that was already paid or closed. Click Review, open each payment, and refund it or apply it to another invoice.';
 }
-$this->params['help']['Infrastructure Assets / Inbound Pipeline'] = 'Counts of active domains, hosting and maintenance plans, and of audit requests and website enquiries still Pending. The arrow icon or the count opens the list.';
+$this->params['help']['Infrastructure Assets / Inbound Pipeline'] = 'Counts of active domains, hosting and maintenance plans, and of audit requests and website enquiries still Pending. The link icon opens the active ones; a Pending count opens those requests.';
 if ($canBilling) {
     $this->params['help']['Recent Coupons'] = 'The 4 newest coupons, Active or Inactive.';
 }
@@ -53,7 +53,7 @@ $kpis = [
     ['bg-danger', (int) $highPrioritySupportTickets, 'High Priority Support', 'fas fa-exclamation-triangle', 'Review Priority Tickets', ['/support-ticket/index', 'SupportTicketSearch' => ['priority' => SupportTicket::PRIORITY_HIGH, 'status' => 'active']]],
     ['bg-primary', (int) $metrics['totalClients'], 'Customer Accounts', 'fas fa-users', 'Manage Clients', ['/user/index']],
     ['bg-success', Yii::$app->formatter->asCurrency((float) $metrics['totalRevenueCollected'], 'INR'), 'Total Revenue Settled', 'fas fa-cash-register', 'Review Paid Invoices', ['/invoice/index', 'InvoiceSearch' => ['status' => \common\models\Invoice::STATUS_PAID]]],
-    ['bg-warning', Yii::$app->formatter->asCurrency((float) $metrics['unpaidBalance'], 'INR'), 'Outstanding Due Balance', 'fas fa-comments-dollar', 'Track Accounts Due', ['/invoice/index', 'InvoiceSearch' => ['status' => [\common\models\Invoice::STATUS_UNPAID, \common\models\Invoice::STATUS_PARTIALLY_PAID]]]],
+    ['bg-warning', Yii::$app->formatter->asCurrency((float) $metrics['unpaidBalance'], 'INR'), 'Outstanding Due Balance', 'fas fa-comments-dollar', 'Track Accounts Due', ['/invoice/index', 'InvoiceSearch' => ['status' => \backend\models\searches\InvoiceSearch::OUTSTANDING]]],
     ['bg-secondary', (int) $metrics['totalInvoicesCount'], 'Invoices Generated', 'fas fa-file-invoice-dollar', 'View Billing History', ['/invoice/index']],
 ];
 // Managers don't see billing figures (they can't open those sections either).
@@ -61,9 +61,9 @@ if (!$canBilling) {
     $kpis = array_filter($kpis, static fn(array $kpi): bool => $kpi[5][0] !== '/invoice/index');
 }
 $assets = [
-    ['fas fa-globe text-primary', 'Domains', $metrics['activeDomainsCount'], ['/domains/index']],
-    ['fas fa-cloud text-success', 'Web Hosting', $metrics['activeHostingCount'], ['/hosting/index']],
-    ['fas fa-tools text-warning', 'Maintenance (AMC)', $metrics['underCareAmcCount'], ['/maintenance/index']],
+    ['fas fa-globe text-primary', 'Domains', $metrics['activeDomainsCount'], ['/domains/index', 'DomainsSearch' => ['status' => 1]]],
+    ['fas fa-cloud text-success', 'Web Hosting', $metrics['activeHostingCount'], ['/hosting/index', 'HostingSearch' => ['status' => 1]]],
+    ['fas fa-tools text-warning', 'Maintenance (AMC)', $metrics['underCareAmcCount'], ['/maintenance/index', 'MaintenanceSearch' => ['status' => 1]]],
 ];
 ?>
 <div class="container-fluid">

@@ -20,7 +20,7 @@ $this->params['help'] = [
     'Pencil icon' => 'Change the customer\'s account details or status.',
     'Ban icon (Disable)' => 'Shown on Active customers. Suspends the account so they can no longer sign in. Their renewals and reminders carry on: disable their services or cancel invoices if those should stop too.',
     'Tick icon (Enable)' => 'Shown on any customer who is not Active. Makes the account Active so they can sign in again.',
-    'Account Status' => 'Active can sign in. Inactive has signed up but not confirmed their email yet. Suspended was stopped by staff, or automatically after a month with incomplete billing details and nothing in use. Deleted: renewals and reminders stop.',
+    'Account Status' => 'Active can sign in. Inactive has signed up but not confirmed their email yet. Suspended was stopped by staff, or automatically after a month with incomplete billing details and nothing in use. Deleted: renewals and reminders stop; only possible once every service of theirs is inactive.',
 ];
 
 GridViewHelper::register($this);

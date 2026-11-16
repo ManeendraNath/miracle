@@ -132,15 +132,7 @@ class InvoiceController extends BaseController
          * Automatic renewal items and carried-forward balances
          * must never enter the manual invoice editor.
          */
-        $containsSystemItems = InvoiceItem::find()
-                ->where(['invoice_id' => $model->id])
-                ->andWhere([
-                    'or',
-                    ['not', ['billing_event_id' => null]],
-                    ['not', ['source_invoice_id' => null]],
-                ])
-                ->exists();
-        if ($containsSystemItems) {
+        if ($model->hasSystemItems()) {
             Yii::$app->session->setFlash('error', 'Invoices containing renewal or carried-forward items cannot be edited manually.');
             return $this->redirect(['view', 'number' => $model->invoice_number]);
         }

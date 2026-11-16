@@ -305,6 +305,13 @@ class BaseController extends Controller
                 'class' => AccessControl::class,
                 'denyCallback' => function ($rule, $action) {
                     if (Yii::$app->user->isGuest) {
+                        // A link from an alert email opens its page after signing in, not the dashboard.
+                        // One leading slash: "//x" would leave the site. Anything else (POST, ajax) drops an older one.
+                        if (Yii::$app->request->isGet && !Yii::$app->request->isAjax) {
+                            Yii::$app->user->setReturnUrl('/' . ltrim(Yii::$app->request->url, '/'));
+                        } else {
+                            Yii::$app->session->remove(Yii::$app->user->returnUrlParam);
+                        }
                         return Yii::$app->response->redirect(['/auth/login']);
                     }
                     if (!isset(self::ROLE_RANK[Yii::$app->user->identity->role ?? ''])) {

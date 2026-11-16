@@ -39,8 +39,9 @@ class BackupController extends Controller
     }
 
     /**
-     * Dumps the database to backups/db_backup_<timestamp>.sql.gz, archives customers' payment proofs to
-     * backups/receipts_<timestamp>.tar, and prunes both older than KEEP_DAYS. Failures alert admins.
+     * Dumps the database to backups/db_backup_<timestamp>.sql.gz, archives the files that live only on disk
+     * (customers' payment proofs, blog images) to backups/<name>_<timestamp>.tar, and prunes all older than
+     * KEEP_DAYS. Failures alert admins.
      * Command execution: php yii backup/run
      */
     public function actionRun(): int
@@ -66,26 +67,36 @@ class BackupController extends Controller
         }
 
         $status = $this->copyOffsite($file);
-        $receiptsSafe = false;
-        try {
-            $receipts = $this->archiveReceipts($backupDir);
-            if ($receipts !== null) {
-                $this->stdout("✓ Payment proofs archived: {$receipts}\n", Console::FG_GREEN);
-                $status = $this->copyOffsite($receipts) ?: $status;
+        $prunable = [$backupDir . '/db_backup_*.sql.gz'];
+        // Files a restored database points at, which live only on this disk.
+        $folders = [
+            'receipts' => ['Payment proofs', dirname(Yii::getAlias('@common')) . '/storage/payment-receipts'],
+            'blog_images' => ['Blog images', Yii::getAlias('@frontend/web/' . \common\models\BlogPost::UPLOAD_DIR)],
+        ];
+        foreach ($folders as $name => [$label, $source]) {
+            try {
+                $archive = $this->archiveFolder($backupDir, $name, $source);
+                // Old archives go only once a new one exists: two weeks of failures, or of an emptied folder,
+                // must not leave none.
+                if ($archive !== null) {
+                    $this->stdout("✓ {$label} archived: {$archive}\n", Console::FG_GREEN);
+                    $status = $this->copyOffsite($archive) ?: $status;
+                    $prunable[] = $backupDir . "/{$name}_*.tar";
+                }
+            } catch (\Throwable $e) {
+                $status = $this->fail("{$label} archive failed: " . $e->getMessage(), ExitCode::UNSPECIFIED_ERROR);
             }
-            $receiptsSafe = true;
-        } catch (\Throwable $e) {
-            $status = $this->fail('Payment proof archive failed: ' . $e->getMessage(), ExitCode::UNSPECIFIED_ERROR);
         }
 
-        // Old proofs stay while new archives fail: otherwise two weeks of failures would leave none.
-        foreach ([...(glob($backupDir . '/db_backup_*.sql.gz') ?: []), ...($receiptsSafe ? glob($backupDir . '/receipts_*.tar') ?: [] : [])] as $old) {
-            if (filemtime($old) < time() - self::KEEP_DAYS * 86400) {
-                unlink($old);
+        foreach ($prunable as $pattern) {
+            foreach (glob($pattern) ?: [] as $old) {
+                if (!str_ends_with($old, '.part.tar') && filemtime($old) < time() - self::KEEP_DAYS * 86400) {
+                    unlink($old);
+                }
             }
         }
         // Leftovers of dumps killed by a fatal error (e.g. out of memory) can't delete themselves.
-        foreach ([...(glob($backupDir . '/db_backup_*.sql.gz.part') ?: []), ...(glob($backupDir . '/receipts_*.part.tar') ?: [])] as $stale) {
+        foreach ([...(glob($backupDir . '/db_backup_*.sql.gz.part') ?: []), ...(glob($backupDir . '/*.part.tar') ?: [])] as $stale) {
             if (filemtime($stale) < time() - 86400) {
                 unlink($stale);
             }
@@ -107,17 +118,16 @@ class BackupController extends Controller
     }
 
     /**
-     * Proofs live only on disk, so a restored database would point at nothing without this.
-     * ponytail: a full copy each run, kept KEEP_DAYS; keep fewer or go incremental if the folder gets big.
+     * These files live only on disk, so a restored database would point at nothing without this.
+     * ponytail: a full copy each run, kept KEEP_DAYS; keep fewer or go incremental if a folder gets big.
      */
-    private function archiveReceipts(string $backupDir): ?string
+    private function archiveFolder(string $backupDir, string $name, string $source): ?string
     {
-        $source = dirname(Yii::getAlias('@common')) . '/storage/payment-receipts';
         if (!is_dir($source) || (new \FilesystemIterator($source))->valid() === false) {
             return null;
         }
-        $file = $backupDir . '/receipts_' . date('Ymd_His') . '.tar';
-        $part = $backupDir . '/receipts_' . date('Ymd_His') . '.part.tar';
+        $file = $backupDir . "/{$name}_" . date('Ymd_His') . '.tar';
+        $part = $backupDir . "/{$name}_" . date('Ymd_His') . '.part.tar';
         $oldUmask = umask(0077);
         try {
             (new \PharData($part))->buildFromDirectory($source);

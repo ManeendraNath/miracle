@@ -66,7 +66,7 @@ if (BaseController::canAccess(Yii::$app->user->identity, 'customer-preference', 
 if (BaseController::canAccess(Yii::$app->user->identity, 'user-login-history')) {
     $this->params['help']['Login History'] = 'Every time this customer signed in to the website, with IP address and browser.';
 }
-$this->params['help']['Account Status'] = 'Only Active customers can sign in. Suspended or Inactive customers are still billed and reminded for their active services; Deleted ones are not.';
+$this->params['help']['Account Status'] = 'Only Active customers can sign in. Suspended or Inactive customers are still billed and reminded for their active services. A customer can be Deleted only once every service of theirs is inactive.';
 ?>
 
 <div class="user-view">

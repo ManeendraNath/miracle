@@ -30,6 +30,8 @@ final class PayPalService
 
     /** Set by recoverPaidOrders(): PayPal shows a completed payment the app could not record. */
     public bool $paidButNotRecorded = false;
+    /** @var array<int, true> Invoices with a payment that may have been taken but isn't recorded: capture nothing more for them. */
+    private array $unsettledInvoices = [];
 
     private array $_config;
     private ?string $_token = null;
@@ -71,11 +73,30 @@ final class PayPalService
     /** Rupees per US dollar for this invoice: the rate locked when it was sent, until usd_rate_until; else today's. */
     public static function rateFor(Invoice $invoice): float
     {
-        if ((float) $invoice->usd_rate_locked > 0 && (string) $invoice->usd_rate_until >= date('Y-m-d')) {
-            return (float) $invoice->usd_rate_locked;
+        return self::isLocked($invoice) ? (float) $invoice->usd_rate_locked : self::usdRate();
+    }
+
+    /** Whether the invoice's dollar price (rate and PayPal fee) is still the one fixed when it was sent. */
+    public static function isLocked(Invoice $invoice): bool
+    {
+        return (float) $invoice->usd_rate_locked > 0 && (string) $invoice->usd_rate_until >= date('Y-m-d');
+    }
+
+    /**
+     * PayPal's fee as [percent, fixed US$]: the one locked with the invoice's rate while that holds; else Site Settings.
+     *
+     * @return array{float, float}
+     */
+    private static function fee(?Invoice $invoice): array
+    {
+        if ($invoice !== null && self::isLocked($invoice) && $invoice->usd_fee_percent_locked !== null) {
+            return [(float) $invoice->usd_fee_percent_locked, (float) $invoice->usd_fee_fixed_locked];
         }
 
-        return self::usdRate();
+        return [
+            min(50.0, max(0.0, (float) CustomYii::getSetting('paypal_fee_percent', 0))),
+            max(0.0, (float) CustomYii::getSetting('paypal_fee_fixed_usd', 0)),
+        ];
     }
 
     /**
@@ -85,8 +106,7 @@ final class PayPalService
      */
     public static function lockRate(Invoice $invoice): void
     {
-        $stillLocked = $invoice->usd_rate_locked !== null && (string) $invoice->usd_rate_until >= date('Y-m-d');
-        if (!$invoice->isExport() || $stillLocked || !(new self())->acceptsCustomerPayments()) {
+        if (!$invoice->isExport() || self::isLocked($invoice) || !(new self())->acceptsCustomerPayments()) {
             return;
         }
         $rate = self::usdRate();
@@ -94,17 +114,18 @@ final class PayPalService
             return;
         }
         $until = max((string) $invoice->due_date, date('Y-m-d', strtotime('+' . \common\services\billing\OutstandingBalanceService::CARRY_FORWARD_GRACE_DAYS . ' days')));
-        $invoice->updateAttributes(['usd_rate_locked' => $rate, 'usd_rate_until' => $until]);
+        [$percent, $fixed] = self::fee(null);
+        $invoice->updateAttributes(['usd_rate_locked' => $rate, 'usd_rate_until' => $until, 'usd_fee_percent_locked' => $percent, 'usd_fee_fixed_locked' => $fixed]);
     }
 
     /** "US$43.39 (this price holds until 30 Dec 2026)" for an email, while the invoice's locked rate applies; else null. */
     public static function lockedPrice(Invoice $invoice, float $inr): ?string
     {
-        if ($inr <= 0 || (float) $invoice->usd_rate_locked <= 0 || (string) $invoice->usd_rate_until < date('Y-m-d') || !(new self())->acceptsCustomerPayments()) {
+        if ($inr <= 0 || !self::isLocked($invoice) || !(new self())->acceptsCustomerPayments()) {
             return null;
         }
 
-        return 'US$' . self::chargeFor($inr, (float) $invoice->usd_rate_locked) . ' (this price holds until ' . date('d M Y', (int) strtotime((string) $invoice->usd_rate_until)) . ')';
+        return 'US$' . self::chargeFor($inr, (float) $invoice->usd_rate_locked, $invoice) . ' (this price holds until ' . date('d M Y', (int) strtotime((string) $invoice->usd_rate_until)) . ')';
     }
 
     /** A dollar amount as PayPal writes it ("41.18"). */
@@ -115,13 +136,12 @@ final class PayPalService
 
     /**
      * What a client abroad is charged for $inr: the dollar amount at $rate plus PayPal's own fee (Site Settings,
-     * default 4.4% + US$0.30), so after PayPal's fee the payment still brings in about $inr. One total, rounded up
-     * to the cent: it is the price in dollars, not a surcharge shown on top.
+     * default 4.4% + US$0.30, or the one locked on $invoice), so after PayPal's fee the payment still brings in about
+     * $inr. One total, rounded up to the cent: it is the price in dollars, not a surcharge shown on top.
      */
-    public static function chargeFor(float $inr, float $rate): string
+    public static function chargeFor(float $inr, float $rate, ?Invoice $invoice = null): string
     {
-        $percent = min(50.0, max(0.0, (float) CustomYii::getSetting('paypal_fee_percent', 0)));
-        $fixed = max(0.0, (float) CustomYii::getSetting('paypal_fee_fixed_usd', 0));
+        [$percent, $fixed] = self::fee($invoice);
         $usd = ($inr / $rate + $fixed) / (1 - $percent / 100);
 
         return number_format(ceil(round($usd * 100, 6)) / 100, 2, '.', '');
@@ -135,7 +155,7 @@ final class PayPalService
             throw new \DomainException('PayPal is not available.');
         }
         $amount = round($amount, 2);
-        $usd = self::chargeFor($amount, $rate);
+        $usd = self::chargeFor($amount, $rate, $invoice);
         if ((float) $usd < 1) {
             throw new \DomainException('The remaining balance is below the US$1 minimum for PayPal. Please contact support.');
         }
@@ -215,7 +235,8 @@ final class PayPalService
         }
         if (!is_array($order)) {
             Yii::error(['message' => 'PayPal capture failed.', 'orderId' => $orderId, 'status' => $response->statusCode, 'body' => $response->content], __METHOD__);
-            throw new \RuntimeException('PayPal could not complete the payment (HTTP ' . $response->statusCode . ').');
+            // The HTTP status as the code: sync() tells a refusal (4xx) from an answer that never arrived (timeout, 5xx).
+            throw new \RuntimeException('PayPal could not complete the payment (HTTP ' . $response->statusCode . ').', (int) $response->statusCode);
         }
 
         return $this->record($orderId, $order) ?? $this->transaction($orderId);
@@ -290,10 +311,41 @@ final class PayPalService
             return null;
         }
         if (($order['status'] ?? '') === 'APPROVED') {
-            return $recent && $transaction->status === Transaction::STATUS_PENDING ? $this->captureOrder((string) $transaction->gateway_order_id) : null;
+            $invoiceId = (int) $transaction->invoice_id;
+            if (!$recent || $transaction->status !== Transaction::STATUS_PENDING || isset($this->unsettledInvoices[$invoiceId])) {
+                return null;
+            }
+            // A client abroad may also have paid by Razorpay with its callback and webhook lost: record that first
+            // (captureOrder then refuses, the invoice being paid), and capture nothing while Razorpay has a payment
+            // it can't record. Here, so the checkout and the cron sync both get it.
+            $razorpay = new RazorpayService();
+            if ($razorpay->isEnabled()) {
+                $razorpay->recoverPaidOrders((int) $transaction->invoice_id);
+                if ($razorpay->paidButNotRecorded) {
+                    $this->markUnsettled($invoiceId);
+                    return null;
+                }
+            }
+            try {
+                return $this->captureOrder((string) $transaction->gateway_order_id);
+            } catch (\Throwable $e) {
+                // No answer (timeout, PayPal error): the money may have been taken. A refusal (4xx) took nothing.
+                $code = (int) $e->getCode();
+                if (!$e instanceof \DomainException && ($code < 400 || $code >= 500)) {
+                    $this->markUnsettled($invoiceId);
+                }
+                throw $e;
+            }
         }
 
         return ($order['status'] ?? '') === 'COMPLETED' ? $this->record((string) $transaction->gateway_order_id, $order) : null;
+    }
+
+    /** Two orders of one invoice approved (two tabs): once one may have been paid, the other is not captured. */
+    private function markUnsettled(int $invoiceId): void
+    {
+        $this->paidButNotRecorded = true;
+        $this->unsettledInvoices[$invoiceId] = true;
     }
 
     /** Before a new order: an earlier one may have been paid with the browser lost. Returns how many were recorded. */
@@ -307,7 +359,7 @@ final class PayPalService
                     $recorded++;
                 }
             } catch (\DomainException $e) {
-                $this->paidButNotRecorded = true;
+                $this->markUnsettled($invoiceId);
                 $this->alertNotRecorded($transaction, $e->getMessage());
             } catch (\Throwable $e) {
                 Yii::warning(['message' => 'PayPal order lookup failed.', 'orderId' => $transaction->gateway_order_id, 'error' => $e->getMessage()], __METHOD__);

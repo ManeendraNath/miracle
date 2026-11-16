@@ -115,6 +115,25 @@ final class PayPalServiceTest extends Unit
         $this->assertNotNull(PayPalService::lockedPrice($this->_invoice, 3500));
     }
 
+    public function testTheFeeIsLockedWithTheRate(): void
+    {
+        Yii::$app->db->createCommand()->update('{{%site_setting}}', ['paypal_fee_percent' => 4.4, 'paypal_fee_fixed_usd' => 0.3], ['id' => 1])->execute();
+        $this->resetSettings();
+        $this->_invoice->updateAttributes(['due_date' => date('Y-m-d', strtotime('+30 days'))]);
+        PayPalService::lockRate($this->_invoice);
+        $this->assertStringStartsWith('US$43.39 ', (string) PayPalService::lockedPrice($this->_invoice, 3500));
+
+        // The fee setting changes after the email: the quoted price still holds, on the page and at checkout.
+        Yii::$app->db->createCommand()->update('{{%site_setting}}', ['paypal_fee_percent' => 10, 'paypal_fee_fixed_usd' => 1], ['id' => 1])->execute();
+        $this->resetSettings();
+        $this->assertStringStartsWith('US$43.39 ', (string) PayPalService::lockedPrice($this->_invoice, 3500));
+        $this->assertSame('43.39', PayPalService::chargeFor(3500, PayPalService::rateFor($this->_invoice), $this->_invoice));
+
+        // Once the lock ends, today's fee applies.
+        $this->_invoice->updateAttributes(['usd_rate_until' => date('Y-m-d', strtotime('-1 day'))]);
+        $this->assertNotSame('43.39', PayPalService::chargeFor(3500, 85, $this->_invoice));
+    }
+
     public function testAnInvoiceInIndiaGetsNoDollarPrice(): void
     {
         $this->_invoice->updateAttributes(['client_country' => 'India']);

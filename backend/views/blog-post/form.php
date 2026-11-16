@@ -109,7 +109,7 @@ JS);
                     <?php if ($model->cover_image): ?>
                         <?= Html::img(rtrim((string) (Yii::$app->params['frontendBaseUrl'] ?? ''), '/') . '/' . $model->cover_image, ['class' => 'img-fluid rounded mb-2', 'alt' => 'Current cover image']) ?>
                         <div class="form-check mb-2">
-                            <?= Html::checkbox('remove_cover', false, ['class' => 'form-check-input', 'id' => 'remove-cover']) ?>
+                            <?= Html::checkbox('remove_cover', (bool) Yii::$app->request->post('remove_cover'), ['class' => 'form-check-input', 'id' => 'remove-cover']) ?>
                             <label class="form-check-label small" for="remove-cover">Remove the cover image</label>
                         </div>
                     <?php endif; ?>

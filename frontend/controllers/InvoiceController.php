@@ -110,7 +110,7 @@ final class InvoiceController extends Controller
                             'carriedInto' => $model->status === Invoice::STATUS_CARRIED_FORWARD ? $paymentService->openInvoiceCarrying((int) $model->id) : null,
                             'razorpayEnabled' => (new RazorpayService())->acceptsCustomerPayments($model->isExport()),
                             // Clients abroad: PayPal in US dollars.
-                            'paypal' => $model->isExport() && $paypal->acceptsCustomerPayments() ? ['clientId' => $paypal->getClientId(), 'rate' => PayPalService::rateFor($model), 'until' => (float) $model->usd_rate_locked > 0 && (string) $model->usd_rate_until >= date('Y-m-d') ? $model->usd_rate_until : null] : null,
+                            'paypal' => $model->isExport() && $paypal->acceptsCustomerPayments() ? ['clientId' => $paypal->getClientId(), 'rate' => PayPalService::rateFor($model), 'until' => PayPalService::isLocked($model) ? $model->usd_rate_until : null] : null,
                             'canChangeCoupon' => (new InvoiceCouponService())->blockReason($model) === null,
                         ]
         );
@@ -131,7 +131,18 @@ final class InvoiceController extends Controller
             Yii::$app->response->statusCode = 422;
             return ['error' => 'We have just found your earlier payment and recorded it. Please reload this page to see your balance.'];
         }
+        // Stop before the PayPal check: it may capture an approved order, a second charge if Razorpay already has one.
         if ($razorpay->paidButNotRecorded) {
+            Yii::$app->response->statusCode = 422;
+            return ['error' => 'We can see an earlier payment for this invoice that has not been recorded yet. Please do not pay again: try this page in a few minutes, or contact support.'];
+        }
+        // Also an earlier PayPal order (a client abroad may have both buttons) approved with the browser lost.
+        $paypal = new PayPalService();
+        if ($paypal->isEnabled() && $paypal->recoverPaidOrders((int) $invoice->id) > 0) {
+            Yii::$app->response->statusCode = 422;
+            return ['error' => 'We have just found your earlier payment and recorded it. Please reload this page to see your balance.'];
+        }
+        if ($paypal->paidButNotRecorded) {
             Yii::$app->response->statusCode = 422;
             return ['error' => 'We can see an earlier payment for this invoice that has not been recorded yet. Please do not pay again: try this page in a few minutes, or contact support.'];
         }
@@ -236,6 +247,17 @@ final class InvoiceController extends Controller
     {
         Yii::$app->response->format = Response::FORMAT_JSON;
         $invoice = $this->findOwnedInvoice($number);
+        // An earlier Razorpay attempt (a client abroad may have both buttons) paid with its callback and webhook lost.
+        // First: it only records, while the PayPal check below may capture an approved order, a second charge.
+        $razorpay = new RazorpayService();
+        if ($razorpay->isEnabled() && $razorpay->recoverPaidOrders((int) $invoice->id) > 0) {
+            Yii::$app->response->statusCode = 422;
+            return ['error' => 'We have just found your earlier payment and recorded it. Please reload this page to see your balance.'];
+        }
+        if ($razorpay->paidButNotRecorded) {
+            Yii::$app->response->statusCode = 422;
+            return ['error' => 'We can see an earlier payment for this invoice that has not been recorded yet. Please do not pay again: try this page in a few minutes, or contact support.'];
+        }
         $paypal = new PayPalService();
         // An earlier order may have been paid with the browser lost: never charge twice.
         if ($paypal->isEnabled() && $paypal->recoverPaidOrders((int) $invoice->id) > 0) {

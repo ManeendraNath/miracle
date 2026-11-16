@@ -102,7 +102,7 @@ class AuthController extends Controller
         if ($model->load(Yii::$app->request->post())) {
             if ($model->login()) {
                 // Still a guest when the account has two-factor on: the code comes next.
-                return $this->redirect(Yii::$app->user->getIsGuest() ? ['auth/two-factor'] : ['dashboard/index']);
+                return Yii::$app->user->getIsGuest() ? $this->redirect(['auth/two-factor']) : $this->toReturnUrl();
             } else {
                 // Debug fallback block for verification issues
                 // Not the typed username: it may be a password typed into the wrong field.
@@ -135,7 +135,7 @@ class AuthController extends Controller
         $this->layout = 'blank';
         $model = new TwoFactorForm();
         if ($model->load(Yii::$app->request->post()) && $model->login()) {
-            return $this->redirect(['dashboard/index']);
+            return $this->toReturnUrl();
         }
         $model->code = '';
 
@@ -203,5 +203,14 @@ class AuthController extends Controller
     {
         Yii::$app->user->logout();
         return $this->redirect(Url::base() . '/auth/login');
+    }
+
+    /** The page a signed-out link pointed at (BaseController's denyCallback), once; else the dashboard. */
+    private function toReturnUrl(): Response
+    {
+        $url = Yii::$app->user->getReturnUrl(['dashboard/index']);
+        Yii::$app->session->remove(Yii::$app->user->returnUrlParam);
+
+        return $this->redirect($url);
     }
 }

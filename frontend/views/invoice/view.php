@@ -260,7 +260,7 @@ JS);
                 <?php elseif ($isPayable): ?>
                     <div class="d-grid gap-2 mt-3">
                         <?php if ($canPayPal): ?>
-                            <?php $usd = PayPalService::chargeFor((float) $outstandingAmount, (float) $paypal['rate']); ?>
+                            <?php $usd = PayPalService::chargeFor((float) $outstandingAmount, (float) $paypal['rate'], $model); ?>
                             <p class="small text-center mb-0">
                                 Pay <strong>US$<?= Html::encode($usd) ?></strong> with PayPal or a card
                                 for the <?= $inr($outstandingAmount) ?> due.

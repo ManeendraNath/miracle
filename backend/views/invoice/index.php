@@ -26,6 +26,8 @@ $this->params['help'] = [
 ];
 
 GridViewHelper::register($this);
+// One query for the page: invoices with renewal or carried-forward lines can't be edited by hand.
+$systemItemIds = Invoice::idsWithSystemItems(array_map('intval', $dataProvider->getKeys()));
 ?>
 
 <div class="invoice-index">
@@ -126,7 +128,7 @@ GridViewHelper::register($this);
                     [
                         'attribute' => 'status',
                         'format' => 'raw',
-                        'filter' => GridFilterHelper::select2($searchModel, 'status', Invoice::getStatuses(), 'All Statuses'),
+                        'filter' => GridFilterHelper::select2($searchModel, 'status', [\backend\models\searches\InvoiceSearch::OUTSTANDING => 'Outstanding (Unpaid or Partially Paid)'] + Invoice::getStatuses(), 'All Statuses'),
                         'value' => static function (Invoice $model): string {
                             $class = match ($model->status) {
                                 Invoice::STATUS_UNPAID => 'bg-danger',
@@ -207,7 +209,7 @@ GridViewHelper::register($this);
                         },
                         // Same rule as the Update button on the view page.
                         visibleButtons: [
-                            'update' => static fn (Invoice $model): bool => $model->status === Invoice::STATUS_UNPAID,
+                            'update' => static fn (Invoice $model): bool => $model->status === Invoice::STATUS_UNPAID && !in_array((int) $model->id, $systemItemIds, true),
                             // Same rule as Resend Invoice on the view page.
                             'resend-invoice' => static fn (Invoice $model): bool => in_array($model->status, [Invoice::STATUS_UNPAID, Invoice::STATUS_PARTIALLY_PAID], true),
                         ],

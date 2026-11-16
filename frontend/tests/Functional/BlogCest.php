@@ -54,6 +54,18 @@ final class BlogCest
         $I->dontSeeInSource('Draft post');
     }
 
+    public function aReaderCountsOnceADayAndABotNotAtAll(FunctionalTester $I): void
+    {
+        $id = $I->haveRecord(BlogPost::class, ['title' => 'Counted post', 'slug' => 'counted-post', 'summary' => 'A summary.', 'body' => '<p>Body.</p>', 'status' => BlogPost::STATUS_PUBLISHED, 'published_at' => time() - 60, 'created_at' => time(), 'updated_at' => time()]);
+        $I->haveHttpHeader('User-Agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/140.0 Safari/537.36');
+        $I->amOnPage('/blog/counted-post');
+        $I->amOnPage('/blog/counted-post');
+        $I->assertSame(['total' => 1, 'recent' => 1], \common\models\BlogPostView::counts([(int) $id])[(int) $id] ?? null);
+        $I->haveHttpHeader('User-Agent', 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)');
+        $I->amOnPage('/blog/counted-post');
+        $I->assertSame(1, \common\models\BlogPostView::counts([(int) $id])[(int) $id]['total']);
+    }
+
     public function theSecondPageShowsOlderPosts(FunctionalTester $I): void
     {
         for ($n = 1; $n <= 10; $n++) {

@@ -1,5 +1,5 @@
 {
-    "migrations": 73,
+    "migrations": 74,
     "columns": {
         "admin": {
             "auth_key": {
@@ -546,6 +546,32 @@
             },
             "updated_at": {
                 "type": "int",
+                "null": false,
+                "default": null,
+                "extra": ""
+            }
+        },
+        "blog_post_view": {
+            "day": {
+                "type": "date",
+                "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "id": {
+                "type": "int",
+                "null": false,
+                "default": null,
+                "extra": "auto_increment"
+            },
+            "post_id": {
+                "type": "int",
+                "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "visitor": {
+                "type": "char(32)",
                 "null": false,
                 "default": null,
                 "extra": ""
@@ -2545,6 +2571,10 @@
             "slug": "unique",
             "status,published_at": "index"
         },
+        "blog_post_view": {
+            "id": "primary",
+            "post_id,day,visitor": "unique"
+        },
         "coupon": {
             "code": "unique",
             "id": "primary"
@@ -2713,6 +2743,9 @@
         "blog_post": {
             "author_id": "admin(id) ON DELETE SET NULL ON UPDATE CASCADE",
             "category_id": "blog_category(id) ON DELETE SET NULL ON UPDATE CASCADE"
+        },
+        "blog_post_view": {
+            "post_id": "blog_post(id) ON DELETE CASCADE ON UPDATE CASCADE"
         },
         "coupon_applicability": {
             "coupon_id": "coupon(id) ON DELETE RESTRICT ON UPDATE CASCADE"

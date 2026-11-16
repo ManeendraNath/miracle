@@ -47,6 +47,7 @@ final class BlogPostCest
     public function anUploadWithoutAFileIsRefused(FunctionalTester $I): void
     {
         $I->amOnRoute('blog-post/index');
+        $I->see('Views', 'th');
         $I->sendAjaxPostRequest('/blog-post/upload-image', [Yii::$app->request->csrfParam => $I->grabAttributeFrom('meta[name=csrf-token]', 'content')]);
         $I->seeResponseCodeIs(422);
         $I->seeInSource('Choose an image to upload.');

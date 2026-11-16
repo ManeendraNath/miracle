@@ -39,6 +39,7 @@ class BlogController extends Controller
         $related = BlogPost::findPublic()->andWhere(['<>', 'id', $post->id])
             ->orderBy($post->category_id ? [new \yii\db\Expression('category_id = :category DESC', [':category' => $post->category_id]), 'published_at' => SORT_DESC] : ['published_at' => SORT_DESC])
             ->limit(3)->all();
+        \common\models\BlogPostView::record($post, Yii::$app->request);
 
         return $this->render('view', ['post' => $post, 'related' => $related]);
     }

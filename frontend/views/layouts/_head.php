@@ -33,9 +33,17 @@ $this->registerMetaTag(['property' => 'og:type', 'content' => $this->params['og_
 $this->registerMetaTag(['property' => 'og:title', 'content' => $this->title]);
 $this->registerMetaTag(['property' => 'og:description', 'content' => $description]);
 $this->registerMetaTag(['property' => 'og:image', 'content' => $this->params['og_image'] ?? Url::to('@web/images/og.png', true)]);
-if (!empty($this->params['canonical'])) {
-    $this->registerLinkTag(['rel' => 'canonical', 'href' => $this->params['canonical']]);
-    $this->registerMetaTag(['property' => 'og:url', 'content' => $this->params['canonical']]);
+// Every page names its one address, so /site/about, /index.php, www. or ?subject=… are not counted as separate
+// pages by search engines. Absolute links use the configured site address (frontendBaseUrl), whatever the host.
+$canonical = $this->params['canonical'] ?? null;
+// Not for one-time links (password reset): their address must not be handed to search engines.
+if ($canonical === null && Yii::$app->controller !== null && Yii::$app->errorHandler->exception === null && !isset(Yii::$app->controller->actionParams['token'])) {
+    $route = Yii::$app->controller->getRoute();
+    $canonical = $route === 'site/index' ? Url::home(true) : Url::to(array_merge(['/' . $route], Yii::$app->controller->actionParams), true);
+}
+if ($canonical) {
+    $this->registerLinkTag(['rel' => 'canonical', 'href' => $canonical]);
+    $this->registerMetaTag(['property' => 'og:url', 'content' => $canonical]);
 }
 $this->registerMetaTag(['name' => 'twitter:card', 'content' => 'summary_large_image']);
 if (!empty($this->params['meta_keywords'])) {

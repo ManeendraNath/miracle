@@ -112,3 +112,18 @@
 .blog-editor .ql-editor img { max-width: 100%; height: auto; }
 .blog-preview { max-width: 760px; }
 .blog-preview img { max-width: 100%; height: auto; }
+
+/* Notification bell: long titles wrap instead of running off the menu, and the list scrolls under a fixed header and View All. */
+.notification-menu .notification-list {
+    max-height: min(60vh, 32rem);
+    overflow-y: auto;
+}
+
+.notification-menu .dropdown-item {
+    white-space: normal;
+}
+
+.notification-menu .notification-title {
+    min-width: 0;
+    overflow-wrap: anywhere;
+}

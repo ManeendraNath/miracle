@@ -28,10 +28,14 @@ use yii\bootstrap5\NavBar;
         $menuItems[] = ['label' => 'Log in', 'url' => ['/site/login']];
         $menuItems[] = '<li class="nav-item ms-xl-2">' . Html::a('Get a quote', ['/site/contact', 'subject' => 'Project enquiry'], ['class' => 'btn btn-primary']) . '</li>';
     } else {
-        $menuItems[] = ['label' => 'Dashboard', 'url' => ['/dashboard/index']];
+        // Icons on the one-line desktop menu (name in the tooltip and for screen readers); icon and name in the phone menu.
+        $iconLabel = static fn(string $icon, string $text): string => '<i class="fas ' . $icon . ' fa-fw" aria-hidden="true"></i>'
+            . '<span class="nav-icon-text">' . $text . '</span>';
+        $signOut = 'Sign out (' . Html::encode(Yii::$app->user->identity->username) . ')';
+        $menuItems[] = ['label' => $iconLabel('fa-tachometer-alt', 'Dashboard'), 'encode' => false, 'url' => ['/dashboard/index'], 'linkOptions' => ['title' => 'Dashboard']];
         $menuItems[] = '<li class="nav-item">'
                 . Html::beginForm(['/site/logout'], 'post', ['class' => 'd-inline'])
-                . Html::submitButton('Sign Out (' . Html::encode(Yii::$app->user->identity->username) . ')', ['class' => 'btn btn-link nav-link logout'])
+                . Html::submitButton($iconLabel('fa-sign-out-alt', $signOut), ['class' => 'btn btn-link nav-link logout', 'title' => $signOut])
                 . Html::endForm()
                 . '</li>';
     }

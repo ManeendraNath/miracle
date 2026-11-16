@@ -128,6 +128,12 @@ RewriteEngine On
     Require all denied
 </Files>
 
+# One address for search engines: www. goes to the bare domain in one step, http or https.
+# The host condition comes last: %1 is taken from the last condition that matched.
+RewriteCond %{REQUEST_URI} !^/\.well-known/
+RewriteCond %{HTTP_HOST} ^www\.(.+)$ [NC]
+RewriteRule ^ https://%1%{REQUEST_URI} [L,R=301]
+
 # Secure cookies don't work over http, so every form would fail there. SSL renewal must stay reachable.
 RewriteCond %{HTTPS} !=on
 RewriteCond %{HTTP:X-Forwarded-Proto} !=https

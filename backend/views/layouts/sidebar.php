@@ -94,11 +94,27 @@ use yii\helpers\Html;
                         'url' => ['/testimonial/index'],
                         'active' => Yii::$app->controller->id === 'testimonial'
                     ],
+                    // =====================================================================
+                    // 📝 1.0.1. BLOG (the public blog at /blog)
+                    // =====================================================================
+                    ['label' => 'BLOG', 'header' => true],
                     [
-                        'label' => 'Blog',
-                        'icon' => 'pen-nib',
+                        'label' => 'Posts',
+                        'icon' => 'newspaper',
                         'url' => ['/blog-post/index'],
-                        'active' => in_array(Yii::$app->controller->id, ['blog-post', 'blog-category'], true)
+                        'active' => Yii::$app->controller->id === 'blog-post' && Yii::$app->controller->action->id !== 'create'
+                    ],
+                    [
+                        'label' => 'Write a post',
+                        'icon' => 'pen-nib',
+                        'url' => ['/blog-post/create'],
+                        'active' => Yii::$app->controller->id === 'blog-post' && Yii::$app->controller->action->id === 'create'
+                    ],
+                    [
+                        'label' => 'Categories',
+                        'icon' => 'tags',
+                        'url' => ['/blog-category/index'],
+                        'active' => Yii::$app->controller->id === 'blog-category'
                     ],
                     // =====================================================================
                     // 🚀 1.1. CUSTOMER SUPPORT

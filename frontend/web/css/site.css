@@ -283,16 +283,23 @@ a.desc:after {
     }
 }
 
-/* The narrowest one-line header: the portal's menu has a username in it. */
-@media (min-width: 1200px) and (max-width: 1399.98px) {
-    .mw-header .nav-link {
-        padding-left: .375rem;
-        padding-right: .375rem;
-        font-size: .9375rem;
-    }
+/* Dashboard and Sign out: the name sits next to the icon in the phone menu; on the one-line menu only the icon shows,
+   and the name stays readable for screen readers (Bootstrap's visually-hidden, from 1200px up). */
+.mw-header .nav-icon-text {
+    margin-left: .5rem;
+}
 
-    .navbar-nav .nav-link.logout {
-        max-width: 10rem;
+@media (min-width: 1200px) {
+    .mw-header .nav-icon-text {
+        position: absolute !important;
+        width: 1px !important;
+        height: 1px !important;
+        padding: 0 !important;
+        margin: -1px !important;
+        overflow: hidden !important;
+        clip: rect(0, 0, 0, 0) !important;
+        white-space: nowrap !important;
+        border: 0 !important;
     }
 }
 

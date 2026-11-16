@@ -40,7 +40,7 @@ $adminNotificationCount = AdminNotification::visibleTo(Yii::$app->user->identity
                     </span>
                 <?php endif; ?>
             </a>
-            <div class="dropdown-menu dropdown-menu-lg dropdown-menu-right">
+            <div class="dropdown-menu dropdown-menu-lg dropdown-menu-right notification-menu">
                 <span class="dropdown-header">
                     <?= $adminNotificationCount ?>
                     Unread Notification<?= $adminNotificationCount !== 1 ? 's' : '' ?>
@@ -51,12 +51,14 @@ $adminNotificationCount = AdminNotification::visibleTo(Yii::$app->user->identity
                         No notifications available
                     </div>
                 <?php else: ?>
+                    <?php /* The list scrolls; the header and View All stay in sight. */ ?>
+                    <div class="notification-list">
                     <?php foreach ($adminNotifications as $notification): ?>
                         <a href="<?= Url::to(['/admin-notification/read', 'id' => $notification->id]) ?>" class="dropdown-item">
-                            <div class="d-flex justify-content-between">
-                                <strong><?= Html::encode($notification->title) ?></strong>
+                            <div class="d-flex justify-content-between align-items-start">
+                                <strong class="notification-title"><?= Html::encode($notification->title) ?></strong>
                         <?php if (!$notification->is_read): ?>
-                                    <span class="badge badge-danger">New</span>
+                                    <span class="badge badge-danger ml-2">New</span>
                         <?php endif; ?>
                             </div>
                             <div class="text-muted text-sm mt-1" style="white-space: normal; line-height: 1.4;">
@@ -68,6 +70,7 @@ $adminNotificationCount = AdminNotification::visibleTo(Yii::$app->user->identity
                         </a>
                         <div class="dropdown-divider"></div>
                     <?php endforeach; ?>
+                    </div>
                 <?php endif; ?>
                 <a href="<?= Url::to(['/admin-notification/index']) ?>" class="dropdown-item dropdown-footer">View All Notifications</a>
             </div>

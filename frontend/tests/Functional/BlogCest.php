@@ -64,4 +64,12 @@ final class BlogCest
         $I->dontSee('Post 10', 'h2, h3');
         $I->seeElement('link[rel=canonical][href$="/blog?page=2"]');
     }
+
+    public function everyPageNamesItsOneAddress(FunctionalTester $I): void
+    {
+        $I->amOnPage('/site/about');
+        $I->seeElement('link[rel=canonical][href$="/about"]');
+        $I->amOnPage('/contact?subject=Project+enquiry');
+        $I->seeElement('link[rel=canonical][href$="/contact"]');
+    }
 }

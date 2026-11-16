@@ -83,7 +83,7 @@ final class LoginCest
     public function checkValidLogin(FunctionalTester $I): void
     {
         $I->submitForm('#login-form', $this->formParams('erau', 'password_0'));
-        $I->see('Sign Out (erau)');
+        $I->see('Sign out (erau)');
         $I->dontSeeLink('Login');
         $I->dontSeeLink('Signup');
     }
@@ -92,7 +92,7 @@ final class LoginCest
     {
         // First sign-in ever: nothing to compare against, so no alert.
         $I->submitForm('#login-form', $this->formParams('erau', 'password_0'));
-        $I->see('Sign Out (erau)');
+        $I->see('Sign out (erau)');
         $I->dontSeeEmailIsSent();
 
         // A browser without the device cookie, for an account that has signed in before: alert.
@@ -123,16 +123,16 @@ final class LoginCest
         $user = \common\models\User::findOne(['username' => 'erau']);
         $I->assertFalse($user->validateAuthKey('tUu1qHcde0diwUol3xeI-18MuHkkprQI'));
         $I->amOnRoute('security/index');
-        $I->see('Sign Out (erau)');
+        $I->see('Sign out (erau)');
         $I->see('You have been signed out of all other devices.');
     }
 
     private function signInAgain(FunctionalTester $I): void
     {
-        $I->click('Sign Out (erau)');
+        $I->click('Sign out (erau)');
         $I->amOnRoute('site/login');
         $I->submitForm('#login-form', $this->formParams('erau', 'password_0'));
-        $I->see('Sign Out (erau)');
+        $I->see('Sign out (erau)');
     }
 
     public function describesCommonDevices(FunctionalTester $I): void

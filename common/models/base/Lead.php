@@ -36,12 +36,12 @@ class Lead extends \yii\db\ActiveRecord
         return [
             [['phone_number', 'email', 'source', 'subject', 'message'], 'default', 'value' => null],
             [['lead_name', 'status', 'created_at', 'updated_at'], 'required'],
+            [['message'], 'string'],
             [['created_at', 'updated_at'], 'integer'],
             [['lead_name'], 'string', 'max' => 150],
             [['phone_number'], 'string', 'max' => 30],
-            [['source'], 'string', 'max' => 100],
             [['email', 'subject'], 'string', 'max' => 255],
-            [['message'], 'string'],
+            [['source'], 'string', 'max' => 100],
             [['status'], 'string', 'max' => 50],
         ];
     }

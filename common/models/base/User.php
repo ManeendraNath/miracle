@@ -36,6 +36,7 @@ use Yii;
  * @property ServiceReminderLog[] $serviceReminderLogs
  * @property SupportTicketAttachment[] $supportTicketAttachments
  * @property SupportTicket[] $supportTickets
+ * @property Testimonial $testimonial
  * @property UserLoginHistory[] $userLoginHistories
  */
 class User extends \yii\db\ActiveRecord
@@ -54,7 +55,7 @@ class User extends \yii\db\ActiveRecord
     public function rules()
     {
         return [
-            [['password_reset_token', 'mobile', 'whatsapp', 'verification_token'], 'default', 'value' => null],
+            [['password_reset_token', 'mobile', 'whatsapp', 'verification_token', 'profile_warned_at', 'reactivated_at'], 'default', 'value' => null],
             [['status'], 'default', 'value' => 0],
             [['username', 'auth_key', 'password_hash', 'email', 'created_at', 'updated_at'], 'required'],
             [['status', 'created_at', 'updated_at', 'profile_warned_at', 'reactivated_at'], 'integer'],
@@ -87,6 +88,8 @@ class User extends \yii\db\ActiveRecord
             'created_at' => 'Created At',
             'updated_at' => 'Updated At',
             'verification_token' => 'Verification Token',
+            'profile_warned_at' => 'Profile Warned At',
+            'reactivated_at' => 'Reactivated At',
         ];
     }
 
@@ -228,6 +231,16 @@ class User extends \yii\db\ActiveRecord
     public function getSupportTickets()
     {
         return $this->hasMany(SupportTicket::class, ['user_id' => 'id']);
+    }
+
+    /**
+     * Gets query for [[Testimonial]].
+     *
+     * @return \yii\db\ActiveQuery
+     */
+    public function getTestimonial()
+    {
+        return $this->hasOne(Testimonial::class, ['user_id' => 'id']);
     }
 
     /**

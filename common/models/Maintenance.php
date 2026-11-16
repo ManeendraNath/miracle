@@ -25,6 +25,16 @@ class Maintenance extends base\Maintenance
     use AutoTimestampTrait;
     use CustomerNotDeletedTrait;
 
+    /** renewal_anchor_day is set by the app when the expiry date changes, never from a form. */
+    #[\Override]
+    public function scenarios(): array
+    {
+        return array_map(
+            static fn(array $attributes): array => array_map(static fn(string $name): string => $name === 'renewal_anchor_day' ? '!' . $name : $name, $attributes),
+            parent::scenarios(),
+        );
+    }
+
     /** Standard yearly price (₹), prefilled on new services; a service's own Renewal Base Amount decides what it pays. */
     public const STANDARD_YEARLY_AMOUNT = 4000.00;
 
@@ -73,6 +83,7 @@ class Maintenance extends base\Maintenance
         return \yii\helpers\ArrayHelper::merge(parent::attributeLabels(), [
             'user_id' => 'Client',
             'website_url' => 'Website',
+            'next_renewal_amount' => 'Next Renewal Price (one-time)',
             'renewal_cycle_months' => 'Renewal Cycle (Months)',
             'renewal_increase_percent' => 'Renewal Increase (%)',
             'renewal_base_amount' => 'Base Renewal Amount',

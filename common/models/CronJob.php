@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace common\models;
 
-use yii\db\ActiveRecord;
-
 /**
  * The admin on/off switch of a cron job. Cron still starts a job that is off; it stops at once
  * (CronController, BackupController): PHP can't edit the crontab.
@@ -15,7 +13,7 @@ use yii\db\ActiveRecord;
  * @property string|null $updated_by
  * @property int|null $updated_at
  */
-final class CronJob extends ActiveRecord
+final class CronJob extends base\CronJob
 {
     /** Route => [name, when it runs, what stops while it is off]. */
     public const JOBS = [

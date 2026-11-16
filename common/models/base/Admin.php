@@ -20,6 +20,8 @@ use Yii;
  * @property int $status
  * @property int $created_at
  * @property int $updated_at
+ *
+ * @property BlogPost[] $blogPosts
  */
 class Admin extends \yii\db\ActiveRecord
 {
@@ -42,9 +44,9 @@ class Admin extends \yii\db\ActiveRecord
             [['status'], 'default', 'value' => 1],
             [['username', 'email', 'auth_key', 'password_hash', 'created_at', 'updated_at'], 'required'],
             [['totp_last_step', 'status', 'created_at', 'updated_at'], 'integer'],
-            [['username', 'email', 'password_hash', 'password_reset_token'], 'string', 'max' => 255],
+            [['totp_backup_codes'], 'string'],
+            [['username', 'email', 'password_hash', 'password_reset_token', 'totp_secret'], 'string', 'max' => 255],
             [['auth_key'], 'string', 'max' => 32],
-            [['totp_secret'], 'string', 'max' => 64],
             [['role'], 'string', 'max' => 50],
             [['username'], 'unique'],
             [['email'], 'unique'],
@@ -66,10 +68,21 @@ class Admin extends \yii\db\ActiveRecord
             'password_reset_token' => 'Password Reset Token',
             'totp_secret' => 'Totp Secret',
             'totp_last_step' => 'Totp Last Step',
+            'totp_backup_codes' => 'Totp Backup Codes',
             'role' => 'Role',
             'status' => 'Status',
             'created_at' => 'Created At',
             'updated_at' => 'Updated At',
         ];
+    }
+
+    /**
+     * Gets query for [[BlogPosts]].
+     *
+     * @return \yii\db\ActiveQuery
+     */
+    public function getBlogPosts()
+    {
+        return $this->hasMany(BlogPost::class, ['author_id' => 'id']);
     }
 }

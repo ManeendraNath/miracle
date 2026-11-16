@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace common\models;
 
 use yii\behaviors\TimestampBehavior;
-use yii\db\ActiveRecord;
 
 /**
  * A client quote shown on the public home page once published.
@@ -23,7 +22,7 @@ use yii\db\ActiveRecord;
  * @property int $created_at
  * @property int $updated_at
  */
-class Testimonial extends ActiveRecord
+class Testimonial extends base\Testimonial
 {
     public const MAX_ON_HOME = 6;
     /** The portal form: the customer can't publish or order their own quote. */

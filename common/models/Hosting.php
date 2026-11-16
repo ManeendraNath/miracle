@@ -23,12 +23,15 @@ class Hosting extends base\Hosting
     /** Form field: a new cPanel password to store; blank keeps the saved one. */
     public ?string $new_cpanel_password = null;
 
-    /** cpanel_password itself is never mass-assigned: it only holds the encrypted value. */
+    /**
+     * Never mass-assigned: cpanel_password only holds the encrypted value; renewal_anchor_day is set by the app when
+     * the expiry date changes.
+     */
     public function scenarios(): array
     {
         $scenarios = parent::scenarios();
         foreach ($scenarios as $name => $attributes) {
-            $scenarios[$name] = array_map(static fn (string $a): string => $a === 'cpanel_password' ? '!cpanel_password' : $a, $attributes);
+            $scenarios[$name] = array_map(static fn (string $a): string => in_array($a, ['cpanel_password', 'renewal_anchor_day'], true) ? '!' . $a : $a, $attributes);
         }
 
         return $scenarios;
@@ -120,6 +123,7 @@ class Hosting extends base\Hosting
             parent::attributeLabels(),
             [
                 'user_id' => 'Client',
+                'next_renewal_amount' => 'Next Renewal Price (one-time)',
                 'renewal_cycle_months' => 'Renewal Cycle (Months)',
                 'renewal_increase_percent' => 'Renewal Increase (%)',
                 'renewal_base_amount' => 'Base Renewal Amount',

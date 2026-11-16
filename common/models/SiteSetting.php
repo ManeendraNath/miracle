@@ -25,11 +25,28 @@ namespace common\models;
  */
 class SiteSetting extends base\SiteSetting
 {
+    /** Set by the app only, never from a form: still validated, but not mass-assigned ("!"). */
+    #[\Override]
+    public function scenarios(): array
+    {
+        $internal = ['usd_market_rate', 'usd_rate_checked_at', 'usd_rate_fetched_at'];
+
+        return array_map(
+            static fn(array $attributes): array => array_map(static fn(string $name): string => in_array($name, $internal, true) ? '!' . $name : $name, $attributes),
+            parent::scenarios(),
+        );
+    }
+
     public function rules(): array
     {
         return array_merge(parent::rules(), [
             [['email_1', 'email_2', 'email_3'], 'trim'],
             [['email_1', 'email_2', 'email_3'], 'email'],
+            [['review_invoices', 'razorpay_india', 'razorpay_abroad', 'paypal_abroad', 'usd_rate_auto'], 'boolean'],
+            [['usd_inr_rate'], 'number', 'min' => 10, 'max' => 999],
+            [['paypal_fee_percent'], 'number', 'min' => 0, 'max' => 15],
+            [['paypal_fee_fixed_usd'], 'number', 'min' => 0, 'max' => 5],
+            [['usd_rate_margin'], 'number', 'min' => 0, 'max' => 20],
         ]);
     }
 

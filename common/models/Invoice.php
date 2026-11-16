@@ -8,6 +8,18 @@ use yii\db\ActiveQuery;
 
 class Invoice extends base\Invoice
 {
+    /** Set by the app only, never from a form: still validated, but not mass-assigned ("!"). */
+    #[\Override]
+    public function scenarios(): array
+    {
+        $internal = ['usd_rate_locked', 'usd_rate_until', 'usd_fee_percent_locked', 'usd_fee_fixed_locked', 'written_off_at'];
+
+        return array_map(
+            static fn(array $attributes): array => array_map(static fn(string $name): string => in_array($name, $internal, true) ? '!' . $name : $name, $attributes),
+            parent::scenarios(),
+        );
+    }
+
     public function getItems(): ActiveQuery
     {
         return $this->hasMany(InvoiceItem::class, ['invoice_id' => 'id'])->orderBy(['id' => SORT_ASC]);

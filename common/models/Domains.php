@@ -29,6 +29,16 @@ class Domains extends base\Domains
     use AutoTimestampTrait;
     use CustomerNotDeletedTrait;
 
+    /** renewal_anchor_day is set by the app when the expiry date changes, never from a form. */
+    #[\Override]
+    public function scenarios(): array
+    {
+        return array_map(
+            static fn(array $attributes): array => array_map(static fn(string $name): string => $name === 'renewal_anchor_day' ? '!' . $name : $name, $attributes),
+            parent::scenarios(),
+        );
+    }
+
     public const STATUS_INACTIVE = 0;
     public const STATUS_ACTIVE = 1;
     public const STATUS_DELETED = 2;
@@ -80,6 +90,7 @@ class Domains extends base\Domains
             parent::attributeLabels(),
             [
                             'user_id' => 'Client',
+                            'next_renewal_amount' => 'Next Renewal Price (one-time)',
                             'domain_url' => 'Domain Name',
                             'registered_date' => 'Registered',
                             'current_expiry_date' => 'Expiry Date',

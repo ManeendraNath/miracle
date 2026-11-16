@@ -33,7 +33,7 @@ class AdminNotification extends \yii\db\ActiveRecord
     public function rules()
     {
         return [
-            [['route', 'read_at'], 'default', 'value' => null],
+            [['route', 'read_at', 'emailed_at'], 'default', 'value' => null],
             [['is_read'], 'default', 'value' => 0],
             [['type', 'title', 'message', 'created_at'], 'required'],
             [['message'], 'string'],
@@ -58,6 +58,7 @@ class AdminNotification extends \yii\db\ActiveRecord
             'is_read' => 'Is Read',
             'read_at' => 'Read At',
             'created_at' => 'Created At',
+            'emailed_at' => 'Emailed At',
         ];
     }
 }

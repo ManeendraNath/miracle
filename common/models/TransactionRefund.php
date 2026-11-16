@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace common\models;
 
-use yii\db\ActiveRecord;
-
 /**
  * One refund of a payment.
  *
@@ -15,7 +13,7 @@ use yii\db\ActiveRecord;
  * @property int $refunded_at
  * @property string|null $note
  */
-final class TransactionRefund extends ActiveRecord
+final class TransactionRefund extends base\TransactionRefund
 {
     public static function tableName(): string
     {

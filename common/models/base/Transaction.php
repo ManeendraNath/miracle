@@ -9,15 +9,15 @@ use Yii;
  *
  * @property int $id
  * @property int $invoice_id
- * @property int|null $gateway_id null/0: Manual, 1: Razorpay, 2: Personal UPI / Bank Deposit, 3: PayPal
+ * @property int|null $gateway_id null/0: Manual, 1: Razorpay, 2: Personal UPI / Bank Deposit
  * @property string|null $gateway_payment_id Razorpay pay_id OR User-entered UPI Transaction/UTR Ref No
  * @property string|null $gateway_order_id Razorpay order_id reference token (null for Manual UPI)
  * @property float $amount
  * @property float|null $gateway_fee
  * @property float $refunded_amount
  * @property int|null $refunded_at
- * @property int $is_unapplied 1: captured after the invoice was settled/closed; held for refund or applying elsewhere
  * @property string $status
+ * @property int $is_unapplied
  * @property string|null $user_payment_notes User remarks e.g., Sent from Rahul UPI wallet
  * @property string|null $payment_receipt_file File directory storage path path for uploaded snapshot proofs
  * @property string|null $raw_payload JSON dump for automated webhooks or error trace tracking
@@ -28,6 +28,7 @@ use Yii;
  *
  * @property Invoice $invoice
  * @property ServiceRenewalHistory[] $serviceRenewalHistories
+ * @property TransactionRefund[] $transactionRefunds
  */
 class Transaction extends \yii\db\ActiveRecord
 {
@@ -54,12 +55,12 @@ class Transaction extends \yii\db\ActiveRecord
     public function rules()
     {
         return [
-            [['gateway_id', 'gateway_payment_id', 'gateway_order_id', 'user_payment_notes', 'payment_receipt_file', 'raw_payload', 'paid_at', 'confirmation_emailed_at'], 'default', 'value' => null],
-            [['gateway_fee', 'refunded_amount'], 'default', 'value' => 0.00],
-            [['is_unapplied'], 'default', 'value' => 0],
+            [['gateway_id', 'gateway_payment_id', 'gateway_order_id', 'refunded_at', 'user_payment_notes', 'payment_receipt_file', 'raw_payload', 'paid_at', 'confirmation_emailed_at'], 'default', 'value' => null],
+            [['refunded_amount'], 'default', 'value' => 0.00],
             [['status'], 'default', 'value' => 'Pending'],
+            [['is_unapplied'], 'default', 'value' => 0],
             [['invoice_id', 'amount', 'created_at', 'updated_at'], 'required'],
-            [['invoice_id', 'gateway_id', 'paid_at', 'confirmation_emailed_at', 'refunded_at', 'is_unapplied', 'created_at', 'updated_at'], 'integer'],
+            [['invoice_id', 'gateway_id', 'refunded_at', 'is_unapplied', 'paid_at', 'confirmation_emailed_at', 'created_at', 'updated_at'], 'integer'],
             [['amount', 'gateway_fee', 'refunded_amount'], 'number'],
             [['status', 'user_payment_notes', 'raw_payload'], 'string'],
             [['gateway_payment_id', 'gateway_order_id'], 'string', 'max' => 100],
@@ -83,9 +84,11 @@ class Transaction extends \yii\db\ActiveRecord
             'gateway_payment_id' => 'Gateway Payment ID',
             'gateway_order_id' => 'Gateway Order ID',
             'amount' => 'Amount',
-            'refunded_amount' => 'Refunded Amount',
             'gateway_fee' => 'Gateway Fee',
+            'refunded_amount' => 'Refunded Amount',
+            'refunded_at' => 'Refunded At',
             'status' => 'Status',
+            'is_unapplied' => 'Is Unapplied',
             'user_payment_notes' => 'User Payment Notes',
             'payment_receipt_file' => 'Payment Receipt File',
             'raw_payload' => 'Raw Payload',
@@ -114,6 +117,16 @@ class Transaction extends \yii\db\ActiveRecord
     public function getServiceRenewalHistories()
     {
         return $this->hasMany(ServiceRenewalHistory::class, ['transaction_id' => 'id']);
+    }
+
+    /**
+     * Gets query for [[TransactionRefunds]].
+     *
+     * @return \yii\db\ActiveQuery
+     */
+    public function getTransactionRefunds()
+    {
+        return $this->hasMany(TransactionRefund::class, ['transaction_id' => 'id']);
     }
 
 

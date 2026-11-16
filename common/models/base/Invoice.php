@@ -26,11 +26,6 @@ use Yii;
  * @property int $created_at
  * @property int $updated_at
  * @property int|null $emailed_at
- * @property string|null $usd_rate_locked
- * @property string|null $usd_rate_until
- * @property string|null $usd_fee_percent_locked
- * @property string|null $usd_fee_fixed_locked
- * @property int|null $written_off_at
  * @property int|null $billing_run_id
  * @property string|null $client_city
  * @property string|null $client_state
@@ -40,6 +35,11 @@ use Yii;
  * @property string|null $client_gstin
  * @property string|null $client_pan
  * @property string|null $place_of_supply
+ * @property int|null $written_off_at
+ * @property float|null $usd_rate_locked
+ * @property string|null $usd_rate_until
+ * @property float|null $usd_fee_percent_locked
+ * @property float|null $usd_fee_fixed_locked
  *
  * @property BillingEvent[] $billingEvents
  * @property BillingRun $billingRun
@@ -60,10 +60,10 @@ class Invoice extends \yii\db\ActiveRecord
     public const STATUS_UNPAID = 'Unpaid';
     public const STATUS_PARTIALLY_PAID = 'Partially_Paid';
     public const STATUS_PAID = 'Paid';
-    public const STATUS_DRAFT = 'Draft';
     public const STATUS_CARRIED_FORWARD = 'Carried_Forward';
     public const STATUS_CANCELLED = 'Cancelled';
     public const STATUS_REFUNDED = 'Refunded';
+    public const STATUS_DRAFT = 'Draft';
 
     /**
      * {@inheritdoc}
@@ -79,15 +79,15 @@ class Invoice extends \yii\db\ActiveRecord
     public function rules()
     {
         return [
-            [['client_address_line_1', 'client_address_line_2', 'coupon_id', 'coupon_code', 'due_date', 'emailed_at', 'billing_run_id', 'client_city', 'client_state', 'client_state_code', 'client_postal_code', 'client_country', 'client_gstin', 'client_pan', 'place_of_supply'], 'default', 'value' => null],
+            [['client_address_line_1', 'client_address_line_2', 'coupon_id', 'coupon_code', 'due_date', 'emailed_at', 'billing_run_id', 'client_city', 'client_state', 'client_state_code', 'client_postal_code', 'client_country', 'client_gstin', 'client_pan', 'place_of_supply', 'written_off_at', 'usd_rate_locked', 'usd_rate_until', 'usd_fee_percent_locked', 'usd_fee_fixed_locked'], 'default', 'value' => null],
             [['total_payable'], 'default', 'value' => 0.00],
             [['sgst_percent'], 'default', 'value' => 9.00],
             [['status'], 'default', 'value' => 'Unpaid'],
             [['user_id', 'invoice_number', 'client_name', 'created_at', 'updated_at'], 'required'],
-            [['user_id', 'coupon_id', 'created_at', 'updated_at', 'emailed_at', 'written_off_at', 'billing_run_id'], 'integer'],
-            [['subtotal_amount', 'discount_amount', 'cgst_percent', 'sgst_percent', 'igst_percent', 'total_payable'], 'number'],
+            [['user_id', 'coupon_id', 'created_at', 'updated_at', 'emailed_at', 'billing_run_id', 'written_off_at'], 'integer'],
+            [['subtotal_amount', 'discount_amount', 'cgst_percent', 'sgst_percent', 'igst_percent', 'total_payable', 'usd_rate_locked', 'usd_fee_percent_locked', 'usd_fee_fixed_locked'], 'number'],
             [['status'], 'string'],
-            [['due_date'], 'safe'],
+            [['due_date', 'usd_rate_until'], 'safe'],
             [['invoice_number', 'client_city', 'client_state', 'client_country', 'place_of_supply'], 'string', 'max' => 100],
             [['client_name', 'client_address_line_1', 'client_address_line_2'], 'string', 'max' => 255],
             [['coupon_code'], 'string', 'max' => 32],
@@ -136,6 +136,11 @@ class Invoice extends \yii\db\ActiveRecord
             'client_gstin' => 'Client Gstin',
             'client_pan' => 'Client Pan',
             'place_of_supply' => 'Place Of Supply',
+            'written_off_at' => 'Written Off At',
+            'usd_rate_locked' => 'Usd Rate Locked',
+            'usd_rate_until' => 'Usd Rate Until',
+            'usd_fee_percent_locked' => 'Usd Fee Percent Locked',
+            'usd_fee_fixed_locked' => 'Usd Fee Fixed Locked',
         ];
     }
 
@@ -341,5 +346,18 @@ class Invoice extends \yii\db\ActiveRecord
     public function setStatusToRefunded()
     {
         $this->status = self::STATUS_REFUNDED;
+    }
+
+    /**
+     * @return bool
+     */
+    public function isStatusDraft()
+    {
+        return $this->status === self::STATUS_DRAFT;
+    }
+
+    public function setStatusToDraft()
+    {
+        $this->status = self::STATUS_DRAFT;
     }
 }

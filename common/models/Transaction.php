@@ -113,6 +113,8 @@ class Transaction extends base\Transaction
     public function rules(): array
     {
         return array_merge(parent::rules(), [
+            // Gii keeps only one of two columns sharing a default: the fee's 0.00 is set here.
+            [['gateway_fee'], 'default', 'value' => 0.00],
             // Safe assignment for custom customer notes
             [['user_payment_notes'], 'string'],
             // A zero or negative "payment" would lower what the invoice counts as received.

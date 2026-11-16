@@ -31,7 +31,11 @@ $this->params['meta_description'] = $siteName . ' is a web development company b
                     <li><strong>Upgrades:</strong> improving the site you already have, or bringing an older application up to date.</li>
                     <li><strong>Hosting, domains and maintenance:</strong> keeping your site online and up to date after launch.</li>
                 </ul>
-                <p class="mb-0">We work with PHP, Yii, MySQL, PostgreSQL and Docker.</p>
+                <p>We work with PHP, Yii, MySQL, PostgreSQL and Docker.</p>
+
+                <h2 class="mw-h2 mt-5 mb-3">Our founder</h2>
+                <p class="mb-1"><strong>M.N. Trivedi</strong>, Founder <span class="text-body-secondary">(MCA, PGDCA)</span></p>
+                <p class="mb-0">20 years in software development, 11 of them with <?= Html::encode($siteName) ?>.</p>
             </div>
             <div class="col-lg-5">
                 <div class="mw-panel">

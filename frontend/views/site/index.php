@@ -188,7 +188,7 @@ $questions = [
                 <?php foreach ($projects as $project): ?>
                     <div class="col-lg-4">
                         <article class="mw-card mw-project">
-                            <?= Html::img('@web/images/projects/' . $project['image'], ['alt' => 'Home page of ' . $project['name'], 'width' => 960, 'height' => 600, 'loading' => 'lazy']) ?>
+                            <?= Html::img('@web/images/projects/' . $project['image'], ['alt' => 'Home page of ' . $project['name'], 'srcset' => Yii::getAlias('@web/images/projects/' . str_replace('.jpg', '@2x.jpg', $project['image'])) . ' 2x', 'width' => 960, 'height' => 600, 'loading' => 'lazy']) ?>
                             <div class="mw-project-body">
                                 <p class="mw-eyebrow mb-1"><?= Html::encode($project['type']) ?></p>
                                 <h3><?= Html::encode($project['name']) ?></h3>

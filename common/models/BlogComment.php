@@ -32,6 +32,9 @@ class BlogComment extends base\BlogComment
     public const RATE_LIMIT = 3;
     public const RATE_MINUTES = 10;
 
+    /** How long a comment stays in Spam before the weekly cleanup deletes it. */
+    public const SPAM_DAYS = 30;
+
     #[\Override]
     public function behaviors(): array
     {
@@ -114,6 +117,12 @@ class BlogComment extends base\BlogComment
         return $links > 2
             || preg_match('~https?://|www\.~i', $this->author_name) === 1
             || ($links > 0 && preg_match('/\b(unsubscribe|opt[ -]?out)\b/i', $this->body) === 1);
+    }
+
+    /** Deletes comments marked Spam more than SPAM_DAYS ago (their replies go with them); returns how many. */
+    public static function deleteOldSpam(): int
+    {
+        return self::deleteAll(['and', ['status' => self::STATUS_SPAM], ['<', 'updated_at', time() - self::SPAM_DAYS * 86400]]);
     }
 
     public function isStaffReply(): bool

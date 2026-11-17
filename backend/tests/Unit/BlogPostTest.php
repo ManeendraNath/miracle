@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace backend\tests\Unit;
 
 use Codeception\Test\Unit;
+use common\models\BlogComment;
 use common\models\BlogPost;
 use common\models\BlogTag;
 use common\services\BlogImageService;
@@ -140,5 +141,30 @@ final class BlogPostTest extends Unit
         $this->assertStringContainsString('<h2 id="h-intro">Intro</h2><p>Hé — text</p>', $out['html']);
         $this->assertStringContainsString('<h2 id="h-intro-2">Intro</h2>', $out['html']);
         $this->assertStringNotContainsString('id="post"', $out['html']);
+    }
+
+    public function testOnlySpamOlderThanThirtyDaysIsDeleted(): void
+    {
+        $post = new BlogPost(['title' => 'Spam target', 'slug' => 'spam-target', 'summary' => 'S.', 'body' => '<p>B.</p>', 'status' => BlogPost::STATUS_DRAFT]);
+        $this->assertTrue($post->save());
+        $old = time() - (BlogComment::SPAM_DAYS + 1) * 86400;
+        $rows = [
+            'old spam' => [BlogComment::STATUS_SPAM, $old],
+            'new spam' => [BlogComment::STATUS_SPAM, time()],
+            'old shown' => [BlogComment::STATUS_APPROVED, $old],
+            'old waiting' => [BlogComment::STATUS_PENDING, $old],
+        ];
+        $db = \Yii::$app->db;
+        foreach ($rows as $name => [$status, $at]) {
+            $db->createCommand()->insert('{{%blog_comment}}', ['post_id' => $post->id, 'author_name' => $name, 'body' => 'x', 'status' => $status, 'created_at' => $at, 'updated_at' => $at])->execute();
+        }
+        // Sent long ago, marked Spam by staff today: its 30 days start now.
+        $db->createCommand()->insert('{{%blog_comment}}', ['post_id' => $post->id, 'author_name' => 'marked today', 'body' => 'x', 'status' => BlogComment::STATUS_SPAM, 'created_at' => $old, 'updated_at' => time()])->execute();
+        $oldSpam = (int) BlogComment::find()->select('id')->where(['author_name' => 'old spam', 'post_id' => $post->id])->scalar();
+        $db->createCommand()->insert('{{%blog_comment}}', ['post_id' => $post->id, 'parent_id' => $oldSpam, 'author_name' => 'reply to old spam', 'body' => 'x', 'status' => BlogComment::STATUS_APPROVED, 'created_at' => time(), 'updated_at' => time()])->execute();
+
+        BlogComment::deleteOldSpam();
+        $left = BlogComment::find()->select('author_name')->where(['post_id' => $post->id])->orderBy('author_name')->column();
+        $this->assertSame(['marked today', 'new spam', 'old shown', 'old waiting'], $left);
     }
 }

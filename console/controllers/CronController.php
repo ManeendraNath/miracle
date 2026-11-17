@@ -14,6 +14,7 @@ use common\services\billing\InvoiceReminderService;
 use common\services\billing\ServiceRenewalReminderService;
 use common\services\payment\PayPalService;
 use common\services\payment\RazorpayService;
+use common\models\BlogComment;
 use common\models\CronJob;
 use common\models\WhatsappLog;
 use common\services\admin\AdminAlertService;
@@ -216,10 +217,15 @@ class CronController extends Controller
         });
     }
 
-    /**
-     * Runs a job under a mutex so overlapping cron runs can't send duplicates,
-     * and turns failures into a non-zero exit code cron can see.
-     */
+    /** Comments in Spam for more than SPAM_DAYS (with any replies) are deleted; real ones get that long to be rescued. */
+    public function actionBlogSpamCleanup(): int
+    {
+        return $this->runLocked('miracle:blog-spam-cleanup', 'Blog spam cleanup', static fn(): string => sprintf(
+            'Deleted %d spam comment(s).',
+            BlogComment::deleteOldSpam(),
+        ));
+    }
+
     /**
      * Skip every job while deploy.sh has the site in maintenance mode; the next
      * scheduled run picks the work up.
@@ -276,6 +282,10 @@ class CronController extends Controller
         }
     }
 
+    /**
+     * Runs a job under a mutex so overlapping cron runs can't send duplicates,
+     * and turns failures into a non-zero exit code cron can see.
+     */
     private function runLocked(string $lockName, string $label, callable $job): int
     {
         /** @var \yii\mutex\Mutex $mutex */

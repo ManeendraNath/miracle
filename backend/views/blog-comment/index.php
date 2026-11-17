@@ -20,7 +20,7 @@ $this->params['help'] = [
     'Waiting' => 'New comments from readers. They show on the post only once you approve them. Staff get an alert when nothing else is waiting; the count next to Comments in the menu shows the rest.',
     'Approve' => 'Shows the comment on the post.',
     'Reply' => 'Write an answer shown under the comment with your author name (My account) and a Team label. Replying approves the comment too.',
-    'Spam' => 'Hides it. Comments that look like spam (many links) or that were sent the way bots send are put here by themselves, without an alert; look here now and then for real ones.',
+    'Spam' => 'Hides it. Comments that look like spam (many links) or that were sent the way bots send are put here by themselves, without an alert; look here now and then for real ones. Spam older than ' . BlogComment::SPAM_DAYS . ' days is deleted by itself every week.',
     'Trash icon' => 'Delete the comment and its replies for good.',
     'Limits' => 'One address can send ' . BlogComment::RATE_LIMIT . ' comments in ' . BlogComment::RATE_MINUTES . ' minutes. Comments can be closed per post with Allow comments on the post form; those already shown stay.',
 ];

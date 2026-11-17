@@ -7,10 +7,13 @@ namespace frontend\controllers;
 use common\models\BlogCategory;
 use common\models\BlogComment;
 use common\models\BlogPost;
+use common\models\BlogSubscriber;
 use common\models\BlogTag;
 use common\services\admin\AdminAlertService;
+use common\services\BlogNewsletterService;
 use frontend\components\FormGuard;
 use Yii;
+use yii\base\DynamicModel;
 use yii\data\ActiveDataProvider;
 use yii\db\Expression;
 use yii\db\Query;
@@ -56,6 +59,8 @@ class BlogController extends Controller
         if ($featured !== null) {
             $query->andWhere(['<>', 'id', $featured->id]);
         }
+
+        FormGuard::shown('subscribe');
 
         return $this->render('index', [
             'dataProvider' => new ActiveDataProvider(['query' => $query, 'pagination' => ['pageSize' => 9]]),
@@ -105,6 +110,7 @@ class BlogController extends Controller
         }
         // Per post, so another post opened in a second tab doesn't restart this form's timer.
         FormGuard::shown('comment-' . $post->id);
+        FormGuard::shown('subscribe');
         $related = BlogPost::findPublic()->andWhere(['<>', 'id', $post->id])
             ->orderBy($post->category_id ? [new Expression('category_id = :category DESC', [':category' => $post->category_id]), 'published_at' => SORT_DESC] : ['published_at' => SORT_DESC])
             ->limit(3)->all();
@@ -157,6 +163,108 @@ class BlogController extends Controller
         $session->setFlash('comment', ['success', 'Thank you. Your comment will appear here once we have read it.']);
 
         return true;
+    }
+
+    /** The newsletter sign-up: a confirmation email first (double opt-in). */
+    public function actionSubscribe(): Response|string
+    {
+        // Not the record itself: its "email is unique" rule would say who is subscribed.
+        $model = (new DynamicModel(['email' => '']))
+            ->addRule('email', 'trim')->addRule('email', 'required', ['message' => 'Enter your email address.'])
+            ->addRule('email', 'email', ['message' => 'Enter a valid email address.'])->addRule('email', 'string', ['max' => 255]);
+        $request = Yii::$app->request;
+        if ($request->isPost) {
+            $session = Yii::$app->session;
+            $sent = 'Almost done: we sent you an email with a link to confirm. It can take a few minutes; look in your spam folder if it doesn\'t arrive.';
+            if (FormGuard::isBot('subscribe')) {
+                // Nothing kept or sent: a confirmation email must not go to an address a bot typed in.
+                $session->setFlash('subscribe', ['success', $sent]);
+
+                return $this->redirect(['subscribe']);
+            }
+            if ($model->load($request->post(), 'BlogSubscriber') && $model->validate()) {
+                if (BlogSubscriber::overLimit($request->userIP)) {
+                    $session->setFlash('subscribe', ['danger', 'Too many sign-ups from your connection in the last hour. Please try again later.']);
+                } else {
+                    try {
+                        $subscriber = BlogSubscriber::signUp((string) $model->getAttributes(['email'])['email'], $request->userIP);
+                        if ($subscriber !== null) {
+                            if (!BlogNewsletterService::sendConfirmation($subscriber)) {
+                                throw new \RuntimeException('The mailer did not send it.');
+                            }
+                            $subscriber->confirmationSent();
+                        }
+                        $session->setFlash('subscribe', ['success', $sent]);
+
+                        return $this->redirect(['subscribe']);
+                    } catch (\Throwable $e) {
+                        Yii::error(['message' => 'Newsletter sign-up failed.', 'error' => $e->getMessage()], __METHOD__);
+                        $session->setFlash('subscribe', ['danger', 'We could not send the confirmation email just now. Please try again in a few minutes.']);
+                    }
+                }
+            }
+        }
+        FormGuard::shown('subscribe');
+
+        return $this->render('subscribe', ['model' => $model]);
+    }
+
+    /**
+     * The link in the confirmation email. Opening it shows a button: link checkers in mail systems open links, and
+     * must not subscribe anyone. The POST subscribes a waiting sign-up only, never one that unsubscribed.
+     */
+    public function actionConfirm(mixed $token = null): string
+    {
+        $subscriber = $this->findSubscriber($token);
+        if (!Yii::$app->request->isPost) {
+            return $this->render('confirm', ['subscriber' => $subscriber]);
+        }
+        if (!$subscriber->confirm()) {
+            return $this->render('newsletter-done', [
+                'title' => 'This link has expired',
+                'text' => $subscriber->email . ' unsubscribed after this link was sent. To get new posts again, subscribe on the blog.',
+            ]);
+        }
+
+        return $this->render('newsletter-done', [
+            'title' => 'You are subscribed',
+            'text' => 'Thank you. New posts will come to ' . $subscriber->email . '. Every email has a link to unsubscribe.',
+        ]);
+    }
+
+    /**
+     * The link in every newsletter. Opening it asks first (link checkers in mail systems open links); the button, or a
+     * mail app's one-click unsubscribe (a POST without our form, so no CSRF token), unsubscribes.
+     */
+    public function actionUnsubscribe(mixed $token = null): string
+    {
+        $subscriber = $this->findSubscriber($token);
+        if (!Yii::$app->request->isPost) {
+            return $this->render('unsubscribe', ['subscriber' => $subscriber]);
+        }
+        $subscriber->unsubscribe();
+
+        return $this->render('newsletter-done', [
+            'title' => 'You are unsubscribed',
+            'text' => $subscriber->email . ' will get no more emails from the blog. Changed your mind? You can subscribe again at any time.',
+        ]);
+    }
+
+    #[\Override]
+    public function beforeAction($action): bool
+    {
+        if ($action->id === 'unsubscribe') {
+            $this->enableCsrfValidation = false;
+        }
+
+        return parent::beforeAction($action);
+    }
+
+    private function findSubscriber(mixed $token): BlogSubscriber
+    {
+        $subscriber = is_string($token) && $token !== '' ? BlogSubscriber::findOne(['token' => $token]) : null;
+
+        return $subscriber ?? throw new NotFoundHttpException('This link is not valid. Copy the whole link from the email, or subscribe again.');
     }
 
     /** RSS 2.0 of the 20 newest posts. */

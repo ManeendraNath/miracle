@@ -9,7 +9,7 @@ use yii\helpers\Html;
 
 $name = Html::encode(CustomYii::getSetting('site_name') ?: 'Miracle Web Technologies');
 
-echo $this->render('_legal', ['title' => 'Privacy Policy', 'updated' => '09 Nov 2026', 'body' => <<<HTML
+echo $this->render('_legal', ['title' => 'Privacy Policy', 'updated' => '17 Nov 2026', 'body' => <<<HTML
 <p>This policy explains what personal data {$name} collects through this website and customer portal, why, and how it is protected.</p>
 
 <h2 class="h5 fw-bold mt-4">1. What we collect</h2>
@@ -18,6 +18,8 @@ echo $this->render('_legal', ['title' => 'Privacy Policy', 'updated' => '09 Nov 
     <li><strong>Billing details:</strong> GSTIN and PAN, if you give them for your invoices.</li>
     <li><strong>Service records:</strong> your domains, hosting and maintenance plans (including hosting control panel logins, where we manage them for you), invoices, payments and support tickets.</li>
     <li><strong>Enquiries:</strong> what you send through the contact and website-audit forms.</li>
+    <li><strong>Blog comments:</strong> the name, email address and comment you send, and your IP address (to stop spam). Only the name and comment are shown, once we approve them.</li>
+    <li><strong>Blog newsletter:</strong> your email address, when you subscribed and confirmed, and your IP address. Used only to email you new posts; every email has an unsubscribe link, and we delete your address on request.</li>
     <li><strong>Technical data:</strong> IP address, browser and log data needed to run and secure the site, and a login history (time, IP address and browser) used to alert you to sign-ins from new devices.</li>
     <li><strong>Cookies:</strong> a session cookie and a security (CSRF) cookie needed to use the site; a "remember me" cookie (up to 30 days) if you choose to stay signed in; and a device cookie (up to 400 days) so we can tell you when your account is used from a new device. We use no advertising or tracking cookies.</li>
 </ul>

@@ -43,6 +43,8 @@ return [
             'upiId' => $_ENV['BILLING_UPI_ID'] ?? '',
         ],
     ],
+    // Newsletter emails per cron run (every 15 minutes): 40 keeps under 200 an hour, a common shared-hosting limit.
+    'newsletterBatch' => 40,
     'frontendBaseUrl' => rtrim($_ENV['FRONTEND_BASE_URL'] ?? '', '/'),
     // Admin panel, for links in emails to staff.
     'backendBaseUrl' => rtrim($_ENV['BACKEND_BASE_URL'] ?? 'https://admin.miraclewebtechnologies.com', '/'),

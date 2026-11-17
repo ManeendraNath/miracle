@@ -102,6 +102,7 @@ return [
                 'blog/<year:\d{4}>/<month:\d{2}>' => 'blog/index',
                 'blog' => 'blog/index',
                 'blog/feed' => 'blog/feed',
+                'blog/<action:(subscribe|confirm|unsubscribe)>' => 'blog/<action>',
                 'blog/<slug:[a-z0-9-]+>' => 'blog/view',
                 'sitemap.xml' => 'sitemap/index',
                 '<action>' => 'site/<action>',

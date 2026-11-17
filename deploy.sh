@@ -345,7 +345,7 @@ trap - ERR INT TERM HUP
 rm -rf "${SNAP:?}"
 # A job that never starts can't report itself, and a new job needs its line added by hand.
 # cron/razorpay-sync also records PayPal payments that PayPal held, so it is needed whenever either gateway is used.
-for job in cron/run-billing cron/payment-reminders cron/send-reminders cron/profile-reminders cron/razorpay-sync cron/whatsapp-cleanup cron/blog-spam-cleanup backup/run; do
+for job in cron/run-billing cron/payment-reminders cron/send-reminders cron/profile-reminders cron/razorpay-sync cron/whatsapp-cleanup cron/blog-newsletter cron/blog-spam-cleanup backup/run; do
     crontab -l 2>/dev/null | grep -q "$job" || echo "WARNING: no crontab line for $job. See docs/BILLING_MODULE.md section 14."
 done
 echo "Deployment completed successfully."

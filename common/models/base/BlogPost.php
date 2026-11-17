@@ -20,6 +20,9 @@ use Yii;
  * @property int $is_featured
  * @property int $noindex
  * @property int $comments_open
+ * @property int $send_newsletter
+ * @property int|null $newsletter_started_at
+ * @property int|null $newsletter_done_at
  * @property int|null $published_at
  * @property int|null $author_id
  * @property int $created_at
@@ -27,10 +30,12 @@ use Yii;
  *
  * @property Admin $author
  * @property BlogComment[] $blogComments
+ * @property BlogNewsletterDelivery[] $blogNewsletterDeliveries
  * @property BlogPostRevision[] $blogPostRevisions
  * @property BlogPostTag[] $blogPostTags
  * @property BlogPostView[] $blogPostViews
  * @property BlogCategory $category
+ * @property BlogSubscriber[] $subscribers
  * @property BlogTag[] $tags
  */
 class BlogPost extends \yii\db\ActiveRecord
@@ -49,10 +54,10 @@ class BlogPost extends \yii\db\ActiveRecord
     public function rules()
     {
         return [
-            [['category_id', 'cover_image', 'cover_alt', 'seo_title', 'published_at', 'author_id'], 'default', 'value' => null],
+            [['category_id', 'cover_image', 'cover_alt', 'seo_title', 'newsletter_started_at', 'newsletter_done_at', 'published_at', 'author_id'], 'default', 'value' => null],
             [['noindex'], 'default', 'value' => 0],
-            [['comments_open'], 'default', 'value' => 1],
-            [['category_id', 'status', 'is_featured', 'noindex', 'comments_open', 'published_at', 'author_id', 'created_at', 'updated_at'], 'integer'],
+            [['send_newsletter'], 'default', 'value' => 1],
+            [['category_id', 'status', 'is_featured', 'noindex', 'comments_open', 'send_newsletter', 'newsletter_started_at', 'newsletter_done_at', 'published_at', 'author_id', 'created_at', 'updated_at'], 'integer'],
             [['title', 'slug', 'summary', 'body', 'created_at', 'updated_at'], 'required'],
             [['body'], 'string'],
             [['title', 'cover_alt'], 'string', 'max' => 200],
@@ -85,6 +90,9 @@ class BlogPost extends \yii\db\ActiveRecord
             'is_featured' => 'Is Featured',
             'noindex' => 'Noindex',
             'comments_open' => 'Comments Open',
+            'send_newsletter' => 'Send Newsletter',
+            'newsletter_started_at' => 'Newsletter Started At',
+            'newsletter_done_at' => 'Newsletter Done At',
             'published_at' => 'Published At',
             'author_id' => 'Author ID',
             'created_at' => 'Created At',
@@ -110,6 +118,16 @@ class BlogPost extends \yii\db\ActiveRecord
     public function getBlogComments()
     {
         return $this->hasMany(BlogComment::class, ['post_id' => 'id']);
+    }
+
+    /**
+     * Gets query for [[BlogNewsletterDeliveries]].
+     *
+     * @return \yii\db\ActiveQuery
+     */
+    public function getBlogNewsletterDeliveries()
+    {
+        return $this->hasMany(BlogNewsletterDelivery::class, ['post_id' => 'id']);
     }
 
     /**
@@ -150,6 +168,16 @@ class BlogPost extends \yii\db\ActiveRecord
     public function getCategory()
     {
         return $this->hasOne(BlogCategory::class, ['id' => 'category_id']);
+    }
+
+    /**
+     * Gets query for [[Subscribers]].
+     *
+     * @return \yii\db\ActiveQuery
+     */
+    public function getSubscribers()
+    {
+        return $this->hasMany(BlogSubscriber::class, ['id' => 'subscriber_id'])->viaTable('blog_newsletter_delivery', ['post_id' => 'id']);
     }
 
     /**

@@ -6,6 +6,7 @@ namespace frontend\tests\Functional;
 
 use common\models\BlogCategory;
 use common\models\BlogComment;
+use common\models\BlogSubscriber;
 use common\models\BlogPost;
 use frontend\tests\Support\FunctionalTester;
 
@@ -131,5 +132,44 @@ final class BlogCest
         $I->submitForm('#comment-form', ['BlogComment[author_name]' => 'Reader 3', 'BlogComment[author_email]' => 'r@example.test', 'BlogComment[body]' => 'Comment 3']);
         $I->see('Please wait', '#comments [role=alert]');
         $I->dontSeeRecord(BlogComment::class, ['author_name' => 'Reader 3']);
+    }
+
+    public function aReaderSubscribesConfirmsAndUnsubscribes(FunctionalTester $I): void
+    {
+        $I->amOnPage('/blog');
+        $I->see('Get new posts by email', 'h2');
+        $I->amOnPage('/blog/subscribe');
+        $I->submitForm('#subscribe-page-title + p + form', ['BlogSubscriber[email]' => 'not-an-email']);
+        $I->see('Enter a valid email address.');
+        $I->submitForm('#subscribe-page-title + p + form', ['BlogSubscriber[email]' => 'reader@example.test']);
+        $I->see('we sent you an email with a link to confirm', '[role=status]');
+        $I->seeEmailIsSent(1);
+        $subscriber = BlogSubscriber::findOne(['email' => 'reader@example.test']);
+        $I->assertSame(BlogSubscriber::STATUS_PENDING, $subscriber->status);
+        $I->assertStringContainsString('/blog/confirm?token=' . $subscriber->token, quoted_printable_decode((string) $I->grabLastSentEmail()->toString()));
+
+        $I->amOnPage('/blog/confirm?token=' . $subscriber->token);
+        $I->see('Send new blog posts to reader@example.test?');
+        $I->assertSame(BlogSubscriber::STATUS_PENDING, $subscriber->refresh() ? $subscriber->status : null, 'opening the link alone (a mail scanner) does not subscribe');
+        $I->click('Yes, subscribe me');
+        $I->see('You are subscribed', 'h1');
+        $I->assertSame(BlogSubscriber::STATUS_SUBSCRIBED, $subscriber->refresh() ? $subscriber->status : null);
+
+        $I->amOnPage('/blog/unsubscribe?token=' . $subscriber->token);
+        $I->see('Stop sending new blog posts to reader@example.test?');
+        $I->assertSame(BlogSubscriber::STATUS_SUBSCRIBED, $subscriber->refresh() ? $subscriber->status : null);
+        // A mail app's one-click unsubscribe: a plain POST, no form token.
+        $I->sendAjaxPostRequest('/blog/unsubscribe?token=' . $subscriber->token, ['List-Unsubscribe' => 'One-Click']);
+        $I->seeResponseCodeIs(200);
+        $I->assertSame(BlogSubscriber::STATUS_UNSUBSCRIBED, $subscriber->refresh() ? $subscriber->status : null);
+
+        // An old confirmation link does not put an unsubscribed reader back.
+        $I->amOnPage('/blog/confirm?token=' . $subscriber->token);
+        $I->see('This link has expired');
+        $I->dontSee('Yes, subscribe me');
+        $I->assertSame(BlogSubscriber::STATUS_UNSUBSCRIBED, $subscriber->refresh() ? $subscriber->status : null);
+
+        $I->amOnPage('/blog/confirm?token=wrong');
+        $I->seeResponseCodeIs(404);
     }
 }

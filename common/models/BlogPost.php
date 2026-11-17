@@ -44,6 +44,9 @@ class BlogPost extends base\BlogPost
     /** Where post images live, under the frontend web root (served directly by the web server). */
     public const UPLOAD_DIR = 'uploads/blog';
 
+    /** Addresses under /blog/ taken by the blog's own pages. */
+    public const RESERVED_SLUGS = ['feed', 'subscribe', 'confirm', 'unsubscribe'];
+
     /** The form's date and time field (datetime-local); published_at is set from it. */
     public $publishAt;
 
@@ -75,7 +78,9 @@ class BlogPost extends base\BlogPost
             // Not on the form (null): left null, so the post's tags stay as they are.
             ['tagNames', 'trim', 'skipOnEmpty' => true],
             [['status', 'is_featured'], 'default', 'value' => 0],
-            [['is_featured', 'noindex', 'comments_open'], 'boolean'],
+            // Gii keeps only one shared default per value: these come from the database too.
+            [['comments_open', 'send_newsletter'], 'default', 'value' => 1],
+            [['is_featured', 'noindex', 'comments_open', 'send_newsletter'], 'boolean'],
             ['tagNames', 'string', 'max' => 500],
             ['tagNames', function (string $attribute): void {
                 foreach (array_filter(array_map('trim', explode(',', (string) $this->$attribute))) as $name) {
@@ -89,7 +94,7 @@ class BlogPost extends base\BlogPost
             ['slug', 'filter', 'filter' => fn($slug): string => Inflector::slug((string) ($slug ?: $this->title))],
             // Server only: the browser can't run the filter above, so an empty field would wrongly fail there.
             ['slug', 'required', 'message' => 'Use at least one letter or digit in the title.', 'enableClientValidation' => false],
-            ['slug', 'compare', 'compareValue' => 'feed', 'operator' => '!==', 'type' => 'string', 'message' => 'The web address "feed" is taken by the blog\'s RSS feed. Choose another.'],
+            ['slug', 'in', 'range' => self::RESERVED_SLUGS, 'not' => true, 'message' => 'The web address "{value}" is used by the blog itself. Choose another.'],
             // Pasted or typed HTML could carry scripts: only plain article markup is kept.
             ['body', 'filter', 'filter' => [self::class, 'cleanBody']],
             ['body', 'required', 'message' => 'Write the post before saving.'],
@@ -103,7 +108,7 @@ class BlogPost extends base\BlogPost
     #[\Override]
     public function scenarios(): array
     {
-        $internal = ['cover_image', 'author_id', 'published_at', 'created_at', 'updated_at'];
+        $internal = ['cover_image', 'author_id', 'published_at', 'created_at', 'updated_at', 'newsletter_started_at', 'newsletter_done_at'];
 
         return array_map(
             static fn(array $attributes): array => array_map(static fn(string $name): string => in_array($name, $internal, true) ? '!' . $name : $name, $attributes),
@@ -127,6 +132,7 @@ class BlogPost extends base\BlogPost
                     'is_featured' => 'Feature at the top of the blog',
                     'noindex' => 'Keep out of search engines',
                     'comments_open' => 'Allow comments',
+                    'send_newsletter' => 'Email it to subscribers when it goes live',
                     'published_at' => 'Published',
         ]);
     }

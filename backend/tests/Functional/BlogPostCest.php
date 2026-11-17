@@ -27,6 +27,8 @@ final class BlogPostCest
     {
         $I->amOnRoute('blog-post/create');
         $I->seeResponseCodeIs(200);
+        $I->seeCheckboxIsChecked('#blogpost-send_newsletter');
+        $I->seeCheckboxIsChecked('#blogpost-comments_open');
         $I->submitForm('#blog-post-form', [
             'BlogPost[title]' => 'Hiring an offshore developer',
             'BlogPost[summary]' => 'What to check first.',
@@ -84,5 +86,17 @@ final class BlogPostCest
 
         $I->sendAjaxPostRequest('/blog-comment/spam?id=' . $id, [Yii::$app->request->csrfParam => $I->grabAttributeFrom('meta[name=csrf-token]', 'content')]);
         $I->seeRecord(BlogComment::class, ['id' => $id, 'status' => BlogComment::STATUS_SPAM]);
+    }
+
+    public function staffSeeAndDeleteSubscribers(FunctionalTester $I): void
+    {
+        $id = (int) $I->haveRecord(\common\models\BlogSubscriber::class, ['email' => 'list@example.test', 'token' => str_repeat('t', 40), 'status' => \common\models\BlogSubscriber::STATUS_SUBSCRIBED, 'confirmed_at' => time(), 'created_at' => time(), 'updated_at' => time()]);
+        $I->amOnRoute('blog-subscriber/index');
+        $I->see('list@example.test');
+        $I->see('Subscribers', '.nav-sidebar');
+        $I->amOnRoute('blog-subscriber/index', ['q' => 'nobody']);
+        $I->dontSee('list@example.test');
+        $I->sendAjaxPostRequest('/blog-subscriber/delete?id=' . $id, [Yii::$app->request->csrfParam => $I->grabAttributeFrom('meta[name=csrf-token]', 'content')]);
+        $I->dontSeeRecord(\common\models\BlogSubscriber::class, ['id' => $id]);
     }
 }

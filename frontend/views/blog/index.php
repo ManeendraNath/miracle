@@ -117,6 +117,7 @@ $this->registerLinkTag(['rel' => 'alternate', 'type' => 'application/rss+xml', '
                     <?= LinkPager::widget(['pagination' => $dataProvider->pagination, 'options' => ['class' => 'pagination'], 'linkContainerOptions' => ['class' => 'page-item'], 'linkOptions' => ['class' => 'page-link'], 'disabledListItemSubTagOptions' => ['class' => 'page-link']]) ?>
                 </div>
             <?php endif; ?>
+            <div class="mt-5"><?= $this->render('_subscribe') ?></div>
         </div>
     </section>
 </div>

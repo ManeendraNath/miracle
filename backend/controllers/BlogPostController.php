@@ -27,7 +27,12 @@ class BlogPostController extends BaseController
 
     public function actionCreate(): Response|string
     {
-        return $this->saveForm(new BlogPost(['status' => BlogPost::STATUS_DRAFT, 'author_id' => Yii::$app->user->id]));
+        // The database defaults (comments on, emailed to subscribers) tick their boxes on a new post.
+        $post = (new BlogPost())->loadDefaultValues();
+        $post->status = BlogPost::STATUS_DRAFT;
+        $post->author_id = Yii::$app->user->id;
+
+        return $this->saveForm($post);
     }
 
     public function actionUpdate(int $id): Response|string

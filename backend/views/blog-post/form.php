@@ -176,6 +176,16 @@ JS);
                         ?><option value="<?= Html::encode($tagName) ?>"></option><?php
                                              endforeach; ?></datalist>
                     <?= $form->field($model, 'is_featured')->checkbox() ?>
+                    <?php
+                    $delivered = $model->newsletter_started_at !== null ? (int) $model->getBlogNewsletterDeliveries()->andWhere(['failed' => 0])->count() : 0;
+                    $newsletterHint = match (true) {
+                        $model->newsletter_done_at !== null && $delivered === 0 => 'Not emailed: it was switched off, kept out of search engines, published before the newsletter existed, or there were no subscribers yet.',
+                        $model->newsletter_done_at !== null => 'Done: emailed to ' . $delivered . ' subscriber(s). It is not emailed again after edits.',
+                        $model->newsletter_started_at !== null => 'Sending now: ' . $delivered . ' sent so far.',
+                        default => 'Sent once, within about 15 minutes of going live, to confirmed subscribers (not if kept out of search engines).',
+                    };
+                    ?>
+                    <?= $form->field($model, 'send_newsletter')->checkbox(['disabled' => $model->newsletter_started_at !== null])->hint($newsletterHint) ?>
                     <?= $form->field($model, 'comments_open')->checkbox()->hint('Readers can comment; each waits for approval under Blog > Comments.') ?>
                     <?= $form->field($model, 'slug', ['enableClientValidation' => false])->textInput(['maxlength' => 220, 'placeholder' => 'Made from the title'])->hint('/blog/' . Html::encode($model->slug ?: 'made-from-the-title')) ?>
                     <?= Html::submitButton('<i class="fas fa-save me-1"></i> Save', ['class' => 'btn btn-primary w-100']) ?>

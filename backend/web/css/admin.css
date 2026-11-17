@@ -55,6 +55,10 @@
 
 /* stop long sidebar labels from wrapping under their icon */
 .nav-sidebar .nav-link p { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* The collapsed sidebar gives labels no width; hovering it opens the sidebar, so give them their width back
+   (with overflow: hidden above they would stay invisible). */
+.sidebar-mini.sidebar-collapse .main-sidebar:not(.sidebar-no-expand):hover .nav-sidebar .nav-link p,
+.sidebar-mini.sidebar-collapse .main-sidebar:not(.sidebar-no-expand).sidebar-focused .nav-sidebar .nav-link p { width: auto; }
 
 /* grid action buttons: keep them on one line */
 .grid-view td:last-child { white-space: nowrap; }

@@ -1,5 +1,5 @@
 {
-    "migrations": 77,
+    "migrations": 78,
     "columns": {
         "admin": {
             "auth_key": {
@@ -557,6 +557,32 @@
                 "extra": ""
             }
         },
+        "blog_newsletter_delivery": {
+            "failed": {
+                "type": "tinyint",
+                "null": false,
+                "default": "0",
+                "extra": ""
+            },
+            "post_id": {
+                "type": "int",
+                "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "sent_at": {
+                "type": "int",
+                "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "subscriber_id": {
+                "type": "int",
+                "null": false,
+                "default": null,
+                "extra": ""
+            }
+        },
         "blog_post": {
             "author_id": {
                 "type": "int",
@@ -612,6 +638,18 @@
                 "default": "0",
                 "extra": ""
             },
+            "newsletter_done_at": {
+                "type": "int",
+                "null": true,
+                "default": null,
+                "extra": ""
+            },
+            "newsletter_started_at": {
+                "type": "int",
+                "null": true,
+                "default": null,
+                "extra": ""
+            },
             "noindex": {
                 "type": "tinyint",
                 "null": false,
@@ -622,6 +660,12 @@
                 "type": "int",
                 "null": true,
                 "default": null,
+                "extra": ""
+            },
+            "send_newsletter": {
+                "type": "tinyint",
+                "null": false,
+                "default": "1",
                 "extra": ""
             },
             "seo_title": {
@@ -740,6 +784,68 @@
             },
             "visitor": {
                 "type": "char(32)",
+                "null": false,
+                "default": null,
+                "extra": ""
+            }
+        },
+        "blog_subscriber": {
+            "confirm_sent_at": {
+                "type": "int",
+                "null": true,
+                "default": null,
+                "extra": ""
+            },
+            "confirmed_at": {
+                "type": "int",
+                "null": true,
+                "default": null,
+                "extra": ""
+            },
+            "created_at": {
+                "type": "int",
+                "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "email": {
+                "type": "varchar(255)",
+                "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "id": {
+                "type": "int",
+                "null": false,
+                "default": null,
+                "extra": "auto_increment"
+            },
+            "ip": {
+                "type": "varchar(45)",
+                "null": true,
+                "default": null,
+                "extra": ""
+            },
+            "status": {
+                "type": "tinyint",
+                "null": false,
+                "default": "0",
+                "extra": ""
+            },
+            "token": {
+                "type": "varchar(64)",
+                "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "unsubscribed_at": {
+                "type": "int",
+                "null": true,
+                "default": null,
+                "extra": ""
+            },
+            "updated_at": {
+                "type": "int",
                 "null": false,
                 "default": null,
                 "extra": ""
@@ -2801,6 +2907,10 @@
             "parent_id": "index",
             "post_id,status": "index"
         },
+        "blog_newsletter_delivery": {
+            "post_id,subscriber_id": "primary",
+            "subscriber_id": "index"
+        },
         "blog_post": {
             "author_id": "index",
             "category_id": "index",
@@ -2820,6 +2930,11 @@
         "blog_post_view": {
             "id": "primary",
             "post_id,day,visitor": "unique"
+        },
+        "blog_subscriber": {
+            "email": "unique",
+            "id": "primary",
+            "token": "unique"
         },
         "blog_tag": {
             "id": "primary",
@@ -2994,6 +3109,10 @@
             "admin_id": "admin(id) ON DELETE SET NULL ON UPDATE CASCADE",
             "parent_id": "blog_comment(id) ON DELETE CASCADE ON UPDATE CASCADE",
             "post_id": "blog_post(id) ON DELETE CASCADE ON UPDATE CASCADE"
+        },
+        "blog_newsletter_delivery": {
+            "post_id": "blog_post(id) ON DELETE CASCADE ON UPDATE CASCADE",
+            "subscriber_id": "blog_subscriber(id) ON DELETE CASCADE ON UPDATE CASCADE"
         },
         "blog_post": {
             "author_id": "admin(id) ON DELETE SET NULL ON UPDATE CASCADE",

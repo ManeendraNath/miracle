@@ -163,6 +163,8 @@ $schema = array_filter([
                 </nav>
             <?php endif; ?>
 
+            <div class="mt-5"><?= $this->render('_subscribe', ['id' => 'subscribe-post']) ?></div>
+
             <?php $notice = Yii::$app->session->getFlash('comment'); ?>
             <?php if ($comments || $post->comments_open || is_array($notice)): ?>
                 <section id="comments" class="mw-comments mt-5" aria-labelledby="comments-title">

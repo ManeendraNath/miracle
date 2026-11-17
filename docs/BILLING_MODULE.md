@@ -270,6 +270,7 @@ Suggested full crontab (times are examples; keep each job's frequency):
 0 9 * * *    /usr/local/bin/php /home/rpocncwk/miracle/yii cron/payment-reminders >> /home/rpocncwk/miracle/runtime/logs/billing-cron.log 2>&1
 30 9 * * *   /usr/local/bin/php /home/rpocncwk/miracle/yii cron/send-reminders >> /home/rpocncwk/miracle/runtime/logs/billing-cron.log 2>&1
 0 4 * * 0    /usr/local/bin/php /home/rpocncwk/miracle/yii cron/whatsapp-cleanup >> /home/rpocncwk/miracle/runtime/logs/billing-cron.log 2>&1
+*/15 * * * * /usr/local/bin/php /home/rpocncwk/miracle/yii cron/blog-newsletter >> /home/rpocncwk/miracle/runtime/logs/billing-cron.log 2>&1
 15 4 * * 0   /usr/local/bin/php /home/rpocncwk/miracle/yii cron/blog-spam-cleanup >> /home/rpocncwk/miracle/runtime/logs/billing-cron.log 2>&1
 0 10 * * *   /usr/local/bin/php /home/rpocncwk/miracle/yii cron/profile-reminders >> /home/rpocncwk/miracle/runtime/logs/billing-cron.log 2>&1
 */30 * * * * /usr/local/bin/php /home/rpocncwk/miracle/yii cron/razorpay-sync >> /home/rpocncwk/miracle/runtime/logs/billing-cron.log 2>&1

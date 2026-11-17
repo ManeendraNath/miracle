@@ -15,6 +15,7 @@ use common\services\billing\ServiceRenewalReminderService;
 use common\services\payment\PayPalService;
 use common\services\payment\RazorpayService;
 use common\models\BlogComment;
+use common\services\BlogNewsletterService;
 use common\models\CronJob;
 use common\models\WhatsappLog;
 use common\services\admin\AdminAlertService;
@@ -217,12 +218,25 @@ class CronController extends Controller
         });
     }
 
-    /** Comments in Spam for more than SPAM_DAYS (with any replies) are deleted; real ones get that long to be rescued. */
+    /** New blog posts to newsletter subscribers, in batches small enough for the mail server's hourly limit. */
+    public function actionBlogNewsletter(): int
+    {
+        return $this->runLocked('miracle:blog-newsletter', 'Blog newsletter', static fn(): string => sprintf(
+            'Sent %d newsletter email(s).',
+            BlogNewsletterService::sendBatch((int) (Yii::$app->params['newsletterBatch'] ?? 40)),
+        ));
+    }
+
+    /**
+     * Comments in Spam for more than SPAM_DAYS (with any replies) are deleted, real ones get that long to be rescued;
+     * and newsletter sign-ups never confirmed within BlogSubscriber::UNCONFIRMED_DAYS.
+     */
     public function actionBlogSpamCleanup(): int
     {
-        return $this->runLocked('miracle:blog-spam-cleanup', 'Blog spam cleanup', static fn(): string => sprintf(
-            'Deleted %d spam comment(s).',
+        return $this->runLocked('miracle:blog-spam-cleanup', 'Blog cleanup', static fn(): string => sprintf(
+            'Deleted %d spam comment(s) and %d unconfirmed newsletter sign-up(s).',
             BlogComment::deleteOldSpam(),
+            \common\models\BlogSubscriber::deleteUnconfirmed(),
         ));
     }
 

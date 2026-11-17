@@ -231,8 +231,10 @@ final class RenewalFulfilmentService
         }
         // The one-time price was used for this renewal; later ones are calculated from it again. A different
         // value was set meanwhile for the renewal after this one, so it stays.
-        if ((int) $event->is_manual_amount && $asset->next_renewal_amount !== null
-            && abs((float) $asset->next_renewal_amount - (float) $event->amount) < 0.005) {
+        if (
+            (int) $event->is_manual_amount && $asset->next_renewal_amount !== null
+            && abs((float) $asset->next_renewal_amount - (float) $event->amount) < 0.005
+        ) {
             $asset->next_renewal_amount = null;
             $attributes[] = 'next_renewal_amount';
         }
@@ -264,8 +266,10 @@ final class RenewalFulfilmentService
      */
     private function reactivate(object $asset, int $paidInvoiceId): bool
     {
-        if (!($asset instanceof Hosting && (int) $asset->status === Hosting::STATUS_SUSPENDED)
-            && !($asset instanceof Maintenance && (int) $asset->status === Maintenance::STATUS_OVERDUE)) {
+        if (
+            !($asset instanceof Hosting && (int) $asset->status === Hosting::STATUS_SUSPENDED)
+            && !($asset instanceof Maintenance && (int) $asset->status === Maintenance::STATUS_OVERDUE)
+        ) {
             return false;
         }
         $asset->status = $asset instanceof Hosting ? Hosting::STATUS_ACTIVE : Maintenance::STATUS_ACTIVE;
@@ -311,5 +315,4 @@ final class RenewalFulfilmentService
             default => throw new \RuntimeException('Unsupported renewable service.'),
         };
     }
-
 }

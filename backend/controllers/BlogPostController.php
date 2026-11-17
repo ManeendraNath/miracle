@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace backend\controllers;
 
 use common\models\BlogPost;
+use common\models\BlogPostRevision;
 use common\services\BlogImageService;
 use Yii;
 use yii\data\ActiveDataProvider;
@@ -40,6 +41,29 @@ class BlogPostController extends BaseController
         return $this->render('preview', ['model' => $this->findModel($id)]);
     }
 
+    /** An earlier version, read-only, to compare before restoring it. */
+    public function actionRevision(int $id): string
+    {
+        $revision = BlogPostRevision::findOne($id) ?? throw new NotFoundHttpException('The requested page does not exist.');
+
+        return $this->render('revision', ['revision' => $revision, 'model' => $this->findModel((int) $revision->post_id)]);
+    }
+
+    /** Puts an earlier version's title, summary and text back; what it replaces is kept as a version too. */
+    public function actionRestore(int $id): Response
+    {
+        $revision = BlogPostRevision::findOne($id) ?? throw new NotFoundHttpException('The requested page does not exist.');
+        $model = $this->findModel((int) $revision->post_id);
+        $model->setAttributes(['title' => $revision->title, 'summary' => $revision->summary, 'body' => $revision->body], false);
+        if ($model->save()) {
+            Yii::$app->session->setFlash('success', 'The version of ' . Yii::$app->formatter->asDatetime($revision->created_at, 'php:d M Y, H:i') . ' was restored. The text it replaced is in the version list.');
+        } else {
+            Yii::$app->session->setFlash('error', 'The version could not be restored: ' . implode(' ', $model->getFirstErrors()));
+        }
+
+        return $this->redirect(['update', 'id' => $model->id]);
+    }
+
     public function actionDelete(int $id): Response
     {
         $this->findModel($id)->delete();
@@ -69,6 +93,9 @@ class BlogPostController extends BaseController
     private function saveForm(BlogPost $model): Response|string
     {
         $wasPublic = $model->isPublic();
+        if (!$model->getIsNewRecord()) {
+            $model->tagNames = $model->tagNamesText();
+        }
         if ($model->load(Yii::$app->request->post())) {
             $cover = UploadedFile::getInstance($model, 'cover_image');
             try {

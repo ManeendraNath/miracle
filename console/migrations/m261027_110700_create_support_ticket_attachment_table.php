@@ -8,7 +8,6 @@ use yii\db\Migration;
  */
 class m261027_110700_create_support_ticket_attachment_table extends Migration
 {
-
     /**
      * {@inheritdoc}
      */
@@ -31,12 +30,12 @@ class m261027_110700_create_support_ticket_attachment_table extends Migration
 
         // Adds foreign key for table `{{%support_ticket}}`
         $this->addForeignKey(
-                '{{%fk_sta_ticket}}',
-                '{{%support_ticket_attachment}}',
-                'ticket_id',
-                '{{%support_ticket}}',
-                'id',
-                'CASCADE'
+            '{{%fk_sta_ticket}}',
+            '{{%support_ticket_attachment}}',
+            'ticket_id',
+            '{{%support_ticket}}',
+            'id',
+            'CASCADE'
         );
 
         // Creates index for column `ticket_message_id`
@@ -44,14 +43,14 @@ class m261027_110700_create_support_ticket_attachment_table extends Migration
 
         // Adds foreign key for table `{{%support_ticket_message}}`
         $this->addForeignKey(
-                '{{%fk_sta_message}}',
-                '{{%support_ticket_attachment}}',
-                'ticket_message_id',
-                '{{%support_ticket_message}}',
-                'id',
-                'CASCADE'
+            '{{%fk_sta_message}}',
+            '{{%support_ticket_attachment}}',
+            'ticket_message_id',
+            '{{%support_ticket_message}}',
+            'id',
+            'CASCADE'
         );
-        
+
         // Creates index for column `uploaded_by`
         $this->createIndex('{{%idx_uploaded_by}}', '{{%support_ticket_attachment}}', 'uploaded_by');
 
@@ -73,7 +72,7 @@ class m261027_110700_create_support_ticket_attachment_table extends Migration
     {
         // Drops foreign key for table `{{%user}}`
         $this->dropForeignKey('{{%fk_sta_user}}', '{{%support_ticket_attachment}}');
-        
+
         // Drops index for column `uploaded_by`
         $this->dropIndex('{{%idx_uploaded_by}}', '{{%support_ticket_attachment}}');
 

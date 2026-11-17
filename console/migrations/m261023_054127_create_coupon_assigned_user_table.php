@@ -7,7 +7,6 @@ use yii\db\Migration;
  */
 class m261023_054127_create_coupon_assigned_user_table extends Migration
 {
-
     /**
      * {@inheritdoc}
      */
@@ -23,30 +22,30 @@ class m261023_054127_create_coupon_assigned_user_table extends Migration
         ]);
 
         $this->createIndex(
-                'uq-coupon_assigned_user-coupon_id',
-                '{{%coupon_assigned_user}}',
-                'coupon_id',
-                true
+            'uq-coupon_assigned_user-coupon_id',
+            '{{%coupon_assigned_user}}',
+            'coupon_id',
+            true
         );
 
         $this->addForeignKey(
-                'fk-coupon_assigned_user-coupon_id',
-                '{{%coupon_assigned_user}}',
-                'coupon_id',
-                '{{%coupon}}',
-                'id',
-                'RESTRICT',
-                'CASCADE'
+            'fk-coupon_assigned_user-coupon_id',
+            '{{%coupon_assigned_user}}',
+            'coupon_id',
+            '{{%coupon}}',
+            'id',
+            'RESTRICT',
+            'CASCADE'
         );
-        
+
         $this->addForeignKey(
-                'fk-coupon_assigned_user-user_id',
-                '{{%coupon_assigned_user}}',
-                'user_id',
-                '{{%user}}',
-                'id',
-                'RESTRICT',
-                'CASCADE'
+            'fk-coupon_assigned_user-user_id',
+            '{{%coupon_assigned_user}}',
+            'user_id',
+            '{{%user}}',
+            'id',
+            'RESTRICT',
+            'CASCADE'
         );
     }
 
@@ -56,15 +55,15 @@ class m261023_054127_create_coupon_assigned_user_table extends Migration
     public function safeDown()
     {
         $this->dropForeignKey(
-                'fk-coupon_assigned_user-coupon_id',
-                '{{%coupon_assigned_user}}'
+            'fk-coupon_assigned_user-coupon_id',
+            '{{%coupon_assigned_user}}'
         );
-        
+
         $this->dropForeignKey(
-                'fk-coupon_assigned_user-user_id',
-                '{{%coupon_assigned_user}}'
+            'fk-coupon_assigned_user-user_id',
+            '{{%coupon_assigned_user}}'
         );
-        
+
         $this->dropTable('{{%coupon_assigned_user}}');
     }
 }

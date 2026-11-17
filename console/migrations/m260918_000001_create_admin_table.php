@@ -7,7 +7,6 @@ use yii\db\Migration;
  */
 class m260918_000001_create_admin_table extends Migration
 {
-
     private $tableName = '{{%admin}}';
 
     /**

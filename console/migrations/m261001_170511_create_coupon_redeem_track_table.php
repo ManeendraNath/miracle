@@ -4,7 +4,6 @@ use yii\db\Migration;
 
 class m261001_170511_create_coupon_redeem_track_table extends Migration
 {
-
     private $tableName = '{{%coupon_redeem_track}}';
 
     public function safeUp()

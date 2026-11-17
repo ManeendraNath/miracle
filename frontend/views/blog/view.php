@@ -21,7 +21,14 @@ $this->params['canonical'] = $url;
 $this->params['og_type'] = 'article';
 if ($image !== null) {
     $this->params['og_image'] = $image;
+    if ((string) $post->cover_alt !== '') {
+        $this->registerMetaTag(['property' => 'og:image:alt', 'content' => $post->cover_alt]);
+    }
 }
+if ($post->noindex) {
+    $this->params['robots'] = 'noindex, follow';
+}
+$authorName = $post->author?->authorName();
 $this->registerMetaTag(['property' => 'article:published_time', 'content' => date(DATE_ATOM, (int) $post->published_at)]);
 $this->registerMetaTag(['property' => 'article:modified_time', 'content' => date(DATE_ATOM, (int) $post->updated_at)]);
 
@@ -35,7 +42,8 @@ $schema = array_filter([
     'datePublished' => date(DATE_ATOM, (int) $post->published_at),
     'dateModified' => date(DATE_ATOM, (int) $post->updated_at),
     'mainEntityOfPage' => $url,
-    'author' => ['@type' => 'Organization', 'name' => $siteName, 'url' => Url::home(true)],
+    'author' => $authorName !== null ? ['@type' => 'Person', 'name' => $authorName] : ['@type' => 'Organization', 'name' => $siteName, 'url' => Url::home(true)],
+    'keywords' => implode(', ', array_map(static fn($tag): string => $tag->name, $post->tags)) ?: null,
     'publisher' => ['@type' => 'Organization', 'name' => $siteName, 'logo' => ['@type' => 'ImageObject', 'url' => Url::to('@web/images/logo-full.svg', true)]],
 ]);
 ?>
@@ -51,18 +59,26 @@ $schema = array_filter([
             </nav>
             <h1 class="mw-h1 mb-3"><?= Html::encode($post->title) ?></h1>
             <p class="mw-lead mb-3"><?= Html::encode($post->summary) ?></p>
-            <p class="small mb-0"><?= Yii::$app->formatter->asDate($post->published_at, 'php:d M Y') ?> · <?= $post->readingMinutes() ?> min read</p>
+            <p class="small mb-0"><?= $authorName !== null ? 'By ' . Html::encode($authorName) . ' · ' : '' ?><?= Yii::$app->formatter->asDate($post->published_at, 'php:d M Y') ?> · <?= $post->readingMinutes() ?> min read</p>
         </div>
     </div>
 
     <div class="container py-5">
         <div class="mw-article mx-auto">
             <?php if ($image !== null): ?>
-                <?= Html::img($image, ['alt' => '', 'class' => 'mw-article-cover mb-4']) ?>
+                <?= Html::img($image, ['alt' => (string) $post->cover_alt, 'class' => 'mw-article-cover mb-4']) ?>
             <?php endif; ?>
             <div class="mw-article-body">
                 <?= $post->body /* cleaned to article markup when saved (BlogPost::cleanBody) */ ?>
             </div>
+
+            <?php if ($post->tags): ?>
+                <nav class="mw-tags mt-4" aria-label="Tags">
+                    <?php foreach ($post->tags as $tag): ?>
+                        <?= Html::a('#' . Html::encode($tag->name), ['/blog/index', 'tag' => $tag->slug], ['class' => 'mw-chip']) ?>
+                    <?php endforeach; ?>
+                </nav>
+            <?php endif; ?>
 
             <aside class="mw-panel mt-5">
                 <h2 class="h4 fw-bold">Planning something similar?</h2>

@@ -7,7 +7,6 @@ use yii\db\Migration;
  */
 class m261006_103404_create_service_renewal_history_table extends Migration
 {
-
     private $tableName = '{{%service_renewal_history}}';
 
     /**
@@ -27,14 +26,14 @@ class m261006_103404_create_service_renewal_history_table extends Migration
                 'item_id' => $this->integer(11)->notNull()->comment('The Primary Key ID of the corresponding domain, hosting, or AMC record'),
                 'invoice_id' => $this->integer(11)->defaultValue(null)->comment('Link to billing record if applicable'),
                 'transaction_id' => $this->integer(11)->defaultValue(null)->comment('Link to transaction log gateway reference'),
-                
+
                 // Active variable metrics per cycle
                 'billed_amount' => $this->decimal(10, 2)->notNull()->comment('The exact rate charged for this specific year extension'),
                 'renewal_period_months' => $this->integer(3)->notNull()->defaultValue(12)->comment('Usually 12 months, or custom adjustments'),
-                
+
                 'start_date' => $this->date()->notNull()->comment('Cycle coverage commencement date'),
                 'end_date' => $this->date()->notNull()->comment('Calculated new expiry timestamp threshold'),
-                
+
                 'logged_at' => $this->integer(11)->notNull()->comment('Timestamp of payment verification execution'),
             ]);
 

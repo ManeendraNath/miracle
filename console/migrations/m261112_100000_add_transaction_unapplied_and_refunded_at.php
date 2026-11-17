@@ -16,7 +16,7 @@ final class m261112_100000_add_transaction_unapplied_and_refunded_at extends Mig
         $this->addColumn('{{%transaction}}', 'is_unapplied', $this->tinyInteger(1)->notNull()->defaultValue(0)->after('status'));
         $this->addColumn('{{%transaction}}', 'refunded_at', $this->integer()->null()->after('refunded_amount'));
         $this->execute("UPDATE {{%transaction}} SET is_unapplied = 1 WHERE gateway_id = 1 AND user_payment_notes LIKE BINARY '%UNAPPLIED:%'");
-        $this->execute("UPDATE {{%transaction}} SET refunded_at = updated_at WHERE refunded_amount > 0");
+        $this->execute('UPDATE {{%transaction}} SET refunded_at = updated_at WHERE refunded_amount > 0');
     }
 
     public function safeDown(): void

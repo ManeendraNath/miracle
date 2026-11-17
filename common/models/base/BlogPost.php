@@ -14,15 +14,22 @@ use Yii;
  * @property string $summary
  * @property string $body
  * @property string|null $cover_image
+ * @property string|null $cover_alt
  * @property string|null $seo_title
  * @property int $status
+ * @property int $is_featured
+ * @property int $noindex
  * @property int|null $published_at
  * @property int|null $author_id
  * @property int $created_at
  * @property int $updated_at
  *
  * @property Admin $author
+ * @property BlogPostRevision[] $blogPostRevisions
+ * @property BlogPostTag[] $blogPostTags
+ * @property BlogPostView[] $blogPostViews
  * @property BlogCategory $category
+ * @property BlogTag[] $tags
  */
 class BlogPost extends \yii\db\ActiveRecord
 {
@@ -40,12 +47,12 @@ class BlogPost extends \yii\db\ActiveRecord
     public function rules()
     {
         return [
-            [['category_id', 'cover_image', 'seo_title', 'published_at', 'author_id'], 'default', 'value' => null],
-            [['status'], 'default', 'value' => 0],
-            [['category_id', 'status', 'published_at', 'author_id', 'created_at', 'updated_at'], 'integer'],
+            [['category_id', 'cover_image', 'cover_alt', 'seo_title', 'published_at', 'author_id'], 'default', 'value' => null],
+            [['noindex'], 'default', 'value' => 0],
+            [['category_id', 'status', 'is_featured', 'noindex', 'published_at', 'author_id', 'created_at', 'updated_at'], 'integer'],
             [['title', 'slug', 'summary', 'body', 'created_at', 'updated_at'], 'required'],
             [['body'], 'string'],
-            [['title'], 'string', 'max' => 200],
+            [['title', 'cover_alt'], 'string', 'max' => 200],
             [['slug'], 'string', 'max' => 220],
             [['summary'], 'string', 'max' => 300],
             [['cover_image'], 'string', 'max' => 255],
@@ -69,8 +76,11 @@ class BlogPost extends \yii\db\ActiveRecord
             'summary' => 'Summary',
             'body' => 'Body',
             'cover_image' => 'Cover Image',
+            'cover_alt' => 'Cover Alt',
             'seo_title' => 'Seo Title',
             'status' => 'Status',
+            'is_featured' => 'Is Featured',
+            'noindex' => 'Noindex',
             'published_at' => 'Published At',
             'author_id' => 'Author ID',
             'created_at' => 'Created At',
@@ -89,6 +99,36 @@ class BlogPost extends \yii\db\ActiveRecord
     }
 
     /**
+     * Gets query for [[BlogPostRevisions]].
+     *
+     * @return \yii\db\ActiveQuery
+     */
+    public function getBlogPostRevisions()
+    {
+        return $this->hasMany(BlogPostRevision::class, ['post_id' => 'id']);
+    }
+
+    /**
+     * Gets query for [[BlogPostTags]].
+     *
+     * @return \yii\db\ActiveQuery
+     */
+    public function getBlogPostTags()
+    {
+        return $this->hasMany(BlogPostTag::class, ['post_id' => 'id']);
+    }
+
+    /**
+     * Gets query for [[BlogPostViews]].
+     *
+     * @return \yii\db\ActiveQuery
+     */
+    public function getBlogPostViews()
+    {
+        return $this->hasMany(BlogPostView::class, ['post_id' => 'id']);
+    }
+
+    /**
      * Gets query for [[Category]].
      *
      * @return \yii\db\ActiveQuery
@@ -96,5 +136,15 @@ class BlogPost extends \yii\db\ActiveRecord
     public function getCategory()
     {
         return $this->hasOne(BlogCategory::class, ['id' => 'category_id']);
+    }
+
+    /**
+     * Gets query for [[Tags]].
+     *
+     * @return \yii\db\ActiveQuery
+     */
+    public function getTags()
+    {
+        return $this->hasMany(BlogTag::class, ['id' => 'tag_id'])->viaTable('blog_post_tag', ['post_id' => 'id']);
     }
 }

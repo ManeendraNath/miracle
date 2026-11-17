@@ -6,12 +6,11 @@ use yii\db\Migration;
 
 final class m261021_172000_create_user_login_history_table extends Migration
 {
-
     public function safeUp(): void
     {
         $this->createTable(
-                '{{%user_login_history}}',
-                [
+            '{{%user_login_history}}',
+            [
                     'id' =>
                     $this->bigPrimaryKey(),
                     'user_id' =>
@@ -30,34 +29,34 @@ final class m261021_172000_create_user_login_history_table extends Migration
         );
 
         $this->createIndex(
-                'idx-user_login_history-user-date',
-                '{{%user_login_history}}',
-                [
+            'idx-user_login_history-user-date',
+            '{{%user_login_history}}',
+            [
                     'user_id',
                     'logged_in_at',
                 ]
         );
 
         $this->addForeignKey(
-                'fk-user_login_history-user',
-                '{{%user_login_history}}',
-                'user_id',
-                '{{%user}}',
-                'id',
-                'CASCADE',
-                'CASCADE'
+            'fk-user_login_history-user',
+            '{{%user_login_history}}',
+            'user_id',
+            '{{%user}}',
+            'id',
+            'CASCADE',
+            'CASCADE'
         );
     }
 
     public function safeDown(): void
     {
         $this->dropForeignKey(
-                'fk-user_login_history-user',
-                '{{%user_login_history}}'
+            'fk-user_login_history-user',
+            '{{%user_login_history}}'
         );
 
         $this->dropTable(
-                '{{%user_login_history}}'
+            '{{%user_login_history}}'
         );
     }
 }

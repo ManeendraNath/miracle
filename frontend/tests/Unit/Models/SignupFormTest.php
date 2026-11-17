@@ -44,7 +44,7 @@ final class SignupFormTest extends Unit
 
         /** @var User $user */
         $user = $this->tester->grabRecord(
-            User::class, 
+            User::class,
             [
                 'username' => 'some_username',
                 'email' => 'some_email@example.com',

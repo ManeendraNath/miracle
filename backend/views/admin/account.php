@@ -26,6 +26,7 @@ if ($model->hasTwoFactor()) {
 } else {
     $this->params['help']['Set up two-factor sign-in'] = 'Shows a QR code to scan with an authenticator app such as Google Authenticator or Microsoft Authenticator.';
 }
+$this->params['help']['Author profile'] = 'Your name, a short bio and a photo, shown with the blog posts you write. No password is needed for these.';
 $this->params['help']['Too many failed attempts'] = 'After repeated wrong passwords or codes, changes are blocked for 15 minutes.';
 ?>
 <div class="card card-outline card-primary shadow-sm" style="max-width: 640px;">
@@ -52,6 +53,41 @@ $this->params['help']['Too many failed attempts'] = 'After repeated wrong passwo
         <?= Html::submitButton('Save', ['class' => 'btn btn-primary px-4']) ?>
     </div>
     <?php ActiveForm::end(); ?>
+</div>
+
+<div class="card card-outline card-info shadow-sm" style="max-width: 640px;">
+    <div class="card-header">
+        <h3 class="card-title">Author profile</h3>
+    </div>
+    <?= Html::beginForm(['account'], 'post', ['enctype' => 'multipart/form-data']) ?>
+    <?= Html::hiddenInput('author_profile', '1') ?>
+    <div class="card-body">
+        <div class="form-group">
+            <?= Html::label('Name shown on your posts', 'display-name', ['class' => 'form-label']) ?>
+            <?= Html::textInput('display_name', (string) $model->display_name, ['id' => 'display-name', 'class' => 'form-control', 'maxlength' => 100, 'placeholder' => 'e.g. M.N. Trivedi']) ?>
+            <small class="form-text text-muted">Leave empty to publish as the company.</small>
+        </div>
+        <div class="form-group">
+            <?= Html::label('About you', 'bio', ['class' => 'form-label']) ?>
+            <?= Html::textarea('bio', (string) $model->bio, ['id' => 'bio', 'class' => 'form-control', 'rows' => 3, 'maxlength' => 500, 'placeholder' => 'One or two sentences shown under your posts.']) ?>
+        </div>
+        <div class="form-group">
+            <?php if ($model->photo): ?>
+                <?= Html::img(rtrim((string) (Yii::$app->params['frontendBaseUrl'] ?? ''), '/') . '/' . $model->photo, ['class' => 'rounded-circle mb-2', 'width' => 72, 'height' => 72, 'style' => 'object-fit: cover', 'alt' => 'Your photo']) ?>
+                <div class="form-check mb-2">
+                    <?= Html::checkbox('remove_photo', false, ['class' => 'form-check-input', 'id' => 'remove-photo']) ?>
+                    <label class="form-check-label small" for="remove-photo">Remove the photo</label>
+                </div>
+            <?php endif; ?>
+            <?= Html::label($model->photo ? 'Replace photo' : 'Photo', 'photo', ['class' => 'form-label d-block']) ?>
+            <?= Html::fileInput('photo', null, ['id' => 'photo', 'accept' => 'image/jpeg,image/png,image/webp']) ?>
+            <small class="form-text text-muted">Square works best. JPG, PNG or WebP, up to 5 MB.</small>
+        </div>
+    </div>
+    <div class="card-footer text-right">
+        <?= Html::submitButton('Save profile', ['class' => 'btn btn-primary px-4']) ?>
+    </div>
+    <?= Html::endForm() ?>
 </div>
 
 <div class="card card-outline card-secondary shadow-sm" style="max-width: 640px;">

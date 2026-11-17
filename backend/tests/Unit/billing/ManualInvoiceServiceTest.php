@@ -16,7 +16,6 @@ use yii\db\Transaction as DbTransaction;
 
 final class ManualInvoiceServiceTest extends Unit
 {
-
     private ?DbTransaction $dbTransaction = null;
     private User $user;
     private CustomerBillingProfile $profile;
@@ -50,46 +49,46 @@ final class ManualInvoiceServiceTest extends Unit
 
         $items = [
             $this->item(
-                    'Development',
-                    'Custom website development',
-                    1,
-                    10000.00
+                'Development',
+                'Custom website development',
+                1,
+                10000.00
             ),
             $this->item(
-                    'Support',
-                    'Technical support package',
-                    2,
-                    2500.00
+                'Support',
+                'Technical support package',
+                2,
+                2500.00
             ),
         ];
 
         $service = new ManualInvoiceService();
 
         $created = $service->create(
-                $invoice,
-                $items
+            $invoice,
+            $items
         );
 
         $this->assertFalse(
-                $created->isNewRecord
+            $created->isNewRecord
         );
 
         $this->assertMatchesRegularExpression(
-                '/^MWT' . \common\services\billing\InvoiceNumberService::financialYear((int) $created->created_at) . '-\d{5}$/',
-                $created->invoice_number
+            '/^MWT' . \common\services\billing\InvoiceNumberService::financialYear((int) $created->created_at) . '-\d{5}$/',
+            $created->invoice_number
         );
 
         $this->assertSame(
-                Invoice::STATUS_UNPAID,
-                $created->status
+            Invoice::STATUS_UNPAID,
+            $created->status
         );
 
         /*
          * 10000 + (2 * 2500)
          */
         $this->assertEquals(
-                15000.00,
-                (float) $created->subtotal_amount
+            15000.00,
+            (float) $created->subtotal_amount
         );
 
         /*
@@ -100,18 +99,18 @@ final class ManualInvoiceServiceTest extends Unit
          * IGST = 0
          */
         $this->assertEquals(
-                9.00,
-                (float) $created->cgst_percent
+            9.00,
+            (float) $created->cgst_percent
         );
 
         $this->assertEquals(
-                9.00,
-                (float) $created->sgst_percent
+            9.00,
+            (float) $created->sgst_percent
         );
 
         $this->assertEquals(
-                0.00,
-                (float) $created->igst_percent
+            0.00,
+            (float) $created->igst_percent
         );
 
         /*
@@ -122,8 +121,8 @@ final class ManualInvoiceServiceTest extends Unit
          * Total: 16520
          */
         $this->assertEquals(
-                16520.00,
-                (float) $created->total_payable
+            16520.00,
+            (float) $created->total_payable
         );
 
         $savedItems = InvoiceItem::find()
@@ -136,23 +135,23 @@ final class ManualInvoiceServiceTest extends Unit
                 ->all();
 
         $this->assertCount(
-                2,
-                $savedItems
+            2,
+            $savedItems
         );
 
         $this->assertSame(
-                InvoiceItem::TYPE_CUSTOM,
-                (int) $savedItems[0]->item_type
+            InvoiceItem::TYPE_CUSTOM,
+            (int) $savedItems[0]->item_type
         );
 
         $this->assertEquals(
-                10000.00,
-                (float) $savedItems[0]->total_price
+            10000.00,
+            (float) $savedItems[0]->total_price
         );
 
         $this->assertEquals(
-                5000.00,
-                (float) $savedItems[1]->total_price
+            5000.00,
+            (float) $savedItems[1]->total_price
         );
     }
 
@@ -161,13 +160,13 @@ final class ManualInvoiceServiceTest extends Unit
         $service = new ManualInvoiceService();
 
         $invoice = $service->create(
-                $this->newInvoice(),
-                [
+            $this->newInvoice(),
+            [
                     $this->item(
-                            'Old Service',
-                            'Original line',
-                            1,
-                            5000.00
+                        'Old Service',
+                        'Original line',
+                        1,
+                        5000.00
                     ),
                 ]
         );
@@ -175,19 +174,19 @@ final class ManualInvoiceServiceTest extends Unit
         $invoice->discount_amount = 500.00;
 
         $updated = $service->update(
-                $invoice,
-                [
+            $invoice,
+            [
                     $this->item(
-                            'Development',
-                            'Updated development',
-                            1,
-                            8000.00
+                        'Development',
+                        'Updated development',
+                        1,
+                        8000.00
                     ),
                     $this->item(
-                            'Support',
-                            'Updated support',
-                            1,
-                            2000.00
+                        'Support',
+                        'Updated support',
+                        1,
+                        2000.00
                     ),
                 ]
         );
@@ -195,8 +194,8 @@ final class ManualInvoiceServiceTest extends Unit
         $updated->refresh();
 
         $this->assertEquals(
-                10000.00,
-                (float) $updated->subtotal_amount
+            10000.00,
+            (float) $updated->subtotal_amount
         );
 
         /*
@@ -204,8 +203,8 @@ final class ManualInvoiceServiceTest extends Unit
          * 9500 + 18% = 11210
          */
         $this->assertEquals(
-                11210.00,
-                (float) $updated->total_payable
+            11210.00,
+            (float) $updated->total_payable
         );
 
         $items = InvoiceItem::find()
@@ -219,18 +218,18 @@ final class ManualInvoiceServiceTest extends Unit
                 ->all();
 
         $this->assertCount(
-                2,
-                $items
+            2,
+            $items
         );
 
         $this->assertSame(
-                'Development',
-                $items[0]->category
+            'Development',
+            $items[0]->category
         );
 
         $this->assertSame(
-                'Support',
-                $items[1]->category
+            'Support',
+            $items[1]->category
         );
     }
 
@@ -257,13 +256,13 @@ final class ManualInvoiceServiceTest extends Unit
     public function testRejectsInvoiceWithoutItems(): void
     {
         $this->expectException(
-                \DomainException::class
+            \DomainException::class
         );
 
         (new ManualInvoiceService())
                 ->create(
-                        $this->newInvoice(),
-                        []
+                    $this->newInvoice(),
+                    []
                 );
     }
 
@@ -280,13 +279,13 @@ final class ManualInvoiceServiceTest extends Unit
         $item->unit_price = 1000.00;
 
         $this->expectException(
-                \DomainException::class
+            \DomainException::class
         );
 
         (new ManualInvoiceService())
                 ->create(
-                        $this->newInvoice(),
-                        [$item]
+                    $this->newInvoice(),
+                    [$item]
                 );
     }
 
@@ -297,18 +296,18 @@ final class ManualInvoiceServiceTest extends Unit
         $invoice->discount_amount = 2000.00;
 
         $this->expectException(
-                \DomainException::class
+            \DomainException::class
         );
 
         (new ManualInvoiceService())
                 ->create(
-                        $invoice,
-                        [
+                    $invoice,
+                    [
                             $this->item(
-                                    'Service',
-                                    'Small service',
-                                    1,
-                                    1000.00
+                                'Service',
+                                'Small service',
+                                1,
+                                1000.00
                             ),
                         ]
                 );
@@ -319,13 +318,13 @@ final class ManualInvoiceServiceTest extends Unit
         $service = new ManualInvoiceService();
 
         $invoice = $service->create(
-                $this->newInvoice(),
-                [
+            $this->newInvoice(),
+            [
                     $this->item(
-                            'Service',
-                            'Original service',
-                            1,
-                            5000.00
+                        'Service',
+                        'Original service',
+                        1,
+                        5000.00
                     ),
                 ]
         );
@@ -333,25 +332,25 @@ final class ManualInvoiceServiceTest extends Unit
         $invoice->status = Invoice::STATUS_PARTIALLY_PAID;
 
         $invoice->save(
-                false,
-                [
+            false,
+            [
                     'status',
                     'updated_at',
                 ]
         );
 
         $this->expectException(
-                \DomainException::class
+            \DomainException::class
         );
 
         $service->update(
-                $invoice,
-                [
+            $invoice,
+            [
                     $this->item(
-                            'Changed',
-                            'Must not save',
-                            1,
-                            1000.00
+                        'Changed',
+                        'Must not save',
+                        1,
+                        1000.00
                     ),
                 ]
         );
@@ -366,20 +365,19 @@ final class ManualInvoiceServiceTest extends Unit
         $invoice->discount_amount = 1000.00;
 
         $invoice->due_date = date(
-                'Y-m-d',
-                strtotime('+15 days')
+            'Y-m-d',
+            strtotime('+15 days')
         );
 
         return $invoice;
     }
 
     private function item(
-            string $category,
-            string $description,
-            int $quantity,
-            float $unitPrice
-    ): ManualInvoiceItemForm
-    {
+        string $category,
+        string $description,
+        int $quantity,
+        float $unitPrice
+    ): ManualInvoiceItemForm {
         $item = new ManualInvoiceItemForm();
 
         $item->category = $category;
@@ -396,7 +394,7 @@ final class ManualInvoiceServiceTest extends Unit
     private function createClient(): void
     {
         $suffix = bin2hex(
-                random_bytes(4)
+            random_bytes(4)
         );
 
         $this->user = new User();
@@ -415,10 +413,10 @@ final class ManualInvoiceServiceTest extends Unit
         $this->user->updated_at = time();
 
         $this->assertTrue(
-                $this->user->save(),
-                json_encode(
-                        $this->user->errors
-                )
+            $this->user->save(),
+            json_encode(
+                $this->user->errors
+            )
         );
 
         $this->profile = new CustomerBillingProfile();
@@ -444,10 +442,10 @@ final class ManualInvoiceServiceTest extends Unit
         $this->profile->updated_at = time();
 
         $this->assertTrue(
-                $this->profile->save(),
-                json_encode(
-                        $this->profile->errors
-                )
+            $this->profile->save(),
+            json_encode(
+                $this->profile->errors
+            )
         );
     }
 
@@ -458,7 +456,7 @@ final class ManualInvoiceServiceTest extends Unit
         $this->profile->state_code = '27';
 
         $this->assertTrue(
-                $this->profile->save()
+            $this->profile->save()
         );
 
         $invoice = $this->newInvoice();
@@ -467,38 +465,38 @@ final class ManualInvoiceServiceTest extends Unit
 
         $created = (new ManualInvoiceService())
                 ->create(
-                        $invoice,
-                        [
+                    $invoice,
+                    [
                             $this->item(
-                                    'Development',
-                                    'Interstate service',
-                                    1,
-                                    10000.00
+                                'Development',
+                                'Interstate service',
+                                1,
+                                10000.00
                             ),
                         ]
                 );
 
         $this->assertEquals(
-                0.00,
-                (float) $created->cgst_percent
+            0.00,
+            (float) $created->cgst_percent
         );
 
         $this->assertEquals(
-                0.00,
-                (float) $created->sgst_percent
+            0.00,
+            (float) $created->sgst_percent
         );
 
         $this->assertEquals(
-                18.00,
-                (float) $created->igst_percent
+            18.00,
+            (float) $created->igst_percent
         );
 
         $this->assertEquals(
-                11800.00,
-                (float) $created->total_payable
+            11800.00,
+            (float) $created->total_payable
         );
     }
-    
+
     public function testAClientAbroadIsAlwaysPlaceOfSupply96(): void
     {
         // Saved before the foreign-state rule existed: the profile still names a state abroad.
@@ -514,14 +512,14 @@ final class ManualInvoiceServiceTest extends Unit
     }
 
     public function testInvalidItemRollsBackWholeInvoice(): void
-{
-    $beforeInvoices =
+    {
+        $beforeInvoices =
         (int) Invoice::find()->count();
 
-    $beforeItems =
+        $beforeItems =
         (int) InvoiceItem::find()->count();
 
-    $valid =
+        $valid =
         $this->item(
             'Valid',
             'Valid item',
@@ -529,7 +527,7 @@ final class ManualInvoiceServiceTest extends Unit
             5000.00
         );
 
-    $invalid =
+        $invalid =
         $this->item(
             '',
             '',
@@ -537,9 +535,8 @@ final class ManualInvoiceServiceTest extends Unit
             1000.00
         );
 
-    try {
-
-        (new ManualInvoiceService())
+        try {
+            (new ManualInvoiceService())
             ->create(
                 $this->newInvoice(),
                 [
@@ -548,26 +545,25 @@ final class ManualInvoiceServiceTest extends Unit
                 ]
             );
 
-        $this->fail(
-            'Expected DomainException.'
+            $this->fail(
+                'Expected DomainException.'
+            );
+        } catch (\DomainException $e) {
+            /*
+             * Expected.
+             */
+        }
+
+        $this->assertSame(
+            $beforeInvoices,
+            (int) Invoice::find()->count()
         );
 
-    } catch (\DomainException $e) {
-        /*
-         * Expected.
-         */
+        $this->assertSame(
+            $beforeItems,
+            (int) InvoiceItem::find()->count()
+        );
     }
-
-    $this->assertSame(
-        $beforeInvoices,
-        (int) Invoice::find()->count()
-    );
-
-    $this->assertSame(
-        $beforeItems,
-        (int) InvoiceItem::find()->count()
-    );
-}
 
     public function testCouponLimitedToServiceTypesDiscountsOnlyThoseLines(): void
     {

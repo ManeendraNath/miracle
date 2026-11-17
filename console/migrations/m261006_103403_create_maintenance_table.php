@@ -4,7 +4,6 @@ use yii\db\Migration;
 
 class m261006_103403_create_maintenance_table extends Migration
 {
-
     private $tableName = '{{%maintenance}}';
 
     public function up()

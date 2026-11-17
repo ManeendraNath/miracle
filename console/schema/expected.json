@@ -1,5 +1,5 @@
 {
-    "migrations": 75,
+    "migrations": 76,
     "columns": {
         "admin": {
             "auth_key": {
@@ -8,9 +8,21 @@
                 "default": null,
                 "extra": ""
             },
+            "bio": {
+                "type": "varchar(500)",
+                "null": true,
+                "default": null,
+                "extra": ""
+            },
             "created_at": {
                 "type": "int",
                 "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "display_name": {
+                "type": "varchar(100)",
+                "null": true,
                 "default": null,
                 "extra": ""
             },
@@ -33,6 +45,12 @@
                 "extra": ""
             },
             "password_reset_token": {
+                "type": "varchar(255)",
+                "null": true,
+                "default": null,
+                "extra": ""
+            },
+            "photo": {
                 "type": "varchar(255)",
                 "null": true,
                 "default": null,
@@ -490,6 +508,12 @@
                 "default": null,
                 "extra": ""
             },
+            "cover_alt": {
+                "type": "varchar(200)",
+                "null": true,
+                "default": null,
+                "extra": ""
+            },
             "cover_image": {
                 "type": "varchar(255)",
                 "null": true,
@@ -507,6 +531,18 @@
                 "null": false,
                 "default": null,
                 "extra": "auto_increment"
+            },
+            "is_featured": {
+                "type": "tinyint",
+                "null": false,
+                "default": "0",
+                "extra": ""
+            },
+            "noindex": {
+                "type": "tinyint",
+                "null": false,
+                "default": "0",
+                "extra": ""
             },
             "published_at": {
                 "type": "int",
@@ -551,6 +587,64 @@
                 "extra": ""
             }
         },
+        "blog_post_revision": {
+            "author_id": {
+                "type": "int",
+                "null": true,
+                "default": null,
+                "extra": ""
+            },
+            "body": {
+                "type": "mediumtext",
+                "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "created_at": {
+                "type": "int",
+                "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "id": {
+                "type": "int",
+                "null": false,
+                "default": null,
+                "extra": "auto_increment"
+            },
+            "post_id": {
+                "type": "int",
+                "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "summary": {
+                "type": "varchar(300)",
+                "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "title": {
+                "type": "varchar(200)",
+                "null": false,
+                "default": null,
+                "extra": ""
+            }
+        },
+        "blog_post_tag": {
+            "post_id": {
+                "type": "int",
+                "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "tag_id": {
+                "type": "int",
+                "null": false,
+                "default": null,
+                "extra": ""
+            }
+        },
         "blog_post_view": {
             "day": {
                 "type": "date",
@@ -572,6 +666,38 @@
             },
             "visitor": {
                 "type": "char(32)",
+                "null": false,
+                "default": null,
+                "extra": ""
+            }
+        },
+        "blog_tag": {
+            "created_at": {
+                "type": "int",
+                "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "id": {
+                "type": "int",
+                "null": false,
+                "default": null,
+                "extra": "auto_increment"
+            },
+            "name": {
+                "type": "varchar(60)",
+                "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "slug": {
+                "type": "varchar(80)",
+                "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "updated_at": {
+                "type": "int",
                 "null": false,
                 "default": null,
                 "extra": ""
@@ -2601,9 +2727,22 @@
             "slug": "unique",
             "status,published_at": "index"
         },
+        "blog_post_revision": {
+            "author_id": "index",
+            "id": "primary",
+            "post_id": "index"
+        },
+        "blog_post_tag": {
+            "post_id,tag_id": "primary",
+            "tag_id": "index"
+        },
         "blog_post_view": {
             "id": "primary",
             "post_id,day,visitor": "unique"
+        },
+        "blog_tag": {
+            "id": "primary",
+            "slug": "unique"
         },
         "coupon": {
             "code": "unique",
@@ -2773,6 +2912,14 @@
         "blog_post": {
             "author_id": "admin(id) ON DELETE SET NULL ON UPDATE CASCADE",
             "category_id": "blog_category(id) ON DELETE SET NULL ON UPDATE CASCADE"
+        },
+        "blog_post_revision": {
+            "author_id": "admin(id) ON DELETE SET NULL ON UPDATE CASCADE",
+            "post_id": "blog_post(id) ON DELETE CASCADE ON UPDATE CASCADE"
+        },
+        "blog_post_tag": {
+            "post_id": "blog_post(id) ON DELETE CASCADE ON UPDATE CASCADE",
+            "tag_id": "blog_tag(id) ON DELETE CASCADE ON UPDATE CASCADE"
         },
         "blog_post_view": {
             "post_id": "blog_post(id) ON DELETE CASCADE ON UPDATE CASCADE"

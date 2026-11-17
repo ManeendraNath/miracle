@@ -72,7 +72,7 @@ final class ResendVerificationEmailCest
         $I->submitForm($this->formId, $this->formParams('test@mail.com'));
         $I->canSeeEmailIsSent();
         $I->seeRecord(
-            User::class, 
+            User::class,
             [
                 'email' => 'test@mail.com',
                 'username' => 'test.test',

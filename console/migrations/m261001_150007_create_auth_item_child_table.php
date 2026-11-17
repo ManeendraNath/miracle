@@ -4,7 +4,6 @@ use yii\db\Migration;
 
 class m261001_150007_create_auth_item_child_table extends Migration
 {
-
     private $tableName = '{{%auth_item_child}}';
 
     public function safeUp()
@@ -19,7 +18,7 @@ class m261001_150007_create_auth_item_child_table extends Migration
                 'parent' => $this->string(64)->notNull(),
                 'child' => $this->string(64)->notNull(),
             ]);
-            
+
             $this->addPrimaryKey('pk-auth_item_child', $this->tableName, ['parent', 'child']);
 
             // Seed Initial Auth Item Children Links

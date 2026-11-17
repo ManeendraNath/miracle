@@ -4,7 +4,6 @@ use yii\db\Migration;
 
 final class m261028_100000_create_admin_notification_table extends Migration
 {
-
     public function safeUp(): void
     {
         $this->createTable('admin_notification', [
@@ -21,15 +20,15 @@ final class m261028_100000_create_admin_notification_table extends Migration
         ]);
 
         $this->createIndex(
-                'idx_admin_notification_read',
-                'admin_notification',
-                'is_read'
+            'idx_admin_notification_read',
+            'admin_notification',
+            'is_read'
         );
 
         $this->createIndex(
-                'idx_admin_notification_created',
-                'admin_notification',
-                'created_at'
+            'idx_admin_notification_created',
+            'admin_notification',
+            'created_at'
         );
     }
 

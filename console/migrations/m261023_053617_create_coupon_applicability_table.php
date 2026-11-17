@@ -7,7 +7,6 @@ use yii\db\Migration;
  */
 class m261023_053617_create_coupon_applicability_table extends Migration
 {
-
     /**
      * {@inheritdoc}
      */
@@ -23,20 +22,20 @@ class m261023_053617_create_coupon_applicability_table extends Migration
         ]);
 
         $this->createIndex(
-                'uq-coupon_applicability-coupon_id',
-                '{{%coupon_applicability}}',
-                'coupon_id',
-                true
+            'uq-coupon_applicability-coupon_id',
+            '{{%coupon_applicability}}',
+            'coupon_id',
+            true
         );
 
         $this->addForeignKey(
-                'fk-coupon_applicability-coupon_id',
-                '{{%coupon_applicability}}',
-                'coupon_id',
-                '{{%coupon}}',
-                'id',
-                'RESTRICT',
-                'CASCADE'
+            'fk-coupon_applicability-coupon_id',
+            '{{%coupon_applicability}}',
+            'coupon_id',
+            '{{%coupon}}',
+            'id',
+            'RESTRICT',
+            'CASCADE'
         );
     }
 
@@ -46,8 +45,8 @@ class m261023_053617_create_coupon_applicability_table extends Migration
     public function safeDown()
     {
         $this->dropForeignKey(
-                'fk-coupon_applicability-coupon_id',
-                '{{%coupon_applicability}}'
+            'fk-coupon_applicability-coupon_id',
+            '{{%coupon_applicability}}'
         );
 
         $this->dropTable('{{%coupon_applicability}}');

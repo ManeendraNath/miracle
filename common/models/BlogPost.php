@@ -30,6 +30,8 @@ use yii\helpers\Inflector;
  *
  * @property BlogCategory|null $category
  * @property Admin|null $author
+ * @property BlogTag[] $tags
+ * @property BlogPostRevision[] $revisions
  */
 class BlogPost extends base\BlogPost
 {
@@ -44,6 +46,19 @@ class BlogPost extends base\BlogPost
     /** The form's date and time field (datetime-local); published_at is set from it. */
     public $publishAt;
 
+    /** The form's tags, comma-separated ("SEO, Web apps"); null when not on the form, so tags stay as they are. */
+    public $tagNames;
+
+    /** Title, summary and text before this save, kept as a revision when they change. */
+    private ?array $_before = null;
+
+    /** The post, the version before it and its tags are saved together or not at all. */
+    #[\Override]
+    public function transactions(): array
+    {
+        return [self::SCENARIO_DEFAULT => self::OP_ALL];
+    }
+
     #[\Override]
     public function behaviors(): array
     {
@@ -55,7 +70,21 @@ class BlogPost extends base\BlogPost
     {
         // Only what the base class lacks, and first: its "slug required" must see the slug made from the title.
         $rules = [
-            [['title', 'slug', 'summary', 'seo_title'], 'trim'],
+            [['title', 'slug', 'summary', 'seo_title', 'cover_alt'], 'trim'],
+            // Not on the form (null): left null, so the post's tags stay as they are.
+            ['tagNames', 'trim', 'skipOnEmpty' => true],
+            [['status', 'is_featured'], 'default', 'value' => 0],
+            [['is_featured', 'noindex'], 'boolean'],
+            ['tagNames', 'string', 'max' => 500],
+            ['tagNames', function (string $attribute): void {
+                foreach (array_filter(array_map('trim', explode(',', (string) $this->$attribute))) as $name) {
+                    if (mb_strlen($name) > 60) {
+                        $this->addError($attribute, 'Keep each tag to 60 characters at most: "' . mb_substr($name, 0, 20) . '…".');
+                    } elseif (BlogTag::slugFor($name) === '') {
+                        $this->addError($attribute, 'Use letters or digits in the tag "' . $name . '".');
+                    }
+                }
+            }],
             ['slug', 'filter', 'filter' => fn($slug): string => Inflector::slug((string) ($slug ?: $this->title))],
             // Server only: the browser can't run the filter above, so an empty field would wrongly fail there.
             ['slug', 'required', 'message' => 'Use at least one letter or digit in the title.', 'enableClientValidation' => false],
@@ -92,6 +121,10 @@ class BlogPost extends base\BlogPost
                     'cover_image' => 'Cover image',
                     'seo_title' => 'Search result title',
                     'publishAt' => 'Publish on',
+                    'tagNames' => 'Tags',
+                    'cover_alt' => 'Cover description (alt text)',
+                    'is_featured' => 'Feature at the top of the blog',
+                    'noindex' => 'Keep out of search engines',
                     'published_at' => 'Published',
         ]);
     }
@@ -104,10 +137,44 @@ class BlogPost extends base\BlogPost
     }
 
     #[\Override]
+    public function getAuthor(): ActiveQuery
+    {
+        return $this->hasOne(Admin::class, ['id' => 'author_id']);
+    }
+
+    #[\Override]
+    public function getCategory(): ActiveQuery
+    {
+        return $this->hasOne(BlogCategory::class, ['id' => 'category_id']);
+    }
+
+    #[\Override]
+    public function getTags(): ActiveQuery
+    {
+        return $this->hasMany(BlogTag::class, ['id' => 'tag_id'])->viaTable('{{%blog_post_tag}}', ['post_id' => 'id'])->orderBy(['name' => SORT_ASC]);
+    }
+
+    /** Earlier versions, newest first. */
+    public function getRevisions(): ActiveQuery
+    {
+        return $this->hasMany(BlogPostRevision::class, ['post_id' => 'id'])->orderBy(['id' => SORT_DESC]);
+    }
+
+    /** The tags as typed on the form. */
+    public function tagNamesText(): string
+    {
+        return implode(', ', array_map(static fn(BlogTag $tag): string => $tag->name, $this->tags));
+    }
+
+    #[\Override]
     public function beforeSave($insert): bool
     {
         if (!parent::beforeSave($insert)) {
             return false;
+        }
+        if (!$insert) {
+            $old = ['title' => (string) $this->getOldAttribute('title'), 'summary' => (string) $this->getOldAttribute('summary'), 'body' => (string) $this->getOldAttribute('body')];
+            $this->_before = $old !== ['title' => (string) $this->title, 'summary' => (string) $this->summary, 'body' => (string) $this->body] ? $old : null;
         }
         if ($this->publishAt) {
             $this->published_at = (int) strtotime((string) $this->publishAt);
@@ -117,6 +184,31 @@ class BlogPost extends base\BlogPost
         }
 
         return true;
+    }
+
+    #[\Override]
+    public function afterSave($insert, $changedAttributes): void
+    {
+        parent::afterSave($insert, $changedAttributes);
+        if ($this->_before !== null) {
+            // The version before this edit; editor is whoever is signed in to the admin (none in console runs).
+            $editor = \Yii::$app->id === 'app-backend' ? \Yii::$app->user->id : null;
+            (new BlogPostRevision($this->_before + ['post_id' => $this->id, 'author_id' => $editor, 'created_at' => time()]))->save(false);
+            $keep = BlogPostRevision::find()->select('id')->where(['post_id' => $this->id])->orderBy(['id' => SORT_DESC])->offset(BlogPostRevision::KEEP)->column();
+            if ($keep !== []) {
+                BlogPostRevision::deleteAll(['id' => $keep]);
+            }
+            $this->_before = null;
+        }
+        if ($this->tagNames !== null) {
+            $ids = array_map(static fn(BlogTag $tag): int => (int) $tag->id, BlogTag::findOrCreate((string) $this->tagNames));
+            $db = static::getDb();
+            $db->createCommand()->delete('{{%blog_post_tag}}', ['post_id' => $this->id])->execute();
+            if ($ids !== []) {
+                $db->createCommand()->batchInsert('{{%blog_post_tag}}', ['post_id', 'tag_id'], array_map(fn(int $id): array => [$this->id, $id], $ids))->execute();
+            }
+            unset($this->tags);
+        }
     }
 
     /** Article markup only: headings, paragraphs, lists, quotes, code, links and images. */

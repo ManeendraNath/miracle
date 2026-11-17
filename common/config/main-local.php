@@ -21,8 +21,8 @@ return [
             'class' => \yii\symfonymailer\Mailer::class,
             'viewPath' => '@common/mail',
             'useFileTransport' => filter_var(
-                    $_ENV['MAIL_USE_FILE_TRANSPORT'] ?? false,
-                    FILTER_VALIDATE_BOOLEAN
+                $_ENV['MAIL_USE_FILE_TRANSPORT'] ?? false,
+                FILTER_VALIDATE_BOOLEAN
             ),
             'transport' => [
                 'scheme' => $_ENV['SMTP_SCHEME'] ?? 'smtps',

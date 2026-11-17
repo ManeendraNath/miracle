@@ -6,12 +6,11 @@ use yii\db\Migration;
 
 final class m261021_160000_create_customer_notification_table extends Migration
 {
-
     public function safeUp(): void
     {
         $this->createTable(
-                '{{%customer_notification}}',
-                [
+            '{{%customer_notification}}',
+            [
                     'id' =>
                     $this->bigPrimaryKey(),
                     'user_id' =>
@@ -43,43 +42,43 @@ final class m261021_160000_create_customer_notification_table extends Migration
         );
 
         $this->createIndex(
-                'idx-customer_notification-user-read',
-                '{{%customer_notification}}',
-                [
+            'idx-customer_notification-user-read',
+            '{{%customer_notification}}',
+            [
                     'user_id',
                     'is_read',
                 ]
         );
 
         $this->createIndex(
-                'idx-customer_notification-user-created',
-                '{{%customer_notification}}',
-                [
+            'idx-customer_notification-user-created',
+            '{{%customer_notification}}',
+            [
                     'user_id',
                     'created_at',
                 ]
         );
 
         $this->addForeignKey(
-                'fk-customer_notification-user',
-                '{{%customer_notification}}',
-                'user_id',
-                '{{%user}}',
-                'id',
-                'CASCADE',
-                'CASCADE'
+            'fk-customer_notification-user',
+            '{{%customer_notification}}',
+            'user_id',
+            '{{%user}}',
+            'id',
+            'CASCADE',
+            'CASCADE'
         );
     }
 
     public function safeDown(): void
     {
         $this->dropForeignKey(
-                'fk-customer_notification-user',
-                '{{%customer_notification}}'
+            'fk-customer_notification-user',
+            '{{%customer_notification}}'
         );
 
         $this->dropTable(
-                '{{%customer_notification}}'
+            '{{%customer_notification}}'
         );
     }
 }

@@ -2,10 +2,8 @@
 
 use yii\db\Migration;
 
-
 class m261001_150005_create_auth_item_group_table extends Migration
 {
-
     private $tableName = '{{%auth_item_group}}';
 
     /**
@@ -25,7 +23,7 @@ class m261001_150005_create_auth_item_group_table extends Migration
                 'created_at' => $this->integer(11)->defaultValue(null),
                 'updated_at' => $this->integer(11)->defaultValue(null),
             ]);
-            
+
             $this->addPrimaryKey('pk-auth_item_group-code', $this->tableName, 'code');
 
             // Seed Initial Groups

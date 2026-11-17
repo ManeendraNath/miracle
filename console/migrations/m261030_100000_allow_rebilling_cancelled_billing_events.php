@@ -12,18 +12,17 @@ use yii\db\Migration;
  */
 class m261030_100000_allow_rebilling_cancelled_billing_events extends Migration
 {
-
     public function safeUp(): void
     {
         $this->execute(
-                "ALTER TABLE {{%billing_event}} ADD COLUMN live_slot TINYINT"
+            'ALTER TABLE {{%billing_event}} ADD COLUMN live_slot TINYINT'
                 . " AS (IF(status = 'Cancelled', NULL, 1)) STORED"
         );
         $this->createIndex(
-                'uq-billing_event-item-period-live',
-                '{{%billing_event}}',
-                ['item_type', 'item_id', 'period_start', 'period_end', 'live_slot'],
-                true
+            'uq-billing_event-item-period-live',
+            '{{%billing_event}}',
+            ['item_type', 'item_id', 'period_start', 'period_end', 'live_slot'],
+            true
         );
         $this->dropIndex('uq-billing_event-item-period', '{{%billing_event}}');
     }
@@ -32,10 +31,10 @@ class m261030_100000_allow_rebilling_cancelled_billing_events extends Migration
     {
         // Fails if a period has been re-billed after cancellation; resolve those rows first.
         $this->createIndex(
-                'uq-billing_event-item-period',
-                '{{%billing_event}}',
-                ['item_type', 'item_id', 'period_start', 'period_end'],
-                true
+            'uq-billing_event-item-period',
+            '{{%billing_event}}',
+            ['item_type', 'item_id', 'period_start', 'period_end'],
+            true
         );
         $this->dropIndex('uq-billing_event-item-period-live', '{{%billing_event}}');
         $this->dropColumn('{{%billing_event}}', 'live_slot');

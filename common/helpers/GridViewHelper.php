@@ -11,10 +11,8 @@ use yii\web\View;
  */
 final class GridViewHelper
 {
-
     private function __construct()
     {
-        
     }
 
     /**

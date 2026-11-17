@@ -35,7 +35,6 @@ use yii\helpers\Html;
  */
 final class GridPaginationHelper
 {
-
     /**
      * Default records displayed per page.
      */
@@ -56,7 +55,6 @@ final class GridPaginationHelper
 
     private function __construct()
     {
-        
     }
 
     /**
@@ -78,15 +76,15 @@ final class GridPaginationHelper
     public static function pageSizeDropdown(): string
     {
         return Html::dropDownList(
-                        'per-page',
-                        self::getPageSize(),
-                        self::PAGE_SIZE_OPTIONS,
-                        [
+            'per-page',
+            self::getPageSize(),
+            self::PAGE_SIZE_OPTIONS,
+            [
                             'class' => 'form-select form-select-sm grid-page-size',
                             'style' => 'width: 85px;',
                             'aria-label' => 'Records per page',
                         ]
-                );
+        );
     }
 
     /**

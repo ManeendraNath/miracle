@@ -6,7 +6,6 @@ use yii\db\Migration;
 
 class m261015_042628_add_billing_overrides_to_assets extends Migration
 {
-
     private $tables = ['{{%domains}}', '{{%hosting}}', '{{%maintenance}}'];
 
     #[\Override]

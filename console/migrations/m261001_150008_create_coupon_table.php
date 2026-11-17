@@ -4,7 +4,6 @@ use yii\db\Migration;
 
 class m261001_150008_create_coupon_table extends Migration
 {
-
     private $tableName = '{{%coupon}}';
 
     public function safeUp()

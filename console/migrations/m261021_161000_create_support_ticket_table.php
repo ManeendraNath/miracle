@@ -6,12 +6,11 @@ use yii\db\Migration;
 
 final class m261021_161000_create_support_ticket_table extends Migration
 {
-
     public function safeUp(): void
     {
         $this->createTable(
-                '{{%support_ticket}}',
-                [
+            '{{%support_ticket}}',
+            [
                     'id' =>
                     $this->primaryKey(),
                     'ticket_number' =>
@@ -56,41 +55,41 @@ final class m261021_161000_create_support_ticket_table extends Migration
         );
 
         $this->createIndex(
-                'uq-support_ticket-number',
-                '{{%support_ticket}}',
-                'ticket_number',
-                true
+            'uq-support_ticket-number',
+            '{{%support_ticket}}',
+            'ticket_number',
+            true
         );
 
         $this->createIndex(
-                'idx-support_ticket-user-status',
-                '{{%support_ticket}}',
-                [
+            'idx-support_ticket-user-status',
+            '{{%support_ticket}}',
+            [
                     'user_id',
                     'status',
                 ]
         );
 
         $this->addForeignKey(
-                'fk-support_ticket-user',
-                '{{%support_ticket}}',
-                'user_id',
-                '{{%user}}',
-                'id',
-                'RESTRICT',
-                'CASCADE'
+            'fk-support_ticket-user',
+            '{{%support_ticket}}',
+            'user_id',
+            '{{%user}}',
+            'id',
+            'RESTRICT',
+            'CASCADE'
         );
     }
 
     public function safeDown(): void
     {
         $this->dropForeignKey(
-                'fk-support_ticket-user',
-                '{{%support_ticket}}'
+            'fk-support_ticket-user',
+            '{{%support_ticket}}'
         );
 
         $this->dropTable(
-                '{{%support_ticket}}'
+            '{{%support_ticket}}'
         );
     }
 }

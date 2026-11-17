@@ -7,7 +7,6 @@ use yii\db\Migration;
  */
 class m261014_052241_create_lead_table extends Migration
 {
-
     private $tableName = '{{%lead}}';
 
     public function safeUp()
@@ -23,21 +22,21 @@ class m261014_052241_create_lead_table extends Migration
         ]);
 
         $this->createIndex(
-                'idx-lead-status',
-                $this->tableName,
-                'status'
+            'idx-lead-status',
+            $this->tableName,
+            'status'
         );
 
         $this->createIndex(
-                'idx-lead-created_at',
-                $this->tableName,
-                'created_at'
+            'idx-lead-created_at',
+            $this->tableName,
+            'created_at'
         );
 
         $this->createIndex(
-                'idx-lead-phone_number',
-                $this->tableName,
-                'phone_number'
+            'idx-lead-phone_number',
+            $this->tableName,
+            'phone_number'
         );
     }
 

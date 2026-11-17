@@ -4,7 +4,6 @@ use yii\db\Migration;
 
 class m261006_165500_apply_project_foreign_keys extends Migration
 {
-
     public function up()
     {
         // 1. Link Service Assets back to their respective Owners (user table)
@@ -21,7 +20,7 @@ class m261006_165500_apply_project_foreign_keys extends Migration
 
         // 4. Link Financial Processing Gateway Records to the target Invoice
         $this->addForeignKey('fk-transaction-invoice_id', '{{%transaction}}', 'invoice_id', '{{%invoice}}', 'id', 'RESTRICT', 'CASCADE');
-        
+
         // 5. Link Lifecycle Renewal History records back to Bills/Transactions
         $this->addForeignKey('fk-renewal_history-invoice_id', '{{%service_renewal_history}}', 'invoice_id', '{{%invoice}}', 'id', 'SET NULL', 'CASCADE');
         $this->addForeignKey('fk-renewal_history-transaction_id', '{{%service_renewal_history}}', 'transaction_id', '{{%transaction}}', 'id', 'SET NULL', 'CASCADE');

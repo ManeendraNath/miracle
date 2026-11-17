@@ -6,6 +6,7 @@ namespace backend\tests\Unit;
 
 use Codeception\Test\Unit;
 use common\models\BlogPost;
+use common\models\BlogTag;
 use common\services\BlogImageService;
 use yii\web\UploadedFile;
 
@@ -79,5 +80,52 @@ final class BlogPostTest extends Unit
         $post = new BlogPost(['status' => BlogPost::STATUS_PUBLISHED, 'published_at' => time() + 86400, 'publishAt' => '']);
         $post->beforeSave(false);
         $this->assertLessThanOrEqual(time(), $post->published_at);
+    }
+
+    public function testTagsAreSharedAndAnEditKeepsTheVersionBefore(): void
+    {
+        $db = \Yii::$app->db->beginTransaction();
+        try {
+            $post = new BlogPost(['title' => 'Tags and versions ' . uniqid(), 'summary' => 'First summary', 'body' => '<p>First text</p>', 'status' => BlogPost::STATUS_DRAFT, 'tagNames' => 'Web apps, Costs, web apps']);
+            $this->assertTrue($post->save(), json_encode($post->errors));
+            $this->assertSame(['Costs', 'Web apps'], array_map(static fn($tag): string => $tag->name, $post->tags), 'one tag per slug, first spelling kept');
+            $this->assertSame([], $post->revisions, 'a new post has no earlier version');
+
+            $other = new BlogPost(['title' => 'Other ' . uniqid(), 'summary' => 'S', 'body' => '<p>T</p>', 'status' => BlogPost::STATUS_DRAFT, 'tagNames' => 'costs']);
+            $this->assertTrue($other->save());
+            $this->assertSame(1, (int) BlogTag::find()->where(['slug' => 'costs'])->count(), 'an existing tag is reused');
+
+            $post = BlogPost::findOne($post->id);
+            $post->tagNames = null; // not on the form: tags stay
+            $post->body = '<p>Second text</p>';
+            $this->assertTrue($post->save());
+            $post->setAttributes(['is_featured' => 1], false);
+            $this->assertTrue($post->save(), 'a change to settings only keeps no version');
+            $post = BlogPost::findOne($post->id);
+            $this->assertCount(2, $post->tags);
+            $this->assertCount(1, $post->revisions);
+            $this->assertSame(['First summary', '<p>First text</p>'], [$post->revisions[0]->summary, $post->revisions[0]->body]);
+
+            $post->tagNames = '';
+            $this->assertTrue($post->save());
+            $this->assertSame([], BlogPost::findOne($post->id)->tags, 'clearing the field removes the tags');
+        } finally {
+            $db->rollBack();
+        }
+    }
+
+    public function testAFormCannotSetTheAuthorPhoto(): void
+    {
+        $admin = new \common\models\Admin(['photo' => 'uploads/blog/a.jpg']);
+        $admin->load(['Admin' => ['photo' => 'x.jpg', 'display_name' => 'Name']]);
+        $this->assertSame(['uploads/blog/a.jpg', 'Name'], [$admin->photo, $admin->display_name]);
+    }
+
+    public function testTagNamesNeedLettersAndKeepSymbolsApart(): void
+    {
+        $this->assertSame(['c-plus-plus', 'c-sharp', 'c'], [BlogTag::slugFor('C++'), BlogTag::slugFor('C#'), BlogTag::slugFor('C')]);
+        $post = new BlogPost(['tagNames' => 'SEO, !!!']);
+        $post->validate(['tagNames']);
+        $this->assertStringContainsString('Use letters or digits', (string) $post->getFirstError('tagNames'));
     }
 }

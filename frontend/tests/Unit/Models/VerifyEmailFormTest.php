@@ -29,7 +29,7 @@ final class VerifyEmailFormTest extends Unit
     public function testVerifyWrongToken(): void
     {
         $this->tester->expectThrowable(
-            InvalidArgumentException::class, 
+            InvalidArgumentException::class,
             static function (): void {
                 new VerifyEmailForm('');
             },
@@ -46,7 +46,7 @@ final class VerifyEmailFormTest extends Unit
     public function testAlreadyActivatedToken(): void
     {
         $this->tester->expectThrowable(
-            InvalidArgumentException::class, 
+            InvalidArgumentException::class,
             static function (): void {
                 new VerifyEmailForm('already_used_token_9999999999');
             },

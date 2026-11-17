@@ -10,6 +10,9 @@ use Yii;
  * @property int $id
  * @property string $username
  * @property string $email
+ * @property string|null $display_name
+ * @property string|null $bio
+ * @property string|null $photo
  * @property string $auth_key
  * @property string $password_hash
  * @property string|null $password_reset_token
@@ -21,6 +24,7 @@ use Yii;
  * @property int $created_at
  * @property int $updated_at
  *
+ * @property BlogPostRevision[] $blogPostRevisions
  * @property BlogPost[] $blogPosts
  */
 class Admin extends \yii\db\ActiveRecord
@@ -39,13 +43,15 @@ class Admin extends \yii\db\ActiveRecord
     public function rules()
     {
         return [
-            [['password_reset_token', 'totp_secret', 'totp_last_step', 'totp_backup_codes'], 'default', 'value' => null],
+            [['display_name', 'bio', 'photo', 'password_reset_token', 'totp_secret', 'totp_last_step', 'totp_backup_codes'], 'default', 'value' => null],
             [['role'], 'default', 'value' => 'Manager'],
             [['status'], 'default', 'value' => 1],
             [['username', 'email', 'auth_key', 'password_hash', 'created_at', 'updated_at'], 'required'],
             [['totp_last_step', 'status', 'created_at', 'updated_at'], 'integer'],
             [['totp_backup_codes'], 'string'],
-            [['username', 'email', 'password_hash', 'password_reset_token', 'totp_secret'], 'string', 'max' => 255],
+            [['username', 'email', 'photo', 'password_hash', 'password_reset_token', 'totp_secret'], 'string', 'max' => 255],
+            [['display_name'], 'string', 'max' => 100],
+            [['bio'], 'string', 'max' => 500],
             [['auth_key'], 'string', 'max' => 32],
             [['role'], 'string', 'max' => 50],
             [['username'], 'unique'],
@@ -63,6 +69,9 @@ class Admin extends \yii\db\ActiveRecord
             'id' => 'ID',
             'username' => 'Username',
             'email' => 'Email',
+            'display_name' => 'Display Name',
+            'bio' => 'Bio',
+            'photo' => 'Photo',
             'auth_key' => 'Auth Key',
             'password_hash' => 'Password Hash',
             'password_reset_token' => 'Password Reset Token',
@@ -74,6 +83,16 @@ class Admin extends \yii\db\ActiveRecord
             'created_at' => 'Created At',
             'updated_at' => 'Updated At',
         ];
+    }
+
+    /**
+     * Gets query for [[BlogPostRevisions]].
+     *
+     * @return \yii\db\ActiveQuery
+     */
+    public function getBlogPostRevisions()
+    {
+        return $this->hasMany(BlogPostRevision::class, ['author_id' => 'id']);
     }
 
     /**

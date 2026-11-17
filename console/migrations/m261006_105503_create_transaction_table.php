@@ -4,7 +4,6 @@ use yii\db\Migration;
 
 class m261006_105503_create_transaction_table extends Migration
 {
-
     private $tableName = '{{%transaction}}';
 
     public function up()

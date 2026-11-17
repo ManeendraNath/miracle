@@ -7,7 +7,6 @@ use yii\db\Migration;
  */
 class m261006_103402_create_hosting_table extends Migration
 {
-
     private $tableName = '{{%hosting}}';
 
     /**
@@ -33,7 +32,7 @@ class m261006_103402_create_hosting_table extends Migration
                 'created_at' => $this->integer(11)->notNull(),
                 'updated_at' => $this->integer(11)->notNull(),
             ], $tableOptions);
-            
+
             $this->createIndex('idx-hosting-user_id', '{{%hosting}}', 'user_id');
         }
     }

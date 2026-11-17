@@ -98,6 +98,7 @@ return [
             'rules' => [
                 // The category rule first: links to a category use it rather than /blog?category=…
                 'blog/category/<category:[a-z0-9-]+>' => 'blog/index',
+                'blog/tag/<tag:[a-z0-9-]+>' => 'blog/index',
                 'blog' => 'blog/index',
                 'blog/feed' => 'blog/feed',
                 'blog/<slug:[a-z0-9-]+>' => 'blog/view',

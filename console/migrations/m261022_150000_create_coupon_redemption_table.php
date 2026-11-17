@@ -6,12 +6,11 @@ use yii\db\Migration;
 
 final class m261022_150000_create_coupon_redemption_table extends Migration
 {
-
     public function safeUp(): void
     {
         $this->createTable(
-                '{{%coupon_redemption}}',
-                [
+            '{{%coupon_redemption}}',
+            [
                     'id' => $this->primaryKey(),
                     'coupon_id' => $this->integer()->notNull(),
                     'user_id' => $this->integer()->notNull(),
@@ -23,62 +22,62 @@ final class m261022_150000_create_coupon_redemption_table extends Migration
         );
 
         $this->createIndex(
-                'uq_coupon_redemption_invoice',
-                '{{%coupon_redemption}}',
-                'invoice_id',
-                true
+            'uq_coupon_redemption_invoice',
+            '{{%coupon_redemption}}',
+            'invoice_id',
+            true
         );
 
         $this->createIndex(
-                'idx_coupon_redemption_coupon',
-                '{{%coupon_redemption}}',
-                'coupon_id'
+            'idx_coupon_redemption_coupon',
+            '{{%coupon_redemption}}',
+            'coupon_id'
         );
 
         $this->createIndex(
-                'idx_coupon_redemption_coupon_user',
-                '{{%coupon_redemption}}',
-                [
+            'idx_coupon_redemption_coupon_user',
+            '{{%coupon_redemption}}',
+            [
                     'coupon_id',
                     'user_id',
                 ]
         );
 
         $this->addForeignKey(
-                'fk_coupon_redemption_coupon',
-                '{{%coupon_redemption}}',
-                'coupon_id',
-                '{{%coupon}}',
-                'id',
-                'RESTRICT',
-                'CASCADE'
+            'fk_coupon_redemption_coupon',
+            '{{%coupon_redemption}}',
+            'coupon_id',
+            '{{%coupon}}',
+            'id',
+            'RESTRICT',
+            'CASCADE'
         );
 
         $this->addForeignKey(
-                'fk_coupon_redemption_user',
-                '{{%coupon_redemption}}',
-                'user_id',
-                '{{%user}}',
-                'id',
-                'RESTRICT',
-                'CASCADE'
+            'fk_coupon_redemption_user',
+            '{{%coupon_redemption}}',
+            'user_id',
+            '{{%user}}',
+            'id',
+            'RESTRICT',
+            'CASCADE'
         );
 
         $this->addForeignKey(
-                'fk_coupon_redemption_invoice',
-                '{{%coupon_redemption}}',
-                'invoice_id',
-                '{{%invoice}}',
-                'id',
-                'CASCADE',
-                'CASCADE'
+            'fk_coupon_redemption_invoice',
+            '{{%coupon_redemption}}',
+            'invoice_id',
+            '{{%invoice}}',
+            'id',
+            'CASCADE',
+            'CASCADE'
         );
     }
 
     public function safeDown(): void
     {
         $this->dropTable(
-                '{{%coupon_redemption}}'
+            '{{%coupon_redemption}}'
         );
     }
 }

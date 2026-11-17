@@ -4,7 +4,6 @@ use yii\db\Migration;
 
 final class m261028_120000_create_whatsapp_log_table extends Migration
 {
-
     public function safeUp(): void
     {
         $this->createTable('whatsapp_log', [
@@ -21,19 +20,19 @@ final class m261028_120000_create_whatsapp_log_table extends Migration
         ]);
 
         $this->createIndex(
-                'idx_whatsapp_log_created',
-                'whatsapp_log',
-                'created_at'
+            'idx_whatsapp_log_created',
+            'whatsapp_log',
+            'created_at'
         );
         $this->createIndex(
-                'idx_whatsapp_event',
-                'whatsapp_log',
-                'event_key'
+            'idx_whatsapp_event',
+            'whatsapp_log',
+            'event_key'
         );
         $this->createIndex(
-                'idx_whatsapp_log_status',
-                'whatsapp_log',
-                'status'
+            'idx_whatsapp_log_status',
+            'whatsapp_log',
+            'status'
         );
     }
 

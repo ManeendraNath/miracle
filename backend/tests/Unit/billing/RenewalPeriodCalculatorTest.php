@@ -9,15 +9,14 @@ use common\services\billing\RenewalPeriodCalculator;
 
 final class RenewalPeriodCalculatorTest extends Unit
 {
-
     /**
      * @dataProvider periods
      */
     public function testCalculate(string $expiry, int $months, string $start, string $end): void
     {
         $this->assertSame(
-                ['start' => $start, 'end' => $end],
-                (new RenewalPeriodCalculator())->calculate($expiry, $months)
+            ['start' => $start, 'end' => $end],
+            (new RenewalPeriodCalculator())->calculate($expiry, $months)
         );
     }
 

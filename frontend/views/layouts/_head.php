@@ -46,6 +46,9 @@ if ($canonical) {
     $this->registerMetaTag(['property' => 'og:url', 'content' => $canonical]);
 }
 $this->registerMetaTag(['name' => 'twitter:card', 'content' => 'summary_large_image']);
+if (!empty($this->params['robots'])) {
+    $this->registerMetaTag(['name' => 'robots', 'content' => $this->params['robots']]);
+}
 if (!empty($this->params['meta_keywords'])) {
     $this->registerMetaTag(
         [

@@ -7,7 +7,6 @@ use yii\db\Migration;
  */
 class m220515_155701_create_domains_table extends Migration
 {
-
     private $tableName = '{{%domains}}';
 
     /**
@@ -32,7 +31,7 @@ class m220515_155701_create_domains_table extends Migration
                 'created_at' => $this->integer(11)->notNull(),
                 'updated_at' => $this->integer(11)->notNull(),
             ], $tableOptions);
-            
+
             $this->createIndex('idx-domains-user_id', '{{%domains}}', 'user_id');
             $this->createIndex('idx-domains-status', '{{%domains}}', 'status');
         }

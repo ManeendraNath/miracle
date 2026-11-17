@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace common\models;
 
+use common\components\CustomYii;
 use yii\db\ActiveQuery;
+use yii\helpers\ArrayHelper;
 
 /**
  * @property-read InvoiceItem[] $items
@@ -41,16 +43,6 @@ class Invoice extends base\Invoice
     public function getItems(): ActiveQuery
     {
         return $this->hasMany(InvoiceItem::class, ['invoice_id' => 'id'])->orderBy(['id' => SORT_ASC]);
-    }
-
-    public function getTransactions(): ActiveQuery
-    {
-        return $this->hasMany(Transaction::class, ['invoice_id' => 'id']);
-    }
-
-    public function getBillingEvents(): ActiveQuery
-    {
-        return $this->hasMany(BillingEvent::class, ['invoice_id' => 'id']);
     }
 
     /**
@@ -151,12 +143,12 @@ class Invoice extends base\Invoice
      */
     public static function supplierLines(): array
     {
-        $setting = static fn(string $name): string => trim((string) \common\components\CustomYii::getSetting($name), ' ,');
+        $setting = static fn(string $name): string => trim((string) CustomYii::getSetting($name), ' ,');
         $address = array_filter([$setting('address_line_1'), $setting('address_line_2'), $setting('address_line_3')]);
 
         return array_values(array_filter([
             implode(', ', $address),
-            implode(' | ', array_filter([$setting('email_1'), $setting('mobile_1') !== '' ? \common\components\CustomYii::formatPhone($setting('mobile_1')) : ''])),
+            implode(' | ', array_filter([$setting('email_1'), $setting('mobile_1') !== '' ? CustomYii::formatPhone($setting('mobile_1')) : ''])),
         ]));
     }
 
@@ -199,7 +191,7 @@ class Invoice extends base\Invoice
      *
      * @return \yii\db\ActiveQuery<static>
      */
-    public static function forCustomer(): \yii\db\ActiveQuery
+    public static function forCustomer(): ActiveQuery
     {
         return self::find()->andWhere(['<>', self::tableName() . '.status', self::STATUS_DRAFT])
             // A held invoice cancelled before it was sent keeps its TMP- number: it was never issued.
@@ -257,7 +249,7 @@ class Invoice extends base\Invoice
     /** Plain names on forms and errors instead of the column names. */
     public function attributeLabels(): array
     {
-        return \yii\helpers\ArrayHelper::merge(parent::attributeLabels(), [
+        return ArrayHelper::merge(parent::attributeLabels(), [
             'user_id' => 'Client',
             'coupon_id' => 'Coupon',
             'cgst_percent' => 'CGST (%)',

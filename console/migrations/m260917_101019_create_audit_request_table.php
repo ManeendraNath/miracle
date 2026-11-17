@@ -7,7 +7,6 @@ use yii\db\Migration;
  */
 class m260917_101019_create_audit_request_table extends Migration
 {
-
     private $tableName = '{{%audit_request}}';
 
     /**
@@ -33,7 +32,6 @@ class m260917_101019_create_audit_request_table extends Migration
             ]);
 
             $this->createIndex('idx-audit_request-status', '{{%audit_request}}', 'status');
-
         }
     }
 

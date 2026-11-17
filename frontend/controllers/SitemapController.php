@@ -20,9 +20,14 @@ class SitemapController extends Controller
     public function actionIndex(): Response
     {
         $urls = array_map(static fn(string $route): array => ['loc' => $route === '/site/index' ? Url::home(true) : Url::to([$route], true)], self::PAGES);
-        $posts = BlogPost::findPublic()->select(['slug', 'updated_at', 'category_id'])->asArray()->all();
+        // A post kept out of search engines stays out of the sitemap too.
+        $posts = BlogPost::findPublic()->andWhere(['noindex' => 0])->select(['id', 'slug', 'updated_at', 'category_id'])->asArray()->all();
         foreach (BlogCategory::find()->where(['id' => array_filter(array_column($posts, 'category_id'))])->all() as $category) {
             $urls[] = ['loc' => Url::to(['/blog/index', 'category' => $category->slug], true)];
+        }
+        $tags = \common\models\BlogTag::find()->where(['id' => (new \yii\db\Query())->select('tag_id')->from('{{%blog_post_tag}}')->where(['post_id' => array_column($posts, 'id')])])->all();
+        foreach ($tags as $tag) {
+            $urls[] = ['loc' => Url::to(['/blog/index', 'tag' => $tag->slug], true)];
         }
         foreach ($posts as $post) {
             $urls[] = ['loc' => Url::to(['/blog/view', 'slug' => $post['slug']], true), 'lastmod' => date('Y-m-d', (int) $post['updated_at'])];

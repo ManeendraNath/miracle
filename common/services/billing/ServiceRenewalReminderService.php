@@ -120,8 +120,10 @@ final class ServiceRenewalReminderService
             return null;
         }
         $threshold = min($due);
-        if ($threshold !== $days && $target !== null && $createdAt > 0
-            && $createdAt >= $target->modify(sprintf('%+d days', -$threshold))->getTimestamp()) {
+        if (
+            $threshold !== $days && $target !== null && $createdAt > 0
+            && $createdAt >= $target->modify(sprintf('%+d days', -$threshold))->getTimestamp()
+        ) {
             return null;
         }
 

@@ -10,10 +10,8 @@ use yii\base\Model;
 
 final class GridFilterHelper
 {
-
     private function __construct()
     {
-        
     }
 
     /**
@@ -40,11 +38,10 @@ final class GridFilterHelper
      * Reusable date-range GridView filter.
      */
     public static function dateRange(
-            Model $model,
-            string $attribute,
-            string $placeholder = 'Select date range'
-    ): string
-    {
+        Model $model,
+        string $attribute,
+        string $placeholder = 'Select date range'
+    ): string {
         return DateRangePicker::widget([
                     'model' => $model,
                     'attribute' => $attribute,

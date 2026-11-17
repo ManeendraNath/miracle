@@ -10,7 +10,6 @@ use yii\db\Migration;
  */
 class m261030_100100_fix_user_status_default extends Migration
 {
-
     public function safeUp(): void
     {
         $this->alterColumn('{{%user}}', 'status', $this->smallInteger()->notNull()->defaultValue(0));

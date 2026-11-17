@@ -334,6 +334,7 @@ class BaseController extends Controller
                 'class' => VerbFilter::class,
                 'actions' => [
                     'delete' => ['POST'],
+                    'restore' => ['POST'],
                     'approve' => ['POST'],
                     'reject' => ['POST'],
                     'check-gateway' => ['POST'],

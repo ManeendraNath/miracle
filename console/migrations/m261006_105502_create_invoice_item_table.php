@@ -4,7 +4,6 @@ use yii\db\Migration;
 
 class m261006_105502_create_invoice_item_table extends Migration
 {
-
     private $tableName = '{{%invoice_item}}';
 
     public function up()

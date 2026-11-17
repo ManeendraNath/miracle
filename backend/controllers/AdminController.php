@@ -117,6 +117,10 @@ class AdminController extends BaseController
     {
         $model = $this->findModel(Yii::$app->user->id);
         $twoFactorStep = $this->request->post('two_factor');
+        if ($this->request->isPost && $this->request->post('author_profile') !== null) {
+            $this->saveAuthorProfile($model);
+            return $this->refresh();
+        }
         if ($this->request->isPost && $twoFactorStep !== null) {
             $this->handleTwoFactor($model, self::scalarParam($twoFactorStep), self::scalarParam($this->request->post('code', '')), self::scalarParam($this->request->post('current_password', '')));
             return $this->refresh();
@@ -149,6 +153,36 @@ class AdminController extends BaseController
                     'setupSecret' => $setupSecret,
                     'setupUri' => $setupSecret === null ? null : Totp::uri($setupSecret, $model->username, Yii::$app->name),
         ]);
+    }
+
+    /** Name, bio and photo shown with the blog posts they write. Public details only, so no password is asked. */
+    private function saveAuthorProfile(Admin $model): void
+    {
+        $model->display_name = trim(self::scalarParam($this->request->post('display_name', ''))) ?: null;
+        $model->bio = trim(self::scalarParam($this->request->post('bio', ''))) ?: null;
+        $old = $model->photo;
+        $stored = null;
+        try {
+            $file = \yii\web\UploadedFile::getInstanceByName('photo');
+            if ($file !== null) {
+                $model->photo = $stored = (new \common\services\BlogImageService())->store($file);
+            } elseif ($this->request->post('remove_photo')) {
+                $model->photo = null;
+            }
+            if (!$model->save(true, ['display_name', 'bio', 'photo', 'updated_at'])) {
+                throw new \DomainException(implode(' ', $model->getFirstErrors()));
+            }
+        } catch (\DomainException $e) {
+            if ($stored !== null) {
+                @unlink(Yii::getAlias('@frontend/web/' . $stored));
+            }
+            Yii::$app->session->setFlash('error', $e->getMessage());
+            return;
+        }
+        if ($old !== null && $old !== $model->photo) {
+            @unlink(Yii::getAlias('@frontend/web/' . $old));
+        }
+        Yii::$app->session->setFlash('success', 'Your author profile has been saved.');
     }
 
     /** Wrong guesses count toward the login lock: a hijacked session must not get unlimited tries. */

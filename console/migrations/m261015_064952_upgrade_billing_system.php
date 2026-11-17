@@ -6,7 +6,6 @@ use yii\db\Migration;
 
 class m261015_064952_upgrade_billing_system extends Migration
 {
-
     public function safeUp(): void
     {
         $this->createBillingRun();
@@ -22,8 +21,8 @@ class m261015_064952_upgrade_billing_system extends Migration
     public function safeDown(): void
     {
         throw new RuntimeException(
-                        'Billing upgrade is intentionally irreversible because it modifies financial ledger structures.'
-                );
+            'Billing upgrade is intentionally irreversible because it modifies financial ledger structures.'
+        );
     }
 
     private function createBillingRun(): void
@@ -79,9 +78,9 @@ class m261015_064952_upgrade_billing_system extends Migration
     private function upgradeInvoice(): void
     {
         $this->alterColumn(
-                '{{%invoice}}',
-                'status',
-                "ENUM(
+            '{{%invoice}}',
+            'status',
+            "ENUM(
                 'Unpaid',
                 'Partially_Paid',
                 'Paid',
@@ -92,195 +91,195 @@ class m261015_064952_upgrade_billing_system extends Migration
         );
 
         $this->addColumn(
-                '{{%invoice}}',
-                'billing_run_id',
-                $this->bigInteger()->null()
+            '{{%invoice}}',
+            'billing_run_id',
+            $this->bigInteger()->null()
         );
 
         $this->addColumn(
-                '{{%invoice}}',
-                'client_city',
-                $this->string(100)->null()
+            '{{%invoice}}',
+            'client_city',
+            $this->string(100)->null()
         );
 
         $this->addColumn(
-                '{{%invoice}}',
-                'client_state',
-                $this->string(100)->null()
+            '{{%invoice}}',
+            'client_state',
+            $this->string(100)->null()
         );
 
         $this->addColumn(
-                '{{%invoice}}',
-                'client_state_code',
-                $this->string(10)->null()
+            '{{%invoice}}',
+            'client_state_code',
+            $this->string(10)->null()
         );
 
         $this->addColumn(
-                '{{%invoice}}',
-                'client_postal_code',
-                $this->string(20)->null()
+            '{{%invoice}}',
+            'client_postal_code',
+            $this->string(20)->null()
         );
 
         $this->addColumn(
-                '{{%invoice}}',
-                'client_gstin',
-                $this->string(15)->null()
+            '{{%invoice}}',
+            'client_gstin',
+            $this->string(15)->null()
         );
 
         $this->addColumn(
-                '{{%invoice}}',
-                'client_pan',
-                $this->string(10)->null()
+            '{{%invoice}}',
+            'client_pan',
+            $this->string(10)->null()
         );
 
         $this->addColumn(
-                '{{%invoice}}',
-                'place_of_supply',
-                $this->string(100)->null()
+            '{{%invoice}}',
+            'place_of_supply',
+            $this->string(100)->null()
         );
 
         $this->addColumn(
-                '{{%invoice}}',
-                'emailed_at',
-                $this->integer()->null()
+            '{{%invoice}}',
+            'emailed_at',
+            $this->integer()->null()
         );
 
         $this->createIndex(
-                'uq-invoice-invoice_number',
-                '{{%invoice}}',
-                'invoice_number',
-                true
+            'uq-invoice-invoice_number',
+            '{{%invoice}}',
+            'invoice_number',
+            true
         );
 
         $this->createIndex(
-                'idx-invoice-run-user',
-                '{{%invoice}}',
-                [
+            'idx-invoice-run-user',
+            '{{%invoice}}',
+            [
                     'billing_run_id',
                     'user_id',
                 ]
         );
 
         $this->createIndex(
-                'idx-invoice-emailed_at',
-                '{{%invoice}}',
-                'emailed_at'
+            'idx-invoice-emailed_at',
+            '{{%invoice}}',
+            'emailed_at'
         );
 
         $this->addForeignKey(
-                'fk-invoice-billing_run',
-                '{{%invoice}}',
-                'billing_run_id',
-                '{{%billing_run}}',
-                'id',
-                'SET NULL',
-                'CASCADE'
+            'fk-invoice-billing_run',
+            '{{%invoice}}',
+            'billing_run_id',
+            '{{%billing_run}}',
+            'id',
+            'SET NULL',
+            'CASCADE'
         );
     }
 
     private function upgradeInvoiceItem(): void
     {
         $this->addColumn(
-                '{{%invoice_item}}',
-                'source_invoice_id',
-                $this->integer()->null()
+            '{{%invoice_item}}',
+            'source_invoice_id',
+            $this->integer()->null()
         );
 
         $this->addColumn(
-                '{{%invoice_item}}',
-                'billing_event_id',
-                $this->bigInteger()->null()
+            '{{%invoice_item}}',
+            'billing_event_id',
+            $this->bigInteger()->null()
         );
 
         $this->createIndex(
-                'uq-invoice_item-billing_event',
-                '{{%invoice_item}}',
-                'billing_event_id',
-                true
+            'uq-invoice_item-billing_event',
+            '{{%invoice_item}}',
+            'billing_event_id',
+            true
         );
 
         $this->createIndex(
-                'uq-invoice_item-source_invoice',
-                '{{%invoice_item}}',
-                'source_invoice_id',
-                true
+            'uq-invoice_item-source_invoice',
+            '{{%invoice_item}}',
+            'source_invoice_id',
+            true
         );
 
         $this->addForeignKey(
-                'fk-invoice_item-source_invoice',
-                '{{%invoice_item}}',
-                'source_invoice_id',
-                '{{%invoice}}',
-                'id',
-                'RESTRICT',
-                'CASCADE'
+            'fk-invoice_item-source_invoice',
+            '{{%invoice_item}}',
+            'source_invoice_id',
+            '{{%invoice}}',
+            'id',
+            'RESTRICT',
+            'CASCADE'
         );
 
         $this->addForeignKey(
-                'fk-invoice_item-billing_event',
-                '{{%invoice_item}}',
-                'billing_event_id',
-                '{{%billing_event}}',
-                'id',
-                'RESTRICT',
-                'CASCADE'
+            'fk-invoice_item-billing_event',
+            '{{%invoice_item}}',
+            'billing_event_id',
+            '{{%billing_event}}',
+            'id',
+            'RESTRICT',
+            'CASCADE'
         );
     }
 
     private function upgradeRenewalHistory(): void
     {
         $this->addColumn(
-                '{{%service_renewal_history}}',
-                'billing_event_id',
-                $this->bigInteger()->null()
+            '{{%service_renewal_history}}',
+            'billing_event_id',
+            $this->bigInteger()->null()
         );
 
         $this->createIndex(
-                'uq-renewal_history-billing_event',
-                '{{%service_renewal_history}}',
-                'billing_event_id',
-                true
+            'uq-renewal_history-billing_event',
+            '{{%service_renewal_history}}',
+            'billing_event_id',
+            true
         );
 
         $this->addForeignKey(
-                'fk-renewal_history-billing_event',
-                '{{%service_renewal_history}}',
-                'billing_event_id',
-                '{{%billing_event}}',
-                'id',
-                'RESTRICT',
-                'CASCADE'
+            'fk-renewal_history-billing_event',
+            '{{%service_renewal_history}}',
+            'billing_event_id',
+            '{{%billing_event}}',
+            'id',
+            'RESTRICT',
+            'CASCADE'
         );
     }
 
     private function upgradeTransaction(): void
     {
         $this->createIndex(
-                'idx-transaction-invoice-status',
-                '{{%transaction}}',
-                [
+            'idx-transaction-invoice-status',
+            '{{%transaction}}',
+            [
                     'invoice_id',
                     'status',
                 ]
         );
 
         $this->createIndex(
-                'uq-transaction-gateway-order-id',
-                '{{%transaction}}',
-                'gateway_order_id',
-                true
+            'uq-transaction-gateway-order-id',
+            '{{%transaction}}',
+            'gateway_order_id',
+            true
         );
 
         $this->dropIndex(
-                'idx-transaction-payment_id',
-                '{{%transaction}}'
+            'idx-transaction-payment_id',
+            '{{%transaction}}'
         );
 
         $this->createIndex(
-                'uq-transaction-gateway-payment-id',
-                '{{%transaction}}',
-                'gateway_payment_id',
-                true
+            'uq-transaction-gateway-payment-id',
+            '{{%transaction}}',
+            'gateway_payment_id',
+            true
         );
     }
 
@@ -324,7 +323,7 @@ class m261015_064952_upgrade_billing_system extends Migration
         foreach ($rows as $row) {
             $exists = $this->db
                     ->createCommand(
-                            'SELECT id
+                        'SELECT id
                      FROM {{%billing_settings}}
                      WHERE service_type = :type'
                     )

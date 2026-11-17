@@ -6,12 +6,11 @@ use yii\db\Migration;
 
 final class m261021_171000_create_customer_preference_table extends Migration
 {
-
     public function safeUp(): void
     {
         $this->createTable(
-                '{{%customer_preference}}',
-                [
+            '{{%customer_preference}}',
+            [
                     'id' =>
                     $this->primaryKey(),
                     'user_id' =>
@@ -43,32 +42,32 @@ final class m261021_171000_create_customer_preference_table extends Migration
         );
 
         $this->createIndex(
-                'uq-customer_preference-user',
-                '{{%customer_preference}}',
-                'user_id',
-                true
+            'uq-customer_preference-user',
+            '{{%customer_preference}}',
+            'user_id',
+            true
         );
 
         $this->addForeignKey(
-                'fk-customer_preference-user',
-                '{{%customer_preference}}',
-                'user_id',
-                '{{%user}}',
-                'id',
-                'CASCADE',
-                'CASCADE'
+            'fk-customer_preference-user',
+            '{{%customer_preference}}',
+            'user_id',
+            '{{%user}}',
+            'id',
+            'CASCADE',
+            'CASCADE'
         );
     }
 
     public function safeDown(): void
     {
         $this->dropForeignKey(
-                'fk-customer_preference-user',
-                '{{%customer_preference}}'
+            'fk-customer_preference-user',
+            '{{%customer_preference}}'
         );
 
         $this->dropTable(
-                '{{%customer_preference}}'
+            '{{%customer_preference}}'
         );
     }
 }

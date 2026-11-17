@@ -4,7 +4,6 @@ use yii\db\Migration;
 
 class m261001_170504_create_auth_assignment_table extends Migration
 {
-
     private $tableName = '{{%auth_assignment}}';
 
     public function safeUp()
@@ -20,7 +19,7 @@ class m261001_170504_create_auth_assignment_table extends Migration
                 'user_id' => $this->integer(11)->notNull(),
                 'created_at' => $this->integer(11)->defaultValue(null),
             ]);
-            
+
             $this->addPrimaryKey('pk-auth_assignment', $this->tableName, ['item_name', 'user_id']);
             $this->createIndex('idx-auth_assignment-user_id', $this->tableName, 'user_id');
         }

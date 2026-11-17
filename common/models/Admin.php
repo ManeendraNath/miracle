@@ -70,7 +70,7 @@ class Admin extends base\Admin implements IdentityInterface
     public function scenarios(): array
     {
         return array_map(
-            static fn(array $attributes): array => array_values(array_diff($attributes, ['totp_backup_codes', 'totp_secret', 'totp_last_step'])),
+            static fn(array $attributes): array => array_values(array_diff($attributes, ['totp_backup_codes', 'totp_secret', 'totp_last_step', 'photo'])),
             parent::scenarios(),
         );
     }
@@ -137,6 +137,14 @@ class Admin extends base\Admin implements IdentityInterface
     /**
      * Whether this administrator has the Superadmin role.
      */
+    /** The name shown on blog posts they wrote; null when they set none (the post is then by the company). */
+    public function authorName(): ?string
+    {
+        $name = trim((string) $this->display_name);
+
+        return $name !== '' ? $name : null;
+    }
+
     public function isSuperAdmin(): bool
     {
         return $this->role === self::getRoleSuperAdmin();

@@ -6,12 +6,11 @@ use yii\db\Migration;
 
 final class m261021_170000_create_support_ticket_message_table extends Migration
 {
-
     public function safeUp(): void
     {
         $this->createTable(
-                '{{%support_ticket_message}}',
-                [
+            '{{%support_ticket_message}}',
+            [
                     'id' =>
                     $this->bigPrimaryKey(),
                     'ticket_id' =>
@@ -33,34 +32,34 @@ final class m261021_170000_create_support_ticket_message_table extends Migration
         );
 
         $this->createIndex(
-                'idx-support_ticket_message-ticket',
-                '{{%support_ticket_message}}',
-                [
+            'idx-support_ticket_message-ticket',
+            '{{%support_ticket_message}}',
+            [
                     'ticket_id',
                     'created_at',
                 ]
         );
 
         $this->addForeignKey(
-                'fk-support_ticket_message-ticket',
-                '{{%support_ticket_message}}',
-                'ticket_id',
-                '{{%support_ticket}}',
-                'id',
-                'CASCADE',
-                'CASCADE'
+            'fk-support_ticket_message-ticket',
+            '{{%support_ticket_message}}',
+            'ticket_id',
+            '{{%support_ticket}}',
+            'id',
+            'CASCADE',
+            'CASCADE'
         );
     }
 
     public function safeDown(): void
     {
         $this->dropForeignKey(
-                'fk-support_ticket_message-ticket',
-                '{{%support_ticket_message}}'
+            'fk-support_ticket_message-ticket',
+            '{{%support_ticket_message}}'
         );
 
         $this->dropTable(
-                '{{%support_ticket_message}}'
+            '{{%support_ticket_message}}'
         );
     }
 }

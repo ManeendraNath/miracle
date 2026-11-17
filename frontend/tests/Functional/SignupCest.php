@@ -44,7 +44,7 @@ final class SignupCest
     public function signupSuccessfully(FunctionalTester $I): void
     {
         $I->submitForm(
-            $this->formId, 
+            $this->formId,
             [
                 'SignupForm[username]' => 'tester',
                 'SignupForm[email]' => 'tester.email@example.com',
@@ -54,7 +54,7 @@ final class SignupCest
         );
 
         $I->seeRecord(
-            User::class, 
+            User::class,
             [
                 'username' => 'tester',
                 'email' => 'tester.email@example.com',

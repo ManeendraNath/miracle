@@ -4,7 +4,6 @@ use yii\db\Migration;
 
 class m261001_150009_create_coupon_email_track_table extends Migration
 {
-
     private $tableName = '{{%coupon_email_track}}';
 
     public function safeUp()

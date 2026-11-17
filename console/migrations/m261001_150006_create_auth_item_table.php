@@ -4,7 +4,6 @@ use yii\db\Migration;
 
 class m261001_150006_create_auth_item_table extends Migration
 {
-
     private $tableName = '{{%auth_item}}';
 
     public function safeUp()

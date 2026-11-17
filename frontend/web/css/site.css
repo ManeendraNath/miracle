@@ -1254,6 +1254,29 @@ img[src*="captcha"] {
     object-fit: cover;
 }
 
+/* The featured post: picture beside the text from tablet width up. */
+@media (min-width: 768px) {
+    .mw-post-featured {
+        display: grid;
+        grid-template-columns: 3fr 2fr;
+        align-items: center;
+    }
+
+    .mw-post-featured .mw-post-cover {
+        height: 100%;
+    }
+
+    .mw-post-featured h3 {
+        font-size: 1.6rem;
+    }
+}
+
+.mw-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .5rem;
+}
+
 .mw-crumb {
     color: var(--mw-on-ink-muted);
     text-decoration: none;

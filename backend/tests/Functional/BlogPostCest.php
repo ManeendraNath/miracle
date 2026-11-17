@@ -7,6 +7,7 @@ namespace backend\tests\Functional;
 use backend\tests\Support\FunctionalTester;
 use common\models\Admin;
 use common\models\BlogCategory;
+use common\models\BlogComment;
 use common\models\BlogPost;
 use Yii;
 
@@ -34,7 +35,7 @@ final class BlogPostCest
             'BlogPost[slug]' => '',
             'BlogPost[publishAt]' => '',
         ]);
-        $I->see('Post published.');
+        $I->see('Post published and added to the sitemap automatically');
         $I->see('Request indexing.');
         $post = BlogPost::findOne(['slug' => 'hiring-an-offshore-developer']);
         $I->assertNotNull($post);
@@ -42,6 +43,13 @@ final class BlogPostCest
         $I->assertStringNotContainsString('<script', $post->body);
         $I->amOnRoute('blog-post/preview', ['id' => $post->id]);
         $I->see('Hiring an offshore developer', 'h1');
+
+        $I->amOnRoute('blog-post/update', ['id' => $post->id]);
+        $I->submitForm('#blog-post-form', ['BlogPost[summary]' => 'What to check first, in order.']);
+        $I->see('The sitemap shows the update by itself; nothing to do in Search Console.');
+        $I->submitForm('#blog-post-form', ['BlogPost[slug]' => 'offshore-developer']);
+        $I->see('Its web address changed');
+        $I->see('/blog/offshore-developer');
     }
 
     public function anUploadWithoutAFileIsRefused(FunctionalTester $I): void
@@ -58,5 +66,23 @@ final class BlogPostCest
         $I->amOnRoute('blog-category/create');
         $I->submitForm('form[action*="blog-category/create"]', ['BlogCategory[name]' => 'Case Studies', 'BlogCategory[slug]' => '']);
         $I->seeRecord(BlogCategory::class, ['name' => 'Case Studies', 'slug' => 'case-studies']);
+    }
+
+    public function staffApproveAndAnswerAComment(FunctionalTester $I): void
+    {
+        $postId = (int) $I->haveRecord(BlogPost::class, ['title' => 'Asked post', 'slug' => 'asked-post', 'summary' => 'A summary.', 'body' => '<p>Body.</p>', 'status' => BlogPost::STATUS_PUBLISHED, 'published_at' => time() - 60, 'created_at' => time(), 'updated_at' => time()]);
+        $id = (int) $I->haveRecord(BlogComment::class, ['post_id' => $postId, 'author_name' => 'Ana', 'author_email' => 'ana@example.test', 'body' => 'Do you build in Laravel?', 'status' => BlogComment::STATUS_PENDING, 'created_at' => time(), 'updated_at' => time()]);
+        $I->amOnRoute('blog-comment/index');
+        $I->see('Do you build in Laravel?');
+        $I->see('Comments', '.nav-sidebar');
+
+        $I->amOnRoute('blog-comment/reply', ['id' => $id]);
+        $I->submitForm('#reply-form', ['BlogComment[body]' => 'Yes, and Yii.', 'BlogComment[status]' => (string) BlogComment::STATUS_SPAM, 'BlogComment[post_id]' => '999']);
+        $I->see('Reply posted.');
+        $I->seeRecord(BlogComment::class, ['id' => $id, 'status' => BlogComment::STATUS_APPROVED]);
+        $I->seeRecord(BlogComment::class, ['parent_id' => $id, 'post_id' => $postId, 'body' => 'Yes, and Yii.', 'status' => BlogComment::STATUS_APPROVED, 'author_email' => null]);
+
+        $I->sendAjaxPostRequest('/blog-comment/spam?id=' . $id, [Yii::$app->request->csrfParam => $I->grabAttributeFrom('meta[name=csrf-token]', 'content')]);
+        $I->seeRecord(BlogComment::class, ['id' => $id, 'status' => BlogComment::STATUS_SPAM]);
     }
 }

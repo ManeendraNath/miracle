@@ -5,8 +5,11 @@ declare(strict_types=1);
 namespace frontend\controllers;
 
 use common\models\BlogCategory;
+use common\models\BlogComment;
 use common\models\BlogPost;
 use common\models\BlogTag;
+use common\services\admin\AdminAlertService;
+use frontend\components\FormGuard;
 use Yii;
 use yii\data\ActiveDataProvider;
 use yii\db\Expression;
@@ -83,22 +86,77 @@ class BlogController extends Controller
         return array_values(array_filter(array_map(static fn($id) => $posts[$id] ?? null, $ids)));
     }
 
-    public function actionView(string $slug): string
+    public function actionView(string $slug): Response|string
     {
         $post = BlogPost::findPublic()->andWhere(['slug' => $slug])->with(['category', 'tags', 'author'])->one();
         if (!$post instanceof BlogPost) {
             throw new NotFoundHttpException('This post does not exist.');
         }
+        $comment = new BlogComment(['scenario' => BlogComment::SCENARIO_READER]);
+        $request = Yii::$app->request;
+        if ($request->isPost) {
+            if (!$post->comments_open) {
+                Yii::$app->session->setFlash('comment', ['danger', 'Comments were closed on this post before yours arrived, so it was not saved.']);
+            } elseif ($this->saveComment($post, $comment)) {
+                return $this->redirect(['/blog/view', 'slug' => $post->slug, '#' => 'comments']);
+            }
+        } else {
+            \common\models\BlogPostView::record($post, $request);
+        }
+        // Per post, so another post opened in a second tab doesn't restart this form's timer.
+        FormGuard::shown('comment-' . $post->id);
         $related = BlogPost::findPublic()->andWhere(['<>', 'id', $post->id])
-            ->orderBy($post->category_id ? [new \yii\db\Expression('category_id = :category DESC', [':category' => $post->category_id]), 'published_at' => SORT_DESC] : ['published_at' => SORT_DESC])
+            ->orderBy($post->category_id ? [new Expression('category_id = :category DESC', [':category' => $post->category_id]), 'published_at' => SORT_DESC] : ['published_at' => SORT_DESC])
             ->limit(3)->all();
-        \common\models\BlogPostView::record($post, Yii::$app->request);
         $older = BlogPost::findPublic()->andWhere(['or', ['<', 'published_at', $post->published_at], ['and', ['published_at' => $post->published_at], ['<', 'id', $post->id]]])
             ->orderBy(['published_at' => SORT_DESC, 'id' => SORT_DESC])->one();
         $newer = BlogPost::findPublic()->andWhere(['or', ['>', 'published_at', $post->published_at], ['and', ['published_at' => $post->published_at], ['>', 'id', $post->id]]])
             ->orderBy(['published_at' => SORT_ASC, 'id' => SORT_ASC])->one();
 
-        return $this->render('view', ['post' => $post, 'related' => $related, 'older' => $older, 'newer' => $newer]);
+        return $this->render('view', [
+            'post' => $post, 'related' => $related, 'older' => $older, 'newer' => $newer,
+            'comments' => BlogComment::shownFor($post->id)->all(), 'comment' => $comment,
+        ]);
+    }
+
+    /**
+     * A reader's comment waits for staff, who get an alert when it is the only one waiting (the sidebar counts the
+     * rest). What the bot guard catches, or looks like spam, is kept as Spam without an alert: people trip the guard
+     * too (an extension filling every field, a fast paste), so staff can still find it. Messages go to the comment
+     * section ("comment" flash), where the page lands after sending.
+     */
+    private function saveComment(BlogPost $post, BlogComment $comment): bool
+    {
+        $session = Yii::$app->session;
+        $bot = FormGuard::isBot('comment-' . $post->id);
+        if (!$comment->load(Yii::$app->request->post()) || !$comment->validate()) {
+            return false;
+        }
+        $ip = Yii::$app->request->userIP;
+        if (BlogComment::tooManyFrom($ip)) {
+            $session->setFlash('comment', ['danger', 'You have sent several comments in the last few minutes. Please wait ' . BlogComment::RATE_MINUTES . ' minutes and send it again.']);
+
+            return false;
+        }
+        $comment->post_id = $post->id;
+        $comment->ip = $ip;
+        $comment->status = $bot || $comment->looksLikeSpam() ? BlogComment::STATUS_SPAM : BlogComment::STATUS_PENDING;
+        $othersWaiting = BlogComment::find()->where(['status' => BlogComment::STATUS_PENDING, 'parent_id' => null])->exists();
+        if (!$comment->save(false)) {
+            $session->setFlash('comment', ['danger', 'Your comment could not be saved. Please try again.']);
+
+            return false;
+        }
+        if ($comment->status === BlogComment::STATUS_PENDING && !$othersWaiting) {
+            try {
+                AdminAlertService::blogCommentWaiting($post->title, $comment->author_name);
+            } catch (\Throwable $e) {
+                Yii::error(['message' => 'Blog comment admin alert failed.', 'commentId' => (int) $comment->id, 'error' => $e->getMessage()], __METHOD__);
+            }
+        }
+        $session->setFlash('comment', ['success', 'Thank you. Your comment will appear here once we have read it.']);
+
+        return true;
     }
 
     /** RSS 2.0 of the 20 newest posts. */

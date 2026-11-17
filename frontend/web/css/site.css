@@ -1317,8 +1317,27 @@ img[src*="captcha"] {
 }
 
 .mw-article-body h2,
-.mw-article-body h3 {
+.mw-article-body h3,
+.mw-comments {
     scroll-margin-top: 5rem;
+}
+
+.mw-comments {
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--mw-line);
+}
+
+.mw-comment {
+    padding: 1rem 0;
+    border-bottom: 1px solid var(--mw-line);
+    overflow-wrap: anywhere;
+}
+
+.mw-comment-reply {
+    margin: 0.75rem 0 0 1.5rem;
+    padding: 0.75rem 0 0 1rem;
+    border-bottom: 0;
+    border-left: 3px solid var(--mw-brand);
 }
 
 .mw-tags {

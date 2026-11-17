@@ -3,6 +3,9 @@
 use yii\helpers\Url;
 use yii\helpers\Html;
 
+// Reader comments waiting for staff, shown next to Comments.
+$waitingComments = (int) \common\models\BlogComment::find()->where(['status' => \common\models\BlogComment::STATUS_PENDING, 'parent_id' => null])->count();
+
 ?>
 
 <aside class="main-sidebar sidebar-dark-primary elevation-4">
@@ -115,6 +118,13 @@ use yii\helpers\Html;
                         'icon' => 'tags',
                         'url' => ['/blog-category/index'],
                         'active' => Yii::$app->controller->id === 'blog-category'
+                    ],
+                    [
+                        'label' => 'Comments',
+                        'badge' => $waitingComments > 0 ? '<span class="right badge badge-warning" title="Waiting for approval">' . $waitingComments . '</span>' : '',
+                        'icon' => 'comments',
+                        'url' => ['/blog-comment/index'],
+                        'active' => Yii::$app->controller->id === 'blog-comment'
                     ],
                     // =====================================================================
                     // 🚀 1.1. CUSTOMER SUPPORT

@@ -19,12 +19,14 @@ use Yii;
  * @property int $status
  * @property int $is_featured
  * @property int $noindex
+ * @property int $comments_open
  * @property int|null $published_at
  * @property int|null $author_id
  * @property int $created_at
  * @property int $updated_at
  *
  * @property Admin $author
+ * @property BlogComment[] $blogComments
  * @property BlogPostRevision[] $blogPostRevisions
  * @property BlogPostTag[] $blogPostTags
  * @property BlogPostView[] $blogPostViews
@@ -49,7 +51,8 @@ class BlogPost extends \yii\db\ActiveRecord
         return [
             [['category_id', 'cover_image', 'cover_alt', 'seo_title', 'published_at', 'author_id'], 'default', 'value' => null],
             [['noindex'], 'default', 'value' => 0],
-            [['category_id', 'status', 'is_featured', 'noindex', 'published_at', 'author_id', 'created_at', 'updated_at'], 'integer'],
+            [['comments_open'], 'default', 'value' => 1],
+            [['category_id', 'status', 'is_featured', 'noindex', 'comments_open', 'published_at', 'author_id', 'created_at', 'updated_at'], 'integer'],
             [['title', 'slug', 'summary', 'body', 'created_at', 'updated_at'], 'required'],
             [['body'], 'string'],
             [['title', 'cover_alt'], 'string', 'max' => 200],
@@ -81,6 +84,7 @@ class BlogPost extends \yii\db\ActiveRecord
             'status' => 'Status',
             'is_featured' => 'Is Featured',
             'noindex' => 'Noindex',
+            'comments_open' => 'Comments Open',
             'published_at' => 'Published At',
             'author_id' => 'Author ID',
             'created_at' => 'Created At',
@@ -96,6 +100,16 @@ class BlogPost extends \yii\db\ActiveRecord
     public function getAuthor()
     {
         return $this->hasOne(Admin::class, ['id' => 'author_id']);
+    }
+
+    /**
+     * Gets query for [[BlogComments]].
+     *
+     * @return \yii\db\ActiveQuery
+     */
+    public function getBlogComments()
+    {
+        return $this->hasMany(BlogComment::class, ['post_id' => 'id']);
     }
 
     /**

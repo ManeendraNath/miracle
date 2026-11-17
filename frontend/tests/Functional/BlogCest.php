@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace frontend\tests\Functional;
 
 use common\models\BlogCategory;
+use common\models\BlogComment;
 use common\models\BlogPost;
 use frontend\tests\Support\FunctionalTester;
 
@@ -83,5 +84,52 @@ final class BlogCest
         $I->seeElement('link[rel=canonical][href$="/about"]');
         $I->amOnPage('/contact?subject=Project+enquiry');
         $I->seeElement('link[rel=canonical][href$="/contact"]');
+    }
+
+    public function aCommentShowsOnlyOnceStaffApproveIt(FunctionalTester $I): void
+    {
+        $id = (int) $I->haveRecord(BlogPost::class, ['title' => 'Talk post', 'slug' => 'talk-post', 'summary' => 'A summary.', 'body' => '<p>Body.</p>', 'status' => BlogPost::STATUS_PUBLISHED, 'published_at' => time() - 60, 'created_at' => time(), 'updated_at' => time()]);
+        $I->amOnPage('/blog/talk-post');
+        $I->see('Leave a comment', 'h3');
+        $I->submitForm('#comment-form', ['BlogComment[author_name]' => 'Ana', 'BlogComment[author_email]' => 'ana@example.test', 'BlogComment[body]' => "Useful, thanks.\n<b>Two</b> lines."]);
+        $I->see('Your comment will appear here once we have read it.');
+        $I->dontSee('Useful, thanks.');
+        $comment = BlogComment::findOne(['post_id' => $id]);
+        $I->assertSame(BlogComment::STATUS_PENDING, $comment->status);
+        $I->seeRecord(\common\models\AdminNotification::class, ['title' => 'New Blog Comment']);
+
+        $comment->updateAttributes(['status' => BlogComment::STATUS_APPROVED]);
+        $I->haveRecord(BlogComment::class, ['post_id' => $id, 'parent_id' => $comment->id, 'author_name' => 'Team member', 'body' => 'Glad it helped.', 'status' => BlogComment::STATUS_APPROVED, 'created_at' => time(), 'updated_at' => time()]);
+        $I->amOnPage('/blog/talk-post');
+        $I->see('1 comment', 'h2');
+        $I->see('Useful, thanks.');
+        $I->seeInSource('&lt;b&gt;Two&lt;/b&gt;');
+        $I->see('Glad it helped.');
+        $I->dontSee('ana@example.test');
+
+        BlogPost::updateAll(['comments_open' => 0], ['id' => $id]);
+        $I->amOnPage('/blog/talk-post');
+        $I->see('Comments are closed on this post.');
+        $I->dontSeeElement('#comment-form');
+        $I->see('Useful, thanks.');
+    }
+
+    public function spamAndFloodsAreKeptOff(FunctionalTester $I): void
+    {
+        $I->haveServerParameter('REMOTE_ADDR', '203.0.113.7');
+        $id = (int) $I->haveRecord(BlogPost::class, ['title' => 'Busy post', 'slug' => 'busy-post', 'summary' => 'A summary.', 'body' => '<p>Body.</p>', 'status' => BlogPost::STATUS_PUBLISHED, 'published_at' => time() - 60, 'created_at' => time(), 'updated_at' => time()]);
+        $I->amOnPage('/blog/busy-post');
+        $I->submitForm('#comment-form', ['BlogComment[author_name]' => 'Bot', 'BlogComment[author_email]' => 'b@example.test', 'BlogComment[body]' => 'Hi', 'mw_hp_extra' => 'filled']);
+        $I->see('Your comment will appear here', '#comments [role=status]');
+        $I->seeRecord(BlogComment::class, ['post_id' => $id, 'author_name' => 'Bot', 'status' => BlogComment::STATUS_SPAM]);
+
+        $I->submitForm('#comment-form', ['BlogComment[author_name]' => 'Seller', 'BlogComment[author_email]' => 's@example.test', 'BlogComment[body]' => 'http://a.test http://b.test http://c.test']);
+        $I->seeRecord(BlogComment::class, ['post_id' => $id, 'author_name' => 'Seller', 'status' => BlogComment::STATUS_SPAM]);
+
+        $I->submitForm('#comment-form', ['BlogComment[author_name]' => 'Reader 1', 'BlogComment[author_email]' => 'r@example.test', 'BlogComment[body]' => 'Comment 1']);
+        $I->seeRecord(BlogComment::class, ['author_name' => 'Reader 1', 'status' => BlogComment::STATUS_PENDING]);
+        $I->submitForm('#comment-form', ['BlogComment[author_name]' => 'Reader 3', 'BlogComment[author_email]' => 'r@example.test', 'BlogComment[body]' => 'Comment 3']);
+        $I->see('Please wait', '#comments [role=alert]');
+        $I->dontSeeRecord(BlogComment::class, ['author_name' => 'Reader 3']);
     }
 }

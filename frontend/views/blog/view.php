@@ -3,6 +3,8 @@
 declare(strict_types=1);
 
 use common\components\CustomYii;
+use frontend\components\FormGuard;
+use yii\bootstrap5\ActiveForm;
 use yii\helpers\Html;
 use yii\helpers\Json;
 use yii\helpers\Url;
@@ -12,6 +14,8 @@ use yii\helpers\Url;
 /** @var common\models\BlogPost[] $related */
 /** @var common\models\BlogPost|null $older */
 /** @var common\models\BlogPost|null $newer */
+/** @var common\models\BlogComment[] $comments */
+/** @var common\models\BlogComment $comment */
 
 $siteName = CustomYii::getSetting('site_name') ?: 'Miracle Web Technologies';
 $url = Url::to(['/blog/view', 'slug' => $post->slug], true);
@@ -157,6 +161,44 @@ $schema = array_filter([
                         <?php endif; ?>
                     </div>
                 </nav>
+            <?php endif; ?>
+
+            <?php $notice = Yii::$app->session->getFlash('comment'); ?>
+            <?php if ($comments || $post->comments_open || is_array($notice)): ?>
+                <section id="comments" class="mw-comments mt-5" aria-labelledby="comments-title">
+                    <h2 id="comments-title" class="h4 fw-bold"><?= $comments ? count($comments) . ' ' . (count($comments) === 1 ? 'comment' : 'comments') : 'Comments' ?></h2>
+                    <?php if (is_array($notice)): ?>
+                        <div class="alert alert-<?= $notice[0] === 'success' ? 'success' : 'danger' ?>" role="<?= $notice[0] === 'success' ? 'status' : 'alert' ?>"><?= Html::encode($notice[1]) ?></div>
+                    <?php endif; ?>
+                    <?php foreach ($comments as $item): ?>
+                        <div class="mw-comment">
+                            <p class="mb-1"><strong><?= Html::encode($item->author_name) ?></strong> <span class="small text-muted">· <?= Yii::$app->formatter->asDate($item->created_at, 'php:d M Y') ?></span></p>
+                            <div class="mw-comment-body"><?= nl2br(Html::encode($item->body)) ?></div>
+                            <?php foreach ($item->replies as $reply): ?>
+                                <div class="mw-comment mw-comment-reply">
+                                    <p class="mb-1"><strong><?= Html::encode($reply->author_name) ?></strong> <span class="badge text-bg-primary">Team</span> <span class="small text-muted">· <?= Yii::$app->formatter->asDate($reply->created_at, 'php:d M Y') ?></span></p>
+                                    <div class="mw-comment-body"><?= nl2br(Html::encode($reply->body)) ?></div>
+                                </div>
+                            <?php endforeach; ?>
+                        </div>
+                    <?php endforeach; ?>
+
+                    <?php if ($post->comments_open): ?>
+                        <?php $form = ActiveForm::begin(['id' => 'comment-form', 'action' => ['/blog/view', 'slug' => $post->slug, '#' => 'comments'], 'options' => ['class' => 'mw-panel mt-4']]); ?>
+                            <h3 class="h5 fw-bold">Leave a comment</h3>
+                            <p class="small text-muted">Comments appear once we have read them. Your email is not shown.</p>
+                            <?= FormGuard::field() ?>
+                            <div class="row g-3">
+                                <div class="col-sm-6"><?= $form->field($comment, 'author_name')->textInput(['maxlength' => 100, 'autocomplete' => 'name']) ?></div>
+                                <div class="col-sm-6"><?= $form->field($comment, 'author_email')->input('email', ['maxlength' => 255, 'autocomplete' => 'email']) ?></div>
+                            </div>
+                            <?= $form->field($comment, 'body')->textarea(['rows' => 5, 'maxlength' => 5000]) ?>
+                            <?= Html::submitButton('Post comment', ['class' => 'btn btn-primary']) ?>
+                        <?php ActiveForm::end(); ?>
+                    <?php else: ?>
+                        <p class="small text-muted">Comments are closed on this post.</p>
+                    <?php endif; ?>
+                </section>
             <?php endif; ?>
 
             <aside class="mw-panel mt-5">

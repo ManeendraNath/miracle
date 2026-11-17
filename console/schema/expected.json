@@ -1,5 +1,5 @@
 {
-    "migrations": 76,
+    "migrations": 77,
     "columns": {
         "admin": {
             "auth_key": {
@@ -489,6 +489,74 @@
                 "extra": ""
             }
         },
+        "blog_comment": {
+            "admin_id": {
+                "type": "int",
+                "null": true,
+                "default": null,
+                "extra": ""
+            },
+            "author_email": {
+                "type": "varchar(255)",
+                "null": true,
+                "default": null,
+                "extra": ""
+            },
+            "author_name": {
+                "type": "varchar(100)",
+                "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "body": {
+                "type": "text",
+                "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "created_at": {
+                "type": "int",
+                "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "id": {
+                "type": "int",
+                "null": false,
+                "default": null,
+                "extra": "auto_increment"
+            },
+            "ip": {
+                "type": "varchar(45)",
+                "null": true,
+                "default": null,
+                "extra": ""
+            },
+            "parent_id": {
+                "type": "int",
+                "null": true,
+                "default": null,
+                "extra": ""
+            },
+            "post_id": {
+                "type": "int",
+                "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "status": {
+                "type": "tinyint",
+                "null": false,
+                "default": "0",
+                "extra": ""
+            },
+            "updated_at": {
+                "type": "int",
+                "null": false,
+                "default": null,
+                "extra": ""
+            }
+        },
         "blog_post": {
             "author_id": {
                 "type": "int",
@@ -506,6 +574,12 @@
                 "type": "int",
                 "null": true,
                 "default": null,
+                "extra": ""
+            },
+            "comments_open": {
+                "type": "tinyint",
+                "null": false,
+                "default": "1",
                 "extra": ""
             },
             "cover_alt": {
@@ -2720,6 +2794,13 @@
             "id": "primary",
             "slug": "unique"
         },
+        "blog_comment": {
+            "admin_id": "index",
+            "id": "primary",
+            "ip,created_at": "index",
+            "parent_id": "index",
+            "post_id,status": "index"
+        },
         "blog_post": {
             "author_id": "index",
             "category_id": "index",
@@ -2908,6 +2989,11 @@
             "billing_run_id": "billing_run(id) ON DELETE RESTRICT ON UPDATE CASCADE",
             "invoice_id": "invoice(id) ON DELETE RESTRICT ON UPDATE CASCADE",
             "user_id": "user(id) ON DELETE RESTRICT ON UPDATE CASCADE"
+        },
+        "blog_comment": {
+            "admin_id": "admin(id) ON DELETE SET NULL ON UPDATE CASCADE",
+            "parent_id": "blog_comment(id) ON DELETE CASCADE ON UPDATE CASCADE",
+            "post_id": "blog_post(id) ON DELETE CASCADE ON UPDATE CASCADE"
         },
         "blog_post": {
             "author_id": "admin(id) ON DELETE SET NULL ON UPDATE CASCADE",

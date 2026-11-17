@@ -51,6 +51,11 @@ final class AdminAlertService extends AdminNotificationService
         self::send($title, $message, 'lead', '/audit-request/index', true);
     }
 
+    public static function blogCommentWaiting(string $postTitle, string $name): void
+    {
+        self::send('New Blog Comment', "Post: {$postTitle}\nFrom: {$name}\nIt shows on the post once you approve it. Further comments while this one waits only add to the count next to Blog > Comments.", 'lead', '/blog-comment/index');
+    }
+
     public static function testimonialSubmitted(string $clientName): void
     {
         self::send('New Testimonial', "From: {$clientName}\nReview it before publishing.", 'testimonial', '/testimonial/index');

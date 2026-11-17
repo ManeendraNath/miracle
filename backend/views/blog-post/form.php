@@ -176,6 +176,7 @@ JS);
                         ?><option value="<?= Html::encode($tagName) ?>"></option><?php
                                              endforeach; ?></datalist>
                     <?= $form->field($model, 'is_featured')->checkbox() ?>
+                    <?= $form->field($model, 'comments_open')->checkbox()->hint('Readers can comment; each waits for approval under Blog > Comments.') ?>
                     <?= $form->field($model, 'slug', ['enableClientValidation' => false])->textInput(['maxlength' => 220, 'placeholder' => 'Made from the title'])->hint('/blog/' . Html::encode($model->slug ?: 'made-from-the-title')) ?>
                     <?= Html::submitButton('<i class="fas fa-save me-1"></i> Save', ['class' => 'btn btn-primary w-100']) ?>
                 </div>

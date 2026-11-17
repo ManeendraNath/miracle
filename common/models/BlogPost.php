@@ -32,6 +32,7 @@ use yii\helpers\Inflector;
  * @property Admin|null $author
  * @property BlogTag[] $tags
  * @property BlogPostRevision[] $revisions
+ * @property int $comments_open New comments are accepted (old ones stay shown either way)
  */
 class BlogPost extends base\BlogPost
 {
@@ -74,7 +75,7 @@ class BlogPost extends base\BlogPost
             // Not on the form (null): left null, so the post's tags stay as they are.
             ['tagNames', 'trim', 'skipOnEmpty' => true],
             [['status', 'is_featured'], 'default', 'value' => 0],
-            [['is_featured', 'noindex'], 'boolean'],
+            [['is_featured', 'noindex', 'comments_open'], 'boolean'],
             ['tagNames', 'string', 'max' => 500],
             ['tagNames', function (string $attribute): void {
                 foreach (array_filter(array_map('trim', explode(',', (string) $this->$attribute))) as $name) {
@@ -125,6 +126,7 @@ class BlogPost extends base\BlogPost
                     'cover_alt' => 'Cover description (alt text)',
                     'is_featured' => 'Feature at the top of the blog',
                     'noindex' => 'Keep out of search engines',
+                    'comments_open' => 'Allow comments',
                     'published_at' => 'Published',
         ]);
     }

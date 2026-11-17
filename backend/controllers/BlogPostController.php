@@ -92,7 +92,9 @@ class BlogPostController extends BaseController
 
     private function saveForm(BlogPost $model): Response|string
     {
-        $wasPublic = $model->isPublic();
+        $wasLive = $model->isPublic();
+        $wasPublic = $wasLive && !$model->noindex;
+        $oldSlug = $model->slug;
         if (!$model->getIsNewRecord()) {
             $model->tagNames = $model->tagNamesText();
         }
@@ -123,11 +125,21 @@ class BlogPostController extends BaseController
                     }
                 }
                 if ($saved) {
-                    // Google finds new posts through the sitemap within days; asking it directly takes about a day.
-                    $indexing = 'Ask Google to index it: click Search Console above, then URL inspection > paste ' . $this->publicUrl('blog/' . $model->slug) . ' > Request indexing.';
-                    Yii::$app->session->setFlash('success', match ($model->stateLabel()) {
-                        'Published' => $wasPublic ? 'Post saved.' : 'Post published. ' . $indexing,
-                        'Scheduled' => 'Post saved. It goes live on ' . Yii::$app->formatter->asDatetime($model->published_at, 'php:d M Y, H:i') . '. Once it is live: ' . lcfirst($indexing),
+                    // /sitemap.xml is built on every request, so it is always current, and Google re-reads it by itself:
+                    // nothing ever needs resubmitting. Asking Google to index a new address directly is faster (about a day).
+                    $indexing = 'To have it in Google sooner: click Search Console above, then URL inspection > paste ' . $this->publicUrl('blog/' . $model->slug) . ' > Request indexing.';
+                    $listed = $model->isPublic() && !$model->noindex;
+                    Yii::$app->session->setFlash('success', match (true) {
+                        $model->stateLabel() === 'Scheduled' => 'Post saved. ' . ($wasLive ? 'It is off the website until ' : 'It goes live on ')
+                            . Yii::$app->formatter->asDatetime($model->published_at, 'php:d M Y, H:i')
+                            . ($model->noindex ? ', kept out of search engines and the sitemap.' : ' and joins the sitemap then by itself. Once it is live: ' . lcfirst($indexing)),
+                        $listed && $wasLive && !$wasPublic => 'Post saved and added to the sitemap automatically; Google reads the sitemap by itself, so there is nothing to resubmit. ' . $indexing,
+                        $listed && !$wasPublic => 'Post published and added to the sitemap automatically; Google reads the sitemap by itself, so there is nothing to resubmit. ' . $indexing,
+                        $listed && $model->slug !== $oldSlug => 'Post saved. Its web address changed: the sitemap now lists the new one by itself, and the old address no longer works. ' . $indexing,
+                        $listed => 'Post saved. The sitemap shows the update by itself; nothing to do in Search Console.',
+                        $wasPublic && $model->stateLabel() === 'Draft' => 'Draft saved: visitors can\'t see it until you publish it, and it was taken out of the sitemap automatically. Nothing to do in Search Console.',
+                        $wasPublic => 'Post saved and taken out of the sitemap automatically. Google drops it from search on its next visit; nothing to do in Search Console.',
+                        $model->isPublic() => 'Post saved. It is on the website but kept out of search engines and the sitemap.',
                         default => 'Draft saved. Visitors can\'t see it until you publish it.',
                     });
 

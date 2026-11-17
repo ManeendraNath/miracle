@@ -94,6 +94,12 @@ class BlogComment extends base\BlogComment
         return $this->hasMany(self::class, ['parent_id' => 'id'])->andOnCondition(['status' => self::STATUS_APPROVED])->orderBy(['id' => SORT_ASC]);
     }
 
+    /** Reader comments (not replies) on posts that are not in the trash: what staff moderate. */
+    public static function onLivePosts(): ActiveQuery
+    {
+        return self::find()->where(['parent_id' => null, 'post_id' => BlogPost::find()->select('id')->where(['deleted_at' => null])]);
+    }
+
     /** Approved reader comments of a post with their replies, oldest first. */
     public static function shownFor(int $postId): ActiveQuery
     {

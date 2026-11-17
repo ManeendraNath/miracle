@@ -172,4 +172,25 @@ final class BlogCest
         $I->amOnPage('/blog/confirm?token=wrong');
         $I->seeResponseCodeIs(404);
     }
+
+    public function anOldAddressLeadsToTheMovedPostAndTrashIsGone(FunctionalTester $I): void
+    {
+        $id = (int) $I->haveRecord(BlogPost::class, ['title' => 'New home', 'slug' => 'new-home', 'summary' => 'S.', 'body' => '<p>B.</p>', 'status' => BlogPost::STATUS_PUBLISHED, 'published_at' => time() - 60, 'created_at' => time(), 'updated_at' => time()]);
+        $I->haveRecord(\common\models\BlogPostRedirect::class, ['old_slug' => 'old-home', 'post_id' => $id, 'created_at' => time()]);
+        $I->stopFollowingRedirects();
+        $I->amOnPage('/blog/old-home');
+        $I->seeResponseCodeIs(301);
+        $I->startFollowingRedirects();
+        $I->amOnPage('/blog/old-home');
+        $I->seeCurrentUrlEquals('/index-test.php/blog/new-home');
+        $I->see('New home', 'h1');
+
+        BlogPost::updateAll(['deleted_at' => time()], ['id' => $id]);
+        foreach (['/blog/new-home', '/blog/old-home'] as $gone) {
+            $I->amOnPage($gone);
+            $I->seeResponseCodeIs(404);
+        }
+        $I->amOnPage('/sitemap.xml');
+        $I->dontSeeInSource('new-home');
+    }
 }

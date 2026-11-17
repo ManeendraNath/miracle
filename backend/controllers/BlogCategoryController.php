@@ -34,7 +34,7 @@ class BlogCategoryController extends BaseController
     public function actionDelete(int $id): Response
     {
         $model = $this->findModel($id);
-        $posts = (int) BlogPost::find()->where(['category_id' => $model->id])->count();
+        $posts = (int) BlogPost::find()->where(['category_id' => $model->id, 'deleted_at' => null])->count();
         $model->delete();
         Yii::$app->session->setFlash('success', 'Category deleted.' . ($posts > 0 ? " Its {$posts} post(s) now have no category." : ''));
 

@@ -95,6 +95,14 @@ class BlogController extends Controller
     {
         $post = BlogPost::findPublic()->andWhere(['slug' => $slug])->with(['category', 'tags', 'author'])->one();
         if (!$post instanceof BlogPost) {
+            // An old address of a post that moved: send links and search engines to where it is now.
+            $moved = BlogPost::findPublic()->andWhere(['id' => \common\models\BlogPostRedirect::find()->select('post_id')->where(['old_slug' => $slug])])->one();
+            if ($moved instanceof BlogPost) {
+                // Browsers keep a 301 for good unless told otherwise; a day, as the address may change again.
+                Yii::$app->response->headers->set('Cache-Control', 'public, max-age=86400');
+
+                return $this->redirect(['/blog/view', 'slug' => $moved->slug], 301);
+            }
             throw new NotFoundHttpException('This post does not exist.');
         }
         $comment = new BlogComment(['scenario' => BlogComment::SCENARIO_READER]);
@@ -147,7 +155,7 @@ class BlogController extends Controller
         $comment->post_id = $post->id;
         $comment->ip = $ip;
         $comment->status = $bot || $comment->looksLikeSpam() ? BlogComment::STATUS_SPAM : BlogComment::STATUS_PENDING;
-        $othersWaiting = BlogComment::find()->where(['status' => BlogComment::STATUS_PENDING, 'parent_id' => null])->exists();
+        $othersWaiting = BlogComment::onLivePosts()->andWhere(['status' => BlogComment::STATUS_PENDING])->exists();
         if (!$comment->save(false)) {
             $session->setFlash('comment', ['danger', 'Your comment could not be saved. Please try again.']);
 

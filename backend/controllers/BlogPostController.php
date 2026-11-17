@@ -16,13 +16,89 @@ use yii\web\UploadedFile;
 /** Posts for the public blog at /blog. */
 class BlogPostController extends BaseController
 {
-    public function actionIndex(): string
+    public function actionIndex(mixed $trash = null): string
     {
+        $inTrash = $trash === '1';
+
         return $this->render('index', [
             'dataProvider' => new ActiveDataProvider([
-                'query' => BlogPost::find()->with('category')->orderBy(['status' => SORT_ASC, 'published_at' => SORT_DESC, 'id' => SORT_DESC]),
+                'query' => BlogPost::find()->with('category')->where($inTrash ? ['not', ['deleted_at' => null]] : ['deleted_at' => null])
+                    ->orderBy($inTrash ? ['deleted_at' => SORT_DESC] : ['status' => SORT_ASC, 'published_at' => SORT_DESC, 'id' => SORT_DESC]),
+                'pagination' => ['pageSize' => 30],
             ]),
+            'inTrash' => $inTrash,
+            'trashCount' => (int) BlogPost::find()->where(['not', ['deleted_at' => null]])->count(),
         ]);
+    }
+
+    /** Views a day for the last 30 days, and what readers did with the post. */
+    public function actionStats(int $id): string
+    {
+        $model = $this->findModel($id);
+        $since = date('Y-m-d', strtotime('-29 days'));
+        $days = (new \yii\db\Query())->select(['COUNT(*)', 'day'])->from('{{%blog_post_view}}')
+            ->where(['post_id' => $model->id])->andWhere(['>=', 'day', $since])->groupBy('day')->indexBy('day')->column();
+
+        return $this->render('stats', [
+            'model' => $model,
+            'days' => $days,
+            'views' => \common\models\BlogPostView::counts([(int) $model->id])[(int) $model->id] ?? ['total' => 0, 'recent' => 0],
+            'comments' => \common\models\BlogComment::find()->select(['COUNT(*)', 'status'])->where(['post_id' => $model->id, 'parent_id' => null])->groupBy('status')->indexBy('status')->column(),
+            'emailed' => (int) $model->getBlogNewsletterDeliveries()->andWhere(['failed' => 0])->count(),
+            'redirects' => $model->getBlogPostRedirects()->select('old_slug')->column(),
+        ]);
+    }
+
+    /** A Draft copy to start from, opened for editing. */
+    public function actionDuplicate(int $id): Response
+    {
+        $copy = $this->findModel($id)->duplicate((int) Yii::$app->user->id);
+        Yii::$app->session->setFlash('success', 'A Draft copy was made. Change its title and web address, then publish it when ready.');
+
+        return $this->redirect(['update', 'id' => $copy->id]);
+    }
+
+    public function actionUntrash(int $id): Response
+    {
+        $model = $this->findModel($id);
+        $model->untrash();
+        Yii::$app->session->setFlash('success', $model->isPublic() ? 'Post restored: it is back on the website and in the sitemap.' : 'Post restored.');
+
+        return $this->redirect(['index']);
+    }
+
+    /** Several posts at once, from the ticked boxes of the list. */
+    public function actionBulk(): Response
+    {
+        $request = Yii::$app->request;
+        $ids = array_map('intval', array_filter((array) $request->post('selection', []), 'is_numeric'));
+        $action = (string) $request->post('bulk_action', '');
+        $inTrash = $action === 'untrash' || $action === 'purge';
+        $posts = $ids === [] ? [] : BlogPost::find()->where(['id' => $ids])->andWhere($inTrash ? ['not', ['deleted_at' => null]] : ['deleted_at' => null])->all();
+        if ($posts === [] || !in_array($action, ['publish', 'draft', 'trash', 'untrash', 'purge'], true)) {
+            Yii::$app->session->setFlash('warning', 'Tick at least one post and choose what to do with them.');
+
+            return $this->redirect(['index', 'trash' => $inTrash ? '1' : null]);
+        }
+        foreach ($posts as $post) {
+            match ($action) {
+                'publish' => $post->updateAttributes(['status' => BlogPost::STATUS_PUBLISHED, 'published_at' => $post->published_at ?: time(), 'updated_at' => time()]),
+                'draft' => $post->updateAttributes(['status' => BlogPost::STATUS_DRAFT, 'updated_at' => time()]),
+                'trash' => $post->trash(),
+                'untrash' => $post->untrash(),
+                'purge' => $post->delete(),
+            };
+        }
+        $n = count($posts) . ' post' . (count($posts) === 1 ? '' : 's');
+        Yii::$app->session->setFlash('success', match ($action) {
+            'publish' => "$n published (scheduled ones go live at their time). The sitemap shows them by itself.",
+            'draft' => "$n set to Draft: off the website and out of the sitemap.",
+            'trash' => "$n moved to the trash. Restore them from the Trash tab within " . BlogPost::TRASH_DAYS . ' days.',
+            'untrash' => "$n restored.",
+            'purge' => "$n deleted for good.",
+        });
+
+        return $this->redirect(['index', 'trash' => $inTrash ? '1' : null]);
     }
 
     public function actionCreate(): Response|string
@@ -69,12 +145,20 @@ class BlogPostController extends BaseController
         return $this->redirect(['update', 'id' => $model->id]);
     }
 
+    /** From the list: to the trash first; a post already there is deleted for good. */
     public function actionDelete(int $id): Response
     {
-        $this->findModel($id)->delete();
-        Yii::$app->session->setFlash('success', 'Post deleted.');
+        $model = $this->findModel($id);
+        if ($model->deleted_at === null) {
+            $model->trash();
+            Yii::$app->session->setFlash('success', 'Post moved to the trash: it is off the website and out of the sitemap. Restore it from the Trash tab within ' . BlogPost::TRASH_DAYS . ' days.');
 
-        return $this->redirect(['index']);
+            return $this->redirect(['index']);
+        }
+        $model->delete();
+        Yii::$app->session->setFlash('success', 'Post deleted for good.');
+
+        return $this->redirect(['index', 'trash' => '1']);
     }
 
     /** The editor's image button: stores the image and returns its public address. */
@@ -135,12 +219,13 @@ class BlogPostController extends BaseController
                     $indexing = 'To have it in Google sooner: click Search Console above, then URL inspection > paste ' . $this->publicUrl('blog/' . $model->slug) . ' > Request indexing.';
                     $listed = $model->isPublic() && !$model->noindex;
                     Yii::$app->session->setFlash('success', match (true) {
+                        $model->deleted_at !== null => 'Post saved. It is in the trash, so it is not on the website: restore it to show it again.',
                         $model->stateLabel() === 'Scheduled' => 'Post saved. ' . ($wasLive ? 'It is off the website until ' : 'It goes live on ')
                             . Yii::$app->formatter->asDatetime($model->published_at, 'php:d M Y, H:i')
                             . ($model->noindex ? ', kept out of search engines and the sitemap.' : ' and joins the sitemap then by itself. Once it is live: ' . lcfirst($indexing)),
                         $listed && $wasLive && !$wasPublic => 'Post saved and added to the sitemap automatically; Google reads the sitemap by itself, so there is nothing to resubmit. ' . $indexing,
                         $listed && !$wasPublic => 'Post published and added to the sitemap automatically; Google reads the sitemap by itself, so there is nothing to resubmit. ' . $indexing,
-                        $listed && $model->slug !== $oldSlug => 'Post saved. Its web address changed: the sitemap now lists the new one by itself, and the old address no longer works. ' . $indexing,
+                        $listed && $model->slug !== $oldSlug => 'Post saved. Its web address changed: the sitemap now lists the new one by itself, and the old address sends readers and search engines to it. ' . $indexing,
                         $listed => 'Post saved. The sitemap shows the update by itself; nothing to do in Search Console.',
                         $wasPublic && $model->stateLabel() === 'Draft' => 'Draft saved: visitors can\'t see it until you publish it, and it was taken out of the sitemap automatically. Nothing to do in Search Console.',
                         $wasPublic => 'Post saved and taken out of the sitemap automatically. Google drops it from search on its next visit; nothing to do in Search Console.',

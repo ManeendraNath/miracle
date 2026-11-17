@@ -21,6 +21,9 @@ final class GridActionHelper
         'disable' => ['fa-ban', 'warning', 'Disable'],
         'enable' => ['fa-check', 'success', 'Enable'],
         'resend' => ['fa-paper-plane', 'secondary', 'Resend Invoice'],
+        'stats' => ['fa-chart-bar', 'secondary', 'Stats'],
+        'copy' => ['fa-copy', 'secondary', 'Duplicate'],
+        'restore' => ['fa-undo', 'success', 'Restore'],
     ];
 
     private function __construct()

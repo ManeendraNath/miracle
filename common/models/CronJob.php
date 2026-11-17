@@ -24,7 +24,7 @@ final class CronJob extends base\CronJob
         'cron/razorpay-sync' => ['Online payment sync (Razorpay and PayPal)', 'Every 30 minutes', 'A PayPal payment held by PayPal is never recorded when PayPal completes it (the invoice stays unpaid although the client paid). A Razorpay or PayPal payment whose browser was lost stays unrecorded until the customer tries to pay that invoice again, Razorpay fees are not filled in, and refunds made in the Razorpay dashboard are not noticed.'],
         'cron/whatsapp-cleanup' => ['WhatsApp log cleanup', 'Weekly', 'Old WhatsApp log rows stay.'],
         'cron/blog-newsletter' => ['Blog newsletter', 'Every 15 minutes', 'New blog posts are not emailed to subscribers; they go out once it is back on.'],
-        'cron/blog-spam-cleanup' => ['Blog cleanup', 'Weekly', 'Blog comments in Spam are kept for good instead of being deleted after ' . BlogComment::SPAM_DAYS . ' days, and newsletter sign-ups never confirmed are kept too.'],
+        'cron/blog-spam-cleanup' => ['Blog cleanup', 'Weekly', 'Blog comments in Spam are kept for good instead of being deleted after ' . BlogComment::SPAM_DAYS . ' days; newsletter sign-ups never confirmed and posts in the trash are kept too.'],
         'backup/run' => ['Daily backup', 'Daily', 'No scheduled database or payment proof backups. The backup before a deploy still runs.'],
     ];
 

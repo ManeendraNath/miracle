@@ -153,6 +153,12 @@ JS);
         <button type="button" class="btn btn-sm btn-warning" data-restore>Bring them back</button>
         <button type="button" class="btn btn-sm btn-link" data-discard>Discard</button>
     </div>
+    <?php if ($model->deleted_at !== null): ?>
+        <div class="alert alert-warning d-flex flex-wrap gap-2 align-items-center">
+            This post is in the trash: it is not on the website, whatever its status says.
+            <?= Html::a('Restore it', ['untrash', 'id' => $model->id], ['class' => 'btn btn-sm btn-success', 'data-method' => 'post']) ?>
+        </div>
+    <?php endif; ?>
     <?php $form = ActiveForm::begin(['id' => 'blog-post-form', 'options' => ['enctype' => 'multipart/form-data', 'data-post' => $model->isNewRecord ? 'new' : (string) $model->id, 'data-updated' => (string) (int) $model->updated_at, 'data-unsaved' => $model->hasErrors() ? '' : null]]); ?>
     <div class="row">
         <div class="col-xl-8">

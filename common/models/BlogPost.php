@@ -44,6 +44,9 @@ class BlogPost extends base\BlogPost
     /** Where post images live, under the frontend web root (served directly by the web server). */
     public const UPLOAD_DIR = 'uploads/blog';
 
+    /** Days a post stays in the trash before the weekly cleanup deletes it. */
+    public const TRASH_DAYS = 30;
+
     /** Addresses under /blog/ taken by the blog's own pages. */
     public const RESERVED_SLUGS = ['feed', 'subscribe', 'confirm', 'unsubscribe'];
 
@@ -94,6 +97,12 @@ class BlogPost extends base\BlogPost
             ['slug', 'filter', 'filter' => fn($slug): string => Inflector::slug((string) ($slug ?: $this->title))],
             // Server only: the browser can't run the filter above, so an empty field would wrongly fail there.
             ['slug', 'required', 'message' => 'Use at least one letter or digit in the title.', 'enableClientValidation' => false],
+            // Before the base "unique" rule: the post holding the address may be out of sight, in the trash.
+            ['slug', function (string $attribute): void {
+                if (self::find()->where(['slug' => $this->slug])->andWhere(['not', ['deleted_at' => null]])->andFilterWhere(['<>', 'id', $this->id])->exists()) {
+                    $this->addError($attribute, 'A post in the trash uses this web address. Delete that post for good (Trash tab), or choose another address.');
+                }
+            }],
             ['slug', 'in', 'range' => self::RESERVED_SLUGS, 'not' => true, 'message' => 'The web address "{value}" is used by the blog itself. Choose another.'],
             // Pasted or typed HTML could carry scripts: only plain article markup is kept.
             ['body', 'filter', 'filter' => [self::class, 'cleanBody']],
@@ -108,7 +117,7 @@ class BlogPost extends base\BlogPost
     #[\Override]
     public function scenarios(): array
     {
-        $internal = ['cover_image', 'author_id', 'published_at', 'created_at', 'updated_at', 'newsletter_started_at', 'newsletter_done_at'];
+        $internal = ['cover_image', 'author_id', 'published_at', 'created_at', 'updated_at', 'newsletter_started_at', 'newsletter_done_at', 'deleted_at'];
 
         return array_map(
             static fn(array $attributes): array => array_map(static fn(string $name): string => in_array($name, $internal, true) ? '!' . $name : $name, $attributes),
@@ -208,6 +217,15 @@ class BlogPost extends base\BlogPost
             }
             $this->_before = null;
         }
+        if ($this->isPublic()) {
+            // Live at this address now: an old address of another post with the same slug is over.
+            BlogPostRedirect::deleteAll(['old_slug' => $this->slug]);
+        }
+        if ($insert || array_key_exists('slug', $changedAttributes)) {
+            // Live before this save: a slug change made with a new, later publish time still leaves a redirect.
+            $wasPublishedAt = array_key_exists('published_at', $changedAttributes) ? $changedAttributes['published_at'] : $this->published_at;
+            $this->keepOldAddress($insert ? null : (string) $changedAttributes['slug'], $wasPublishedAt !== null && (int) $wasPublishedAt <= time());
+        }
         if ($this->tagNames !== null) {
             $ids = array_map(static fn(BlogTag $tag): int => (int) $tag->id, BlogTag::findOrCreate((string) $this->tagNames));
             $db = static::getDb();
@@ -217,6 +235,83 @@ class BlogPost extends base\BlogPost
             }
             unset($this->tags);
         }
+    }
+
+    /**
+     * After an address change: the old address of a post that has been live leads to the new one (a 301 from the
+     * blog), so links and search results keep working.
+     */
+    private function keepOldAddress(?string $oldSlug, bool $wasLive): void
+    {
+        // Old addresses with this post's new slug are removed only once it is live there (afterSave): a Draft taking
+        // the slug must not break the old link before it goes live.
+        if ($oldSlug !== null && $oldSlug !== '' && $oldSlug !== $this->slug && $wasLive) {
+            BlogPostRedirect::deleteAll(['old_slug' => $oldSlug]);
+            (new BlogPostRedirect(['old_slug' => $oldSlug, 'post_id' => $this->id, 'created_at' => time()]))->save(false);
+        }
+    }
+
+    /** Off the website and out of the sitemap, kept to restore. Emptied after TRASH_DAYS by the weekly cleanup. */
+    public function trash(): void
+    {
+        $this->updateAttributes(['deleted_at' => time(), 'updated_at' => time()]);
+    }
+
+    /**
+     * Back as it was. A post trashed before the newsletter got to it, restored after a day, is not emailed: by then
+     * it is not new.
+     */
+    public function untrash(): void
+    {
+        $changes = ['deleted_at' => null, 'updated_at' => time()];
+        $liveAgain = (int) $this->status === self::STATUS_PUBLISHED && $this->published_at !== null && (int) $this->published_at <= time();
+        if ($liveAgain && $this->newsletter_started_at === null && $this->deleted_at !== null && (int) $this->deleted_at < time() - 86400) {
+            $changes += ['newsletter_started_at' => time(), 'newsletter_done_at' => time()];
+        }
+        $this->updateAttributes($changes);
+    }
+
+    /** Deletes posts in the trash for more than TRASH_DAYS; returns how many. */
+    public static function emptyOldTrash(): int
+    {
+        $count = 0;
+        foreach (self::find()->where(['<', 'deleted_at', time() - self::TRASH_DAYS * 86400])->all() as $post) {
+            $count += (int) $post->delete();
+        }
+
+        return $count;
+    }
+
+    /** A Draft copy to start a similar post from: same text, category, cover and tags, a new address. */
+    public function duplicate(?int $authorId): self
+    {
+        $copy = (new self())->loadDefaultValues();
+        $copy->setAttributes([
+            'title' => mb_substr('Copy of ' . $this->title, 0, 200),
+            'summary' => $this->summary,
+            'body' => $this->body,
+            'category_id' => $this->category_id,
+            'seo_title' => $this->seo_title,
+            'cover_alt' => $this->cover_alt,
+            'noindex' => $this->noindex,
+            'comments_open' => $this->comments_open,
+            'send_newsletter' => $this->send_newsletter,
+        ], false);
+        $copy->cover_image = $this->cover_image;
+        $copy->status = self::STATUS_DRAFT;
+        $copy->author_id = $authorId;
+        $copy->tagNames = $this->tagNamesText();
+        $base = mb_substr($this->slug, 0, 200) . '-copy';
+        $slug = $base;
+        for ($n = 2; self::find()->where(['slug' => $slug])->exists() || BlogPostRedirect::find()->where(['old_slug' => $slug])->exists(); $n++) {
+            $slug = $base . '-' . $n;
+        }
+        $copy->slug = $slug;
+        if (!$copy->save()) {
+            throw new \RuntimeException('The copy could not be saved: ' . implode(' ', $copy->getFirstErrors()));
+        }
+
+        return $copy;
     }
 
     /** Article markup only: headings, paragraphs, lists, quotes, code, links and images. */
@@ -239,18 +334,19 @@ class BlogPost extends base\BlogPost
     /** Posts visitors can see: Published, and their publish time has passed. */
     public static function findPublic(): ActiveQuery
     {
-        return self::find()->where(['status' => self::STATUS_PUBLISHED])->andWhere(['<=', 'published_at', time()]);
+        return self::find()->where(['status' => self::STATUS_PUBLISHED, 'deleted_at' => null])->andWhere(['<=', 'published_at', time()]);
     }
 
     public function isPublic(): bool
     {
-        return (int) $this->status === self::STATUS_PUBLISHED && $this->published_at !== null && (int) $this->published_at <= time();
+        return (int) $this->status === self::STATUS_PUBLISHED && $this->published_at !== null && (int) $this->published_at <= time() && $this->deleted_at === null;
     }
 
-    /** Draft, Scheduled or Published, for the admin list. */
+    /** Draft, Scheduled, Published or In trash, for the admin list. */
     public function stateLabel(): string
     {
         return match (true) {
+            $this->deleted_at !== null => 'In trash',
             (int) $this->status !== self::STATUS_PUBLISHED => 'Draft',
             !$this->isPublic() => 'Scheduled',
             default => 'Published',

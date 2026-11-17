@@ -35,7 +35,7 @@ GridViewHelper::register($this);
                 'columns' => [
                     'name',
                     ['attribute' => 'slug', 'value' => static fn(BlogCategory $model): string => '/blog/category/' . $model->slug],
-                    ['label' => 'Posts', 'value' => static fn(BlogCategory $model): int => (int) BlogPost::find()->where(['category_id' => $model->id])->count()],
+                    ['label' => 'Posts', 'value' => static fn(BlogCategory $model): int => (int) BlogPost::find()->where(['category_id' => $model->id, 'deleted_at' => null])->count()],
                     GridActionHelper::crudColumn('{update} {delete}', 'Delete this category? Its posts stay, with no category.'),
                 ],
             ]) ?>

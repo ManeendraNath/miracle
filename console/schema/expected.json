@@ -1,5 +1,5 @@
 {
-    "migrations": 78,
+    "migrations": 79,
     "columns": {
         "admin": {
             "auth_key": {
@@ -626,6 +626,12 @@
                 "default": null,
                 "extra": ""
             },
+            "deleted_at": {
+                "type": "int",
+                "null": true,
+                "default": null,
+                "extra": ""
+            },
             "id": {
                 "type": "int",
                 "null": false,
@@ -699,6 +705,32 @@
                 "extra": ""
             },
             "updated_at": {
+                "type": "int",
+                "null": false,
+                "default": null,
+                "extra": ""
+            }
+        },
+        "blog_post_redirect": {
+            "created_at": {
+                "type": "int",
+                "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "id": {
+                "type": "int",
+                "null": false,
+                "default": null,
+                "extra": "auto_increment"
+            },
+            "old_slug": {
+                "type": "varchar(255)",
+                "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "post_id": {
                 "type": "int",
                 "null": false,
                 "default": null,
@@ -2918,6 +2950,11 @@
             "slug": "unique",
             "status,published_at": "index"
         },
+        "blog_post_redirect": {
+            "id": "primary",
+            "old_slug": "unique",
+            "post_id": "index"
+        },
         "blog_post_revision": {
             "author_id": "index",
             "id": "primary",
@@ -3117,6 +3154,9 @@
         "blog_post": {
             "author_id": "admin(id) ON DELETE SET NULL ON UPDATE CASCADE",
             "category_id": "blog_category(id) ON DELETE SET NULL ON UPDATE CASCADE"
+        },
+        "blog_post_redirect": {
+            "post_id": "blog_post(id) ON DELETE CASCADE ON UPDATE CASCADE"
         },
         "blog_post_revision": {
             "author_id": "admin(id) ON DELETE SET NULL ON UPDATE CASCADE",

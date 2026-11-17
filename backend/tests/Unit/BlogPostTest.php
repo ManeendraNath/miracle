@@ -7,6 +7,7 @@ namespace backend\tests\Unit;
 use Codeception\Test\Unit;
 use common\models\BlogComment;
 use common\models\BlogPost;
+use common\models\BlogPostRedirect;
 use common\models\BlogTag;
 use common\services\BlogImageService;
 use yii\web\UploadedFile;
@@ -166,5 +167,74 @@ final class BlogPostTest extends Unit
         BlogComment::deleteOldSpam();
         $left = BlogComment::find()->select('author_name')->where(['post_id' => $post->id])->orderBy('author_name')->column();
         $this->assertSame(['marked today', 'new spam', 'old shown', 'old waiting'], $left);
+    }
+
+    public function testAMovedLivePostKeepsItsOldAddressAndADraftDoesNot(): void
+    {
+        $post = new BlogPost(['title' => 'Moving post', 'slug' => 'moving-post', 'summary' => 'S.', 'body' => '<p>B.</p>', 'status' => BlogPost::STATUS_PUBLISHED]);
+        $this->assertTrue($post->save());
+        $post->slug = 'moved-post';
+        $this->assertTrue($post->save());
+        $this->assertSame((int) $post->id, (int) BlogPostRedirect::find()->select('post_id')->where(['old_slug' => 'moving-post'])->scalar());
+
+        // Moved back and rescheduled: it was live, so the address it leaves still leads to it.
+        $post->slug = 'moving-post';
+        $post->publishAt = date('Y-m-d\TH:i', time() + 86400);
+        $this->assertTrue($post->save());
+        $this->assertTrue(BlogPostRedirect::find()->where(['old_slug' => 'moved-post', 'post_id' => $post->id])->exists());
+
+        // Another post going live at "moved-post" takes the address over from the old redirect.
+        $other = new BlogPost(['title' => 'Other', 'slug' => 'moved-post', 'summary' => 'S.', 'body' => '<p>B.</p>', 'status' => BlogPost::STATUS_DRAFT]);
+        $this->assertTrue($other->save());
+        $this->assertTrue(BlogPostRedirect::find()->where(['old_slug' => 'moved-post'])->exists(), 'not while it is a Draft');
+        $other->status = BlogPost::STATUS_PUBLISHED;
+        $this->assertTrue($other->save());
+        $this->assertFalse(BlogPostRedirect::find()->where(['old_slug' => 'moved-post'])->exists());
+
+        $draft = new BlogPost(['title' => 'Draft move', 'slug' => 'draft-move', 'summary' => 'S.', 'body' => '<p>B.</p>', 'status' => BlogPost::STATUS_DRAFT]);
+        $this->assertTrue($draft->save());
+        $draft->slug = 'draft-moved';
+        $this->assertTrue($draft->save());
+        $this->assertFalse(BlogPostRedirect::find()->where(['old_slug' => 'draft-move'])->exists());
+    }
+
+    public function testTrashHidesAPostAndOldTrashIsEmptied(): void
+    {
+        $post = new BlogPost(['title' => 'Binned', 'slug' => 'binned', 'summary' => 'S.', 'body' => '<p>B.</p>', 'status' => BlogPost::STATUS_PUBLISHED, 'is_featured' => 1]);
+        $this->assertTrue($post->save());
+        $post->trash();
+        $this->assertFalse($post->isPublic());
+        $this->assertSame('In trash', $post->stateLabel());
+        $this->assertFalse(BlogPost::findPublic()->andWhere(['id' => $post->id])->exists());
+        $taken = new BlogPost(['title' => 'Binned', 'slug' => 'binned', 'summary' => 'S.', 'body' => '<p>B.</p>']);
+        $this->assertFalse($taken->validate(['slug']));
+        $this->assertStringContainsString('in the trash', $taken->getFirstError('slug'));
+        $post->untrash();
+        $this->assertTrue($post->isPublic());
+
+        // A Draft restored days later is still emailed once it is published.
+        $draft = new BlogPost(['title' => 'Binned draft', 'slug' => 'binned-draft', 'summary' => 'S.', 'body' => '<p>B.</p>', 'status' => BlogPost::STATUS_DRAFT]);
+        $this->assertTrue($draft->save());
+        $draft->trash();
+        $draft->updateAttributes(['deleted_at' => time() - 3 * 86400]);
+        $draft->untrash();
+        $this->assertNull($draft->newsletter_started_at);
+
+        $post->updateAttributes(['deleted_at' => time() - (BlogPost::TRASH_DAYS + 1) * 86400]);
+        $this->assertSame(1, BlogPost::emptyOldTrash());
+        $this->assertNull(BlogPost::findOne($post->id));
+    }
+
+    public function testADuplicateIsADraftWithItsOwnAddressAndTheSameTags(): void
+    {
+        $post = new BlogPost(['title' => 'Original', 'slug' => 'original', 'summary' => 'S.', 'body' => '<p>B.</p>', 'status' => BlogPost::STATUS_PUBLISHED, 'tagNames' => 'SEO, Yii']);
+        $this->assertTrue($post->save());
+        $copy = $post->duplicate(null);
+        $second = $post->duplicate(null);
+        $this->assertSame('Copy of Original', $copy->title);
+        $this->assertSame('original-copy', $copy->slug);
+        $this->assertSame('original-copy-2', $second->slug);
+        $this->assertSame(BlogPost::STATUS_DRAFT, (int) $copy->status);
+        $this->assertSame('SEO, Yii', BlogPost::findOne($copy->id)->tagNamesText());
     }
 }

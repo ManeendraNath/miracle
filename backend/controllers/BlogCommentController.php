@@ -22,7 +22,7 @@ class BlogCommentController extends BaseController
             $status !== null && ctype_digit($status) && isset(BlogComment::statuses()[(int) $status]) => (int) $status,
             default => BlogComment::STATUS_PENDING,
         };
-        $query = BlogComment::find()->where(['parent_id' => null])->with(['post', 'replies'])->orderBy(['id' => SORT_DESC]);
+        $query = BlogComment::onLivePosts()->with(['post', 'replies'])->orderBy(['id' => SORT_DESC]);
         if ($filter !== null) {
             $query->andWhere(['status' => $filter]);
         }
@@ -30,7 +30,7 @@ class BlogCommentController extends BaseController
         return $this->render('index', [
             'dataProvider' => new ActiveDataProvider(['query' => $query, 'pagination' => ['pageSize' => 30]]),
             'filter' => $filter,
-            'counts' => BlogComment::find()->select(['COUNT(*)', 'status'])->where(['parent_id' => null])->groupBy('status')->indexBy('status')->column(),
+            'counts' => BlogComment::onLivePosts()->select(['COUNT(*)', 'status'])->groupBy('status')->indexBy('status')->column(),
         ]);
     }
 

@@ -229,14 +229,16 @@ class CronController extends Controller
 
     /**
      * Comments in Spam for more than SPAM_DAYS (with any replies) are deleted, real ones get that long to be rescued;
-     * and newsletter sign-ups never confirmed within BlogSubscriber::UNCONFIRMED_DAYS.
+     * newsletter sign-ups never confirmed within BlogSubscriber::UNCONFIRMED_DAYS, and posts in the trash for more than
+     * BlogPost::TRASH_DAYS.
      */
     public function actionBlogSpamCleanup(): int
     {
         return $this->runLocked('miracle:blog-spam-cleanup', 'Blog cleanup', static fn(): string => sprintf(
-            'Deleted %d spam comment(s) and %d unconfirmed newsletter sign-up(s).',
+            'Deleted %d spam comment(s), %d unconfirmed newsletter sign-up(s) and %d post(s) from the trash.',
             BlogComment::deleteOldSpam(),
             \common\models\BlogSubscriber::deleteUnconfirmed(),
+            \common\models\BlogPost::emptyOldTrash(),
         ));
     }
 

@@ -4,7 +4,7 @@ use yii\helpers\Url;
 use yii\helpers\Html;
 
 // Reader comments waiting for staff, shown next to Comments.
-$waitingComments = (int) \common\models\BlogComment::find()->where(['status' => \common\models\BlogComment::STATUS_PENDING, 'parent_id' => null])->count();
+$waitingComments = (int) \common\models\BlogComment::onLivePosts()->andWhere(['status' => \common\models\BlogComment::STATUS_PENDING])->count();
 
 ?>
 
@@ -125,6 +125,12 @@ $waitingComments = (int) \common\models\BlogComment::find()->where(['status' => 
                             'icon' => 'comments',
                             'url' => ['/blog-comment/index'],
                             'active' => Yii::$app->controller->id === 'blog-comment'
+                        ],
+                        [
+                            'label' => 'Media',
+                            'icon' => 'images',
+                            'url' => ['/blog-media/index'],
+                            'active' => Yii::$app->controller->id === 'blog-media'
                         ],
                         [
                             'label' => 'Subscribers',

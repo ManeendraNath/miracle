@@ -19,7 +19,12 @@ if ($model->isPublic()) {
 }
 $this->params['help'] = [
     'Preview' => 'The text and images as the post will read on the website; the website adds its own header, related posts and a "Discuss your project" box.',
-    'Status' => $model->isPublic() ? 'Live on the website.' : ($model->stateLabel() === 'Scheduled' ? 'Goes live on its own at the publish time.' : 'Draft: visitors can\'t see it until you publish it.'),
+    'Status' => match ($model->stateLabel()) {
+        'Published' => 'Live on the website.',
+        'Scheduled' => 'Goes live on its own at the publish time.',
+        'In trash' => 'In the trash: not on the website. Restore it from the Trash tab of the post list.',
+        default => 'Draft: visitors can\'t see it until you publish it.',
+    },
 ];
 ?>
 <div class="card shadow-sm">

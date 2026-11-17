@@ -436,13 +436,13 @@ final class ManualInvoiceService
         $invoice->client_address_line_1 = $profile->address_line_1;
         $invoice->client_address_line_2 = $profile->address_line_2;
         $invoice->client_city = $profile->city;
-        $invoice->client_state = $profile->state;
-        $invoice->client_state_code = $profile->state_code;
+        // A profile saved before the foreign-state rule may still carry a state abroad: never on an invoice.
+        ['state' => $invoice->client_state, 'code' => $invoice->client_state_code] = $profile->placeOfSupply();
         $invoice->client_postal_code = $profile->postal_code;
         $invoice->client_country = $profile->country;
         $invoice->client_gstin = $profile->gstin;
         $invoice->client_pan = $profile->pan;
-        $invoice->place_of_supply = $profile->state;
+        $invoice->place_of_supply = $invoice->client_state;
     }
 
     private function applyTax(Invoice $invoice, CustomerBillingProfile $profile): void

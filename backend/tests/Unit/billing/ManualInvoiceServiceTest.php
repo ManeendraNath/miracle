@@ -499,6 +499,20 @@ final class ManualInvoiceServiceTest extends Unit
         );
     }
     
+    public function testAClientAbroadIsAlwaysPlaceOfSupply96(): void
+    {
+        // Saved before the foreign-state rule existed: the profile still names a state abroad.
+        $this->profile->updateAttributes(['country' => 'Canada', 'state' => 'Ontario', 'state_code' => 'ON', 'is_gst_applicable' => 0]);
+        $invoice = $this->newInvoice();
+        $invoice->discount_amount = 0.00;
+        $created = (new ManualInvoiceService())->create($invoice, [$this->item('Development', 'Export service', 1, 10000.00)]);
+
+        $this->assertSame(CustomerBillingProfile::FOREIGN_STATE, $created->place_of_supply);
+        $this->assertSame(CustomerBillingProfile::FOREIGN_STATE_CODE, $created->client_state_code);
+        $this->assertContains('Place of supply: Foreign Country (96)', $created->getClientTaxLines());
+        $this->assertEquals(10000.00, (float) $created->total_payable, 'export of services: no GST');
+    }
+
     public function testInvalidItemRollsBackWholeInvoice(): void
 {
     $beforeInvoices =

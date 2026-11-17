@@ -93,6 +93,18 @@ class CustomerBillingProfile extends base\CustomerBillingProfile
         return $country !== '' && $country !== self::COUNTRY_INDIA;
     }
 
+    /**
+     * GST place of supply for invoices: the client's state in India; for a client abroad, always 96 Foreign Country.
+     *
+     * @return array{state: string, code: string}
+     */
+    public function placeOfSupply(): array
+    {
+        return $this->isForeign()
+            ? ['state' => self::FOREIGN_STATE, 'code' => self::FOREIGN_STATE_CODE]
+            : ['state' => (string) $this->state, 'code' => (string) $this->state_code];
+    }
+
     /** @return string[] country names */
     public static function countries(): array
     {

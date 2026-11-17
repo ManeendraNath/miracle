@@ -26,11 +26,6 @@ final class CronJob extends base\CronJob
         'backup/run' => ['Daily backup', 'Daily', 'No scheduled database or payment proof backups. The backup before a deploy still runs.'],
     ];
 
-    public static function tableName(): string
-    {
-        return '{{%cron_job}}';
-    }
-
     public static function primaryKey(): array
     {
         return ['job'];

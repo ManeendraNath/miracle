@@ -31,11 +31,6 @@ class Testimonial extends base\Testimonial
     /** The portal form's "you may publish this" checkbox. */
     public $consent;
 
-    public static function tableName(): string
-    {
-        return '{{%testimonial}}';
-    }
-
     public function behaviors(): array
     {
         return [TimestampBehavior::class];

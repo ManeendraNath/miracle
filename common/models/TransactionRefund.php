@@ -15,8 +15,4 @@ namespace common\models;
  */
 final class TransactionRefund extends base\TransactionRefund
 {
-    public static function tableName(): string
-    {
-        return '{{%transaction_refund}}';
-    }
 }

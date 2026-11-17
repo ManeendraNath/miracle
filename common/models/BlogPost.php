@@ -249,6 +249,74 @@ class BlogPost extends base\BlogPost
         };
     }
 
+    /**
+     * The body as shown on the website: Heading 2 and 3 get anchors for the table of contents, and a section headed
+     * "Frequently asked questions" (or "FAQ") is read as questions (its Heading 3s) and their answers.
+     *
+     * @return array{html: string, toc: list<array{level: int, id: string, text: string}>, faq: list<array{question: string, answer: string}>}
+     */
+    public function rendered(): array
+    {
+        $dom = new \DOMDocument();
+        // Saved bodies are cleaned article markup; the XML prefix keeps UTF-8 text as it is.
+        @$dom->loadHTML('<?xml encoding="UTF-8"><div id="post">' . (string) $this->body . '</div>', LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
+        $root = $dom->getElementById('post');
+        if ($root === null) {
+            return ['html' => (string) $this->body, 'toc' => [], 'faq' => []];
+        }
+        $toc = [];
+        $faq = [];
+        $ids = [];
+        $inFaq = false;
+        $asking = false; // inside a question: text goes to the last $faq entry's answer
+        foreach (iterator_to_array($root->childNodes) as $node) {
+            if ($node instanceof \DOMElement && in_array($node->nodeName, ['h2', 'h3'], true)) {
+                $text = trim($node->textContent);
+                // Prefixed: never the same as an id the page layout uses ("main", "content").
+                $id = 'h-' . (Inflector::slug($text) ?: 'section');
+                for ($n = 2, $base = $id; isset($ids[$id]); $n++) {
+                    $id = $base . '-' . $n;
+                }
+                $ids[$id] = true;
+                $node->setAttribute('id', $id);
+                $toc[] = ['level' => (int) $node->nodeName[1], 'id' => $id, 'text' => $text];
+                if ($node->nodeName === 'h2') {
+                    $inFaq = preg_match('/\b(frequently asked questions|faqs?)\b/i', $text) === 1;
+                    $asking = false;
+                } elseif ($inFaq) {
+                    $faq[] = ['question' => $text, 'answer' => ''];
+                    $asking = true;
+                }
+                continue;
+            }
+            if ($asking) {
+                // List items and lines stay separate words ("One Two", not "OneTwo").
+                $faq[array_key_last($faq)]['answer'] .= ' ' . html_entity_decode(strip_tags((string) preg_replace('#<br\s*/?>|</(li|p)>#i', ' $0', (string) $dom->saveHTML($node))), ENT_QUOTES | ENT_HTML5, 'UTF-8');
+            }
+        }
+        $faq = array_values(array_filter(
+            array_map(static fn(array $item): array => ['question' => $item['question'], 'answer' => trim((string) preg_replace('/\s+/', ' ', $item['answer']))], $faq),
+            static fn(array $item): bool => $item['answer'] !== '',
+        ));
+        $html = '';
+        foreach ($root->childNodes as $node) {
+            $html .= $dom->saveHTML($node);
+        }
+
+        return ['html' => $html, 'toc' => $toc, 'faq' => $faq];
+    }
+
+    /** When the text last changed after it went live (a day's grace for first fixes); null when it never did. */
+    public function contentUpdatedAt(): ?int
+    {
+        if (!$this->published_at) {
+            return null;
+        }
+        $last = (int) BlogPostRevision::find()->where(['post_id' => $this->id])->max('created_at');
+
+        return $last > (int) $this->published_at + 86400 ? $last : null;
+    }
+
     /** Whole minutes at about 220 words a minute, at least 1. */
     public function readingMinutes(): int
     {

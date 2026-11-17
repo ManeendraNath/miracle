@@ -23,6 +23,9 @@ if (!$model->isNewRecord) {
 $this->params['help'] = [
     'Title' => 'What the post answers, in words a client abroad would search for, e.g. "How much does a custom web app cost in 2026?".',
     'Summary' => 'One or two sentences. Shown under the title in the blog list and, usually, by Google under the search result (about the first 155 characters).',
+    'Table of contents' => 'Posts with three or more headings get an "In this post" list at the top, built from the Heading 2 and Heading 3 titles.',
+    'FAQ section' => 'Add a Heading 2 named "Frequently asked questions", then each question as a Heading 3 with its answer below. The questions are marked up for search engines and AI assistants (Google shows them as rich results only for a few official sites).',
+    'Code' => 'Text in a code block is shown with colours on the website.',
     'Post' => 'Use Heading 2 for sections and Heading 3 inside them. The image button uploads a picture (JPG, PNG or WebP, up to 5 MB). Pasted text keeps only plain formatting.',
     'Status and Publish on' => 'Draft: only staff can see it. Published: live now, or at the Publish on time if that is later. Leave Publish on empty to publish straight away.',
     'Web address' => 'Made from the title. Keep it short; changing it after publishing breaks links that point to the old address.',

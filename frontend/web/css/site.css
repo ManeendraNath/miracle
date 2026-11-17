@@ -1271,6 +1271,56 @@ img[src*="captcha"] {
     }
 }
 
+.mw-blog-search {
+    max-width: 28rem;
+}
+
+.mw-archive {
+    position: relative;
+}
+
+.mw-archive ul {
+    position: absolute;
+    z-index: 5;
+    min-width: 14rem;
+    max-height: 20rem;
+    overflow-y: auto;
+    margin-top: .25rem;
+    padding: .5rem 1rem;
+    background: #fff;
+    border: 1px solid var(--mw-line);
+    border-radius: var(--mw-radius);
+}
+
+.mw-archive li {
+    padding: .2rem 0;
+}
+
+.mw-toc {
+    padding: 1rem 1.25rem;
+    border-left: 4px solid var(--mw-brand);
+    background: var(--mw-primary-soft);
+    border-radius: var(--mw-radius);
+}
+
+.mw-toc ol {
+    padding-left: 1.1rem;
+}
+
+.mw-toc a {
+    color: var(--mw-primary-hover);
+}
+
+.mw-author {
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--mw-line);
+}
+
+.mw-article-body h2,
+.mw-article-body h3 {
+    scroll-margin-top: 5rem;
+}
+
 .mw-tags {
     display: flex;
     flex-wrap: wrap;

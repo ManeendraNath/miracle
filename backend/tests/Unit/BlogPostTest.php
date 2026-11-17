@@ -128,4 +128,17 @@ final class BlogPostTest extends Unit
         $post->validate(['tagNames']);
         $this->assertStringContainsString('Use letters or digits', (string) $post->getFirstError('tagNames'));
     }
+
+    public function testHeadingsGetAnchorsAndAnFaqSectionIsRead(): void
+    {
+        $post = new BlogPost(['body' => '<h2>Intro</h2><p>Hé — text</p><h2>Frequently asked questions</h2><h3>How much?</h3><p>About <strong>$500</strong>.</p><ul><li>one</li><li>two</li></ul><h3>How long?</h3><p>Two weeks.</p><h2>Intro</h2><p>x</p>']);
+        $out = $post->rendered();
+
+        $this->assertSame(['h-intro', 'h-frequently-asked-questions', 'h-how-much', 'h-how-long', 'h-intro-2'], array_column($out['toc'], 'id'));
+        $this->assertSame([2, 2, 3, 3, 2], array_column($out['toc'], 'level'));
+        $this->assertSame([['question' => 'How much?', 'answer' => 'About $500. one two'], ['question' => 'How long?', 'answer' => 'Two weeks.']], $out['faq']);
+        $this->assertStringContainsString('<h2 id="h-intro">Intro</h2><p>Hé — text</p>', $out['html']);
+        $this->assertStringContainsString('<h2 id="h-intro-2">Intro</h2>', $out['html']);
+        $this->assertStringNotContainsString('id="post"', $out['html']);
+    }
 }

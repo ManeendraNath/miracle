@@ -10,6 +10,8 @@ use yii\helpers\Url;
 /** @var yii\web\View $this */
 /** @var common\models\BlogPost $post */
 /** @var common\models\BlogPost[] $related */
+/** @var common\models\BlogPost|null $older */
+/** @var common\models\BlogPost|null $newer */
 
 $siteName = CustomYii::getSetting('site_name') ?: 'Miracle Web Technologies';
 $url = Url::to(['/blog/view', 'slug' => $post->slug], true);
@@ -29,8 +31,27 @@ if ($post->noindex) {
     $this->params['robots'] = 'noindex, follow';
 }
 $authorName = $post->author?->authorName();
+$content = $post->rendered();
+$updatedAt = $post->contentUpdatedAt();
+$frontendBase = rtrim((string) (Yii::$app->params['frontendBaseUrl'] ?? ''), '/');
+// Code blocks get colours from highlight.js (pinned, with integrity hashes), only on posts that have one.
+if (str_contains($content['html'], '<pre')) {
+    $this->registerCssFile('https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/styles/github-dark.min.css', ['integrity' => 'sha384-wH75j6z1lH97ZOpMOInqhgKzFkAInZPPSPlZpYKYTOqsaizPvhQZmAtLcPKXpLyH', 'crossorigin' => 'anonymous']);
+    $this->registerJsFile('https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/highlight.min.js', ['integrity' => 'sha384-RH2xi4eIQ/gjtbs9fUXM68sLSi99C7ZWBRX1vDrVv6GQXRibxXLbwO2NGZB74MbU', 'crossorigin' => 'anonymous', 'position' => $this::POS_END]);
+    $this->registerJs("document.querySelectorAll('.mw-article-body pre').forEach((block) => { if (window.hljs) { hljs.highlightElement(block); } });");
+}
+$this->registerJs(<<<'JS'
+    document.querySelectorAll('[data-copy-link]').forEach((button) => button.addEventListener('click', async () => {
+        try {
+            await navigator.clipboard.writeText(button.dataset.copyLink);
+            button.querySelector('span').textContent = 'Link copied';
+        } catch (e) {
+            window.prompt('Copy this link:', button.dataset.copyLink);
+        }
+    }));
+    JS);
 $this->registerMetaTag(['property' => 'article:published_time', 'content' => date(DATE_ATOM, (int) $post->published_at)]);
-$this->registerMetaTag(['property' => 'article:modified_time', 'content' => date(DATE_ATOM, (int) $post->updated_at)]);
+$this->registerMetaTag(['property' => 'article:modified_time', 'content' => date(DATE_ATOM, (int) ($updatedAt ?? $post->published_at))]);
 
 // Article details for Google (structured data). A data block, not a script that runs.
 $schema = array_filter([
@@ -40,7 +61,7 @@ $schema = array_filter([
     'description' => $post->summary,
     'image' => $image,
     'datePublished' => date(DATE_ATOM, (int) $post->published_at),
-    'dateModified' => date(DATE_ATOM, (int) $post->updated_at),
+    'dateModified' => date(DATE_ATOM, $updatedAt ?? (int) $post->published_at),
     'mainEntityOfPage' => $url,
     'author' => $authorName !== null ? ['@type' => 'Person', 'name' => $authorName] : ['@type' => 'Organization', 'name' => $siteName, 'url' => Url::home(true)],
     'keywords' => implode(', ', array_map(static fn($tag): string => $tag->name, $post->tags)) ?: null,
@@ -49,6 +70,13 @@ $schema = array_filter([
 ?>
 <article class="blog-view">
     <script type="application/ld+json"><?= Json::htmlEncode($schema) ?></script>
+    <?php if ($content['faq'] !== []): ?>
+        <script type="application/ld+json"><?= Json::htmlEncode([
+            '@context' => 'https://schema.org',
+            '@type' => 'FAQPage',
+            'mainEntity' => array_map(static fn(array $item): array => ['@type' => 'Question', 'name' => $item['question'], 'acceptedAnswer' => ['@type' => 'Answer', 'text' => $item['answer']]], $content['faq']),
+        ]) ?></script>
+    <?php endif; ?>
     <div class="mw-glow">
         <div class="container mw-page-head">
             <nav aria-label="breadcrumb" class="mb-3">
@@ -59,7 +87,7 @@ $schema = array_filter([
             </nav>
             <h1 class="mw-h1 mb-3"><?= Html::encode($post->title) ?></h1>
             <p class="mw-lead mb-3"><?= Html::encode($post->summary) ?></p>
-            <p class="small mb-0"><?= $authorName !== null ? 'By ' . Html::encode($authorName) . ' · ' : '' ?><?= Yii::$app->formatter->asDate($post->published_at, 'php:d M Y') ?> · <?= $post->readingMinutes() ?> min read</p>
+            <p class="small mb-0"><?= $authorName !== null ? 'By ' . Html::encode($authorName) . ' · ' : '' ?><?= Yii::$app->formatter->asDate($post->published_at, 'php:d M Y') ?><?= $updatedAt !== null ? ' · Updated ' . Yii::$app->formatter->asDate($updatedAt, 'php:d M Y') : '' ?> · <?= $post->readingMinutes() ?> min read</p>
         </div>
     </div>
 
@@ -68,8 +96,30 @@ $schema = array_filter([
             <?php if ($image !== null): ?>
                 <?= Html::img($image, ['alt' => (string) $post->cover_alt, 'class' => 'mw-article-cover mb-4']) ?>
             <?php endif; ?>
+            <?php if (count($content['toc']) >= 3): ?>
+                <nav class="mw-toc mb-4" aria-labelledby="toc-title">
+                    <h2 id="toc-title" class="h6 fw-bold text-uppercase mb-2">In this post</h2>
+                    <ol class="mb-0">
+                        <?php foreach ($content['toc'] as $entry): ?>
+                            <li class="<?= $entry['level'] === 3 ? 'ms-3' : '' ?>"><a href="#<?= Html::encode($entry['id']) ?>"><?= Html::encode($entry['text']) ?></a></li>
+                        <?php endforeach; ?>
+                    </ol>
+                </nav>
+            <?php endif; ?>
             <div class="mw-article-body">
-                <?= $post->body /* cleaned to article markup when saved (BlogPost::cleanBody) */ ?>
+                <?= $content['html'] /* cleaned to article markup when saved (BlogPost::cleanBody); headings given ids */ ?>
+            </div>
+
+            <div class="mw-share d-flex flex-wrap align-items-center gap-2 mt-5" role="group" aria-label="Share this post">
+                <span class="small fw-semibold me-1">Share</span>
+                <?php $shareText = rawurlencode($post->title);
+                $shareUrl = rawurlencode($url); ?>
+                <?= Html::a('<i class="fab fa-linkedin-in" aria-hidden="true"></i><span class="visually-hidden">LinkedIn</span>', 'https://www.linkedin.com/sharing/share-offsite/?url=' . $shareUrl, ['class' => 'btn btn-sm btn-outline-secondary', 'target' => '_blank', 'rel' => 'noopener', 'title' => 'Share on LinkedIn']) ?>
+                <?= Html::a('<i class="fab fa-twitter" aria-hidden="true"></i><span class="visually-hidden">X</span>', 'https://x.com/intent/post?text=' . $shareText . '&url=' . $shareUrl, ['class' => 'btn btn-sm btn-outline-secondary', 'target' => '_blank', 'rel' => 'noopener', 'title' => 'Share on X']) ?>
+                <?= Html::a('<i class="fab fa-facebook-f" aria-hidden="true"></i><span class="visually-hidden">Facebook</span>', 'https://www.facebook.com/sharer/sharer.php?u=' . $shareUrl, ['class' => 'btn btn-sm btn-outline-secondary', 'target' => '_blank', 'rel' => 'noopener', 'title' => 'Share on Facebook']) ?>
+                <?= Html::a('<i class="fab fa-whatsapp" aria-hidden="true"></i><span class="visually-hidden">WhatsApp</span>', 'https://wa.me/?text=' . $shareText . '%20' . $shareUrl, ['class' => 'btn btn-sm btn-outline-secondary', 'target' => '_blank', 'rel' => 'noopener', 'title' => 'Share on WhatsApp']) ?>
+                <?= Html::a('<i class="fas fa-envelope" aria-hidden="true"></i><span class="visually-hidden">Email</span>', 'mailto:?subject=' . $shareText . '&body=' . $shareUrl, ['class' => 'btn btn-sm btn-outline-secondary', 'title' => 'Share by email']) ?>
+                <button type="button" class="btn btn-sm btn-outline-secondary" data-copy-link="<?= Html::encode($url) ?>"><i class="fas fa-link me-1" aria-hidden="true"></i><span aria-live="polite">Copy link</span></button>
             </div>
 
             <?php if ($post->tags): ?>
@@ -77,6 +127,35 @@ $schema = array_filter([
                     <?php foreach ($post->tags as $tag): ?>
                         <?= Html::a('#' . Html::encode($tag->name), ['/blog/index', 'tag' => $tag->slug], ['class' => 'mw-chip']) ?>
                     <?php endforeach; ?>
+                </nav>
+            <?php endif; ?>
+
+            <?php if ($authorName !== null): ?>
+                <section class="mw-author d-flex gap-3 align-items-start mt-5" aria-label="About the author">
+                    <?php if ($post->author->photo): ?>
+                        <?= Html::img($frontendBase . '/' . $post->author->photo, ['alt' => '', 'width' => 64, 'height' => 64, 'loading' => 'lazy', 'class' => 'rounded-circle flex-shrink-0', 'style' => 'object-fit: cover']) ?>
+                    <?php endif; ?>
+                    <div>
+                        <p class="fw-bold mb-1">Written by <?= Html::encode($authorName) ?></p>
+                        <?php if ((string) $post->author->bio !== ''): ?>
+                            <p class="small mb-0"><?= Html::encode($post->author->bio) ?></p>
+                        <?php endif; ?>
+                    </div>
+                </section>
+            <?php endif; ?>
+
+            <?php if ($older !== null || $newer !== null): ?>
+                <nav class="mw-post-nav row g-3 mt-4" aria-label="More posts">
+                    <div class="col-sm-6">
+                        <?php if ($older !== null): ?>
+                            <?= Html::a('<span class="small d-block text-muted">← Older post</span>' . Html::encode($older->title), ['/blog/view', 'slug' => $older->slug], ['rel' => 'prev', 'class' => 'd-block text-decoration-none']) ?>
+                        <?php endif; ?>
+                    </div>
+                    <div class="col-sm-6 text-sm-end">
+                        <?php if ($newer !== null): ?>
+                            <?= Html::a('<span class="small d-block text-muted">Newer post →</span>' . Html::encode($newer->title), ['/blog/view', 'slug' => $newer->slug], ['rel' => 'next', 'class' => 'd-block text-decoration-none']) ?>
+                        <?php endif; ?>
+                    </div>
                 </nav>
             <?php endif; ?>
 

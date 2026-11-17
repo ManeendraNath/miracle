@@ -37,7 +37,7 @@ final class CustomerEmailService
                 $due = !$invoice->due_date ? ' is due'
                     : ((string) $invoice->due_date < date('Y-m-d') ? ' was due on ' : ' is due on ') . Yii::$app->formatter->asDate((string) $invoice->due_date, 'php:j F Y');
                 $outstanding = (new InvoicePaymentService())->getOutstanding($invoice);
-                $owed = Yii::$app->formatter->asCurrency($outstanding, 'INR');
+                $owed = $invoice->money($outstanding);
                 // The same dollar price as the invoice email and the automatic reminders, for a client paying by PayPal.
                 $usd = \common\services\payment\PayPalService::lockedPrice($invoice, $outstanding);
                 $list['invoice-reminder'] = ['Payment reminder', "Reminder: invoice {$number}",

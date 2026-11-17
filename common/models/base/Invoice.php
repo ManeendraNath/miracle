@@ -21,6 +21,7 @@ use Yii;
  * @property float|null $sgst_percent
  * @property float|null $igst_percent
  * @property float $total_payable Calculated formula: (Subtotal - Discount) + Taxes applied
+ * @property float|null $usd_total
  * @property string $status
  * @property string|null $due_date
  * @property int $created_at
@@ -38,6 +39,8 @@ use Yii;
  * @property int|null $written_off_at
  * @property float|null $usd_rate_locked
  * @property string|null $usd_rate_until
+ * @property string|null $usd_rate_date
+ * @property string|null $usd_rate_source
  * @property float|null $usd_fee_percent_locked
  * @property float|null $usd_fee_fixed_locked
  *
@@ -79,21 +82,22 @@ class Invoice extends \yii\db\ActiveRecord
     public function rules()
     {
         return [
-            [['client_address_line_1', 'client_address_line_2', 'coupon_id', 'coupon_code', 'due_date', 'emailed_at', 'billing_run_id', 'client_city', 'client_state', 'client_state_code', 'client_postal_code', 'client_country', 'client_gstin', 'client_pan', 'place_of_supply', 'written_off_at', 'usd_rate_locked', 'usd_rate_until', 'usd_fee_percent_locked', 'usd_fee_fixed_locked'], 'default', 'value' => null],
+            [['client_address_line_1', 'client_address_line_2', 'coupon_id', 'coupon_code', 'usd_total', 'due_date', 'emailed_at', 'billing_run_id', 'client_city', 'client_state', 'client_state_code', 'client_postal_code', 'client_country', 'client_gstin', 'client_pan', 'place_of_supply', 'written_off_at', 'usd_rate_locked', 'usd_rate_until', 'usd_rate_date', 'usd_rate_source', 'usd_fee_percent_locked', 'usd_fee_fixed_locked'], 'default', 'value' => null],
             [['total_payable'], 'default', 'value' => 0.00],
             [['sgst_percent'], 'default', 'value' => 9.00],
             [['status'], 'default', 'value' => 'Unpaid'],
             [['user_id', 'invoice_number', 'client_name', 'created_at', 'updated_at'], 'required'],
             [['user_id', 'coupon_id', 'created_at', 'updated_at', 'emailed_at', 'billing_run_id', 'written_off_at'], 'integer'],
-            [['subtotal_amount', 'discount_amount', 'cgst_percent', 'sgst_percent', 'igst_percent', 'total_payable', 'usd_rate_locked', 'usd_fee_percent_locked', 'usd_fee_fixed_locked'], 'number'],
+            [['subtotal_amount', 'discount_amount', 'cgst_percent', 'sgst_percent', 'igst_percent', 'total_payable', 'usd_total', 'usd_rate_locked', 'usd_fee_percent_locked', 'usd_fee_fixed_locked'], 'number'],
             [['status'], 'string'],
-            [['due_date', 'usd_rate_until'], 'safe'],
+            [['due_date', 'usd_rate_until', 'usd_rate_date'], 'safe'],
             [['invoice_number', 'client_city', 'client_state', 'client_country', 'place_of_supply'], 'string', 'max' => 100],
             [['client_name', 'client_address_line_1', 'client_address_line_2'], 'string', 'max' => 255],
             [['coupon_code'], 'string', 'max' => 32],
             [['client_state_code', 'client_pan'], 'string', 'max' => 10],
             [['client_postal_code'], 'string', 'max' => 20],
             [['client_gstin'], 'string', 'max' => 15],
+            [['usd_rate_source'], 'string', 'max' => 60],
             ['status', 'in', 'range' => array_keys(self::optsStatus())],
             [['invoice_number'], 'unique'],
             [['billing_run_id'], 'exist', 'skipOnError' => true, 'targetClass' => BillingRun::class, 'targetAttribute' => ['billing_run_id' => 'id']],
@@ -122,6 +126,7 @@ class Invoice extends \yii\db\ActiveRecord
             'sgst_percent' => 'Sgst Percent',
             'igst_percent' => 'Igst Percent',
             'total_payable' => 'Total Payable',
+            'usd_total' => 'Usd Total',
             'status' => 'Status',
             'due_date' => 'Due Date',
             'created_at' => 'Created At',
@@ -139,6 +144,8 @@ class Invoice extends \yii\db\ActiveRecord
             'written_off_at' => 'Written Off At',
             'usd_rate_locked' => 'Usd Rate Locked',
             'usd_rate_until' => 'Usd Rate Until',
+            'usd_rate_date' => 'Usd Rate Date',
+            'usd_rate_source' => 'Usd Rate Source',
             'usd_fee_percent_locked' => 'Usd Fee Percent Locked',
             'usd_fee_fixed_locked' => 'Usd Fee Fixed Locked',
         ];

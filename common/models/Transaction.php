@@ -38,6 +38,7 @@ class Transaction extends base\Transaction
     /** Marks a Razorpay capture that could not be applied (invoice no longer payable). */
     public const UNAPPLIED_NOTE_PREFIX = 'UNAPPLIED:';
     /** Lines staff actions add to user_payment_notes. */
+    public const HELD_CURRENCY_NOTE = 'invoice is priced in US dollars, paid by PayPal only.';
     private const STAFF_NOTE_PATTERN = '/^(UNAPPLIED:|Refunded ₹|Applied to invoice )/u';
 
     /**
@@ -53,6 +54,26 @@ class Transaction extends base\Transaction
             self::GATEWAY_UPI_BANK => 'Manual UPI / Bank Transfer',
             self::GATEWAY_PAYPAL => 'PayPal (Automated)',
         ];
+    }
+
+    /** The app's Invoice (with its dollar helpers), not the generated base class. */
+    #[\Override]
+    public function getInvoice()
+    {
+        return $this->hasOne(Invoice::class, ['id' => 'invoice_id']);
+    }
+
+    /** An amount of this payment as paid: dollars for a PayPal payment on an invoice priced in dollars, else rupees. */
+    public function money(int|float|string|null $inr): string
+    {
+        return (int) $this->gateway_id === self::GATEWAY_PAYPAL ? $this->invoice->money($inr) : \Yii::$app->formatter->asCurrency((float) ($inr ?? 0), 'INR');
+    }
+
+    /** Held because it was paid in rupees (e.g. Razorpay) on an invoice priced in US dollars, which takes PayPal only. */
+    public function isHeldForCurrency(): bool
+    {
+        // From the note written when it was held: the invoice may since have been paid or repriced.
+        return $this->isUnapplied() && str_contains((string) $this->user_payment_notes, self::HELD_CURRENCY_NOTE);
     }
 
     public function getGatewayLabel(): string

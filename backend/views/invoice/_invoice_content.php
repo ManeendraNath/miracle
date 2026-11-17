@@ -7,6 +7,8 @@ use common\models\InvoiceItem;
 use common\services\billing\TaxCalculator;
 use yii\helpers\Html;
 
+/** @var \common\models\Invoice $model */
+
 $subtotal = round((float) $model->subtotal_amount, 2);
 $discount = round((float) $model->discount_amount, 2);
 $tax = (new TaxCalculator())->forInvoice($model);
@@ -15,9 +17,8 @@ $cgstAmount = $tax['cgstAmount'];
 $sgstAmount = $tax['sgstAmount'];
 $igstAmount = $tax['igstAmount'];
 $totalTax = $tax['totalTax'];
-$money = static function (int|float|string|null $amount): string {
-    return Yii::$app->formatter->asCurrency((float) ($amount ?? 0), 'INR');
-};
+// In dollars for an invoice priced in dollars, else rupees.
+$money = static fn(int|float|string|null $amount): string => $model->money($amount);
 ?>
 <!-- Main Printable Invoice Canvas Base Area -->
 <div class="invoice p-5 bg-white border rounded shadow-sm position-relative">
@@ -281,6 +282,9 @@ $money = static function (int|float|string|null $amount): string {
 
     <?php if ($model->getExportNote() !== null): ?>
         <p class="text-sm text-secondary mt-3 mb-0"><?= Html::encode($model->getExportNote()) ?></p>
+    <?php endif; ?>
+    <?php if ($model->usdValueNote() !== null): ?>
+        <p class="text-sm text-secondary mt-1 mb-0"><?= Html::encode($model->usdValueNote()) ?></p>
     <?php endif; ?>
 
     <hr class="my-5">

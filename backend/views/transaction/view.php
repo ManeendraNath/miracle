@@ -60,6 +60,7 @@ $refundable = round((float) $model->amount - (float) $model->refunded_amount, 2)
 $viaRazorpay = (int) $model->gateway_id === Transaction::GATEWAY_RAZORPAY && (string) $model->gateway_payment_id !== '' && (new RazorpayService())->isEnabled();
 $refundStep = match (true) {
     $viaRazorpay => 'The amount is refunded to the customer through Razorpay now (5-7 working days to reach them).',
+    (int) $model->gateway_id === Transaction::GATEWAY_PAYPAL && $model->invoice->isUsdPriced() => 'Refund it in your PayPal account first (Activity, the payment, Issue a refund), then record the same dollar amount here.',
     (int) $model->gateway_id === Transaction::GATEWAY_PAYPAL => 'Refund it in your PayPal account first (Activity, the payment, Issue a refund), then record the rupee amount here.',
     default => 'Only do this after the money has been returned (bank / UPI).',
 };
@@ -175,7 +176,7 @@ if ($model->status === Transaction::STATUS_CAPTURED && $refundable > 0) {
                             ],
                             [
                                 'attribute' => 'amount',
-                                'value' => Yii::$app->formatter->asCurrency($model->amount, 'INR'),
+                                'value' => Yii::$app->formatter->asCurrency($model->amount, 'INR') . ($model->invoice->isUsdPriced() && (int) $model->gateway_id === Transaction::GATEWAY_PAYPAL ? ' (' . $model->money($model->amount) . ')' : ''),
                             ],
                             [
                                 'label' => (int) $model->gateway_id === Transaction::GATEWAY_PAYPAL ? 'PayPal Fee (at the payment\'s rate)' : 'Razorpay Fee (incl. GST)',
@@ -184,7 +185,7 @@ if ($model->status === Transaction::STATUS_CAPTURED && $refundable > 0) {
                             ],
                             [
                                 'attribute' => 'refunded_amount',
-                                'value' => Yii::$app->formatter->asCurrency($model->refunded_amount, 'INR'),
+                                'value' => Yii::$app->formatter->asCurrency($model->refunded_amount, 'INR') . ($model->invoice->isUsdPriced() && (int) $model->gateway_id === Transaction::GATEWAY_PAYPAL ? ' (' . $model->money($model->refunded_amount) . ')' : ''),
                                 'visible' => (float) $model->refunded_amount > 0,
                             ],
                             [
@@ -260,8 +261,9 @@ if ($model->status === Transaction::STATUS_CAPTURED && $refundable > 0) {
                                 <label class="form-check-label small" for="manual-return">Razorpay is off: I have returned this money myself</label>
                             </div>
                         <?php endif; ?>
-                        <label class="form-label small" for="refund-amount">Amount to refund (₹)</label>
-                        <input type="number" id="refund-amount" name="refund_amount" class="form-control mb-1" step="0.01" min="0.01" max="<?= $refundable ?>" value="<?= $refundable ?>" required>
+                        <?php $refundUsd = $model->invoice->isUsdPriced() && (int) $model->gateway_id === Transaction::GATEWAY_PAYPAL ? $model->invoice->usdFor($refundable) : null; ?>
+                        <label class="form-label small" for="refund-amount">Amount to refund (<?= $refundUsd !== null ? 'US$' : '₹' ?>)</label>
+                        <input type="number" id="refund-amount" name="refund_amount" class="form-control mb-1" step="0.01" min="0.01" max="<?= $refundUsd ?? $refundable ?>" value="<?= $refundUsd ?? $refundable ?>" required>
                         <p class="small text-body-secondary"><?= Html::encode($refundStep) ?> A smaller amount is a partial refund, e.g. keeping a domain fee.</p>
                         <div class="d-grid gap-2">
                             <?php if ($invoiceClosed): ?>

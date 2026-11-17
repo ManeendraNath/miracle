@@ -599,10 +599,14 @@ final class RazorpayService
             // carry-forward or cancel can't change the status between this check and settling.
             $db->createCommand('SELECT id FROM {{%invoice}} WHERE id = :id FOR UPDATE')->bindValue(':id', (int) $transaction->invoice_id)->queryScalar();
             $invoice = Invoice::findOne((int) $transaction->invoice_id);
-            $unapplied = $invoice !== null && in_array($invoice->status, [Invoice::STATUS_CANCELLED, Invoice::STATUS_CARRIED_FORWARD, Invoice::STATUS_PAID, Invoice::STATUS_REFUNDED, Invoice::STATUS_DRAFT], true);
+            $closed = $invoice !== null && in_array($invoice->status, [Invoice::STATUS_CANCELLED, Invoice::STATUS_CARRIED_FORWARD, Invoice::STATUS_PAID, Invoice::STATUS_REFUNDED, Invoice::STATUS_DRAFT], true);
+            // A rupee payment (an order opened before the invoice was switched to US dollars) never counts on it.
+            $wrongCurrency = !$closed && $invoice !== null && $invoice->isUsdPriced() && (int) $transaction->gateway_id !== Transaction::GATEWAY_PAYPAL;
+            $unapplied = $closed || $wrongCurrency;
             if ($unapplied) {
                 $transaction->is_unapplied = 1;
-                $transaction->user_payment_notes = trim($transaction->user_payment_notes . "\n" . Transaction::UNAPPLIED_NOTE_PREFIX . ' invoice was ' . $invoice->statusLabel() . ' when this was recorded.');
+                $transaction->user_payment_notes = trim($transaction->user_payment_notes . "\n" . Transaction::UNAPPLIED_NOTE_PREFIX
+                    . ($wrongCurrency ? ' ' . Transaction::HELD_CURRENCY_NOTE : ' invoice was ' . $invoice->statusLabel() . ' when this was recorded.'));
             }
             if (!$transaction->save()) {
                 throw new \RuntimeException('Captured payment could not be saved.');
@@ -624,9 +628,9 @@ final class RazorpayService
                 }
                 if ($unapplied) {
                     Yii::warning(['message' => 'Razorpay payment captured on a non-payable invoice.', 'transactionId' => (int) $transaction->id, 'invoice' => $invoice->reference(), 'status' => $invoice->status], __METHOD__);
-                    AdminAlertService::paymentUnapplied($invoice->reference(), (string) $invoice->status, (float) $transaction->amount, $paymentId);
-                    (new NotificationService())->create((int) $invoice->user_id, 'payment', 'Payment Received: Not Yet Applied', 'We received your payment of ₹' . number_format((float) $transaction->amount, 2) . ' for ' . $invoice->customerReference() . ', but that invoice was already settled or closed. We will refund it or apply it to another invoice.', '/payment/view?id=' . (int) $transaction->id);
-                    (new PaymentConfirmationService())->sendHeld($invoice, (float) $transaction->amount);
+                    AdminAlertService::paymentUnapplied($invoice->reference(), $wrongCurrency ? $invoice->status . ', priced in US dollars: PayPal only' : (string) $invoice->status, (float) $transaction->amount, $paymentId);
+                    (new NotificationService())->create((int) $invoice->user_id, 'payment', 'Payment Received: Not Yet Applied', 'We received your payment of ' . $transaction->money($transaction->amount) . ' for ' . $invoice->customerReference() . ', but that invoice ' . ($wrongCurrency ? 'is paid in US dollars by PayPal.' : 'was already settled or closed.') . ' We will refund it or apply it to another invoice.', '/payment/view?id=' . (int) $transaction->id);
+                    (new PaymentConfirmationService())->sendHeld($invoice, $transaction);
                 }
             } catch (\Throwable $e) {
                 Yii::error(['message' => 'Payment was captured but an alert failed.', 'transactionId' => (int) $transaction->id, 'error' => $e->getMessage()], __METHOD__);

@@ -9,6 +9,8 @@ use yii\helpers\Html;
 use yii\helpers\Json;
 use yii\helpers\Url;
 
+/** @var \common\models\Invoice $model */
+
 $this->title = 'Invoice ' . $model->invoice_number;
 
 $this->params['breadcrumbs'][] = [
@@ -23,7 +25,8 @@ $canPayOnline = $isPayable && $pendingPayment === null && !empty($razorpayEnable
 // Clients abroad pay in US dollars with PayPal (rate from Site Settings).
 $canPayPal = $isPayable && $pendingPayment === null && !empty($paypal);
 $formatter = Yii::$app->formatter;
-$inr = static fn($amount): string => $formatter->asCurrency($amount, 'INR');
+// In dollars for an invoice priced in dollars, else rupees.
+$inr = static fn($amount): string => $model->money($amount);
 // Same tax breakdown as the PDF and the GST report.
 $tax = (new TaxCalculator())->forInvoice($model);
 $taxes = array_filter([
@@ -211,6 +214,9 @@ JS);
                     <?php if ($model->getExportNote() !== null): ?>
                         <div class="col-12 small text-body-secondary mt-2"><?= Html::encode($model->getExportNote()) ?></div>
                     <?php endif; ?>
+                    <?php if ($model->usdValueNote() !== null): ?>
+                        <div class="col-12 small text-body-secondary mt-1"><?= Html::encode($model->usdValueNote()) ?></div>
+                    <?php endif; ?>
                 </div>
             </div>
         </div>
@@ -262,9 +268,8 @@ JS);
                         <?php if ($canPayPal): ?>
                             <?php $usd = PayPalService::chargeFor((float) $outstandingAmount, (float) $paypal['rate'], $model); ?>
                             <p class="small text-center mb-0">
-                                Pay <strong>US$<?= Html::encode($usd) ?></strong> with PayPal or a card
-                                for the <?= $inr($outstandingAmount) ?> due.
-                                <?php if (!empty($paypal['until'])): ?>
+                                Pay <strong>US$<?= Html::encode($usd) ?></strong> with PayPal or a card<?= $model->isUsdPriced() ? '.' : ' for the ' . $inr($outstandingAmount) . ' due.' ?>
+                                <?php if (!empty($paypal['until']) && !$model->isUsdPriced()): ?>
                                     <br><span class="text-body-secondary">This price holds until <?= Html::encode(Yii::$app->formatter->asDate($paypal['until'], 'php:d M Y')) ?>.</span>
                                 <?php endif; ?>
                             </p>
@@ -278,11 +283,15 @@ JS);
                                 <i class="fas fa-lock me-1"></i> Pay <?= $inr($outstandingAmount) ?> online
                             </button>
                         <?php endif; ?>
-                        <?= Html::a(
-                            '<i class="fas fa-university me-1"></i> Paid by UPI / bank transfer? Submit proof',
-                            ['submit-payment', 'number' => $model->invoice_number],
-                            ['class' => 'btn ' . ($canPayOnline || $canPayPal ? 'btn-outline-secondary btn-sm' : 'btn-success')]
-                        ) ?>
+                        <?php if (!$model->isUsdPriced()): ?>
+                            <?= Html::a(
+                                '<i class="fas fa-university me-1"></i> Paid by UPI / bank transfer? Submit proof',
+                                ['submit-payment', 'number' => $model->invoice_number],
+                                ['class' => 'btn ' . ($canPayOnline || $canPayPal ? 'btn-outline-secondary btn-sm' : 'btn-success')]
+                            ) ?>
+                        <?php elseif (!$canPayPal): ?>
+                            <p class="small text-center mb-0">Online payment is not available right now. <?= Html::a('Raise a support ticket', ['/support/create', 'subject' => 'Paying invoice ' . $model->invoice_number]) ?> and we'll help you pay.</p>
+                        <?php endif; ?>
                     </div>
                     <?php if ($canPayOnline && !$canPayPal): ?>
                         <p class="small text-body-secondary text-center mt-2 mb-0">

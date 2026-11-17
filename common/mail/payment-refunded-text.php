@@ -19,12 +19,12 @@ Invoice:
 
 
 Refunded:
-INR <?= number_format($amount, 2) ?><?= !empty($viaPayPal) ? ' (returned to your PayPal account in US dollars)' : '' ?>
+<?= !empty($viaPayPal) ? $invoice->money($amount, true) : 'INR ' . number_format($amount, 2) ?><?= !empty($viaPayPal) ? ($invoice->isUsdPriced() ? ' (returned to your PayPal account)' : ' (returned to your PayPal account in US dollars)') : '' ?>
 
 <?php if ($stillDue > 0): ?>
 
 Balance still due on this invoice:
-INR <?= number_format($stillDue, 2) ?>
+<?= $invoice->money($stillDue, true) ?>
 
 <?php endif; ?>
 

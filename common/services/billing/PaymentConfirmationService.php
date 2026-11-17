@@ -121,7 +121,7 @@ final class PaymentConfirmationService
     }
 
     /** Charged, but the invoice could no longer take it: the customer must hear about their money by more than a bell. */
-    public function sendHeld(Invoice $invoice, float $amount): void
+    public function sendHeld(Invoice $invoice, Transaction $transaction): void
     {
         $client = User::findOne((int) $invoice->user_id);
         if ($client === null || empty($client->email)) {
@@ -130,7 +130,7 @@ final class PaymentConfirmationService
         $sent = Yii::$app->mailer
             ->compose(
                 ['html' => '@common/mail/payment-held-html', 'text' => '@common/mail/payment-held-text'],
-                ['invoice' => $invoice, 'amount' => $amount, 'invoiceUrl' => $this->getInvoiceUrl($invoice)],
+                ['invoice' => $invoice, 'transaction' => $transaction, 'invoiceUrl' => $this->getInvoiceUrl($invoice)],
             )
             ->setFrom([Yii::$app->params['senderEmail'] => Yii::$app->params['senderName']])
             ->setTo($client->email)

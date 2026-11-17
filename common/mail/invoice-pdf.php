@@ -6,9 +6,10 @@ use common\models\Invoice;
 use common\services\billing\TaxCalculator;
 use yii\helpers\Html;
 
-$money = static function (float $amount): string {
-    return 'INR ' . number_format($amount, 2);
-};
+/** @var \common\models\Invoice $invoice */
+
+// In dollars for an invoice priced in dollars, else rupees.
+$money = static fn(float $amount): string => $invoice->money($amount, true);
 $payment = Yii::$app->params['billing']['payment'] ?? [];
 $tax = (new TaxCalculator())->forInvoice($invoice);
 $taxableAmount = $tax['taxable'];
@@ -330,12 +331,17 @@ $igstAmount = $tax['igstAmount'];
 <?php if ($invoice->getExportNote() !== null): ?>
     <p><?= Html::encode($invoice->getExportNote()) ?></p>
 <?php endif; ?>
+<?php if ($invoice->usdValueNote(true) !== null): ?>
+    <p><?= Html::encode($invoice->usdValueNote(true)) ?></p>
+<?php endif; ?>
 
 <?php $invoiceClosed = in_array($invoice->status, \common\services\billing\InvoicePaymentService::CLOSED_STATUSES, true); ?>
 <?php if ($invoice->status === \common\models\Invoice::STATUS_PAID): ?>
     <p><strong>Status: <?= Html::encode($invoice->statusLabel()) ?>. Nothing more is due on this invoice.</strong></p>
 <?php elseif ($invoiceClosed): ?>
     <p><strong>Status: <?= Html::encode($invoice->statusLabel()) ?>. This invoice is no longer payable.<?= $carriedInto !== null ? ' Balance moved to invoice ' . Html::encode($carriedInto->invoice_number) . ': please pay it there.' : '' ?></strong></p>
+<?php elseif ($invoice->isUsdPriced()): ?>
+    <p><strong>Payment: <?= Html::encode($money((float) $outstandingAmount)) ?> by PayPal or a card. Sign in to your account on our website and open this invoice to pay.</strong></p>
 <?php else: ?>
 <!-- MANUAL PAYMENT DETAIL -->
 <div class="payment-box">

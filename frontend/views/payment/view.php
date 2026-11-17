@@ -33,7 +33,7 @@ $details = [
     'Confirmed' => $model->paid_at ? $formatter->asDatetime($model->paid_at) : '-',
 ];
 if ((float) $model->refunded_amount > 0) {
-    $details['Refunded'] = $formatter->asCurrency($model->refunded_amount, 'INR');
+    $details['Refunded'] = Html::encode($model->money($model->refunded_amount));
 }
 ?>
 
@@ -56,14 +56,14 @@ if ((float) $model->refunded_amount > 0) {
 <div class="card border-0 shadow-sm">
     <div class="card-body p-4">
         <div class="small text-body-secondary">Amount</div>
-        <div class="display-6 fw-bold <?= $model->paidInUsd() !== null ? 'mb-1' : 'mb-4' ?>"><?= $formatter->asCurrency($model->amount, 'INR') ?></div>
-        <?php if ($model->paidInUsd() !== null): ?>
+        <div class="display-6 fw-bold <?= $model->paidInUsd() !== null && !$model->invoice->isUsdPriced() ? 'mb-1' : 'mb-4' ?>"><?= Html::encode($model->money($model->amount)) ?></div>
+        <?php if ($model->paidInUsd() !== null && !$model->invoice->isUsdPriced()): ?>
             <p class="text-body-secondary mb-4">Paid with PayPal: <?= Html::encode($model->paidInUsd()) ?></p>
         <?php endif; ?>
         <?php if ($model->status === Transaction::STATUS_CAPTURED && $model->isUnapplied()): ?>
             <div class="alert alert-warning small">
                 <i class="fas fa-info-circle me-1"></i>
-                We received this payment, but its invoice was already settled or closed, so it has not been counted on the invoice. We will refund it or apply it to another invoice.
+                <?= $model->isHeldForCurrency() ? 'We received this payment in rupees, but its invoice is paid in US dollars by PayPal, so it has not been counted on the invoice.' : 'We received this payment, but its invoice was already settled or closed, so it has not been counted on the invoice.' ?> We will refund it or apply it to another invoice.
             </div>
         <?php endif; ?>
 

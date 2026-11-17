@@ -15,8 +15,8 @@ echo $this->render('_card', [
     'intro' => $viaGateway ? 'It usually reaches your account within 5 to 7 working days.' : 'It was sent back to you directly.',
     'rows' => [
         ['Invoice', ucfirst($invoice->customerReference())],
-        ['Refunded', Yii::$app->formatter->asCurrency($amount, 'INR') . (!empty($viaPayPal) ? ' (returned to your PayPal account in US dollars)' : '')],
-        ...($stillDue > 0 ? [['Balance still due on this invoice', Yii::$app->formatter->asCurrency($stillDue, 'INR'), 'accent']] : []),
+        ['Refunded', (!empty($viaPayPal) ? $invoice->money($amount) : Yii::$app->formatter->asCurrency($amount, 'INR')) . (!empty($viaPayPal) ? ($invoice->isUsdPriced() ? ' (returned to your PayPal account)' : ' (returned to your PayPal account in US dollars)') : '')],
+        ...($stillDue > 0 ? [['Balance still due on this invoice', $invoice->money($stillDue), 'accent']] : []),
     ],
     'button' => [str_starts_with((string) $invoice->invoice_number, 'TMP-') ? 'View Payments' : 'View Invoice', $invoiceUrl],
 ]);

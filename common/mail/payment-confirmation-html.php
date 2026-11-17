@@ -17,10 +17,10 @@ echo $this->render('_card', [
     'intro' => 'We have verified and recorded your payment. Thank you for your payment.',
     'rows' => [
         ['Invoice', $invoice->invoice_number],
-        ['Amount received', $formatter->asCurrency((float) $transaction->amount - (float) $transaction->refunded_amount, 'INR'), 'accent'],
-        ...($transaction->paidInUsd() !== null ? [['Paid with PayPal', $transaction->paidInUsd()]] : []),
+        ['Amount received', $invoice->money((float) $transaction->amount - (float) $transaction->refunded_amount), 'accent'],
+        ...($transaction->paidInUsd() !== null && !$invoice->isUsdPriced() ? [['Paid with PayPal', $transaction->paidInUsd()]] : []),
         ['Payment reference', $transaction->gateway_payment_id ?: 'Recorded payment'],
-        ['Remaining balance', $formatter->asCurrency($outstandingAmount, 'INR')],
+        ['Remaining balance', $invoice->money($outstandingAmount)],
     ],
     'note' => $isPaid
         ? ['This invoice is fully paid. Any linked renewal services have been processed by the billing system.']

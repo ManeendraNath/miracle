@@ -62,6 +62,8 @@ final class AccountingReportService
             // Total Payable includes balances carried in from older invoices, which are also exported
             // (as Carried Forward): sum Invoice Value, not Total Payable, to avoid counting them twice.
             'Arrears Carried In', 'Invoice Value (excl. arrears)',
+            // Priced in US dollars: the dollar price and the rate its rupee value (all columns above) was taken at.
+            'Currency', 'USD Value', 'Rate (INR per USD)', 'Rate Date',
         ];
         // A Draft hasn't been issued to the customer yet.
         $query = Invoice::forCustomer()
@@ -95,6 +97,10 @@ final class AccountingReportService
                 (string) $invoice->coupon_code,
                 self::money(round((float) $invoice->total_payable - $tax['total'], 2)),
                 self::money($tax['total']),
+                $invoice->isUsdPriced() ? Invoice::CURRENCY_USD : Invoice::CURRENCY_INR,
+                $invoice->isUsdPriced() ? self::money($invoice->usd_total) : '',
+                $invoice->isUsdPriced() ? number_format((float) $invoice->usd_rate_locked, 4, '.', '') : '',
+                (string) $invoice->usd_rate_date,
             ];
         }
     }
@@ -106,7 +112,7 @@ final class AccountingReportService
      */
     public function paymentRows(int $start, int $end): \Generator
     {
-        yield ['Paid Date', 'Invoice Number', 'Customer', 'Method', 'Reference', 'Amount', 'Gateway Fee', 'Refunded In Period', 'Last Refund Date In Period', 'Status'];
+        yield ['Paid Date', 'Invoice Number', 'Customer', 'Method', 'Reference', 'Amount', 'Gateway Fee', 'Refunded In Period', 'Last Refund Date In Period', 'Status', 'USD Paid'];
         $refunds = TransactionRefund::find()->select(['transaction_id', 'total' => 'SUM(amount)', 'last' => 'MAX(refunded_at)'])
             ->where(['>=', 'refunded_at', $start])->andWhere(['<', 'refunded_at', $end])
             ->groupBy('transaction_id')->indexBy('transaction_id')->asArray()->all();
@@ -128,6 +134,7 @@ final class AccountingReportService
                 self::money($refunds[$payment->id]['total'] ?? 0),
                 isset($refunds[$payment->id]) ? date('Y-m-d', (int) $refunds[$payment->id]['last']) : '',
                 $payment->isUnapplied() ? $payment->status . ' (unapplied)' : $payment->status,
+                $payment->invoice?->isUsdPriced() ? self::money($payment->invoice->usdFor((float) $payment->amount)) : '',
             ];
         }
     }

@@ -40,6 +40,8 @@ final class OutstandingBalanceService
           AND status IN (:unpaid, :partiallyPaid)
           AND (due_date IS NULL OR due_date < :today)
           AND created_at < :sentBefore
+          -- Priced in US dollars: paid by PayPal in dollars on its own, never moved onto a rupee renewal invoice.
+          AND usd_total IS NULL
           AND NOT EXISTS (
               SELECT 1 FROM {{%transaction}} t
               WHERE t.invoice_id = {{%invoice}}.id

@@ -18,12 +18,12 @@ Invoice Number:
 
 
 Total Payable:
-INR <?= number_format((float) $invoice->total_payable, 2) ?>
+<?= $invoice->money((float) $invoice->total_payable, true) ?>
 
 <?php if ($outstanding < (float) $invoice->total_payable): ?>
 
 Outstanding after payments received:
-INR <?= number_format($outstanding, 2) ?>
+<?= $invoice->money($outstanding, true) ?>
 
 <?php endif; ?>
 

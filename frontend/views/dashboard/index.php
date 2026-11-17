@@ -47,7 +47,7 @@ $invoiceBadge = static fn(string $status): string => match ($status) {
         </div>
         <div class="text-md-end">
             <div class="small text-white-50">Outstanding balance</div>
-            <div class="h2 fw-bold mb-2"><?= $formatter->asCurrency($outstandingTotal, 'INR') ?></div>
+            <div class="h2 fw-bold mb-2"><?= Html::encode($outstandingLabel) ?></div>
             <?php if ($outstandingTotal > 0): ?>
                 <?= Html::a('<i class="fas fa-credit-card me-1"></i> Pay now', ['/invoice/index'], ['class' => 'btn btn-light btn-sm fw-semibold']) ?>
             <?php else: ?>
@@ -153,7 +153,7 @@ $invoiceBadge = static fn(string $status): string => match ($status) {
                                     <td class="ps-3 fw-semibold"><?= Html::a(Html::encode($invoice->invoice_number), ['/invoice/view', 'number' => $invoice->invoice_number]) ?></td>
                                     <td class="text-nowrap"><?= $formatter->asDate($invoice->created_at, 'php:d M Y') ?></td>
                                     <td class="text-nowrap"><?= $invoice->due_date ? $formatter->asDate($invoice->due_date, 'php:d M Y') : '-' ?></td>
-                                    <td class="text-end text-nowrap"><?= $formatter->asCurrency($invoice->total_payable, 'INR') ?></td>
+                                    <td class="text-end text-nowrap"><?= Html::encode($invoice->money($invoice->total_payable)) ?></td>
                                     <td class="pe-3">
                                         <span class="badge <?= $invoiceBadge((string) $invoice->status) ?>"><?= Html::encode($invoice->statusLabel()) ?></span>
                                     </td>

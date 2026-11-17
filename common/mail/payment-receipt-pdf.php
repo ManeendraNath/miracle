@@ -4,7 +4,10 @@ declare(strict_types=1);
 
 use yii\helpers\Html;
 
-$money = static fn(int|float|string|null $amount): string => 'INR ' . number_format((float) ($amount ?? 0), 2);
+/** @var \common\models\Invoice $invoice */
+
+// In dollars for an invoice priced in dollars, else rupees.
+$money = static fn(int|float|string|null $amount): string => $invoice->money($amount, true);
 ?>
 
 <style>
@@ -71,7 +74,7 @@ $money = static fn(int|float|string|null $amount): string => 'INR ' . number_for
 
 <div class="success">Payment Confirmed</div>
 <div class="amount"><?= Html::encode($money($transaction->amount)) ?></div>
-<?php if ($transaction->paidInUsd() !== null): ?>
+<?php if ($transaction->paidInUsd() !== null && !$invoice->isUsdPriced()): ?>
 <div>Paid with PayPal: <?= Html::encode($transaction->paidInUsd()) ?></div>
 <?php endif; ?>
 <table class="details">

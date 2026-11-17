@@ -199,8 +199,8 @@ class TransactionController extends BaseController
                 Yii::$app->session->setFlash('warning', 'Invoice ' . $invoice->reference() . ' could not accept this payment (' . $invoice->statusLabel() . '), so it is held on the payment. Refund it or apply it to another invoice.');
                 try {
                     AdminAlertService::paymentApprovedOnClosedInvoice($invoice->reference(), $invoice->statusLabel(), (float) $paymentTransaction->amount, (int) $paymentTransaction->id);
-                    (new NotificationService())->create((int) $invoice->user_id, 'payment', 'Payment Received: Not Yet Applied', 'We received your payment of ₹' . number_format((float) $paymentTransaction->amount, 2) . ' for ' . $invoice->customerReference() . ', which can no longer take payments. We will refund it or apply it to another invoice.', '/payment/view?id=' . (int) $paymentTransaction->id);
-                    (new PaymentConfirmationService())->sendHeld($invoice, (float) $paymentTransaction->amount);
+                    (new NotificationService())->create((int) $invoice->user_id, 'payment', 'Payment Received: Not Yet Applied', 'We received your payment of ' . $paymentTransaction->money($paymentTransaction->amount) . ' for ' . $invoice->customerReference() . ', which can no longer take payments. We will refund it or apply it to another invoice.', '/payment/view?id=' . (int) $paymentTransaction->id);
+                    (new PaymentConfirmationService())->sendHeld($invoice, $paymentTransaction);
                 } catch (\Throwable $alertError) {
                     Yii::error(['message' => 'Unapplied approval alert failed.', 'transactionId' => $id, 'error' => $alertError->getMessage()], __METHOD__);
                 }
@@ -261,6 +261,17 @@ class TransactionController extends BaseController
             $remaining = round((float) $model->amount - (float) $model->refunded_amount, 2);
             $input = trim(self::scalarParam($this->request->post('refund_amount', '')));
             $amount = $input === '' ? $remaining : round((float) $input, 2);
+            $usd = null;
+            if ($invoice?->isUsdPriced() && (int) $model->gateway_id === Transaction::GATEWAY_PAYPAL) {
+                // Paid in dollars: staff enter what was refunded in PayPal, in dollars; the books take it in rupees
+                // at the invoice's rate (all of what is left when it is all of it, so nothing is left over by rounding).
+                $usdRemaining = $invoice->usdFor($remaining);
+                $usd = $input === '' ? $usdRemaining : round((float) $input, 2);
+                if (($input !== '' && !is_numeric($input)) || $usd <= 0 || $usd > $usdRemaining) {
+                    throw new \DomainException('Enter a refund amount between US$0.01 and US$' . number_format($usdRemaining, 2) . '.');
+                }
+                $amount = abs($usd - $usdRemaining) < 0.005 ? $remaining : $invoice->inrFor($usd);
+            }
             $expected = $this->request->post('refunded_before');
             // A confirm submits the form by script, past the field's "required": a cleared box must not mean "refund everything".
             if (($input === '' && $expected !== null) || ($input !== '' && !is_numeric($input)) || $amount <= 0 || $amount > $remaining) {
@@ -301,7 +312,7 @@ class TransactionController extends BaseController
                 throw new \DomainException('Razorpay is turned off here, so this would only write the record and send nothing. Return the money yourself first, then tick the box to confirm.');
             }
 
-            $note = 'Refunded ₹' . number_format($amount, 2) . ' on ' . date('d M Y') . '.';
+            $note = 'Refunded ₹' . number_format($amount, 2) . ($usd !== null ? ' (US$' . number_format($usd, 2) . ')' : '') . ' on ' . date('d M Y') . '.';
             if ($viaRazorpay) {
                 $refundId = $razorpay->refundPayment((string) $model->gateway_payment_id, (int) round($amount * 100), (int) round((float) $model->refunded_amount * 100));
                 // Kept even if the save below fails: the money has gone.
@@ -351,7 +362,7 @@ class TransactionController extends BaseController
             if ($invoice !== null) {
                 // Recorded: a failed message must not look like a failed refund.
                 try {
-                    (new NotificationService())->create((int) $invoice->user_id, 'payment', 'Payment Refunded', '₹' . number_format($amount, 2) . ' for ' . $invoice->customerReference() . ' has been refunded.', '/payment/view?id=' . (int) $model->id);
+                    (new NotificationService())->create((int) $invoice->user_id, 'payment', 'Payment Refunded', $model->money($amount) . ' for ' . $invoice->customerReference() . ' has been refunded.', '/payment/view?id=' . (int) $model->id);
                     (new PaymentConfirmationService())->sendRefund(Invoice::findOne((int) $invoice->id), $amount, $viaRazorpay || (int) $model->gateway_id === Transaction::GATEWAY_PAYPAL, (int) $model->gateway_id === Transaction::GATEWAY_PAYPAL);
                 } catch (\Throwable $e) {
                     Yii::error(['message' => 'Refund was recorded but the customer could not be told.', 'transactionId' => $id, 'error' => $e->getMessage()], __METHOD__);
@@ -586,6 +597,9 @@ class TransactionController extends BaseController
             if ($target === null) {
                 throw new \DomainException('Choose an invoice of the same customer.');
             }
+            if ($target->isUsdPriced()) {
+                throw new \DomainException('Invoice ' . $target->invoice_number . ' is priced in US dollars and is paid by PayPal, so a payment can\'t be moved onto it.');
+            }
             $paymentService = new InvoicePaymentService();
             $paymentService->assertPayable($target);
             $model->invoice_id = (int) $target->id;
@@ -687,6 +701,10 @@ class TransactionController extends BaseController
             // Before the insert: its foreign key takes a shared lock on the invoice, which two saves can't both upgrade.
             if ($model->getIsNewRecord()) {
                 Yii::$app->db->createCommand('SELECT id FROM {{%invoice}} WHERE id = :id FOR UPDATE')->bindValue(':id', (int) $model->invoice_id)->queryScalar();
+            }
+            // Priced in US dollars: paid by PayPal in dollars only, never a rupee amount typed in here.
+            if ((int) $model->gateway_id !== Transaction::GATEWAY_PAYPAL && Invoice::findOne((int) $model->invoice_id)?->isUsdPriced()) {
+                throw new \DomainException('This invoice is priced in US dollars and is paid by PayPal. To take another payment method, first edit the invoice back to rupee prices.');
             }
             if (!$model->save()) {
                 throw new \RuntimeException('Transaction could not be saved: ' . json_encode($model->errors, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));

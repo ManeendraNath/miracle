@@ -73,7 +73,8 @@ final class InvoiceController extends Controller
 
         $paymentService = new InvoicePaymentService();
         $outstandingTotal = 0.0;
-        foreach (Invoice::find()->where(['user_id' => $userId, 'status' => $filters['due']])->all() as $due) {
+        $dueInvoices = Invoice::find()->where(['user_id' => $userId, 'status' => $filters['due']])->all();
+        foreach ($dueInvoices as $due) {
             $outstandingTotal += $paymentService->getOutstanding($due);
         }
 
@@ -90,6 +91,7 @@ final class InvoiceController extends Controller
             'filter' => $filter,
             'counts' => $counts,
             'outstandingTotal' => round($outstandingTotal, 2),
+            'outstandingLabel' => $paymentService->outstandingLabel($dueInvoices),
             'paymentService' => $paymentService,
         ]);
     }
@@ -108,9 +110,10 @@ final class InvoiceController extends Controller
                             'outstandingAmount' => $paymentService->getOutstanding($model),
                             'pendingPayment' => $pendingPayment,
                             'carriedInto' => $model->status === Invoice::STATUS_CARRIED_FORWARD ? $paymentService->openInvoiceCarrying((int) $model->id) : null,
-                            'razorpayEnabled' => (new RazorpayService())->acceptsCustomerPayments($model->isExport()),
+                            // Priced in US dollars: PayPal only.
+                            'razorpayEnabled' => !$model->isUsdPriced() && (new RazorpayService())->acceptsCustomerPayments($model->isExport()),
                             // Clients abroad: PayPal in US dollars.
-                            'paypal' => $model->isExport() && $paypal->acceptsCustomerPayments() ? ['clientId' => $paypal->getClientId(), 'rate' => PayPalService::rateFor($model), 'until' => PayPalService::isLocked($model) ? $model->usd_rate_until : null] : null,
+                            'paypal' => $model->isExport() && $paypal->acceptsCustomerPayments($model) ? ['clientId' => $paypal->getClientId(), 'rate' => PayPalService::rateFor($model), 'until' => PayPalService::isLocked($model) ? $model->usd_rate_until : null] : null,
                             'canChangeCoupon' => (new InvoiceCouponService())->blockReason($model) === null,
                         ]
         );
@@ -157,7 +160,7 @@ final class InvoiceController extends Controller
             $outstanding = (new InvoicePaymentService())->getOutstanding($invoice);
             $payable = in_array($invoice->status, [Invoice::STATUS_UNPAID, Invoice::STATUS_PARTIALLY_PAID], true) && $outstanding > 0;
             $proofPending = (new InvoicePaymentService())->hasPendingProof((int) $invoice->id);
-            if (!$razorpay->acceptsCustomerPayments($invoice->isExport()) || !$payable || $proofPending) {
+            if ($invoice->isUsdPriced() || !$razorpay->acceptsCustomerPayments($invoice->isExport()) || !$payable || $proofPending) {
                 $dbTransaction->rollBack();
                 Yii::$app->response->statusCode = 422;
                 return ['error' => $proofPending ? 'A payment for this invoice is already awaiting verification.' : 'Online payment is not available for this invoice.'];
@@ -281,7 +284,7 @@ final class InvoiceController extends Controller
             $outstanding = $paymentService->getOutstanding($invoice);
             $payable = in_array($invoice->status, [Invoice::STATUS_UNPAID, Invoice::STATUS_PARTIALLY_PAID], true) && $outstanding > 0;
             $proofPending = $paymentService->hasPendingProof((int) $invoice->id);
-            if (!$invoice->isExport() || !$paypal->acceptsCustomerPayments() || !$payable || $proofPending) {
+            if (!$invoice->isExport() || !$paypal->acceptsCustomerPayments($invoice) || !$payable || $proofPending) {
                 $dbTransaction->rollBack();
                 Yii::$app->response->statusCode = 422;
                 return ['error' => $proofPending ? 'A payment for this invoice is already awaiting verification.' : 'PayPal is not available for this invoice.'];
@@ -405,6 +408,10 @@ final class InvoiceController extends Controller
         $invoice = $this->findOwnedInvoice($number);
         if (!in_array($invoice->status, [Invoice::STATUS_UNPAID, Invoice::STATUS_PARTIALLY_PAID], true)) {
             Yii::$app->session->setFlash('warning', 'This invoice is not currently payable.');
+            return $this->redirect(['view', 'number' => $invoice->invoice_number]);
+        }
+        if ($invoice->isUsdPriced()) {
+            Yii::$app->session->setFlash('warning', 'This invoice is paid in US dollars by PayPal or a card, on the invoice page.');
             return $this->redirect(['view', 'number' => $invoice->invoice_number]);
         }
         $paymentService = new InvoicePaymentService();

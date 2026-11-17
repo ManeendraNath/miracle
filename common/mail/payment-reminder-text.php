@@ -11,10 +11,7 @@ Hello <?= $invoice->client_name ?>,
 Invoice: <?= $invoice->invoice_number ?>
 
 
-Outstanding: INR <?= number_format(
-    (float) $outstandingAmount,
-    2
-) ?>
+Outstanding: <?= $invoice->money((float) $outstandingAmount, true) ?>
 
 
 Due date: <?= $invoice->due_date ?>

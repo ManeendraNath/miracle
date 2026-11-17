@@ -1,5 +1,5 @@
 {
-    "migrations": 74,
+    "migrations": 75,
     "columns": {
         "admin": {
             "auth_key": {
@@ -1366,14 +1366,32 @@
                 "default": null,
                 "extra": ""
             },
+            "usd_rate_date": {
+                "type": "date",
+                "null": true,
+                "default": null,
+                "extra": ""
+            },
             "usd_rate_locked": {
                 "type": "decimal(10,4)",
                 "null": true,
                 "default": null,
                 "extra": ""
             },
+            "usd_rate_source": {
+                "type": "varchar(60)",
+                "null": true,
+                "default": null,
+                "extra": ""
+            },
             "usd_rate_until": {
                 "type": "date",
+                "null": true,
+                "default": null,
+                "extra": ""
+            },
+            "usd_total": {
+                "type": "decimal(12,2)",
                 "null": true,
                 "default": null,
                 "extra": ""
@@ -1455,6 +1473,18 @@
             "unit_price": {
                 "type": "decimal(10,2)",
                 "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "usd_total_price": {
+                "type": "decimal(12,2)",
+                "null": true,
+                "default": null,
+                "extra": ""
+            },
+            "usd_unit_price": {
+                "type": "decimal(12,2)",
+                "null": true,
                 "default": null,
                 "extra": ""
             }

@@ -74,10 +74,18 @@ $isNew = $model->isNewRecord;
                 </div>
 
 
-                <div class="col-md-6">
+                <div class="col-md-3">
 
                     <?= $form->field($model, 'due_date')->input('date') ?>
 
+                </div>
+
+                <div class="col-md-3">
+                    <?php $model->priceCurrency ??= $model->isUsdPriced() ? \common\models\Invoice::CURRENCY_USD : \common\models\Invoice::CURRENCY_INR; ?>
+                    <?= $form->field($model, 'priceCurrency')->dropDownList(
+                        [\common\models\Invoice::CURRENCY_INR => 'Indian rupees (₹)', \common\models\Invoice::CURRENCY_USD => 'US dollars (US$)'],
+                        ['id' => 'price-currency'],
+                    )->label('Prices in')->hint('US dollars: clients abroad only, paid by PayPal. Converted at the reference rate of the invoice date; no coupon or discount.') ?>
                 </div>
 
             </div>
@@ -112,7 +120,7 @@ $isNew = $model->isNewRecord;
                             </th>
 
                             <th style="width: 15%">
-                                Unit Price
+                                Unit Price (<span id="unit-currency"><?= $model->priceCurrency === \common\models\Invoice::CURRENCY_USD ? 'US$' : '₹' ?></span>)
                             </th>
 
                             <th style="width: 15%">
@@ -587,5 +595,23 @@ recalculateManualInvoice();
 JS;
 
 $this->registerJs($js);
+// Prices typed in one currency are not prices in the other: switching clears them, so they are entered again.
+$this->registerJs(<<<'JS'
+    (function () {
+        const select = document.getElementById('price-currency');
+        if (!select) { return; }
+        let current = select.value;
+        select.addEventListener('change', function () {
+            const prices = [...document.querySelectorAll('input[name$="[unit_price]"]')].filter((input) => input.value !== '');
+            if (prices.length && !confirm('Switching the currency clears the unit prices, so you enter them again. Continue?')) {
+                select.value = current;
+                return;
+            }
+            prices.forEach((input) => { input.value = ''; input.dispatchEvent(new Event('input', { bubbles: true })); });
+            current = select.value;
+            document.getElementById('unit-currency').textContent = select.value === 'USD' ? 'US$' : '₹';
+        });
+    })();
+    JS);
 
 ?>

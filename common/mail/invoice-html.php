@@ -23,12 +23,14 @@ echo $this->render('_card', [
     'intro' => 'Hello ' . $invoice->client_name . ', ' . $intro . ' The PDF is attached.',
     'rows' => [
         ['Invoice', $invoice->invoice_number],
-        ['Total payable', Yii::$app->formatter->asCurrency($invoice->total_payable, 'INR')],
-        ...($outstanding < (float) $invoice->total_payable ? [['Outstanding after payments received', Yii::$app->formatter->asCurrency($outstanding, 'INR')]] : []),
+        ['Total payable', $invoice->money($invoice->total_payable)],
+        ...($outstanding < (float) $invoice->total_payable ? [['Outstanding after payments received', $invoice->money($outstanding)]] : []),
         [$dueLabel, $dueOn, 'accent'],
         ...(($usd = \common\services\payment\PayPalService::lockedPrice($invoice, $outstanding)) !== null ? [['Or pay with PayPal', $usd]] : []),
     ],
     'button' => $baseUrl !== '' ? ['View Invoice & Pay', $baseUrl . '/invoice/view?number=' . rawurlencode($invoice->invoice_number)] : null,
-    'footnote' => 'You can pay online from the customer portal, or by bank transfer / UPI using the details on the invoice and then upload the payment screenshot. '
-        . 'Please mention ' . $invoice->invoice_number . ' in the payment reference.',
+    'footnote' => $invoice->isUsdPriced()
+        ? 'You can pay in US dollars by PayPal or a card from the customer portal.'
+        : 'You can pay online from the customer portal, or by bank transfer / UPI using the details on the invoice and then upload the payment screenshot. '
+            . 'Please mention ' . $invoice->invoice_number . ' in the payment reference.',
 ]);

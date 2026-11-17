@@ -24,10 +24,10 @@ echo $this->render('_card', [
     'rows' => [
         ['Invoice', $invoice->invoice_number],
         ['Billed to', $invoice->client_name],
-        ['Outstanding', Yii::$app->formatter->asCurrency($outstandingAmount, 'INR')],
+        ['Outstanding', $invoice->money($outstandingAmount)],
         ['Due date', Yii::$app->formatter->asDate($invoice->due_date, 'php:d M Y'), 'accent'],
         ...(($usd = \common\services\payment\PayPalService::lockedPrice($invoice, (float) $outstandingAmount)) !== null ? [['Or pay with PayPal', $usd]] : []),
     ],
     'button' => ['View Invoice & Pay', $invoiceUrl],
-    'footnote' => 'Paying by bank transfer or UPI? Use ' . $invoice->invoice_number . ' as the payment reference.',
+    'footnote' => $invoice->isUsdPriced() ? 'You can pay in US dollars by PayPal or a card from the customer portal.' : 'Paying by bank transfer or UPI? Use ' . $invoice->invoice_number . ' as the payment reference.',
 ]);

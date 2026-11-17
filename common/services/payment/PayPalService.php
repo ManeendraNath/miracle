@@ -53,10 +53,14 @@ final class PayPalService
         return !empty($this->_config['sandbox']);
     }
 
-    /** Switched on for clients abroad, never a sandbox checkout on live (no money would move), and a rate known. */
-    public function acceptsCustomerPayments(): bool
+    /**
+     * Switched on for clients abroad, never a sandbox checkout on live (no money would move), and a rate known:
+     * today's, or for an invoice priced in dollars its own (it needs no other).
+     */
+    public function acceptsCustomerPayments(?Invoice $invoice = null): bool
     {
-        return (bool) CustomYii::getSetting('paypal_abroad', 0) && $this->isEnabled() && !(YII_ENV_PROD && $this->isSandbox()) && self::usdRate() > 0;
+        return (bool) CustomYii::getSetting('paypal_abroad', 0) && $this->isEnabled() && !(YII_ENV_PROD && $this->isSandbox())
+            && ($invoice?->isUsdPriced() || self::usdRate() > 0);
     }
 
     public function getClientId(): string
@@ -76,10 +80,10 @@ final class PayPalService
         return self::isLocked($invoice) ? (float) $invoice->usd_rate_locked : self::usdRate();
     }
 
-    /** Whether the invoice's dollar price (rate and PayPal fee) is still the one fixed when it was sent. */
+    /** Whether the invoice's dollar price (rate and PayPal fee) is still the one fixed when it was sent; always when priced in dollars. */
     public static function isLocked(Invoice $invoice): bool
     {
-        return (float) $invoice->usd_rate_locked > 0 && (string) $invoice->usd_rate_until >= date('Y-m-d');
+        return $invoice->isUsdPriced() || ((float) $invoice->usd_rate_locked > 0 && (string) $invoice->usd_rate_until >= date('Y-m-d'));
     }
 
     /**
@@ -121,8 +125,11 @@ final class PayPalService
     /** "US$43.39 (this price holds until 30 Dec 2026)" for an email, while the invoice's locked rate applies; else null. */
     public static function lockedPrice(Invoice $invoice, float $inr): ?string
     {
-        if ($inr <= 0 || !self::isLocked($invoice) || !(new self())->acceptsCustomerPayments()) {
+        if ($inr <= 0 || !self::isLocked($invoice) || !(new self())->acceptsCustomerPayments($invoice)) {
             return null;
+        }
+        if ($invoice->isUsdPriced()) {
+            return null; // its amounts are already shown in dollars
         }
 
         return 'US$' . self::chargeFor($inr, (float) $invoice->usd_rate_locked, $invoice) . ' (this price holds until ' . date('d M Y', (int) strtotime((string) $invoice->usd_rate_until)) . ')';
@@ -141,6 +148,10 @@ final class PayPalService
      */
     public static function chargeFor(float $inr, float $rate, ?Invoice $invoice = null): string
     {
+        if ($invoice?->isUsdPriced()) {
+            // Priced in dollars: exactly the dollars owed, rounded to the cent (rounding up could charge a cent extra).
+            return number_format($invoice->usdFor($inr), 2, '.', '');
+        }
         [$percent, $fixed] = self::fee($invoice);
         $usd = ($inr / $rate + $fixed) / (1 - $percent / 100);
 
@@ -294,7 +305,13 @@ final class PayPalService
         $recorded = (new RazorpayService([]))->capture($orderId, $capture['id'], null, null, $paidAt);
         $feeUsd = $capture['seller_receivable_breakdown']['paypal_fee']['value'] ?? null;
         if (is_numeric($feeUsd) && is_array($expected) && !isset($expected['fee_usd'])) {
-            $recorded->updateAttributes(['raw_payload' => json_encode($expected + ['fee_usd' => (string) $feeUsd, 'rate' => $rate], JSON_THROW_ON_ERROR)]);
+            $attributes = ['raw_payload' => json_encode($expected + ['fee_usd' => (string) $feeUsd, 'rate' => $rate], JSON_THROW_ON_ERROR)];
+            $invoice = Invoice::findOne((int) $recorded->invoice_id);
+            if ($invoice !== null && $invoice->isUsdPriced()) {
+                // Priced in dollars, the business pays PayPal's fee: a cost in rupees at the invoice's rate.
+                $attributes['gateway_fee'] = $invoice->inrFor((float) $feeUsd);
+            }
+            $recorded->updateAttributes($attributes);
         }
 
         return $recorded;

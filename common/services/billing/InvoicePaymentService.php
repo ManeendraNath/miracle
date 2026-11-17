@@ -38,6 +38,23 @@ final class InvoicePaymentService
         );
     }
 
+    /** What $invoices still owe, for the customer: "₹1,200.00", "US$50.00" or "₹1,200.00 + US$50.00" (dollar-priced ones in dollars). */
+    public function outstandingLabel(array $invoices): string
+    {
+        $inr = 0.0;
+        $usd = 0.0;
+        foreach ($invoices as $invoice) {
+            $owed = $this->getOutstanding($invoice);
+            $invoice->isUsdPriced() ? $usd += $invoice->usdFor($owed) : $inr += $owed;
+        }
+        $parts = $inr > 0 || $usd <= 0 ? [\Yii::$app->formatter->asCurrency(round($inr, 2), 'INR')] : [];
+        if ($usd > 0) {
+            $parts[] = 'US$' . number_format($usd, 2);
+        }
+
+        return implode(' + ', $parts);
+    }
+
     /**
      * Remaining collectible balance.
      */

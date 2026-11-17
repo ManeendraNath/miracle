@@ -9,9 +9,8 @@ Invoice:
 
 
 Amount Received:
-INR <?= number_format((float) $transaction->amount - (float) $transaction->refunded_amount, 2)
-?>
-<?php if ($transaction->paidInUsd() !== null): ?>
+<?= $invoice->money((float) $transaction->amount - (float) $transaction->refunded_amount, true) ?>
+<?php if ($transaction->paidInUsd() !== null && !$invoice->isUsdPriced()): ?>
 Paid with PayPal: <?= $transaction->paidInUsd() ?>
 
 <?php endif; ?>
@@ -23,7 +22,7 @@ Reference:
 
 
 Outstanding Balance:
-INR <?= number_format((float) $outstandingAmount, 2) ?>
+<?= $invoice->money((float) $outstandingAmount, true) ?>
 
 
 View Invoice:

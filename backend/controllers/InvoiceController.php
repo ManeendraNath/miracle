@@ -154,7 +154,8 @@ class InvoiceController extends BaseController
             $form->category = (string) $dbItem->category;
             $form->description = (string) $dbItem->description;
             $form->quantity = (int) $dbItem->quantity;
-            $form->unit_price = (float) $dbItem->unit_price;
+            // A dollar-priced invoice is edited in its dollar prices.
+            $form->unit_price = $model->isUsdPriced() ? (float) $dbItem->usd_unit_price : (float) $dbItem->unit_price;
             $form->item_type = (int) $dbItem->item_type;
             $items[] = $form;
         }

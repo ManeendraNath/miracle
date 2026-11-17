@@ -10,6 +10,7 @@ use common\models\InvoiceItem;
 use common\models\Transaction;
 use common\models\User;
 use common\services\notification\NotificationService;
+use common\services\payment\ExchangeRateService;
 use common\services\payment\RazorpayService;
 use common\models\forms\ManualInvoiceItemForm;
 use Yii;
@@ -24,11 +25,15 @@ final class ManualInvoiceService
         private readonly InvoiceNumberService $numberService = new InvoiceNumberService(),
         private readonly InvoicePaymentService $paymentService = new InvoicePaymentService(),
         private readonly CouponService $couponService = new CouponService(),
+        private readonly ExchangeRateService $exchangeRates = new ExchangeRateService(),
     ) {
     }
 
     public function create(Invoice $invoice, array $items): Invoice
     {
+        if (!in_array($invoice->priceCurrency, [null, Invoice::CURRENCY_INR, Invoice::CURRENCY_USD], true)) {
+            throw new \DomainException('Choose rupees or US dollars for the prices.');
+        }
         if (!$items) {
             throw new \DomainException('At least one invoice item is required.');
         }
@@ -64,7 +69,9 @@ final class ManualInvoiceService
 
             $this->applyTax($invoice, $profile);
 
-            $subtotal = $this->calculateSubtotal($items);
+            $rate = $invoice->priceCurrency === Invoice::CURRENCY_USD ? $this->usdRate($invoice, $profile, date('Y-m-d')) : null;
+            $lines = $this->priceLines($items, $rate);
+            $subtotal = $lines['subtotal'];
 
             if ($subtotal <= 0) {
                 throw new \DomainException('Invoice subtotal must be greater than zero.');
@@ -92,6 +99,9 @@ final class ManualInvoiceService
             if ($discount > $subtotal) {
                 throw new \DomainException('Invoice discount cannot exceed subtotal.');
             }
+            if ($rate !== null && ($couponCode !== '' || $discount > 0)) {
+                throw new \DomainException('An invoice priced in US dollars takes no coupon or discount: enter the final dollar prices.');
+            }
 
             $taxable = round($subtotal - $discount, 2);
 
@@ -105,6 +115,7 @@ final class ManualInvoiceService
             if ($tax['total'] <= 0) {
                 throw new \DomainException('Invoice total must be greater than zero.');
             }
+            $this->applyUsdTotal($invoice, $rate, $lines['usdTotal'], $tax['total'] === $subtotal);
             $now = time();
             $invoice->billing_run_id = null;
             $invoice->subtotal_amount = $subtotal;
@@ -120,8 +131,8 @@ final class ManualInvoiceService
                         json_encode($invoice->errors, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
                 );
             }
-            foreach ($items as $itemForm) {
-                $this->createItem($invoice, $itemForm);
+            foreach ($lines['lines'] as $line) {
+                $this->createItem($invoice, $line);
             }
             $this->numberService->assign($invoice);
             if ($invoice->coupon_code !== null) {
@@ -151,6 +162,9 @@ final class ManualInvoiceService
 
     public function update(Invoice $invoice, array $items): Invoice
     {
+        if (!in_array($invoice->priceCurrency, [null, Invoice::CURRENCY_INR, Invoice::CURRENCY_USD], true)) {
+            throw new \DomainException('Choose rupees or US dollars for the prices.');
+        }
         if (!$items) {
             throw new \DomainException('At least one invoice item is required.');
         }
@@ -163,11 +177,7 @@ final class ManualInvoiceService
             throw new \DomainException('Invoice due date is required.');
         }
 
-        $subtotal = $this->calculateSubtotal($items);
-
-        if ($subtotal <= 0) {
-            throw new \DomainException('Invoice subtotal must be greater than zero.');
-        }
+        $this->calculateSubtotal($items);
 
         $couponCode = strtoupper(trim((string) $invoice->coupon_code));
 
@@ -252,6 +262,25 @@ final class ManualInvoiceService
                 throw new \DomainException('Only fully manual invoices can be ' . 'modified using this editor.');
             }
 
+            // Prices in dollars or rupees: as chosen on the form, else as the invoice already is.
+            $currency = $invoice->priceCurrency ?? ($lockedInvoice->isUsdPriced() ? Invoice::CURRENCY_USD : Invoice::CURRENCY_INR);
+            $rate = null;
+            if ($currency === Invoice::CURRENCY_USD) {
+                $profile = CustomerBillingProfile::findOne(['user_id' => (int) $lockedInvoice->user_id]);
+                // Already in dollars: its rate stays, being the rate of its (unchanged) invoice date.
+                $rate = $lockedInvoice->isUsdPriced() && $profile !== null && $profile->isForeign()
+                    ? (float) $lockedInvoice->usd_rate_locked
+                    : $this->usdRate($lockedInvoice, $profile, date('Y-m-d', (int) $lockedInvoice->created_at));
+                // Client and tax as they are now (abroad: no GST), not as when the invoice was first made in rupees.
+                $this->applyClientSnapshot($lockedInvoice, $profile);
+                $this->applyTax($lockedInvoice, $profile);
+            }
+            $lines = $this->priceLines($items, $rate);
+            $subtotal = $lines['subtotal'];
+            if ($subtotal <= 0) {
+                throw new \DomainException('Invoice subtotal must be greater than zero.');
+            }
+
             $storedCode = strtoupper(trim((string) $lockedInvoice->coupon_code));
             $newTotals = $this->totalsByType($items);
             $storedTotals = [];
@@ -304,8 +333,8 @@ final class ManualInvoiceService
                 }
             }
 
-            foreach ($items as $itemForm) {
-                $this->createItem($lockedInvoice, $itemForm);
+            foreach ($lines['lines'] as $line) {
+                $this->createItem($lockedInvoice, $line);
             }
 
             $taxable = round($subtotal - $discount, 2);
@@ -321,6 +350,10 @@ final class ManualInvoiceService
                 throw new \DomainException('Invoice total must be greater than zero.');
             }
 
+            if ($rate !== null && ($couponCode !== '' || $discount > 0)) {
+                throw new \DomainException('An invoice priced in US dollars takes no coupon or discount: enter the final dollar prices.');
+            }
+            $this->applyUsdTotal($lockedInvoice, $rate, $lines['usdTotal'], $tax['total'] === $subtotal);
             $lockedInvoice->discount_amount = $discount;
 
             $lockedInvoice->coupon_code = $couponCode !== '' ? $couponCode : null;
@@ -376,6 +409,79 @@ final class ManualInvoiceService
         return $totals;
     }
 
+    /**
+     * The reference rate of $date for an invoice priced in dollars: clients abroad only (no GST), and never a guess.
+     */
+    private function usdRate(Invoice $invoice, ?CustomerBillingProfile $profile, string $date): float
+    {
+        if ($profile === null || !$profile->isForeign()) {
+            throw new \DomainException('Prices in US dollars are for clients abroad only. This client\'s billing country is India.');
+        }
+        $reference = $this->exchangeRates->referenceRate($date);
+        if ($reference === null) {
+            throw new \DomainException('The US dollar exchange rate could not be fetched, so the invoice was not saved. Try again in a few minutes.');
+        }
+        $invoice->usd_rate_locked = $reference['rate'];
+        $invoice->usd_rate_date = $reference['date'];
+        $invoice->usd_rate_source = $reference['source'];
+
+        return $reference['rate'];
+    }
+
+    /**
+     * Line prices as stored. In rupees: as entered. In dollars ($rate given): each unit price in rupees at the rate,
+     * so a line is quantity x shown price in both currencies, and the rupee total converts back to exactly the
+     * dollar total.
+     *
+     * @param ManualInvoiceItemForm[] $items
+     * @return array{lines: list<array{form: ManualInvoiceItemForm, unit: float, total: float, usdUnit: ?float, usdTotal: ?float}>, subtotal: float, usdTotal: ?float}
+     */
+    private function priceLines(array $items, ?float $rate): array
+    {
+        $this->calculateSubtotal($items);
+        $lines = [];
+        $subtotal = 0.0;
+        $usdTotal = 0.0;
+        foreach ($items as $form) {
+            $price = round($form->unit_price, 2);
+            if ($rate === null) {
+                $lines[] = ['form' => $form, 'unit' => $price, 'total' => $form->getTotal(), 'usdUnit' => null, 'usdTotal' => null];
+                $subtotal += $form->getTotal();
+                continue;
+            }
+            $unit = round($price * $rate, 2);
+            if (round(round($form->quantity * $unit, 2) / $rate, 2) !== $form->getTotal()) {
+                throw new \DomainException('These quantities are too large to price exactly in US dollars. Put the work in fewer units (e.g. 1 x the total).');
+            }
+            $lines[] = ['form' => $form, 'unit' => $unit, 'total' => round($form->quantity * $unit, 2), 'usdUnit' => $price, 'usdTotal' => $form->getTotal()];
+            $subtotal += round($form->quantity * $unit, 2);
+            $usdTotal += $form->getTotal();
+        }
+        $subtotal = round($subtotal, 2);
+        if ($rate !== null && round($subtotal / $rate, 2) !== round($usdTotal, 2)) {
+            // Each unit's rupee price is rounded to the paisa: with very many units those add up past a cent.
+            throw new \DomainException('These quantities are too large to price exactly in US dollars. Put the work in fewer units (e.g. 1 x the total).');
+        }
+
+        return ['lines' => $lines, 'subtotal' => $subtotal, 'usdTotal' => $rate !== null ? round($usdTotal, 2) : null];
+    }
+
+    /** Dollar-priced: the dollar total, a permanent rate and no PayPal fee on top. Rupee-priced: none of it. */
+    private function applyUsdTotal(Invoice $invoice, ?float $rate, ?float $usdTotal, bool $untaxed): void
+    {
+        if ($rate !== null && !$untaxed) {
+            throw new \DomainException('An invoice priced in US dollars carries no GST: check that the client\'s billing country is outside India.');
+        }
+        if ($rate === null) {
+            if ($invoice->usd_total !== null) {
+                $invoice->setAttributes(['usd_total' => null, 'usd_rate_locked' => null, 'usd_rate_until' => null, 'usd_rate_date' => null, 'usd_rate_source' => null, 'usd_fee_percent_locked' => null, 'usd_fee_fixed_locked' => null], false);
+            }
+
+            return;
+        }
+        $invoice->setAttributes(['usd_total' => $usdTotal, 'usd_rate_locked' => $rate, 'usd_rate_until' => null, 'usd_fee_percent_locked' => 0, 'usd_fee_fixed_locked' => 0], false);
+    }
+
     private function calculateSubtotal(array $items): float
     {
         $subtotal = 0.0;
@@ -398,8 +504,10 @@ final class ManualInvoiceService
         return round($subtotal, 2);
     }
 
-    private function createItem(Invoice $invoice, ManualInvoiceItemForm $form): void
+    /** @param array{form: ManualInvoiceItemForm, unit: float, total: float, usdUnit: ?float, usdTotal: ?float} $line */
+    private function createItem(Invoice $invoice, array $line): void
     {
+        $form = $line['form'];
         $item = new InvoiceItem();
 
         $item->invoice_id = (int) $invoice->id;
@@ -418,9 +526,10 @@ final class ManualInvoiceService
 
         $item->quantity = $form->quantity;
 
-        $item->unit_price = number_format($form->unit_price, 2, '.', '');
-
-        $item->total_price = number_format($form->getTotal(), 2, '.', '');
+        $item->unit_price = $line['unit'];
+        $item->total_price = $line['total'];
+        $item->usd_unit_price = $line['usdUnit'];
+        $item->usd_total_price = $line['usdTotal'];
 
         if (!$item->save()) {
             throw new \RuntimeException(

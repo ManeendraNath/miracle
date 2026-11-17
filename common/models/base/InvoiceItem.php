@@ -15,7 +15,9 @@ use Yii;
  * @property string $description
  * @property int $quantity
  * @property float $unit_price
+ * @property float|null $usd_unit_price
  * @property float $total_price
+ * @property float|null $usd_total_price
  * @property int|null $source_invoice_id
  * @property int|null $billing_event_id
  *
@@ -39,13 +41,13 @@ class InvoiceItem extends \yii\db\ActiveRecord
     public function rules()
     {
         return [
-            [['item_id', 'source_invoice_id', 'billing_event_id'], 'default', 'value' => null],
+            [['item_id', 'usd_unit_price', 'usd_total_price', 'source_invoice_id', 'billing_event_id'], 'default', 'value' => null],
             [['item_type'], 'default', 'value' => 4],
             [['quantity'], 'default', 'value' => 1],
             [['invoice_id', 'category', 'description', 'unit_price', 'total_price'], 'required'],
             [['invoice_id', 'item_type', 'item_id', 'quantity', 'source_invoice_id', 'billing_event_id'], 'integer'],
             [['description'], 'string'],
-            [['unit_price', 'total_price'], 'number'],
+            [['unit_price', 'usd_unit_price', 'total_price', 'usd_total_price'], 'number'],
             [['category'], 'string', 'max' => 100],
             [['billing_event_id'], 'unique'],
             [['source_invoice_id'], 'unique'],
@@ -69,7 +71,9 @@ class InvoiceItem extends \yii\db\ActiveRecord
             'description' => 'Description',
             'quantity' => 'Quantity',
             'unit_price' => 'Unit Price',
+            'usd_unit_price' => 'Usd Unit Price',
             'total_price' => 'Total Price',
+            'usd_total_price' => 'Usd Total Price',
             'source_invoice_id' => 'Source Invoice ID',
             'billing_event_id' => 'Billing Event ID',
         ];

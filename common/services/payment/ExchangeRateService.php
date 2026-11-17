@@ -19,6 +19,8 @@ use yii\httpclient\Transport;
 final class ExchangeRateService
 {
     private const URL = 'https://api.frankfurter.dev/v1/latest?base=USD&symbols=INR';
+    private const DATED_URL = 'https://api.frankfurter.dev/v1/%s?base=USD&symbols=INR';
+    public const REFERENCE_SOURCE = 'ECB reference rate';
     private const REFRESH_SECONDS = 12 * 3600;
     /** A market rate older than this (the API down for days) is not used. */
     private const MAX_AGE_SECONDS = 4 * 86400;
@@ -63,6 +65,31 @@ final class ExchangeRateService
         }
 
         return (float) $settings->usd_market_rate;
+    }
+
+    /**
+     * The plain market reference rate (no margin) for $date, for pricing an invoice in US dollars: the European
+     * Central Bank rate via Frankfurter, from the last working day on or before $date. Null when it can't be had;
+     * an invoice is then not issued rather than priced at a guess.
+     *
+     * @return array{rate: float, date: string, source: string}|null
+     */
+    public function referenceRate(string $date): ?array
+    {
+        try {
+            $response = (new Client(['transport' => $this->_transport ?? StreamTransport::class]))
+                ->get(sprintf(self::DATED_URL, $date))->setOptions(['timeout' => 8, 'sslVerifyPeer' => true])->send();
+            $rate = $response->isOk ? ($response->data['rates']['INR'] ?? null) : null;
+            $on = $response->isOk ? (string) ($response->data['date'] ?? '') : '';
+            if (is_numeric($rate) && (float) $rate >= 10 && (float) $rate <= 1000 && preg_match('/^\d{4}-\d{2}-\d{2}$/', $on) === 1 && $on <= $date) {
+                return ['rate' => round((float) $rate, 4), 'date' => $on, 'source' => self::REFERENCE_SOURCE];
+            }
+            Yii::warning(['message' => 'Exchange rate API returned no usable dated USD/INR rate.', 'date' => $date, 'status' => $response->statusCode], __METHOD__);
+        } catch (\Throwable $e) {
+            Yii::warning(['message' => 'Exchange rate API could not be reached for a dated rate.', 'date' => $date, 'error' => $e->getMessage()], __METHOD__);
+        }
+
+        return null;
     }
 
     private function fetch(): ?float

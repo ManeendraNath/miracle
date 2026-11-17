@@ -29,6 +29,9 @@ final class InvoiceCouponService
         if ($invoice->status !== Invoice::STATUS_UNPAID) {
             return 'Coupons can only be used on unpaid invoices.';
         }
+        if ($invoice->isUsdPriced()) {
+            return 'This invoice is priced in US dollars, so coupons do not apply.';
+        }
         // Any payment or proof under review freezes the total. An unpaid Razorpay order does not:
         // change() supersedes it, and RazorpayService::capture() still records it if it gets paid.
         $paymentStarted = Transaction::find()

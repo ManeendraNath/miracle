@@ -62,6 +62,7 @@ final class DashboardController extends Controller
                             'totalInvoices' => $totalInvoices,
                             'openInvoices' => $openInvoices,
                             'outstandingTotal' => round($outstandingTotal, 2),
+                            'outstandingLabel' => $paymentService->outstandingLabel($openInvoiceModels),
                             'pendingPayments' => $pendingPayments,
                             'recentInvoices' => $recentInvoices,
                             'domainCount' => $domainCount,

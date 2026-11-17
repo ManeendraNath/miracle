@@ -29,7 +29,7 @@ $tabs = ['all' => 'All', 'due' => 'Due', 'paid' => 'Paid'];
             </span>
             <div>
                 <div class="small text-body-secondary">Total outstanding</div>
-                <div class="fs-5 fw-bold"><?= $formatter->asCurrency($outstandingTotal, 'INR') ?></div>
+                <div class="fs-5 fw-bold"><?= Html::encode($outstandingLabel) ?></div>
             </div>
         </div>
     </div>
@@ -93,10 +93,10 @@ $tabs = ['all' => 'All', 'due' => 'Due', 'paid' => 'Paid'];
                 'format' => 'raw',
                 'headerOptions' => ['class' => 'text-end'],
                 'contentOptions' => ['class' => 'text-end text-nowrap'],
-                'value' => static function (Invoice $model) use ($formatter, $paymentService): string {
-                    $html = $formatter->asCurrency($model->total_payable, 'INR');
+                'value' => static function (Invoice $model) use ($paymentService): string {
+                    $html = Html::encode($model->money($model->total_payable));
                     if ($model->status === Invoice::STATUS_PARTIALLY_PAID) {
-                        $html .= '<div class="small text-body-secondary">' . $formatter->asCurrency($paymentService->getOutstanding($model), 'INR') . ' left</div>';
+                        $html .= '<div class="small text-body-secondary">' . Html::encode($model->money($paymentService->getOutstanding($model))) . ' left</div>';
                     }
                     return $html;
                 },

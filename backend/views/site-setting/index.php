@@ -126,6 +126,7 @@ $end = '</div></div>';
                     <div class="col-sm-6"><?= $form->field($model, 'mobile_1')->textInput(['type' => 'tel', 'placeholder' => 'Digits only'])->label('Main phone') ?></div>
                     <div class="col-sm-6"><?= $form->field($model, 'mobile_2')->textInput(['type' => 'tel', 'placeholder' => 'Optional'])->label('Second phone') ?></div>
                 </div>
+                <?= $form->field($model, 'whatsapp')->textInput(['type' => 'tel', 'placeholder' => 'Digits with country code, e.g. 919876543210'])->hint('The green chat button on every public page opens WhatsApp with this number. Leave empty to hide the button.') ?>
                 <?= $form->field($model, 'email_1')->textInput(['placeholder' => 'info@company.com'])->label('Main email')->hint('Also receives the contact-form and audit-request emails.') ?>
                 <div class="row">
                     <div class="col-sm-6"><?= $form->field($model, 'email_2')->textInput(['placeholder' => 'Optional'])->label('Second email') ?></div>

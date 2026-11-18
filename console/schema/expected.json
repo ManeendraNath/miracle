@@ -1,5 +1,5 @@
 {
-    "migrations": 80,
+    "migrations": 81,
     "columns": {
         "admin": {
             "auth_key": {
@@ -2356,6 +2356,12 @@
                 "type": "decimal(5,2)",
                 "null": false,
                 "default": "3.00",
+                "extra": ""
+            },
+            "whatsapp": {
+                "type": "bigint",
+                "null": true,
+                "default": null,
                 "extra": ""
             },
             "x": {

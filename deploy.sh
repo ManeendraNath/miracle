@@ -281,7 +281,15 @@ for d in "${DIRS[@]}"; do
     rsync -a "${KEEP[@]}" "$APP/$d/" "$SNAP/$d/"
 done
 cp -a "$APP/composer.json" "$APP/composer.lock" "$SNAP/"
-cp -a "$APP/vendor" "$SNAP/vendor"
+# vendor/ is linked, not copied (seconds instead of minutes, and no extra disk space): Composer replaces a package by
+# deleting its files and writing new ones, so the links keep the old versions. Files rewritten in place would change
+# a linked copy too, so they are copied in full: Composer's autoload files, and the extension list the yii2-composer
+# plugin writes. A new Composer plugin that writes into vendor/ must be added here.
+cp -al "$APP/vendor" "$SNAP/vendor"
+for f in composer autoload.php yiisoft/extensions.php; do
+    rm -rf "${SNAP:?}/vendor/$f"
+    cp -a "$APP/vendor/$f" "$SNAP/vendor/$f"
+done
 cp -a "$PUBLIC/.htaccess" "$SNAP/public.htaccess" 2>/dev/null || true
 
 

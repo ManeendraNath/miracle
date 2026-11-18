@@ -13,7 +13,7 @@ $phones = array_filter([CustomYii::getSetting('mobile_1'), CustomYii::getSetting
 $emails = array_filter([CustomYii::getSetting('email_1'), CustomYii::getSetting('email_2')]);
 $socials = array_filter([
     'Facebook' => ['fab fa-facebook-f', CustomYii::getSetting('facebook')],
-    'X' => ['fab fa-twitter', CustomYii::getSetting('x')],
+    'X' => ['x', CustomYii::getSetting('x')],
     'LinkedIn' => ['fab fa-linkedin-in', CustomYii::getSetting('linkedin')],
     'Instagram' => ['fab fa-instagram', CustomYii::getSetting('instagram')],
     'YouTube' => ['fab fa-youtube', CustomYii::getSetting('youtube')],
@@ -33,8 +33,12 @@ $socials = array_filter([
                 <?php if ($socials): ?>
                     <div class="d-flex gap-2">
                         <?php foreach ($socials as $label => [$icon, $url]): ?>
-                            <a href="<?= Html::encode($url) ?>" target="_blank" rel="noopener" class="footer-social" title="<?= $label ?>" aria-label="<?= $label ?>">
-                                <i class="<?= $icon ?>"></i>
+                            <a href="<?= Html::encode($url) ?>" target="_blank" rel="noopener" class="footer-social" title="<?= $label ?>" aria-label="<?= $label ?> (opens in a new tab)">
+                                <?php if ($icon === 'x'): ?>
+                                    <?= $this->render('_x-logo') ?>
+                                <?php else: ?>
+                                    <i class="<?= $icon ?>" aria-hidden="true"></i>
+                                <?php endif; ?>
                             </a>
                         <?php endforeach; ?>
                     </div>

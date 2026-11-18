@@ -47,6 +47,7 @@ class SiteSetting extends base\SiteSetting
             [['paypal_fee_percent'], 'number', 'min' => 0, 'max' => 15],
             [['paypal_fee_fixed_usd'], 'number', 'min' => 0, 'max' => 5],
             [['usd_rate_margin'], 'number', 'min' => 0, 'max' => 20],
+            ['whatsapp', 'match', 'pattern' => '/^[1-9]\d{7,14}$/', 'message' => 'Digits with the country code, e.g. 919876543210.'],
             // Also given to search engines as the company's profiles (home page structured data).
             [['facebook', 'x', 'youtube', 'linkedin', 'instagram'], 'url', 'defaultScheme' => 'https'],
             // The whole <meta …> tag may be pasted: only its content="…" code is kept.
@@ -70,6 +71,7 @@ class SiteSetting extends base\SiteSetting
             'paypal_fee_fixed_usd' => 'PayPal fixed fee (US$)',
             'site_url' => 'Production Server Web Domain',
             'mobile_1' => 'Primary Technical Support Hotline',
+            'whatsapp' => 'WhatsApp number',
             'mobile_2' => 'Alternative Backup Line',
             'email_1' => 'Primary Helpdesk Inbound Email',
             'google_site_verification' => 'Google Search Console code',

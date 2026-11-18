@@ -43,7 +43,14 @@ $this->render('_head');
 
 <?= $this->render('_footer') ?>
 
-<button type="button" class="mw-to-top" aria-label="Back to top" hidden><i class="fas fa-arrow-up" aria-hidden="true"></i></button>
+<?php $whatsapp = preg_replace('/\D/', '', (string) \common\components\CustomYii::getSetting('whatsapp')); ?>
+<?php if ($whatsapp !== ''): ?>
+    <?php // A chat in WhatsApp with a first message ready; clients abroad often prefer it to a call. ?>
+    <a class="mw-whatsapp" href="https://wa.me/<?= $whatsapp ?>?text=<?= rawurlencode('Hi, I would like to discuss a website / web application project.') ?>" target="_blank" rel="noopener" aria-label="Chat with us on WhatsApp (opens in a new tab)" title="Chat with us on WhatsApp">
+        <i class="fab fa-whatsapp" aria-hidden="true"></i>
+    </a>
+<?php endif; ?>
+<button type="button" class="mw-to-top<?= $whatsapp !== '' ? ' mw-to-top-raised' : '' ?>" aria-label="Back to top" hidden><i class="fas fa-arrow-up" aria-hidden="true"></i></button>
 
 <?php $this->endBody() ?>
 </body>

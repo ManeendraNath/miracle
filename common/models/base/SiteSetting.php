@@ -12,6 +12,7 @@ use Yii;
  * @property string $site_url
  * @property int $mobile_1
  * @property int|null $mobile_2
+ * @property int|null $whatsapp
  * @property string $email_1
  * @property string|null $email_2
  * @property string|null $email_3
@@ -56,14 +57,14 @@ class SiteSetting extends \yii\db\ActiveRecord
     public function rules()
     {
         return [
-            [['mobile_2', 'email_2', 'email_3', 'address_line_1', 'address_line_2', 'address_line_3', 'facebook', 'x', 'youtube', 'linkedin', 'instagram', 'updated_at', 'usd_inr_rate', 'usd_market_rate', 'usd_rate_checked_at', 'usd_rate_fetched_at', 'google_site_verification', 'bing_site_verification', 'indexnow_key'], 'default', 'value' => null],
+            [['mobile_2', 'whatsapp', 'email_2', 'email_3', 'address_line_1', 'address_line_2', 'address_line_3', 'facebook', 'x', 'youtube', 'linkedin', 'instagram', 'updated_at', 'usd_inr_rate', 'usd_market_rate', 'usd_rate_checked_at', 'usd_rate_fetched_at', 'google_site_verification', 'bing_site_verification', 'indexnow_key'], 'default', 'value' => null],
             [['usd_rate_auto'], 'default', 'value' => 1],
             [['paypal_abroad'], 'default', 'value' => 0],
             [['usd_rate_margin'], 'default', 'value' => 3.00],
             [['paypal_fee_percent'], 'default', 'value' => 4.40],
             [['paypal_fee_fixed_usd'], 'default', 'value' => 0.30],
             [['site_name', 'site_url', 'mobile_1', 'email_1'], 'required'],
-            [['mobile_1', 'mobile_2', 'updated_at', 'review_invoices', 'razorpay_india', 'razorpay_abroad', 'paypal_abroad', 'usd_rate_auto', 'usd_rate_checked_at', 'usd_rate_fetched_at'], 'integer'],
+            [['mobile_1', 'mobile_2', 'whatsapp', 'updated_at', 'review_invoices', 'razorpay_india', 'razorpay_abroad', 'paypal_abroad', 'usd_rate_auto', 'usd_rate_checked_at', 'usd_rate_fetched_at'], 'integer'],
             [['usd_rate_margin', 'usd_inr_rate', 'usd_market_rate', 'paypal_fee_percent', 'paypal_fee_fixed_usd'], 'number'],
             [['site_name', 'site_url', 'email_1', 'email_2', 'email_3', 'address_line_1', 'address_line_2', 'address_line_3', 'facebook', 'x', 'youtube', 'linkedin', 'instagram'], 'string', 'max' => 255],
             [['google_site_verification', 'bing_site_verification'], 'string', 'max' => 100],
@@ -82,6 +83,7 @@ class SiteSetting extends \yii\db\ActiveRecord
             'site_url' => 'Site Url',
             'mobile_1' => 'Mobile 1',
             'mobile_2' => 'Mobile 2',
+            'whatsapp' => 'Whatsapp',
             'email_1' => 'Email 1',
             'email_2' => 'Email 2',
             'email_3' => 'Email 3',

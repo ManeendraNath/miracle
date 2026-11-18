@@ -281,7 +281,7 @@ class BlogController extends Controller
         $response = Yii::$app->response;
         $response->format = Response::FORMAT_RAW;
         $response->headers->set('Content-Type', 'application/rss+xml; charset=UTF-8');
-        $response->content = $this->renderPartial('feed', ['posts' => BlogPost::findPublic()->orderBy(['published_at' => SORT_DESC])->limit(20)->all()]);
+        $response->content = $this->renderPartial('feed', ['posts' => BlogPost::findPublic()->andWhere(['noindex' => 0])->orderBy(['published_at' => SORT_DESC])->limit(20)->all()]);
 
         return $response;
     }

@@ -19,6 +19,11 @@ final class FormGuard
 
     public static function shown(string $form): void
     {
+        // Shown again after a failed send (a typo, a rate limit): the clock keeps running from the first showing, or
+        // a quick corrected resend would look like a bot.
+        if (Yii::$app->request->isPost && Yii::$app->session->has('form-shown:' . $form)) {
+            return;
+        }
         Yii::$app->session->set('form-shown:' . $form, time());
     }
 

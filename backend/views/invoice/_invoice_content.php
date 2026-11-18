@@ -9,9 +9,11 @@ use yii\helpers\Html;
 
 /** @var \common\models\Invoice $model */
 
-$subtotal = round((float) $model->subtotal_amount, 2);
-$discount = round((float) $model->discount_amount, 2);
 $tax = (new TaxCalculator())->forInvoice($model);
+// Balances carried in from older invoices are shown on their own line, not in the subtotal (they are not taxed here).
+$arrears = $tax['arrears'];
+$subtotal = round((float) $model->subtotal_amount - $arrears, 2);
+$discount = round((float) $model->discount_amount, 2);
 $taxableAmount = $tax['taxable'];
 $cgstAmount = $tax['cgstAmount'];
 $sgstAmount = $tax['sgstAmount'];
@@ -257,6 +259,12 @@ $money = static fn(int|float|string|null $amount): string => $model->money($amou
                         </tr>
                     <?php endif; ?>
 
+                    <?php if ($arrears > 0): ?>
+                        <tr>
+                            <td>Previous outstanding</td>
+                            <td class="text-end"><?= $money($arrears) ?></td>
+                        </tr>
+                    <?php endif; ?>
                     <tr class="fw-bold">
                         <td>Grand Total</td>
                         <td class="text-end">

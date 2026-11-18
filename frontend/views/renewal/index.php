@@ -76,6 +76,7 @@ $expiryLabel = static function (string $expiry) use ($today): array {
         <h2 class="h6 fw-bold mb-0">Renewal History</h2>
         <div class="small text-body-secondary">Review successfully completed service renewals.</div>
     </div>
+    <?php $serviceLabels = ServiceRenewalHistory::serviceLabels($dataProvider->getModels()); ?>
     <?= GridView::widget([
         'dataProvider' => $dataProvider,
         'layout' => "<div class=\"table-responsive\">{items}</div>\n<div class=\"d-flex flex-column flex-sm-row justify-content-between align-items-center gap-2 px-3 py-3\">{summary}{pager}</div>",
@@ -90,7 +91,7 @@ $expiryLabel = static function (string $expiry) use ($today): array {
                 'label' => 'Service',
                 'headerOptions' => ['class' => 'ps-3'],
                 'contentOptions' => ['class' => 'ps-3 fw-semibold'],
-                'value' => static fn(ServiceRenewalHistory $model): string => ucfirst((string) $model->item_type),
+                'value' => static fn(ServiceRenewalHistory $model): string => $serviceLabels[(int) $model->id] ?? ucfirst((string) $model->item_type),
             ],
             [
                 'label' => 'Amount',

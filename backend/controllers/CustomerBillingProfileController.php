@@ -49,7 +49,7 @@ final class CustomerBillingProfileController extends BaseController
         }
         $model = $canSetEverything ? new CustomerBillingProfile(['user_id' => $customer?->id]) : CustomerBillingDetailsService::forUser($customer);
 
-        // Below Admin through the customer path, which tells the admins to review GST.
+        // Below Admin through the customer path, which tells the admins to review the details.
         $saved = $this->request->isPost && ($canSetEverything ? $model->load($this->request->post()) && $model->save() : CustomerBillingDetailsService::save($model, $this->request->post()));
         if ($saved) {
             Yii::$app->session->setFlash('success', 'Customer billing profile created successfully.');

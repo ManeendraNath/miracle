@@ -265,8 +265,8 @@ final class AdminAlertService extends AdminNotificationService
     {
         $title = $created ? 'Customer Added Billing Details' : 'Customer Updated Billing Details';
         $message = "Customer: {$customer}\n" . "Legal name: {$legalName}\n"
-            . ($countryChange === null ? '' : "Country changed: {$countryChange}. Moving abroad turns GST off, and moving back doesn't turn it on again.\n")
-            . 'Review the profile and set GST applicability if needed.';
+            . ($countryChange === null ? '' : "Country changed: {$countryChange}. GST follows the country: none for clients abroad.\n")
+            . 'Review the profile.';
         self::send($title, $message, 'billing', '/customer-billing-profile/update?id=' . $profileId);
     }
 

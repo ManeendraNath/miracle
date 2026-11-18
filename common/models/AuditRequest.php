@@ -42,6 +42,8 @@ class AuditRequest extends base\AuditRequest
             ['company_url', 'url', 'defaultScheme' => 'https'],
             // Used as Reply-To on the staff email.
             ['email', 'email'],
+            // The column is TEXT (64 KB): longer would fail at the database and lose what was typed.
+            ['message', 'string', 'max' => 10000],
             ['verifyCode', 'required', 'on' => self::SCENARIO_PUBLIC],
             ['verifyCode', 'captcha', 'captchaAction' => 'site/captcha', 'on' => self::SCENARIO_PUBLIC],
         ]);

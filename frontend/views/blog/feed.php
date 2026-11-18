@@ -22,7 +22,8 @@ echo '<?xml version="1.0" encoding="UTF-8"?>' . "\n";
     <item>
         <title><?= Html::encode($post->title) ?></title>
         <link><?= Html::encode(Url::to(['/blog/view', 'slug' => $post->slug], true)) ?></link>
-        <guid isPermaLink="true"><?= Html::encode(Url::to(['/blog/view', 'slug' => $post->slug], true)) ?></guid>
+        <?php // By id, not address: a post whose address changes is not a new item to feed readers. ?>
+        <guid isPermaLink="false"><?= Html::encode(Url::to(['/blog/index'], true) . '#post-' . $post->id) ?></guid>
         <pubDate><?= date(DATE_RSS, (int) $post->published_at) ?></pubDate>
         <description><?= Html::encode($post->summary) ?></description>
     </item>

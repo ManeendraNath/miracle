@@ -146,7 +146,9 @@ This guarantees that a retry/new run cannot silently absorb events from a differ
 
 Both manual and automatic invoice creation must snapshot `CustomerBillingProfile` into `Invoice`.
 
-Tax is an invoice-time snapshot. Use configured supplier state/state code and billing profile state/state code to choose:
+Tax is an invoice-time snapshot. GST is charged to every client in India once `BILLING_GSTIN` and the rates in
+`params['billing']['gst']` are set (not to clients abroad, and nothing before registration); the profile's old
+`is_gst_applicable` column is no longer read. Use configured supplier state/state code and billing profile state/state code to choose:
 
 - intra-state: CGST + SGST
 - inter-state: IGST

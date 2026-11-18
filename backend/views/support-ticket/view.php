@@ -126,7 +126,7 @@ $this->params['help']['Service'] = 'The service the customer picked when opening
                                     <?= $isAdmin ? 'Support Team' : 'Customer' ?>
                                 </div>
                                 <div><?= nl2br(Html::encode($message->message)) ?></div>
-                                <div class="small mt-2 <?= $isAdmin ? 'text-white-50' : 'text-muted' ?>">
+                                <div class="small mt-2 <?= $isAdmin ? 'text-white' : 'text-muted' ?>">
                                     <?= Yii::$app->formatter->asDatetime($message->created_at, 'php:d M Y, h:i A') ?>
                                 </div>
                             </div>

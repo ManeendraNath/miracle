@@ -210,7 +210,8 @@ final class InvoiceController extends Controller
         $orderId = $field('razorpay_order_id');
         $paymentId = $field('razorpay_payment_id');
         $signature = $field('razorpay_signature');
-        $razorpay = new RazorpayService();
+        /** @var RazorpayService $razorpay */
+        $razorpay = Yii::createObject(RazorpayService::class); // the container lets tests answer for Razorpay
 
         $ownsOrder = $orderId !== '' && Transaction::find()->where(['gateway_order_id' => $orderId, 'invoice_id' => $invoice->id])->exists();
         if (!$ownsOrder || $paymentId === '' || !$razorpay->verifyCheckoutSignature($orderId, $paymentId, $signature)) {
@@ -220,7 +221,13 @@ final class InvoiceController extends Controller
         }
         try {
             // Unapplied: the invoice was already settled or closed (e.g. paid by UPI in the meantime).
-            $captured = $razorpay->capture($orderId, $paymentId);
+            // The signature only ties the payment to the order: Razorpay itself says whether, and how much, was taken.
+            // Not captured yet (or Razorpay unreachable): left to the webhook and the cron check, which record it once it is.
+            $payment = $razorpay->fetchPayment($paymentId);
+            if (($payment['status'] ?? null) !== 'captured' || ($payment['order_id'] ?? null) !== $orderId) {
+                throw new \RuntimeException('Razorpay has not captured payment ' . $paymentId . ' (status: ' . ($payment['status'] ?? 'unknown') . ').');
+            }
+            $captured = $razorpay->capture($orderId, $paymentId, (int) ($payment['amount'] ?? 0), is_int($payment['fee'] ?? null) ? $payment['fee'] : null, is_int($payment['created_at'] ?? null) ? $payment['created_at'] : null);
             if ($captured->status === Transaction::STATUS_REFUNDED) {
                 Yii::$app->session->setFlash('warning', 'This payment has already been refunded. Reference: ' . $paymentId);
             } elseif ($captured->isUnapplied()) {
@@ -317,6 +324,13 @@ final class InvoiceController extends Controller
         $session = Yii::$app->session;
         if ($orderId === '' || !Transaction::find()->where(['gateway_order_id' => $orderId, 'invoice_id' => $invoice->id, 'gateway_id' => Transaction::GATEWAY_PAYPAL])->exists()) {
             $session->setFlash('error', 'We could not find this PayPal payment. If money was taken, contact support.');
+            return ['ok' => false];
+        }
+        // A Razorpay payment made in another tab with its callback and webhook still on the way: recorded first (the
+        // capture below then refuses, the invoice being paid), and nothing captured while one can't be recorded.
+        $razorpay = new \common\services\payment\RazorpayService();
+        if ($razorpay->isEnabled() && ($razorpay->recoverPaidOrders((int) $invoice->id) > 0 || $razorpay->paidButNotRecorded)) {
+            $session->setFlash('warning', 'We found an earlier payment for this invoice, so PayPal has not been charged. Please reload the page to see your balance, or contact support.');
             return ['ok' => false];
         }
         try {

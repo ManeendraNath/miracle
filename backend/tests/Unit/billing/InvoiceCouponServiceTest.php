@@ -199,7 +199,7 @@ final class InvoiceCouponServiceTest extends Unit
         $this->renewalInvoice(400.00, 500.00);
     }
 
-    public function testDefaultDiscountIsCappedWhenArrearsAreStillOwed(): void
+    public function testDefaultDiscountCoveringTheRenewalFailsAlsoWhenArrearsAreOwed(): void
     {
         // Review step off: a balance is never moved onto an invoice held for review.
         Yii::$app->db->createCommand()->update('{{%site_setting}}', ['review_invoices' => 0])->execute();
@@ -207,11 +207,17 @@ final class InvoiceCouponServiceTest extends Unit
         $old = $this->invoice([InvoiceItem::TYPE_HOSTING => 100.00]);
         $old->updateAttributes(['due_date' => '2000-01-01', 'created_at' => strtotime('-30 days')]); // overdue past the grace: carried into the renewal
 
-        $invoice = $this->renewalInvoice(400.00, 500.00);
+        // Paying only the ₹118 carried balance would otherwise renew the service for free.
+        $this->expectExceptionMessage('The default discount on the billing profile covers this whole renewal.');
+        $this->renewalInvoice(400.00, 500.00);
+    }
 
-        // Discount capped at the ₹400 renewal; the ₹118 carried balance is still owed.
-        $this->assertEquals(400.00, (float) $invoice->discount_amount);
-        $this->assertEquals(118.00, (float) $invoice->total_payable);
+    public function testACouponCoveringAllChargesIsRefusedEvenWithAnOlderBalanceOnTheInvoice(): void
+    {
+        $this->coupon('ALLFREE', ['amount' => 100]);
+        $invoice = $this->invoice([InvoiceItem::TYPE_HOSTING => 1000.00, InvoiceItem::TYPE_ARREARS => 2000.00]);
+        $this->expectExceptionMessage('covers all of this invoice');
+        (new InvoiceCouponService())->apply($invoice, 'ALLFREE');
     }
 
     public function testEditingACouponKeepsExistingAssignmentDates(): void

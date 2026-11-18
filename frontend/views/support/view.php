@@ -59,9 +59,9 @@ $statusClass = match ($model->status) {
             <?php $customer = strtolower($message->sender_type) === 'customer'; ?>
             <div class="d-flex mb-3 <?= $customer ? 'justify-content-end' : 'justify-content-start' ?>">
                 <div class="p-3 rounded-3 text-break <?= $customer ? 'bg-primary text-white' : 'bg-body-tertiary border' ?>" style="max-width: 80%;">
-                    <div class="small fw-semibold mb-1 <?= $customer ? 'text-white-50' : 'text-body-secondary' ?>"><?= $customer ? 'You' : 'Support team' ?></div>
+                    <div class="small fw-semibold mb-1 <?= $customer ? 'text-white' : 'text-body-secondary' ?>"><?= $customer ? 'You' : 'Support team' ?></div>
                     <?= nl2br(Html::encode($message->message)) ?>
-                    <div class="small mt-2 <?= $customer ? 'text-white-50' : 'text-body-secondary' ?>">
+                    <div class="small mt-2 <?= $customer ? 'text-white' : 'text-body-secondary' ?>">
                         <?= $formatter->asDatetime($message->created_at) ?>
                     </div>
                 </div>

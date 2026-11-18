@@ -27,6 +27,7 @@ class UserController extends BaseController
     public function actionToggleStatus($id)
     {
         $model = $this->findModel($id);
+        $unverified = self::unverifiedSignup($model);
 
         // Suspended (not Inactive): Inactive is the unverified-email state, which
         // the customer could flip back to Active via the verification link.
@@ -40,6 +41,9 @@ class UserController extends BaseController
 
         $model->updated_at = time(); // save(false) skips the validation step that refreshes it
         $model->save(false); // Bypasses password validation restrictions during simple status toggles
+        if ($unverified) {
+            $this->distrustSignupPassword($model);
+        }
         $this->warnAboutOpenBusiness($model);
         return $this->redirect(['index']);
     }
@@ -76,6 +80,34 @@ class UserController extends BaseController
         return $this->render('create', ['model' => $model]);
     }
 
+    /** Signed up on the website and never confirmed the email: whoever chose the password may not own the address. */
+    private static function unverifiedSignup(User $model): bool
+    {
+        return (int) $model->status === User::getStatusInactive() && (string) $model->verification_token !== '';
+    }
+
+    /**
+     * Staff moved an unconfirmed sign-up out of Inactive. Its password was chosen by whoever typed the address,
+     * perhaps not its owner (e.g. someone signing up with a prospect's email before staff onboard them): replaced
+     * whatever the new status, as leaving Inactive drops the token that marks it (a later Suspended → Active would
+     * not). Once Active, the owner is emailed to set their own.
+     */
+    private function distrustSignupPassword(User $model): void
+    {
+        if ((int) $model->status === User::getStatusInactive()) {
+            return;
+        }
+        $model->setPassword(Yii::$app->security->generateRandomString(32));
+        $model->generateAuthKey();
+        $model->save(false, ['password_hash', 'auth_key']);
+        if ((int) $model->status !== User::getStatusActive()) {
+            Yii::$app->session->addFlash('info', 'The email address was never confirmed, so the password chosen at sign-up was removed. If you activate this account later, the customer will need Forgot password to sign in.');
+            return;
+        }
+        $this->sendWelcome($model);
+        Yii::$app->session->addFlash('info', 'The email address was never confirmed, so the password chosen at sign-up was replaced: the customer has been emailed to set their own.');
+    }
+
     /** They didn't sign up, so nothing else tells them they have an account, and its one-month clock is running. */
     private function sendWelcome(User $customer): void
     {
@@ -109,6 +141,7 @@ class UserController extends BaseController
     {
         $model = $this->findModel($id);
         $model->clearPlainPassword();
+        $unverified = self::unverifiedSignup($model);
 
         // Below Admin only the status can change: username, email or password would take over the customer's login.
         if (self::canAccess(Yii::$app->user->identity, 'user', 'credentials')) {
@@ -122,6 +155,10 @@ class UserController extends BaseController
         }
         if ($loaded && $model->save()) {
             Yii::$app->session->setFlash('success', 'User updated successfully.');
+            // A password staff typed in this same save is theirs to give the customer.
+            if ($unverified && (string) $model->password === '') {
+                $this->distrustSignupPassword($model);
+            }
             $this->warnAboutOpenBusiness($model);
             return $this->redirect(['view', 'id' => $model->id]);
         }

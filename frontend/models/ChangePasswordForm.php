@@ -40,7 +40,7 @@ final class ChangePasswordForm extends Model
         // Keyed on the account, not the username the login form uses, so these tries can't lock the login page.
         $throttleName = 'user#' . (int) $this->user->id;
         if (\common\components\LoginThrottle::isLocked('frontend', $throttleName)) {
-            $this->addError($attribute, 'Too many failed attempts. Please try again in 15 minutes.');
+            $this->addError($attribute, 'Too many failed attempts. Please try again later (up to an hour).');
         } elseif (!$this->user->validatePassword($this->$attribute)) {
             \common\components\LoginThrottle::fail('frontend', $throttleName);
             $this->addError($attribute, 'The current password is incorrect.');

@@ -14,9 +14,8 @@ $this->params['help'] = [
     'Client' => 'Locked once the profile exists. The profile holds this customer\'s company name, GST number and address, and moving it would put them on another customer\'s invoices and leave this customer with none. If the details are wrong, correct them here; another customer\'s details belong in their own profile.',
     'Changes' => 'Invoices already made keep the old details. The new ones are used from the next invoice.',
     'Country' => 'Outside India means export of services: no GST is charged, and State, GSTIN and PAN are not used.',
-    'State' => 'Sets the GST state code. When GST applies, a customer in our state pays CGST and SGST; any other state pays IGST.',
+    'State' => 'Sets the GST state code. Once we are GST-registered, every customer in India pays GST: CGST and SGST in our state, IGST in any other.',
     'GSTIN and PAN' => 'Optional. A GSTIN is checked for typing mistakes and must match the chosen state and the PAN.',
-    'Is Gst Applicable' => 'Yes adds GST to this customer\'s invoices; No charges none.',
     'Default Discount Amount' => 'A fixed amount taken off every automatic renewal invoice. If it is as large as a whole renewal, that renewal is not invoiced: lower it or bill by hand.',
     'Address, City and PIN' => 'Leaving any of these empty (PIN only counts in India) makes the profile incomplete, and the customer gets daily reminders until it is complete.',
 ];

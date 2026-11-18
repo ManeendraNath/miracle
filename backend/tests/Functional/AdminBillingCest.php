@@ -657,4 +657,21 @@ final class AdminBillingCest
     {
         return (int) $I->haveRecord(Transaction::class, ['invoice_id' => $invoiceId, 'gateway_id' => $gateway, 'gateway_order_id' => 'order_adm_' . bin2hex(random_bytes(4)), 'amount' => 1000, 'status' => $status, 'paid_at' => $status === Transaction::STATUS_CAPTURED ? time() : null, 'created_at' => time(), 'updated_at' => time()]);
     }
+
+    public function activatingAnUnconfirmedSignUpReplacesThePasswordItWasGiven(FunctionalTester $I): void
+    {
+        $user = new \common\models\User(['username' => 'prospect' . random_int(1000, 9999), 'email' => 'prospect' . random_int(1000, 9999) . '@example.test', 'status' => \common\models\User::getStatusInactive(), 'created_at' => time(), 'updated_at' => time()]);
+        $user->setPassword('Chosen-by-someone-1');
+        $user->generateAuthKey();
+        $user->verification_token = 'tok_' . bin2hex(random_bytes(8));
+        $I->assertTrue($user->save(false));
+
+        $I->amOnRoute('user/index');
+        $I->sendAjaxPostRequest('/user/toggle-status?id=' . $user->id, [Yii::$app->request->csrfParam => $I->grabAttributeFrom('meta[name=csrf-token]', 'content')]);
+
+        $user->refresh();
+        $I->assertSame(\common\models\User::getStatusActive(), (int) $user->status);
+        $I->assertFalse($user->validatePassword('Chosen-by-someone-1'));
+        $I->seeEmailIsSent();
+    }
 }

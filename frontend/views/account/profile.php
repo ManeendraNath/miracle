@@ -30,8 +30,8 @@ $this->params['breadcrumbs'][] = $this->title;
                 <?= $form->errorSummary($model, ['class' => 'alert alert-danger']) ?>
                 <?= $form->field($model, 'username')->textInput(['maxlength' => true, 'autocomplete' => 'username']) ?>
                 <div class="mb-3">
-                    <label class="form-label">Email</label>
-                    <input type="email" class="form-control" value="<?= Html::encode($user->email) ?>" readonly />
+                    <label class="form-label" for="profile-email">Email</label>
+                    <input type="email" id="profile-email" class="form-control" value="<?= Html::encode($user->email) ?>" readonly />
                     <div class="form-text">Contact support if your account email needs to be changed.</div>
                 </div>
                 <?= $form->field($model, 'mobile')->textInput(['maxlength' => true, 'placeholder' => '919876543210'])->hint('Enter mobile number with country code.') ?>
@@ -48,13 +48,6 @@ $this->params['breadcrumbs'][] = $this->title;
         <div class="card border-0 shadow-sm">
             <div class="card-header bg-transparent py-3 d-flex justify-content-between align-items-center">
                 <h2 class="h6 fw-bold mb-0">Billing Details</h2>
-                <?php if (!$billingProfile->isNewRecord): ?>
-                    <?php if ((bool) $billingProfile->is_gst_applicable): ?>
-                        <span class="badge bg-success-subtle text-success-emphasis">GST Applicable</span>
-                    <?php else: ?>
-                        <span class="badge bg-secondary-subtle text-secondary-emphasis">GST Not Applicable</span>
-                    <?php endif; ?>
-                <?php endif; ?>
             </div>
             <div class="card-body">
                 <?php if ($billingProfile->isNewRecord): ?>

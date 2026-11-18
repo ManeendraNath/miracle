@@ -228,7 +228,22 @@ class SiteController extends Controller
     public function actionAudit()
     {
         $model = new AuditRequest(['scenario' => AuditRequest::SCENARIO_PUBLIC]);
-        if (Yii::$app->request->isPost && FormGuard::isBot('audit')) {
+        // A person can trip the guard too: kept as a Spam lead staff can look through, like the contact form.
+        if (Yii::$app->request->isPost && FormGuard::isBot('audit') && $model->load(Yii::$app->request->post()) && $model->validate(array_diff($model->activeAttributes(), ['created_at', 'updated_at', 'status', 'user_ip']))) {
+            $lead = new \common\models\Lead();
+            $lead->setAttributes([
+                'lead_name' => mb_substr((string) $model->name, 0, 150),
+                'email' => mb_substr((string) $model->email, 0, 255),
+                'source' => 'Frontend Request',
+                'subject' => mb_substr('Website upgrade: ' . $model->company_url, 0, 255),
+                'message' => trim(implode("\n", array_filter([(string) $model->phone, (string) $model->current_framework, (string) $model->hosting_environment, (string) $model->message]))),
+                'status' => \common\models\Lead::STATUS_SPAM,
+                'created_at' => time(),
+                'updated_at' => time(),
+            ], false);
+            if (!$lead->save(false)) {
+                Yii::error(['message' => 'Audit request caught by the form guard could not be kept.', 'email' => $model->email], __METHOD__);
+            }
             Yii::$app->session->setFlash('success', 'Thank you. We have your website details and will reply by email.');
             return $this->refresh();
         }

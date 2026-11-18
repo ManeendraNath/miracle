@@ -13,6 +13,8 @@ $money = static fn(float $amount): string => $invoice->money($amount, true);
 $payment = Yii::$app->params['billing']['payment'] ?? [];
 $tax = (new TaxCalculator())->forInvoice($invoice);
 $taxableAmount = $tax['taxable'];
+// Balances carried in from older invoices: their own line, not part of the subtotal (not taxed again here).
+$arrears = $tax['arrears'];
 $cgstAmount = $tax['cgstAmount'];
 $sgstAmount = $tax['sgstAmount'];
 $igstAmount = $tax['igstAmount'];
@@ -213,7 +215,7 @@ $igstAmount = $tax['igstAmount'];
         </td>
 
         <td class="right">
-            <?= $money((float) $invoice->subtotal_amount) ?>
+            <?= $money(round((float) $invoice->subtotal_amount - $arrears, 2)) ?>
         </td>
     </tr>
 
@@ -288,6 +290,14 @@ $igstAmount = $tax['igstAmount'];
             </td>
         </tr>
 
+    <?php endif; ?>
+
+    <?php if ($arrears > 0): ?>
+        <tr>
+            <td></td>
+            <td>Previous outstanding</td>
+            <td class="right"><?= $money($arrears) ?></td>
+        </tr>
     <?php endif; ?>
 
     <tr class="total">

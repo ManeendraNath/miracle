@@ -47,7 +47,7 @@ class LoginForm extends Model
     {
         if (!$this->hasErrors()) {
             if (LoginThrottle::isLocked('frontend', $this->throttleName())) {
-                $this->addError($attribute, 'Too many failed attempts. Please try again in 15 minutes.');
+                $this->addError($attribute, 'Too many failed attempts. Please try again later (up to an hour).');
                 return;
             }
             // Suspended or not verified yet: only someone who knows the password is told why they can't get in.

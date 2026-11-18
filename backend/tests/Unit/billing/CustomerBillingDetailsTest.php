@@ -79,7 +79,6 @@ final class CustomerBillingDetailsTest extends Unit
         $profile = CustomerBillingDetailsService::forUser($this->_user);
         $this->assertTrue($profile->isNewRecord);
         $post = ['CustomerBillingProfile' => $this->input([
-            'is_gst_applicable' => 1,
             'default_discount_amount' => 999,
             'user_id' => 1,
         ])];
@@ -87,7 +86,6 @@ final class CustomerBillingDetailsTest extends Unit
 
         $saved = CustomerBillingProfile::findOne(['user_id' => $this->_user->id]);
         $this->assertNotNull($saved);
-        $this->assertSame(0, (int) $saved->is_gst_applicable);
         $this->assertEquals(0, $saved->default_discount_amount);
         $this->assertSame('27', $saved->state_code);
         $this->assertSame($before + 1, $alerts(), 'admins alerted on create');
@@ -124,11 +122,8 @@ final class CustomerBillingDetailsTest extends Unit
         $this->assertNull($saved->pan);
         $this->assertSame('94105-1234', $saved->postal_code, 'no 6-digit PIN rule abroad');
 
-        // GST switched on by an admin before the move abroad is turned off; tax is zero regardless.
-        $saved->is_gst_applicable = 1;
+        // No GST abroad.
         $this->assertSame(['cgst' => 0.0, 'sgst' => 0.0, 'igst' => 0.0], (new TaxCalculator())->getRates($saved));
-        $this->assertTrue($saved->save());
-        $this->assertSame(0, (int) CustomerBillingProfile::findOne($saved->id)->is_gst_applicable);
 
         $admin = new CustomerBillingProfile(['user_id' => $this->_user->id, 'legal_name' => 'X', 'country' => 'Narnia']);
         $this->assertFalse($admin->validate());
@@ -188,5 +183,25 @@ final class CustomerBillingDetailsTest extends Unit
         $profile->validate();
 
         return $profile;
+    }
+
+    public function testGstFollowsRegistrationAndPlaceOfSupplyNotAProfileSwitch(): void
+    {
+        $saved = Yii::$app->params['billing'];
+        try {
+            $profile = new CustomerBillingProfile(['country' => CustomerBillingProfile::COUNTRY_INDIA, 'state_code' => '07', 'is_gst_applicable' => 0]);
+            Yii::$app->params['billing']['gst'] = ['cgst' => 9.0, 'sgst' => 9.0, 'igst' => 18.0];
+            Yii::$app->params['billing']['supplierGstin'] = '';
+            $this->assertSame(['cgst' => 0.0, 'sgst' => 0.0, 'igst' => 0.0], (new TaxCalculator())->getRates($profile), 'not registered');
+
+            Yii::$app->params['billing']['supplierGstin'] = '07AAAAA0000A1Z5';
+            $this->assertSame(['cgst' => 9.0, 'sgst' => 9.0, 'igst' => 0.0], (new TaxCalculator())->getRates($profile), 'Delhi client, switch off');
+            $profile->state_code = '27';
+            $this->assertSame(['cgst' => 0.0, 'sgst' => 0.0, 'igst' => 18.0], (new TaxCalculator())->getRates($profile));
+            $profile->country = 'Canada';
+            $this->assertSame(['cgst' => 0.0, 'sgst' => 0.0, 'igst' => 0.0], (new TaxCalculator())->getRates($profile), 'export');
+        } finally {
+            Yii::$app->params['billing'] = $saved;
+        }
     }
 }

@@ -153,9 +153,14 @@ HTACCESS
 
 health_check()
 {
-    local url status ok=0
+    local url status try ok=0
     for url in "${HEALTH_URLS[@]}"; do
-        status=$(curl -s -o /dev/null -w '%{http_code}' --retry 2 --retry-connrefused --connect-timeout 5 --max-time 20 "$url" || true)
+        # A few tries ~10 s apart: right after the code swap, stale OPcache can answer 500 for a while.
+        for try in 1 2 3; do
+            status=$(curl -s -o /dev/null -w '%{http_code}' --retry 2 --retry-connrefused --connect-timeout 5 --max-time 20 "$url" || true)
+            [ "$status" = 200 ] && break
+            if [ "$try" -lt 3 ]; then sleep 10; fi
+        done
         echo "  $status $url"
         [ "$status" = 200 ] || ok=1
     done
@@ -174,7 +179,8 @@ on_fail()
         echo "Restoring the previous code..."
         # A failed health check comes after the flag was removed: put it back before swapping code under traffic.
         touch "$MAINTENANCE_FLAG"
-        if ! (sync_code "$SNAP" && (cd "$APP" && "${COMPOSER[@]}") && publish_public && cd "$APP" && php yii help >/dev/null); then
+        # vendor/ copied back, not reinstalled: a network failure that broke the forward install would break that too.
+        if ! (sync_code "$SNAP" && rsync -a --delete "$SNAP/vendor/" "$APP/vendor/" && publish_public && cd "$APP" && php yii help >/dev/null); then
             touch "$MAINTENANCE_FLAG"
             echo "ROLLBACK HAD ERRORS. Previous code is kept in: $SNAP"
         elif [ "$MIGRATED" = 1 ] || [ "$PRIOR_FLAG" = 1 ]; then
@@ -275,6 +281,7 @@ for d in "${DIRS[@]}"; do
     rsync -a "${KEEP[@]}" "$APP/$d/" "$SNAP/$d/"
 done
 cp -a "$APP/composer.json" "$APP/composer.lock" "$SNAP/"
+cp -a "$APP/vendor" "$SNAP/vendor"
 cp -a "$PUBLIC/.htaccess" "$SNAP/public.htaccess" 2>/dev/null || true
 
 
@@ -291,6 +298,13 @@ for i in $(seq 1 60); do
     if [ "$i" -eq 1 ]; then echo "Waiting for a running cron job to finish (up to 5 minutes)..."; fi
     sleep 5
 done
+if pgrep -f "$APP/yii (cron|backup)/" >/dev/null; then
+    # Nothing has changed yet: don't swap code and run migrations under a job still running.
+    [ "$PRIOR_FLAG" = 1 ] || rm -f "$MAINTENANCE_FLAG"
+    rm -rf "${SNAP:?}"
+    STAGE=prep
+    die "a cron job is still running after 5 minutes; nothing was changed. Try again later."
+fi
 
 sync_code "$REPO"
 for d in "${DIRS[@]}"; do

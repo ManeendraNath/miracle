@@ -27,10 +27,15 @@ final class UsdPricedInvoiceTest extends Unit
     private CustomerBillingProfile $_profile;
     private MockTransport $_http;
 
+    /** @var array<string, mixed> restored after each test: GST settings must not leak into other tests */
+    private array $_billingParams = [];
+
     protected function _before(): void
     {
         parent::_before();
+        $this->_billingParams = Yii::$app->params['billing'];
         Yii::$app->params['billing']['gst'] = ['cgst' => 9.00, 'sgst' => 9.00, 'igst' => 18.00];
+        Yii::$app->params['billing']['supplierGstin'] = '07AAAAA0000A1Z5';
         $this->_dbTransaction = Yii::$app->db->beginTransaction();
         $this->_http = new MockTransport();
         $suffix = bin2hex(random_bytes(4));
@@ -46,6 +51,7 @@ final class UsdPricedInvoiceTest extends Unit
         if ($this->_dbTransaction?->isActive) {
             $this->_dbTransaction->rollBack();
         }
+        Yii::$app->params['billing'] = $this->_billingParams;
         parent::_after();
     }
 
@@ -129,7 +135,7 @@ final class UsdPricedInvoiceTest extends Unit
 
     public function testSwitchingAnIndianEraInvoiceToDollarsTakesTheClientAndTaxAsTheyAreNow(): void
     {
-        $this->_profile->updateAttributes(['country' => CustomerBillingProfile::COUNTRY_INDIA, 'state' => 'Maharashtra', 'state_code' => '27', 'is_gst_applicable' => 1]);
+        $this->_profile->updateAttributes(['country' => CustomerBillingProfile::COUNTRY_INDIA, 'state' => 'Maharashtra', 'state_code' => '27']);
         $rupees = $this->invoice();
         $rupees->priceCurrency = Invoice::CURRENCY_INR;
         $invoice = $this->service()->create($rupees, [$this->item(1, 1000.00)]);

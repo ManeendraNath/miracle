@@ -39,4 +39,19 @@ final class AuditCest
         ]);
         $I->seeRecord(AuditRequest::class, ['email' => 'audit-tester@example.com', 'company_url' => 'https://example.com']);
     }
+
+    public function keepsARequestCaughtByTheBotTrapAsASpamLead(FunctionalTester $I): void
+    {
+        $I->submitForm('#infrastructure-audit-form', [
+            'AuditRequest[name]' => 'Autofilled Person',
+            'AuditRequest[email]' => 'autofilled@example.com',
+            'AuditRequest[company_url]' => 'example.org',
+            'AuditRequest[message]' => 'Our site is slow.',
+            'AuditRequest[verifyCode]' => 'testme',
+            'mw_hp_extra' => 'filled by an extension',
+        ]);
+        $I->see('We have your website details');
+        $I->dontSeeRecord(AuditRequest::class, ['email' => 'autofilled@example.com']);
+        $I->seeRecord(\common\models\Lead::class, ['email' => 'autofilled@example.com', 'status' => \common\models\Lead::STATUS_SPAM]);
+    }
 }

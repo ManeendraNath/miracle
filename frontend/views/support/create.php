@@ -51,7 +51,8 @@ $this->params['breadcrumbs'][] = $this->title;
 
 <?php
 $this->registerJs('
-    const services = ' . Json::htmlEncode($services) . ';
+    // [id, label] pairs: an object keyed by id would come back in id order, not the alphabetical order sent.
+    const services = ' . Json::htmlEncode(array_map(static fn(array $list): array => array_map(null, array_map('strval', array_keys($list)), array_values($list)), $services)) . ';
     // Re-select the posted service after a validation error (the list is rebuilt below).
     let selectedService = ' . Json::htmlEncode((string) $model->service_id) . ';
     $("#service-type").on("change", function () {
@@ -62,12 +63,9 @@ $this->registerJs('
         if (!type || !services[type]) {
             return;
         }
-        $.each(
-            services[type],
-            function(id, label) {
-                serviceSelect.append($("<option>").val(id).text(label));
-            }
-        );
+        services[type].forEach(function (pair) {
+            serviceSelect.append($("<option>").val(pair[0]).text(pair[1]));
+        });
         serviceSelect.val(selectedService);
         selectedService = "";
     });

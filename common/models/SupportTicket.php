@@ -35,6 +35,13 @@ class SupportTicket extends base\SupportTicket
     /** Each ticket or reply emails and alerts staff, so one account can't send them without limit. */
     private const MAX_POSTS_PER_HOUR = 20;
 
+    #[\Override]
+    public function attributeLabels(): array
+    {
+        // Customers see these on the form and in its error messages.
+        return array_merge(parent::attributeLabels(), ['service_type' => 'Related to', 'service_id' => 'Service']);
+    }
+
     public const STATUS_OPEN = 'Open';
     public const STATUS_IN_PROGRESS = 'In Progress';
     public const STATUS_RESOLVED = 'Resolved';

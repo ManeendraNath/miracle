@@ -20,12 +20,17 @@ final class ManualInvoiceServiceTest extends Unit
     private User $user;
     private CustomerBillingProfile $profile;
 
+    /** @var array<string, mixed> */
+    private array $billingParams = [];
+
     protected function _before(): void
     {
         parent::_before();
 
-        // Assertions assume standard GST, independent of the live params (currently 0%).
+        // Assertions assume a GST-registered supplier at standard rates, independent of the live params (currently 0%).
+        $this->billingParams = Yii::$app->params['billing'];
         Yii::$app->params['billing']['gst'] = ['cgst' => 9.00, 'sgst' => 9.00, 'igst' => 18.00];
+        Yii::$app->params['billing']['supplierGstin'] = '07AAAAA0000A1Z5';
 
         $this->dbTransaction = Yii::$app->db->beginTransaction();
 
@@ -39,6 +44,7 @@ final class ManualInvoiceServiceTest extends Unit
         ) {
             $this->dbTransaction->rollBack();
         }
+        Yii::$app->params['billing'] = $this->billingParams;
 
         parent::_after();
     }

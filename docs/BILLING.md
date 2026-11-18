@@ -228,7 +228,7 @@ payment) gets a banner instead of being blocked, so a bill can always be paid; s
 invoice and payment pages, so a receipt stays reachable. An open ticket doesn't unlock the portal. Staff creating a
 customer send them a welcome email and are taken to the billing form next, with a **Customer Will Complete This** button
 to leave it. Managers may use that form for a customer created in the last 30 days, but can only enter what a customer
-could (country, address, GSTIN and PAN, but not the GST flag or discount), and admins are told to review GST.
+could (country, address, GSTIN and PAN, but not the discount).
 Resending a verification email clears the password chosen at signup, because whoever signed up may not own the mailbox:
 the email tells the customer to use Forgot Password after confirming.
 
@@ -236,7 +236,7 @@ the email tells the customer to use Forgot Password after confirming.
 
 A billing profile whose **Country** is not India is billed as an export of services:
 
-- No GST (`TaxCalculator::getRates()` returns 0 %, and `is_gst_applicable` is saved as 0).
+- No GST (`TaxCalculator::getRates()` returns 0 %).
 - State is saved as "Foreign Country" with GST state code `96`; GSTIN and PAN are cleared;
   the postal code has no 6-digit PIN rule.
 - Invoices keep the country (`invoice.client_country`; NULL on older invoices = India) and

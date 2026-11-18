@@ -13,17 +13,18 @@ final class TaxCalculator
 {
     public function getRates(CustomerBillingProfile $profile): array
     {
-        // Export of services (client outside India) is zero-rated.
-        if (!(bool) $profile->is_gst_applicable || $profile->isForeign()) {
+        $billingConfig = Yii::$app->params['billing'] ?? [];
+        $gstConfig = $billingConfig['gst'] ?? [];
+        // A registered supplier charges GST on every supply in India, whether or not the client has a GSTIN; none
+        // before registration (no GSTIN, or no rates set yet). Export of services (client outside India) is zero-rated.
+        $rated = (float) ($gstConfig['cgst'] ?? 0) + (float) ($gstConfig['sgst'] ?? 0) + (float) ($gstConfig['igst'] ?? 0) > 0;
+        if (Invoice::supplierGstin() === '' || !$rated || $profile->isForeign()) {
             return [
                 'cgst' => 0.0,
                 'sgst' => 0.0,
                 'igst' => 0.0,
             ];
         }
-        $billingConfig = Yii::$app->params['billing'] ?? [];
-
-        $gstConfig = $billingConfig['gst'] ?? [];
 
         $supplierStateCode = trim((string) ($billingConfig['supplierStateCode'] ?? ''));
 
@@ -68,7 +69,7 @@ final class TaxCalculator
      * Tax split of a saved invoice. The invoice PDF, the admin and customer invoice pages and the
      * GST report all read it from here so they can't disagree.
      *
-     * @return array{taxable: float, cgstAmount: float, sgstAmount: float, igstAmount: float, totalTax: float, total: float}
+     * @return array{taxable: float, arrears: float, cgstAmount: float, sgstAmount: float, igstAmount: float, totalTax: float, total: float}
      */
     public function forInvoice(Invoice $invoice): array
     {
@@ -82,7 +83,7 @@ final class TaxCalculator
             round((float) $invoice->subtotal_amount - $arrears - (float) $invoice->discount_amount, 2),
         );
 
-        return ['taxable' => $taxable] +
+        return ['taxable' => $taxable, 'arrears' => round($arrears, 2)] +
             $this->calculate(
                 $taxable,
                 (float) $invoice->cgst_percent,

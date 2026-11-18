@@ -16,22 +16,22 @@ use yii\db\Query;
  */
 final class BlogNewsletterService
 {
-    public static function sendConfirmation(BlogSubscriber $subscriber): bool
-    {
-        $site = self::siteName();
-
-        return Yii::$app->mailer->compose(['html' => 'blog-subscribe-confirm-html', 'text' => 'blog-subscribe-confirm-text'], [
-            'site' => $site,
-            'confirmUrl' => $subscriber->emailLink('confirm'),
-        ])
-            ->setTo($subscriber->email)
-            ->setFrom([Yii::$app->params['senderEmail'] => Yii::$app->params['senderName']])
-            ->setSubject('Confirm your subscription to the ' . $site . ' blog')
-            ->send();
-    }
 
     /** Failed emails in a row that mean the mail server itself is down: the run stops, the next one carries on. */
     private const FAILURES_TO_STOP = 3;
+
+    public static function sendConfirmation(BlogSubscriber $subscriber): bool
+    {
+        $site = self::siteName();
+        return Yii::$app->mailer->compose(
+                                ['html' => 'blog-subscribe-confirm-html', 'text' => 'blog-subscribe-confirm-text'],
+                                ['site' => $site, 'confirmUrl' => $subscriber->emailLink('confirm')]
+                        )
+                        ->setTo($subscriber->email)
+                        ->setFrom([Yii::$app->params['senderEmail'] => Yii::$app->params['senderName']])
+                        ->setSubject('Confirm your subscription to the ' . $site . ' blog')
+                        ->send();
+    }
 
     /**
      * Sends up to $limit emails, oldest post first. Returns how many went out. An address the mail server refuses is
@@ -45,7 +45,7 @@ final class BlogNewsletterService
         $tried = 0;
         $failedInARow = [];
         $posts = BlogPost::findPublic()->andWhere(['not', ['newsletter_started_at' => null]])->andWhere(['newsletter_done_at' => null])
-            ->orderBy(['newsletter_started_at' => SORT_ASC, 'id' => SORT_ASC])->all();
+                        ->orderBy(['newsletter_started_at' => SORT_ASC, 'id' => SORT_ASC])->all();
         foreach ($posts as $post) {
             // Switched off, or kept out of search engines, while it was being sent: the rest are not sent.
             if (!$post->send_newsletter || $post->noindex) {
@@ -53,10 +53,10 @@ final class BlogNewsletterService
                 continue;
             }
             $subscribers = BlogSubscriber::find()
-                ->where(['status' => BlogSubscriber::STATUS_SUBSCRIBED])
-                ->andWhere(['<=', 'confirmed_at', $post->newsletter_started_at])
-                ->andWhere(['not in', 'id', (new Query())->select('subscriber_id')->from('{{%blog_newsletter_delivery}}')->where(['post_id' => $post->id])])
-                ->orderBy(['id' => SORT_ASC])->limit($limit - $tried)->all();
+                            ->where(['status' => BlogSubscriber::STATUS_SUBSCRIBED])
+                            ->andWhere(['<=', 'confirmed_at', $post->newsletter_started_at])
+                            ->andWhere(['not in', 'id', (new Query())->select('subscriber_id')->from('{{%blog_newsletter_delivery}}')->where(['post_id' => $post->id])])
+                            ->orderBy(['id' => SORT_ASC])->limit($limit - $tried)->all();
             foreach ($subscribers as $subscriber) {
                 $ok = self::sendPost($post, $subscriber);
                 $tried++;
@@ -99,15 +99,15 @@ final class BlogNewsletterService
         $base = rtrim((string) (Yii::$app->params['frontendBaseUrl'] ?? ''), '/');
         $unsubscribe = $subscriber->emailLink('unsubscribe');
         $message = Yii::$app->mailer->compose(['html' => 'blog-newsletter-html', 'text' => 'blog-newsletter-text'], [
-            'post' => $post,
-            'postUrl' => $base . '/blog/' . $post->slug,
-            'coverUrl' => $post->cover_image ? $base . '/' . $post->cover_image : null,
-            'unsubscribeUrl' => $unsubscribe,
-            'site' => self::siteName(),
-        ])
-            ->setTo($subscriber->email)
-            ->setFrom([Yii::$app->params['senderEmail'] => Yii::$app->params['senderName']])
-            ->setSubject($post->title);
+                    'post' => $post,
+                    'postUrl' => $base . '/blog/' . $post->slug,
+                    'coverUrl' => $post->cover_image ? $base . '/' . $post->cover_image : null,
+                    'unsubscribeUrl' => $unsubscribe,
+                    'site' => self::siteName(),
+                ])
+                ->setTo($subscriber->email)
+                ->setFrom([Yii::$app->params['senderEmail'] => Yii::$app->params['senderName']])
+                ->setSubject($post->title);
         // One-click unsubscribe from the mail app itself (Gmail and Yahoo expect it from bulk senders).
         if ($message instanceof \yii\symfonymailer\Message) {
             $message->addHeader('List-Unsubscribe', '<' . $unsubscribe . '>');

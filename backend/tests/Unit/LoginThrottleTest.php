@@ -27,4 +27,20 @@ final class LoginThrottleTest extends Unit
         LoginThrottle::clear(LoginThrottle::SCOPE_ADMIN_CODE, $name);
         $this->assertFalse(LoginThrottle::isLocked(LoginThrottle::SCOPE_ADMIN_CODE, $name), 'a right code clears it');
     }
+
+    public function testOneAddressTryingManyCustomerAccountsIsStopped(): void
+    {
+        $ipKey = 'login-throttle-ip:frontend:' . (string) Yii::$app->request->userIP;
+        Yii::$app->cache->delete($ipKey);
+        try {
+            for ($i = 0; $i < 50; $i++) {
+                $this->assertFalse(LoginThrottle::isLocked('frontend', 'customer' . $i), 'each account had one wrong password only');
+                LoginThrottle::fail('frontend', 'customer' . $i);
+                LoginThrottle::clear('frontend', 'own-account'); // signing in to their own account resets nothing
+            }
+            $this->assertTrue(LoginThrottle::isLocked('frontend', 'someone-else'));
+        } finally {
+            Yii::$app->cache->delete($ipKey);
+        }
+    }
 }

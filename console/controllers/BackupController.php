@@ -38,6 +38,9 @@ class BackupController extends Controller
         return array_merge(parent::options($actionID), ['dbOnly']);
     }
 
+    /** Set when a run ends normally; a fatal error before that is reported at shutdown. */
+    private bool $finished = false;
+
     /**
      * Dumps the database to backups/db_backup_<timestamp>.sql.gz, archives the files that live only on disk
      * (customers' payment proofs, blog images) to backups/<name>_<timestamp>.tar, and prunes all older than
@@ -50,6 +53,15 @@ class BackupController extends Controller
         if (!is_dir($backupDir) && !mkdir($backupDir, 0700, true) && !is_dir($backupDir)) {
             return $this->fail("Cannot create {$backupDir}.", ExitCode::CANTCREAT);
         }
+
+        // A fatal error (out of memory, time limit) skips every catch below: still tell the admins.
+        $this->finished = false;
+        register_shutdown_function(function (): void {
+            $error = error_get_last();
+            if (!$this->finished && $error !== null && in_array($error['type'], [E_ERROR, E_CORE_ERROR, E_COMPILE_ERROR], true)) {
+                $this->fail('Backup stopped by a PHP fatal error: ' . $error['message'], ExitCode::SOFTWARE);
+            }
+        });
 
         $file = $backupDir . '/db_backup_' . date('Ymd_His') . '.sql.gz';
         $oldUmask = umask(0077);
@@ -101,6 +113,7 @@ class BackupController extends Controller
                 unlink($stale);
             }
         }
+        $this->finished = true;
 
         return $status;
     }
@@ -148,7 +161,7 @@ class BackupController extends Controller
      * Pure PHP: shared hosting disables system()/exec(), so mysqldump can't be used.
      * Restore: gunzip -c <file> | mysql <database>
      * ponytail: tables only (the schema has no views/triggers/routines); each table
-     * is read in one buffered query, switch to unbuffered reads if a table outgrows memory.
+     * is read row by row (unbuffered), so table size is limited by disk, not memory.
      */
     private function dump(string $file): void
     {
@@ -187,11 +200,27 @@ class BackupController extends Controller
                 $columnList = implode(', ', array_map([$db, 'quoteColumnName'], $columns));
                 $insert = "INSERT INTO {$name} ({$columnList}) VALUES\n";
                 $rows = [];
-                foreach ($db->createCommand("SELECT {$columnList} FROM {$name}")->queryAll() as $row) {
-                    $rows[] = '(' . implode(',', array_map(static fn($v): string => $v === null ? 'NULL' : $db->quoteValue((string) $v), $row)) . ')';
-                    if (count($rows) === 200) {
-                        $write($insert . implode(",\n", $rows) . ";\n");
-                        $rows = [];
+                // Row by row from the server (unbuffered): a big table (e.g. blog_post_view) never sits in memory whole.
+                $pdo = $db->getMasterPdo();
+                $mysql = $db->driverName === 'mysql';
+                if ($mysql) {
+                    $pdo->setAttribute(\Pdo\Mysql::ATTR_USE_BUFFERED_QUERY, false);
+                }
+                $reader = $db->createCommand("SELECT {$columnList} FROM {$name}")->query();
+                try {
+                    foreach ($reader as $row) {
+                        $rows[] = '(' . implode(',', array_map(static fn($v): string => $v === null ? 'NULL' : $db->quoteValue((string) $v), $row)) . ')';
+                        if (count($rows) === 200) {
+                            $write($insert . implode(",\n", $rows) . ";\n");
+                            $rows = [];
+                        }
+                    }
+                } finally {
+                    // Closed even when a write fails: an open unbuffered read would block the ROLLBACK below, and the
+                    // failure alert would then be saved inside a transaction that never commits.
+                    $reader->close();
+                    if ($mysql) {
+                        $pdo->setAttribute(\Pdo\Mysql::ATTR_USE_BUFFERED_QUERY, true);
                     }
                 }
                 if ($rows !== []) {

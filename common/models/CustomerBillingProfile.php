@@ -185,15 +185,6 @@ class CustomerBillingProfile extends base\CustomerBillingProfile
     /** Browser-side twin of !isForeign() for the forms' client validation. */
     private const WHEN_INDIA_JS = "function () { var c = $('#customerbillingprofile-country').val(); return !c || c === 'India'; }";
 
-    /** No GST on supplies to clients outside India, whatever was set before the country changed. */
-    public function beforeSave($insert): bool
-    {
-        if ($this->isForeign()) {
-            $this->is_gst_applicable = 0;
-        }
-
-        return parent::beforeSave($insert);
-    }
 
     /** GSTIN = state code (2) + PAN (10) + 3 chars, so it must agree with the chosen state and the PAN. */
     public function validateGstinMatches(string $attribute): void

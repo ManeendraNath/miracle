@@ -12,7 +12,7 @@ $foreign = json_encode(common\models\CustomerBillingProfile::FOREIGN_STATE);
 $this->registerJs(<<<JS
 (function () {
     var country = $('#customerbillingprofile-country'), state = $('#customerbillingprofile-state');
-    var gstFields = $('.field-customerbillingprofile-state, .field-customerbillingprofile-gstin, .field-customerbillingprofile-pan, .field-customerbillingprofile-is_gst_applicable');
+    var gstFields = $('.field-customerbillingprofile-state, .field-customerbillingprofile-gstin, .field-customerbillingprofile-pan');
     function toggle() {
         var abroad = !!country.val() && country.val() !== 'India';
         gstFields.toggle(!abroad);

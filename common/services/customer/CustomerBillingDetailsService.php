@@ -16,7 +16,6 @@ final class CustomerBillingDetailsService
 {
     public static function forUser(User $user): CustomerBillingProfile
     {
-        // Same default as an admin-created profile: no GST until an admin turns it on.
         $profile = CustomerBillingProfile::findOne(['user_id' => $user->id])
                 ?? new CustomerBillingProfile(['user_id' => $user->id, 'is_gst_applicable' => 0, 'default_discount_amount' => 0]);
         $profile->scenario = CustomerBillingProfile::SCENARIO_CUSTOMER;

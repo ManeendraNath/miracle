@@ -25,6 +25,11 @@ final class LoginThrottle
     private const LOCK_SECONDS = 900;
     /** scope => [failures from any IP, then locked for this many seconds after the last failure]. */
     private const ACCOUNT_LIMITS = [self::SCOPE_ADMIN_CODE => [20, 86400]];
+    /**
+     * scope => [failures from one IP across all usernames, counted for this many seconds]: one address trying a few
+     * passwords on every customer account. Not cleared by a successful login (an attacker could sign in to their own).
+     */
+    private const IP_LIMITS = ['frontend' => [50, 3600]];
     /** Hash of a random value nobody knows, same bcrypt cost as real passwords. */
     private const NOBODY_HASH = '$2y$13$uazifTpQx.6hhBxafktGD.8o6XxERVEQNmKS6KUy2I/JCGly/VvfW';
 
@@ -39,6 +44,7 @@ final class LoginThrottle
     public static function isLocked(string $scope, string $username): bool
     {
         return (int) Yii::$app->cache->get(self::key($scope, $username)) >= self::MAX_FAILURES
+            || (isset(self::IP_LIMITS[$scope]) && (int) Yii::$app->cache->get(self::ipKey($scope)) >= self::IP_LIMITS[$scope][0])
             || (isset(self::ACCOUNT_LIMITS[$scope]) && (int) Yii::$app->cache->get(self::accountKey($scope, $username)) >= self::ACCOUNT_LIMITS[$scope][0]);
     }
 
@@ -53,6 +59,9 @@ final class LoginThrottle
                     Yii::error($e, __METHOD__);
                 }
             }
+        }
+        if (isset(self::IP_LIMITS[$scope])) {
+            self::increment(self::ipKey($scope), self::IP_LIMITS[$scope][1]);
         }
         self::increment(self::key($scope, $username), self::LOCK_SECONDS);
     }
@@ -81,6 +90,13 @@ final class LoginThrottle
     {
         Yii::$app->cache->delete(self::key($scope, $username));
         Yii::$app->cache->delete(self::accountKey($scope, $username));
+    }
+
+    private static function ipKey(string $scope): string
+    {
+        $request = Yii::$app->request;
+
+        return 'login-throttle-ip:' . $scope . ':' . ($request instanceof Request ? (string) $request->userIP : '');
     }
 
     private static function accountKey(string $scope, string $username): string

@@ -51,9 +51,12 @@ final class BlogCest
         $I->dontSeeInSource('draft-post');
         $I->dontSeeInSource('future-post');
 
+        $I->haveRecord(BlogPost::class, ['title' => 'Unlisted post', 'slug' => 'unlisted-post', 'summary' => 'S.', 'body' => '<p>B.</p>', 'status' => BlogPost::STATUS_PUBLISHED, 'noindex' => 1, 'published_at' => time() - 60, 'created_at' => time(), 'updated_at' => time()]);
         $I->amOnPage('/blog/feed');
         $I->seeInSource('<title>Live post</title>');
+        $I->seeInSource('<guid isPermaLink="false">');
         $I->dontSeeInSource('Draft post');
+        $I->dontSeeInSource('Unlisted post');
     }
 
     public function aReaderCountsOnceADayAndABotNotAtAll(FunctionalTester $I): void

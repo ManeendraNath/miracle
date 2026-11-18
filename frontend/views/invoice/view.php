@@ -191,7 +191,7 @@ JS);
                         <table class="table table-sm table-borderless mb-0">
                             <tr>
                                 <td class="text-body-secondary">Subtotal</td>
-                                <td class="text-end"><?= $inr($model->subtotal_amount) ?></td>
+                                <td class="text-end"><?= $inr(round((float) $model->subtotal_amount - $tax['arrears'], 2)) ?></td>
                             </tr>
                             <?php if ((float) $model->discount_amount > 0): ?>
                                 <tr>
@@ -205,6 +205,12 @@ JS);
                                     <td class="text-end"><?= $inr($amount) ?></td>
                                 </tr>
                             <?php endforeach; ?>
+                            <?php if ($tax['arrears'] > 0): ?>
+                                <tr>
+                                    <td class="text-body-secondary">Previous outstanding</td>
+                                    <td class="text-end"><?= $inr($tax['arrears']) ?></td>
+                                </tr>
+                            <?php endif; ?>
                             <tr class="border-top">
                                 <td class="fw-bold pt-2">Total</td>
                                 <td class="text-end fw-bold pt-2"><?= $inr($model->total_payable) ?></td>

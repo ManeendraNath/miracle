@@ -93,13 +93,6 @@ $form = ActiveForm::begin([
         <?php if ($canSetEverything): ?>
         <div class="row">
             <div class="col-md-6">
-                <?= $form->field($model, 'is_gst_applicable')->dropDownList([
-                    0 => 'No',
-                    1 => 'Yes',
-                ]) ?>
-            </div>
-
-            <div class="col-md-6">
                 <?= $form
                     ->field($model, 'default_discount_amount')
                     ->input('number', [

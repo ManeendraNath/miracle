@@ -103,9 +103,25 @@ final class RazorpayWebhookTest extends Unit
         $this->assertSame(Transaction::STATUS_PENDING, Transaction::findOne($this->_order->id)->status);
         $this->assertStringContainsString('could not verify', (string) Yii::$app->session->getFlash('error'));
 
+        // Razorpay answers for the payment: authorized only (not taken yet), then captured.
+        $http = new \yii\httpclient\MockTransport();
+        Yii::$container->set(\common\services\payment\RazorpayService::class, static fn() => new \common\services\payment\RazorpayService(null, $http));
+        $answer = static function (string $status) use ($http, $orderId): void {
+            $http->appendResponse(new \yii\httpclient\Response(['headers' => ['http-code' => '200', 'content-type' => 'application/json'], 'content' => json_encode(['id' => 'pay_cb_ok', 'order_id' => $orderId, 'status' => $status, 'amount' => 100000, 'fee' => 2360, 'created_at' => time()])]));
+        };
         // Signature Razorpay Checkout returns: HMAC-SHA256(order_id|payment_id, key secret).
-        $post(['razorpay_order_id' => $orderId, 'razorpay_payment_id' => 'pay_cb_ok', 'razorpay_signature' => hash_hmac('sha256', $orderId . '|pay_cb_ok', 'unit-key-secret')]);
-        $controller->actionRazorpayCallback($this->_invoice->invoice_number);
+        $valid = ['razorpay_order_id' => $orderId, 'razorpay_payment_id' => 'pay_cb_ok', 'razorpay_signature' => hash_hmac('sha256', $orderId . '|pay_cb_ok', 'unit-key-secret')];
+        try {
+            $answer('authorized');
+            $post($valid);
+            $controller->actionRazorpayCallback($this->_invoice->invoice_number);
+            $this->assertSame(Transaction::STATUS_PENDING, Transaction::findOne($this->_order->id)->status, 'not taken yet: not recorded');
+
+            $answer('captured');
+            $controller->actionRazorpayCallback($this->_invoice->invoice_number);
+        } finally {
+            Yii::$container->clear(\common\services\payment\RazorpayService::class);
+        }
         $this->assertSame(Transaction::STATUS_CAPTURED, Transaction::findOne($this->_order->id)->status);
         $this->assertSame(Invoice::STATUS_PAID, Invoice::findOne($this->_invoice->id)->status);
         $this->assertSame('Payment received. Thank you!', Yii::$app->session->getFlash('success'));

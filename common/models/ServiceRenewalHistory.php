@@ -21,4 +21,25 @@ namespace common\models;
  */
 class ServiceRenewalHistory extends base\ServiceRenewalHistory
 {
+    /**
+     * What each renewal was for, e.g. "Domain example.com", in one query per service type.
+     * @param self[] $renewals
+     * @return array<int, string> renewal id => label
+     */
+    public static function serviceLabels(array $renewals): array
+    {
+        $sources = ['domain' => [Domains::class, 'domain_url'], 'hosting' => [Hosting::class, 'primary_domain'], 'maintenance' => [Maintenance::class, 'website_url']];
+        $names = [];
+        foreach ($sources as $type => [$class, $column]) {
+            $ids = array_map(static fn(self $r): int => (int) $r->item_id, array_filter($renewals, static fn(self $r): bool => $r->item_type === $type));
+            $names[$type] = $ids === [] ? [] : $class::find()->select($column)->where(['id' => $ids])->indexBy('id')->column();
+        }
+        $labels = [];
+        foreach ($renewals as $renewal) {
+            $name = $names[$renewal->item_type][$renewal->item_id] ?? '';
+            $labels[(int) $renewal->id] = trim(ucfirst((string) $renewal->item_type) . ' ' . $name);
+        }
+
+        return $labels;
+    }
 }

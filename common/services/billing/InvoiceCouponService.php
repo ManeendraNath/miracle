@@ -104,6 +104,10 @@ final class InvoiceCouponService
             if ((float) $locked->total_payable <= 0) {
                 throw new \DomainException('Invoice total must be greater than zero.');
             }
+            // Also with an older balance on it: paying only that balance must not renew the services for free.
+            if ($locked->coupon_code !== null && AutoInvoiceService::discountCoversCharges($locked)) {
+                throw new \DomainException('This coupon covers all of this invoice\'s charges. Use a smaller discount, or bill it manually.');
+            }
             if ($locked->coupon_code !== null) {
                 $this->coupons->record($locked);
             } else {

@@ -152,17 +152,13 @@ final class AutoInvoiceService
                 $this->outstandingService->transferForUser($invoice);
             }
 
-            // The profile's fixed default discount can't exceed this run's charges
-            // (e.g. ₹500 off a ₹400 renewal): cap it rather than failing every run.
-            $currentCharges = (float) InvoiceItem::find()
-                ->where(['invoice_id' => $invoice->id])
-                ->andWhere(['<>', 'item_type', InvoiceItem::TYPE_ARREARS])
-                ->sum('total_price');
-            $invoice->discount_amount = min((float) $invoice->discount_amount, round($currentCharges, 2));
+            // Capped first so calculateInvoiceTotals accepts it; a discount that reaches the whole renewal is refused below.
+            $invoice->discount_amount = min((float) $invoice->discount_amount, self::currentCharges($invoice));
 
             $this->calculateInvoiceTotals($invoice);
-            // Invoices can't be for ₹0 (they could never be paid or renew the service).
-            if ((float) $invoice->total_payable <= 0) {
+            // A renewal can't be free: a ₹0 invoice could never be paid, and one carrying an older balance would renew
+            // the service when only that balance is paid.
+            if (self::discountCoversCharges($invoice)) {
                 throw new \DomainException('The default discount on the billing profile covers this whole renewal. Lower the discount or bill this renewal manually.');
             }
             $this->applyAssignedCoupon($invoice);
@@ -217,6 +213,21 @@ final class AutoInvoiceService
 
             throw $exception;
         }
+    }
+
+    /** This invoice's own charges, without balances carried in from older invoices. */
+    public static function currentCharges(Invoice $invoice): float
+    {
+        return round((float) InvoiceItem::find()
+            ->where(['invoice_id' => $invoice->id])
+            ->andWhere(['<>', 'item_type', InvoiceItem::TYPE_ARREARS])
+            ->sum('total_price'), 2);
+    }
+
+    /** True when the discount leaves nothing to pay for this invoice's own charges (or it has none). */
+    public static function discountCoversCharges(Invoice $invoice): bool
+    {
+        return round(self::currentCharges($invoice) - (float) $invoice->discount_amount, 2) <= 0;
     }
 
     /**

@@ -9,6 +9,7 @@ use common\models\Invoice;
 use common\models\ServiceRenewalHistory;
 use common\models\SupportTicket;
 use common\models\Transaction;
+use Yii;
 
 final class CustomerActivityService
 {
@@ -110,21 +111,20 @@ final class CustomerActivityService
             ];
         }
 
-        foreach (
-            ServiceRenewalHistory::find()
-                ->innerJoinWith('invoice', false)
-                ->where(['invoice.user_id' => $userId])
-                ->andWhere((new \common\services\billing\RenewalFulfilmentService())->historyNotRefunded('service_renewal_history', $userId))
-                ->orderBy(['service_renewal_history.logged_at' => SORT_DESC])
-                ->limit($limit)
-                ->all()
-            as $renewal
-        ) {
+        $renewals = ServiceRenewalHistory::find()
+            ->innerJoinWith('invoice', false)
+            ->where(['invoice.user_id' => $userId])
+            ->andWhere((new \common\services\billing\RenewalFulfilmentService())->historyNotRefunded('service_renewal_history', $userId))
+            ->orderBy(['service_renewal_history.logged_at' => SORT_DESC])
+            ->limit($limit)
+            ->all();
+        $labels = ServiceRenewalHistory::serviceLabels($renewals);
+        foreach ($renewals as $renewal) {
             $activities[] = [
                 'icon' => 'fas fa-sync-alt',
                 'badgeClass' => 'bg-success',
                 'title' => 'Service Renewed',
-                'description' => ucfirst($renewal->item_type) . ' renewed until ' . $renewal->end_date,
+                'description' => ($labels[(int) $renewal->id] ?? ucfirst($renewal->item_type)) . ' renewed until ' . Yii::$app->formatter->asDate($renewal->end_date, 'medium'),
                 'time' => (int) $renewal->logged_at,
                 'url' => '/renewal/index',
             ];

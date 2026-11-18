@@ -9,7 +9,7 @@ use yii\bootstrap5\NavBar;
 <header class="sticky-top mw-sticky">
     <?php
     NavBar::begin([
-        'brandLabel' => Html::img('@web/images/logo.svg', ['alt' => '', 'width' => 49, 'height' => 36])
+        'brandLabel' => Html::img('@web/images/logo.svg', ['alt' => 'Logo', 'width' => 49, 'height' => 36])
             . Html::encode(CustomYii::getSetting('site_name', 'Miracle Web Technologies')),
         'brandUrl' => Yii::$app->homeUrl,
         'options' => ['class' => 'navbar navbar-expand-xl mw-header py-2'],

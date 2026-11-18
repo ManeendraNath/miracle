@@ -36,6 +36,9 @@ use Yii;
  * @property int|null $usd_rate_fetched_at
  * @property float $paypal_fee_percent
  * @property float $paypal_fee_fixed_usd
+ * @property string|null $google_site_verification
+ * @property string|null $bing_site_verification
+ * @property string|null $indexnow_key
  */
 class SiteSetting extends \yii\db\ActiveRecord
 {
@@ -53,7 +56,7 @@ class SiteSetting extends \yii\db\ActiveRecord
     public function rules()
     {
         return [
-            [['mobile_2', 'email_2', 'email_3', 'address_line_1', 'address_line_2', 'address_line_3', 'facebook', 'x', 'youtube', 'linkedin', 'instagram', 'updated_at', 'usd_inr_rate', 'usd_market_rate', 'usd_rate_checked_at', 'usd_rate_fetched_at'], 'default', 'value' => null],
+            [['mobile_2', 'email_2', 'email_3', 'address_line_1', 'address_line_2', 'address_line_3', 'facebook', 'x', 'youtube', 'linkedin', 'instagram', 'updated_at', 'usd_inr_rate', 'usd_market_rate', 'usd_rate_checked_at', 'usd_rate_fetched_at', 'google_site_verification', 'bing_site_verification', 'indexnow_key'], 'default', 'value' => null],
             [['usd_rate_auto'], 'default', 'value' => 1],
             [['paypal_abroad'], 'default', 'value' => 0],
             [['usd_rate_margin'], 'default', 'value' => 3.00],
@@ -63,6 +66,8 @@ class SiteSetting extends \yii\db\ActiveRecord
             [['mobile_1', 'mobile_2', 'updated_at', 'review_invoices', 'razorpay_india', 'razorpay_abroad', 'paypal_abroad', 'usd_rate_auto', 'usd_rate_checked_at', 'usd_rate_fetched_at'], 'integer'],
             [['usd_rate_margin', 'usd_inr_rate', 'usd_market_rate', 'paypal_fee_percent', 'paypal_fee_fixed_usd'], 'number'],
             [['site_name', 'site_url', 'email_1', 'email_2', 'email_3', 'address_line_1', 'address_line_2', 'address_line_3', 'facebook', 'x', 'youtube', 'linkedin', 'instagram'], 'string', 'max' => 255],
+            [['google_site_verification', 'bing_site_verification'], 'string', 'max' => 100],
+            [['indexnow_key'], 'string', 'max' => 64],
         ];
     }
 
@@ -101,6 +106,9 @@ class SiteSetting extends \yii\db\ActiveRecord
             'usd_rate_fetched_at' => 'Usd Rate Fetched At',
             'paypal_fee_percent' => 'Paypal Fee Percent',
             'paypal_fee_fixed_usd' => 'Paypal Fee Fixed Usd',
+            'google_site_verification' => 'Google Site Verification',
+            'bing_site_verification' => 'Bing Site Verification',
+            'indexnow_key' => 'Indexnow Key',
         ];
     }
 }

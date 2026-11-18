@@ -20,6 +20,7 @@ $this->params['help'] = [
     'PayPal fees' => 'Built into the US$ price the client sees, so you receive about the full rupee amount. The box at the top of that section shows what a ₹10,000 invoice costs with PayPal today.',
     'Prices already sent' => 'Once an invoice for a client abroad is emailed, its dollar rate is locked until its due date, so changing the rate here doesn\'t change it. A change to the PayPal fee does apply to it.',
     'Contact details, Address, Social links' => 'Shown on the public website (home and contact pages, footer). The main email also receives the contact-form and audit-request emails. Phone numbers take digits only. Leave a social link empty to hide its icon.',
+    'Search engines' => 'Google and Bing ask for a code to prove the site is yours. Paste it here and save, then press Verify in their tools. Social links above are also given to search engines as the company\'s profiles.',
     'Save settings' => 'Saves every section on this page at once.',
 ];
 
@@ -148,6 +149,13 @@ $end = '</div></div>';
                     <?= $form->field($model, $attribute, ['inputTemplate' => '<div class="input-group"><span class="input-group-text"><i class="fab ' . $icon . '"></i></span>{input}</div>'])->textInput(['placeholder' => 'https://…'])->label($name) ?>
                 </div>
             <?php endforeach; ?>
+        </div>
+    <?= $end ?>
+
+    <?= $section('fa-search', 'Search engines', 'Proves to Google and Bing that this website is yours, for their webmaster tools.') ?>
+        <div class="row">
+            <div class="col-md-6"><?= $form->field($model, 'google_site_verification')->textInput(['placeholder' => 'e.g. aBcD1234…'])->hint('Search Console → Add property → URL prefix → HTML tag. Paste the code or the whole tag.') ?></div>
+            <div class="col-md-6"><?= $form->field($model, 'bing_site_verification')->textInput(['placeholder' => 'e.g. 1A2B3C…'])->hint('Bing Webmaster Tools → Add site → HTML Meta Tag. Paste the code or the whole tag.') ?></div>
         </div>
     <?= $end ?>
 

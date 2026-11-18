@@ -24,7 +24,7 @@ $socials = array_filter([
         <div class="row g-4">
             <div class="col-lg-4">
                 <div class="d-flex align-items-center mb-3">
-                    <?= Html::img('@web/images/logo.svg', ['alt' => '', 'width' => 54, 'height' => 40, 'class' => 'me-2']) ?>
+                    <?= Html::img('@web/images/logo.svg', ['alt' => 'Logo', 'width' => 54, 'height' => 40, 'class' => 'me-2']) ?>
                     <h2 class="h5 fw-bold m-0"><?= Html::encode($siteName) ?></h2>
                 </div>
                 <p class="small footer-muted mb-3">

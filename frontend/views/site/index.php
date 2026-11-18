@@ -20,6 +20,24 @@ $address = array_filter(array_map(static fn($l): string => trim((string) $l, ' ,
 $phone = (string) CustomYii::getSetting('mobile_1');
 $email = (string) CustomYii::getSetting('email_1');
 
+// Who runs this site, for search engines (brand name, logo, contact and profiles in results).
+$siteName = CustomYii::getSetting('site_name') ?: 'Miracle Web Technologies';
+$home = \yii\helpers\Url::home(true);
+$organization = array_filter([
+    '@type' => 'Organization',
+    '@id' => $home . '#organization',
+    'name' => $siteName,
+    'url' => $home,
+    'logo' => \yii\helpers\Url::to('@web/images/logo.png', true),
+    'email' => $email ?: null,
+    'telephone' => $phone !== '' ? '+' . $phone : null,
+    'sameAs' => array_values(array_filter(array_map(static fn(string $s): string => trim((string) CustomYii::getSetting($s)), ['linkedin', 'facebook', 'x', 'youtube', 'instagram']))) ?: null,
+]);
+$jsonLd = [
+    '@context' => 'https://schema.org',
+    '@graph' => [$organization, ['@type' => 'WebSite', 'name' => $siteName, 'url' => $home, 'publisher' => ['@id' => $home . '#organization']]],
+];
+
 $services = [
     [
         'icon' => 'fa-cogs',
@@ -84,6 +102,7 @@ $questions = [
     'Can you look after it afterwards?' => 'Yes. We offer website maintenance, hosting and domain registration, so one team can look after everything.',
 ];
 ?>
+<script type="application/ld+json"><?= \yii\helpers\Json::htmlEncode($jsonLd) ?></script>
 <div class="site-index">
 
     <section class="mw-glow mw-hero">
@@ -100,7 +119,7 @@ $questions = [
                 </div>
                 <div class="col-lg-5">
                     <figure class="mw-portal mw-stage">
-                        <?= Html::img('@web/images/gem.svg', ['alt' => '', 'class' => 'mw-gem', 'width' => 640, 'height' => 560]) ?>
+                        <?= Html::img('@web/images/gem.svg', ['alt' => 'Illustration of a cut gem', 'class' => 'mw-gem', 'width' => 640, 'height' => 560]) ?>
                         <div class="mw-portal-card">
                             <div class="mw-browser-bar"><span></span><span></span><span></span><div class="mw-browser-url">yourstore.com/checkout</div></div>
                             <div class="mw-portal-row">

@@ -41,6 +41,8 @@ class BaseController extends Controller
         'admin/cron-log' => 'Admin',
         'admin' => 'Superadmin',
         'site-setting' => 'Superadmin',
+        // Public website text, like testimonials.
+        'seo-page' => 'Admin',
         'invoice' => 'Admin',
         'transaction' => 'Admin',
         'coupon' => 'Admin',

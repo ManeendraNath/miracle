@@ -91,6 +91,10 @@ final class BlogNewsletterService
         foreach (BlogPost::findPublic()->andWhere(['newsletter_started_at' => null])->all() as $post) {
             $send = $post->send_newsletter && !$post->noindex;
             $post->updateAttributes(['newsletter_started_at' => time(), 'newsletter_done_at' => $send ? null : time()]);
+            // Just went live (e.g. a scheduled post): Bing hears now, not at its next crawl.
+            if (!$post->noindex) {
+                \common\services\IndexNowService::queue('/blog/' . $post->slug);
+            }
         }
     }
 

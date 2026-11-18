@@ -22,8 +22,33 @@ $this->registerMetaTag(
     ],
 );
 $siteName = CustomYii::getSetting('site_name') ?: 'Miracle Web Technologies';
+$route = Yii::$app->controller?->getRoute();
+// Title and description staff set for this page (Admin → SEO), used as written. Not for a filtered blog list
+// (a category, tag or month, or page 2): those keep their own.
+$seo = $route !== null && ($route !== 'blog/index' || Yii::$app->request->getQueryParams() === []) ? \common\models\SeoPage::forRoute($route) : null;
+if ($seo !== null && (string) $seo->title !== '') {
+    $this->title = $seo->title;
+}
+if ($seo !== null && (string) $seo->description !== '') {
+    $this->params['meta_description'] = $seo->description;
+}
+// Sign-in and account pages: nothing for searchers there.
+if ($route !== null && str_starts_with($route, 'site/') && in_array(substr($route, 5), \common\models\SeoPage::PRIVATE_ACTIONS, true)) {
+    $this->params['robots'] = 'noindex, follow';
+}
+foreach (['google-site-verification' => 'google_site_verification', 'msvalidate.01' => 'bing_site_verification'] as $metaName => $setting) {
+    $code = (string) CustomYii::getSetting($setting);
+    if ($code !== '') {
+        $this->registerMetaTag(['name' => $metaName, 'content' => $code]);
+    }
+}
 if (!str_contains((string) $this->title, $siteName)) {
     $this->title = trim($this->title . ' | ' . $siteName, ' |');
+}
+// Search engines cut titles at about 60 characters: a long one drops the site name rather than its own words.
+$suffix = ' | ' . $siteName;
+if (mb_strlen((string) $this->title) > 60 && str_ends_with((string) $this->title, $suffix) && mb_strlen((string) $this->title) > mb_strlen($suffix)) {
+    $this->title = mb_substr((string) $this->title, 0, -mb_strlen($suffix));
 }
 $description = $this->params['meta_description']
     ?? 'Custom shopping carts, web applications and websites, built to your brief.';

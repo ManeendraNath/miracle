@@ -204,6 +204,15 @@ class BlogPost extends base\BlogPost
     }
 
     #[\Override]
+    public function afterDelete(): void
+    {
+        parent::afterDelete();
+        if ($this->isPublic()) {
+            \common\services\IndexNowService::queue('/blog/' . $this->slug);
+        }
+    }
+
+    #[\Override]
     public function afterSave($insert, $changedAttributes): void
     {
         parent::afterSave($insert, $changedAttributes);
@@ -216,6 +225,18 @@ class BlogPost extends base\BlogPost
                 BlogPostRevision::deleteAll(['id' => $keep]);
             }
             $this->_before = null;
+        }
+        // Search engines that take IndexNow (Bing) hear at once about a post that is live, or just stopped being.
+        // Never about one that was not public before or after: a draft's address must not leave the site.
+        $old = static fn(string $name) => array_key_exists($name, $changedAttributes) ? $changedAttributes[$name] : null;
+        $wasPublic = !$insert && (int) ($old('status') ?? $this->status) === self::STATUS_PUBLISHED
+            && ($publishedAt = array_key_exists('published_at', $changedAttributes) ? $changedAttributes['published_at'] : $this->published_at) !== null && (int) $publishedAt <= time()
+            && (array_key_exists('deleted_at', $changedAttributes) ? $changedAttributes['deleted_at'] : $this->deleted_at) === null;
+        if ($this->isPublic() || $wasPublic) {
+            \common\services\IndexNowService::queue('/blog/' . $this->slug);
+        }
+        if ($wasPublic && isset($changedAttributes['slug']) && $changedAttributes['slug'] !== $this->slug) {
+            \common\services\IndexNowService::queue('/blog/' . $changedAttributes['slug']);
         }
         if ($this->isPublic()) {
             // Live at this address now: an old address of another post with the same slug is over.
@@ -254,7 +275,11 @@ class BlogPost extends base\BlogPost
     /** Off the website and out of the sitemap, kept to restore. Emptied after TRASH_DAYS by the weekly cleanup. */
     public function trash(): void
     {
+        $wasPublic = $this->isPublic();
         $this->updateAttributes(['deleted_at' => time(), 'updated_at' => time()]);
+        if ($wasPublic) {
+            \common\services\IndexNowService::queue('/blog/' . $this->slug);
+        }
     }
 
     /**
@@ -269,6 +294,9 @@ class BlogPost extends base\BlogPost
             $changes += ['newsletter_started_at' => time(), 'newsletter_done_at' => time()];
         }
         $this->updateAttributes($changes);
+        if ($this->isPublic()) {
+            \common\services\IndexNowService::queue('/blog/' . $this->slug);
+        }
     }
 
     /** Deletes posts in the trash for more than TRASH_DAYS; returns how many. */

@@ -58,6 +58,11 @@ $this->registerMetaTag(['property' => 'article:published_time', 'content' => dat
 $this->registerMetaTag(['property' => 'article:modified_time', 'content' => date(DATE_ATOM, (int) ($updatedAt ?? $post->published_at))]);
 
 // Article details for Google (structured data). A data block, not a script that runs.
+$crumbs = array_values(array_filter([
+    ['Blog', Url::to(['/blog/index'], true)],
+    $post->category ? [$post->category->name, Url::to(['/blog/index', 'category' => $post->category->slug], true)] : null,
+    [$post->title, Url::to(['/blog/view', 'slug' => $post->slug], true)],
+]));
 $schema = array_filter([
     '@context' => 'https://schema.org',
     '@type' => 'BlogPosting',
@@ -74,6 +79,12 @@ $schema = array_filter([
 ?>
 <article class="blog-view">
     <script type="application/ld+json"><?= Json::htmlEncode($schema) ?></script>
+    <?php // Blog › Category › Post, shown by search engines in place of the bare address. ?>
+    <script type="application/ld+json"><?= Json::htmlEncode([
+        '@context' => 'https://schema.org',
+        '@type' => 'BreadcrumbList',
+        'itemListElement' => array_map(static fn(int $i, array $crumb): array => ['@type' => 'ListItem', 'position' => $i + 1, 'name' => $crumb[0], 'item' => $crumb[1]], array_keys($crumbs), $crumbs),
+    ]) ?></script>
     <?php if ($content['faq'] !== []): ?>
         <script type="application/ld+json"><?= Json::htmlEncode([
             '@context' => 'https://schema.org',
@@ -98,7 +109,7 @@ $schema = array_filter([
     <div class="container py-5">
         <div class="mw-article mx-auto">
             <?php if ($image !== null): ?>
-                <?= Html::img($image, ['alt' => (string) $post->cover_alt, 'class' => 'mw-article-cover mb-4']) ?>
+                <?= Html::img($image, ['alt' => (string) $post->cover_alt !== '' ? (string) $post->cover_alt : $post->title, 'class' => 'mw-article-cover mb-4']) ?>
             <?php endif; ?>
             <?php if (count($content['toc']) >= 3): ?>
                 <nav class="mw-toc mb-4" aria-labelledby="toc-title">
@@ -137,7 +148,7 @@ $schema = array_filter([
             <?php if ($authorName !== null): ?>
                 <section class="mw-author d-flex gap-3 align-items-start mt-5" aria-label="About the author">
                     <?php if ($post->author->photo): ?>
-                        <?= Html::img($frontendBase . '/' . $post->author->photo, ['alt' => '', 'width' => 64, 'height' => 64, 'loading' => 'lazy', 'class' => 'rounded-circle flex-shrink-0', 'style' => 'object-fit: cover']) ?>
+                        <?= Html::img($frontendBase . '/' . $post->author->photo, ['alt' => 'Photo of ' . $authorName, 'width' => 64, 'height' => 64, 'loading' => 'lazy', 'class' => 'rounded-circle flex-shrink-0', 'style' => 'object-fit: cover']) ?>
                     <?php endif; ?>
                     <div>
                         <p class="fw-bold mb-1">Written by <?= Html::encode($authorName) ?></p>

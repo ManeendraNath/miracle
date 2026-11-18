@@ -19,6 +19,8 @@ $hostInfo = isset($siteUrl['scheme'], $siteUrl['host']) ? $siteUrl['scheme'] . '
 
 return [
     'id' => 'app-frontend',
+    // Every captcha image is named (search engines report images without alt text).
+    'container' => ['definitions' => [\yii\captcha\Captcha::class => ['imageOptions' => ['alt' => 'Verification code']]]],
     'basePath' => dirname(__DIR__),
     'name' => \common\components\CustomYii::APPLICATION_NAME,
     'bootstrap' => ['log'],
@@ -105,6 +107,7 @@ return [
                 'blog/<action:(subscribe|confirm|unsubscribe)>' => 'blog/<action>',
                 'blog/<slug:[a-z0-9-]+>' => 'blog/view',
                 'sitemap.xml' => 'sitemap/index',
+                'indexnow-key.txt' => 'sitemap/indexnow-key',
                 '<action>' => 'site/<action>',
                 '<controller:[\w\-]+>/<id:\d+>' => '<controller>/view',
                 '<controller:[\w\-]+>/<action:[\w\-]+>/<id:\d+>' => '<controller>/<action>',

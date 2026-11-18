@@ -91,6 +91,12 @@ $waitingComments = (int) \common\models\BlogComment::onLivePosts()->andWhere(['s
                             'url' => ['/testimonial/index'],
                             'active' => Yii::$app->controller->id === 'testimonial'
                         ],
+                        [
+                            'label' => 'SEO',
+                            'icon' => 'search',
+                            'url' => ['/seo-page/index'],
+                            'active' => Yii::$app->controller->id === 'seo-page'
+                        ],
                         ],
                     ],
                     // =====================================================================

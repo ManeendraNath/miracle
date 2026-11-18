@@ -13,7 +13,7 @@ $link = Url::to(['/blog/view', 'slug' => $post->slug]);
 ?>
 <article class="mw-card mw-project mw-post-card<?= $featured ? ' mw-post-featured' : '' ?>">
     <?php if ($post->cover_image): ?>
-        <a href="<?= Html::encode($link) ?>" tabindex="-1" aria-hidden="true"><?= Html::img('@web/' . $post->cover_image, ['alt' => '', 'loading' => $featured ? 'eager' : 'lazy', 'class' => 'mw-post-cover']) ?></a>
+        <a href="<?= Html::encode($link) ?>" tabindex="-1" aria-hidden="true"><?= Html::img('@web/' . $post->cover_image, ['alt' => $post->title, 'loading' => $featured ? 'eager' : 'lazy', 'class' => 'mw-post-cover']) ?></a>
     <?php endif; ?>
     <div class="mw-project-body">
         <p class="mw-eyebrow mb-1"><?= $featured ? 'Featured · ' : '' ?><?= Html::encode($post->category->name ?? 'Article') ?></p>

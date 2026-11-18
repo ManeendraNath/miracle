@@ -29,7 +29,7 @@ class SiteSetting extends base\SiteSetting
     #[\Override]
     public function scenarios(): array
     {
-        $internal = ['usd_market_rate', 'usd_rate_checked_at', 'usd_rate_fetched_at'];
+        $internal = ['usd_market_rate', 'usd_rate_checked_at', 'usd_rate_fetched_at', 'indexnow_key'];
 
         return array_map(
             static fn(array $attributes): array => array_map(static fn(string $name): string => in_array($name, $internal, true) ? '!' . $name : $name, $attributes),
@@ -47,6 +47,11 @@ class SiteSetting extends base\SiteSetting
             [['paypal_fee_percent'], 'number', 'min' => 0, 'max' => 15],
             [['paypal_fee_fixed_usd'], 'number', 'min' => 0, 'max' => 5],
             [['usd_rate_margin'], 'number', 'min' => 0, 'max' => 20],
+            // Also given to search engines as the company's profiles (home page structured data).
+            [['facebook', 'x', 'youtube', 'linkedin', 'instagram'], 'url', 'defaultScheme' => 'https'],
+            // The whole <meta …> tag may be pasted: only its content="…" code is kept.
+            [['google_site_verification', 'bing_site_verification'], 'filter', 'filter' => static fn($value) => preg_match('/content\s*=\s*["\']([^"\']*)["\']/i', (string) $value, $m) === 1 ? trim($m[1]) : trim((string) $value)],
+            [['google_site_verification', 'bing_site_verification'], 'match', 'pattern' => '/^[A-Za-z0-9_\-]*$/', 'message' => 'Paste the code from the search engine (letters, digits, - and _ only), or its whole <meta> tag.'],
         ]);
     }
 
@@ -67,6 +72,8 @@ class SiteSetting extends base\SiteSetting
             'mobile_1' => 'Primary Technical Support Hotline',
             'mobile_2' => 'Alternative Backup Line',
             'email_1' => 'Primary Helpdesk Inbound Email',
+            'google_site_verification' => 'Google Search Console code',
+            'bing_site_verification' => 'Bing Webmaster Tools code',
         ];
         return \yii\helpers\ArrayHelper::merge(parent::attributeLabels(), $labels);
     }

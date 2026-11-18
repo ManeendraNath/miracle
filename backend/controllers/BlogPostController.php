@@ -81,6 +81,7 @@ class BlogPostController extends BaseController
             return $this->redirect(['index', 'trash' => $inTrash ? '1' : null]);
         }
         foreach ($posts as $post) {
+            $wasPublic = $post->isPublic();
             match ($action) {
                 'publish' => $post->updateAttributes(['status' => BlogPost::STATUS_PUBLISHED, 'published_at' => $post->published_at ?: time(), 'updated_at' => time()]),
                 'draft' => $post->updateAttributes(['status' => BlogPost::STATUS_DRAFT, 'updated_at' => time()]),
@@ -88,6 +89,9 @@ class BlogPostController extends BaseController
                 'untrash' => $post->untrash(),
                 'purge' => $post->delete(),
             };
+            if (in_array($action, ['publish', 'draft'], true) && ($wasPublic || $post->isPublic())) {
+                \common\services\IndexNowService::queue('/blog/' . $post->slug);
+            }
         }
         $n = count($posts) . ' post' . (count($posts) === 1 ? '' : 's');
         Yii::$app->session->setFlash('success', match ($action) {

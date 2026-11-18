@@ -164,4 +164,23 @@ final class BlogPostCest
             @rmdir($dir);
         }
     }
+
+    public function anAdminSetsASearchTitleForAFixedPage(FunctionalTester $I): void
+    {
+        // Public website text: Admins only, like testimonials. The Manager signed in by _before is refused.
+        $I->amOnRoute('seo-page/index');
+        $I->dontSee('Upgrade your existing website');
+        $I->haveRecord(Admin::class, ['username' => 'seo-admin', 'email' => 'seo-admin@example.test', 'auth_key' => Yii::$app->security->generateRandomString(), 'password_hash' => Yii::$app->security->generatePasswordHash(self::PASSWORD), 'role' => 'Admin', 'status' => Admin::getStatusActive(), 'created_at' => time(), 'updated_at' => time()]);
+        $I->sendAjaxPostRequest('/auth/logout', [Yii::$app->request->csrfParam => $I->grabAttributeFrom('meta[name=csrf-token]', 'content')]);
+        $I->amOnRoute('auth/login');
+        $I->submitForm('#login-form', ['LoginForm[username]' => 'seo-admin', 'LoginForm[password]' => self::PASSWORD]);
+        $I->amOnRoute('seo-page/index');
+        $I->see('Upgrade your existing website');
+        $I->amOnRoute('seo-page/update', ['route' => 'site/audit']);
+        $I->submitForm('form', ['SeoPage[title]' => '  Website Upgrade Service  ', 'SeoPage[description]' => 'Faster, safer sites.', 'SeoPage[route]' => 'site/login']);
+        $I->seeRecord(\common\models\SeoPage::class, ['route' => 'site/audit', 'title' => 'Website Upgrade Service']);
+        $I->dontSeeRecord(\common\models\SeoPage::class, ['route' => 'site/login']);
+        $I->amOnRoute('seo-page/update', ['route' => 'site/login']);
+        $I->seeResponseCodeIs(404);
+    }
 }

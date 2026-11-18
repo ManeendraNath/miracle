@@ -1,5 +1,5 @@
 {
-    "migrations": 79,
+    "migrations": 80,
     "columns": {
         "admin": {
             "auth_key": {
@@ -2027,6 +2027,38 @@
                 "extra": ""
             }
         },
+        "seo_page": {
+            "description": {
+                "type": "varchar(170)",
+                "null": true,
+                "default": null,
+                "extra": ""
+            },
+            "id": {
+                "type": "int",
+                "null": false,
+                "default": null,
+                "extra": "auto_increment"
+            },
+            "route": {
+                "type": "varchar(64)",
+                "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "title": {
+                "type": "varchar(70)",
+                "null": true,
+                "default": null,
+                "extra": ""
+            },
+            "updated_at": {
+                "type": "int",
+                "null": false,
+                "default": null,
+                "extra": ""
+            }
+        },
         "service_reminder_log": {
             "created_at": {
                 "type": "int",
@@ -2164,6 +2196,12 @@
                 "default": null,
                 "extra": ""
             },
+            "bing_site_verification": {
+                "type": "varchar(100)",
+                "null": true,
+                "default": null,
+                "extra": ""
+            },
             "email_1": {
                 "type": "varchar(255)",
                 "null": false,
@@ -2188,11 +2226,23 @@
                 "default": null,
                 "extra": ""
             },
+            "google_site_verification": {
+                "type": "varchar(100)",
+                "null": true,
+                "default": null,
+                "extra": ""
+            },
             "id": {
                 "type": "int",
                 "null": false,
                 "default": null,
                 "extra": "auto_increment"
+            },
+            "indexnow_key": {
+                "type": "varchar(64)",
+                "null": true,
+                "default": null,
+                "extra": ""
             },
             "instagram": {
                 "type": "varchar(255)",
@@ -3062,6 +3112,10 @@
             "status": "index",
             "status,current_expiry_date": "index",
             "user_id": "index"
+        },
+        "seo_page": {
+            "id": "primary",
+            "route": "unique"
         },
         "service_reminder_log": {
             "id": "primary",

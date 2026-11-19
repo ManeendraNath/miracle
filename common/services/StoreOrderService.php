@@ -7,6 +7,7 @@ namespace common\services;
 use common\models\CustomerBillingProfile;
 use common\models\forms\ManualInvoiceItemForm;
 use common\models\Invoice;
+use common\models\InvoiceItem;
 use common\models\Product;
 use common\models\ProductOrder;
 use common\services\billing\InvoiceCancellationService;
@@ -59,6 +60,7 @@ final class StoreOrderService
                 'description' => $product->name . ' (' . $product->typeLabel() . '), ' . strtolower(Product::LICENCES[$licence]) . ' licence'
                     . ($product->version ? ', version ' . $product->version : '') . '. Includes setup help and 6 months of support.',
                 'unit_price' => $price,
+                'item_type' => InvoiceItem::TYPE_PRODUCT,
             ]);
             $this->invoices->create($invoice, [$item]);
             $order = new ProductOrder(['user_id' => $userId, 'product_id' => (int) $product->id, 'licence' => $licence, 'invoice_id' => (int) $invoice->id]);

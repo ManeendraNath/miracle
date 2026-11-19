@@ -118,6 +118,35 @@ final class StoreOrderTest extends Unit
         $this->assertSame(Invoice::STATUS_UNPAID, Invoice::findOne($fresh->id)->status);
     }
 
+    public function testACouponWorksOnTheStoreUnlessLimitedToOtherServices(): void
+    {
+        $this->profile('India', 'Delhi', '07');
+        $invoice = (new StoreOrderService())->buy((int) $this->_user->id, $this->_product, 'single');
+        $this->assertSame(InvoiceItem::TYPE_PRODUCT, (int) InvoiceItem::findOne(['invoice_id' => $invoice->id])->item_type);
+        $coupons = new \common\services\billing\InvoiceCouponService();
+
+        $this->coupon('HOSTONLY' . $this->_user->id, [(string) InvoiceItem::TYPE_HOSTING]);
+        try {
+            $coupons->apply($invoice, 'HOSTONLY' . $this->_user->id);
+            $this->fail('a hosting-only coupon must not apply to a theme');
+        } catch (\DomainException $e) {
+            $this->assertSame('Coupon cannot be used for this service.', $e->getMessage());
+        }
+        $this->coupon('STORE' . $this->_user->id, [(string) InvoiceItem::TYPE_PRODUCT]);
+        $this->assertEquals(299.90, (float) $coupons->apply($invoice, 'STORE' . $this->_user->id)->discount_amount, '10% of 2999');
+        $coupons->remove(Invoice::findOne($invoice->id));
+        $this->coupon('ALL' . $this->_user->id, []);
+        $this->assertEquals(299.90, (float) $coupons->apply(Invoice::findOne($invoice->id), 'ALL' . $this->_user->id)->discount_amount, 'an unrestricted coupon applies too');
+    }
+
+    /** @param string[] $appliesTo */
+    private function coupon(string $code, array $appliesTo): void
+    {
+        $coupon = new \common\models\Coupon();
+        $coupon->setAttributes(['name' => $code, 'code' => $code, 'type' => \common\models\Coupon::TYPE_P, 'amount' => 10, 'is_active' => \common\models\Coupon::IS_ACTIVE_Y, 'uses_per_coupon' => 0, 'applies_to' => $appliesTo]);
+        $this->assertTrue($coupon->save(), json_encode($coupon->errors));
+    }
+
     private function profile(string $country, string $state, ?string $stateCode): void
     {
         $profile = new CustomerBillingProfile();

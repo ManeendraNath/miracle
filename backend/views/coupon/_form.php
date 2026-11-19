@@ -226,7 +226,7 @@ $normaliseDatetime = static function (?string $value): string {
                             'itemOptions' => ['labelOptions' => ['class' => 'mr-3 font-weight-normal']],
                         ])
                         ->hint(
-                            'Leave all unticked to allow every invoice line. When ticked, only lines of these service types are discounted.',
+                            'Leave all unticked to allow every invoice line, store themes and plugins included. When ticked, only lines of these types are discounted.',
                         ) ?>
                 </div>
                 <div class="col-lg-6">

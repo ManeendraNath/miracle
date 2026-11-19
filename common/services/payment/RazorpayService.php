@@ -13,7 +13,7 @@ use common\services\billing\PaymentProcessingService;
 use common\services\notification\NotificationService;
 use Yii;
 use yii\httpclient\Client;
-use yii\httpclient\StreamTransport;
+use yii\httpclient\CurlTransport;
 use yii\httpclient\Transport;
 
 /**
@@ -502,10 +502,10 @@ final class RazorpayService
     {
         return new Client([
             'baseUrl' => self::API_URL,
-            'transport' => $this->_transport ?? StreamTransport::class,
+            'transport' => $this->_transport ?? CurlTransport::class,
             'requestConfig' => [
                 'headers' => ['Authorization' => 'Basic ' . base64_encode($this->_config['keyId'] . ':' . $this->_config['keySecret'])],
-                // StreamTransport doesn't verify certificates unless told to.
+                // cURL, not PHP streams: the live server has allow_url_fopen off. Certificates checked (explicit).
                 'options' => ['timeout' => 20, 'sslVerifyPeer' => true],
             ],
         ]);

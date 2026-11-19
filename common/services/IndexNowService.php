@@ -65,7 +65,7 @@ final class IndexNowService
         }
         try {
             $base = rtrim((string) Yii::$app->params['frontendBaseUrl'], '/');
-            $response = (new Client(['transport' => \yii\httpclient\StreamTransport::class]))->post(self::ENDPOINT, [
+            $response = (new Client(['transport' => \yii\httpclient\CurlTransport::class]))->post(self::ENDPOINT, [
                 'host' => (string) parse_url($base, PHP_URL_HOST),
                 'key' => self::key(),
                 'keyLocation' => $base . '/indexnow-key.txt',

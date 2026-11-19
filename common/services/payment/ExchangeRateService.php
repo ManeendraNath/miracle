@@ -8,7 +8,7 @@ use common\components\CustomYii;
 use common\models\SiteSetting;
 use Yii;
 use yii\httpclient\Client;
-use yii\httpclient\StreamTransport;
+use yii\httpclient\CurlTransport;
 use yii\httpclient\Transport;
 
 /**
@@ -77,7 +77,7 @@ final class ExchangeRateService
     public function referenceRate(string $date): ?array
     {
         try {
-            $response = (new Client(['transport' => $this->_transport ?? StreamTransport::class]))
+            $response = (new Client(['transport' => $this->_transport ?? CurlTransport::class]))
                 ->get(sprintf(self::DATED_URL, $date))->setOptions(['timeout' => 8, 'sslVerifyPeer' => true])->send();
             $rate = $response->isOk ? ($response->data['rates']['INR'] ?? null) : null;
             $on = $response->isOk ? (string) ($response->data['date'] ?? '') : '';
@@ -95,7 +95,7 @@ final class ExchangeRateService
     private function fetch(): ?float
     {
         try {
-            $response = (new Client(['transport' => $this->_transport ?? StreamTransport::class]))
+            $response = (new Client(['transport' => $this->_transport ?? CurlTransport::class]))
                 ->get(self::URL)->setOptions(['timeout' => 5, 'sslVerifyPeer' => true])->send();
             $rate = $response->isOk ? ($response->data['rates']['INR'] ?? null) : null;
             // A wild value (wrong currency, bad response) must never price an invoice.

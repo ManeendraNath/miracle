@@ -33,8 +33,12 @@ $keyStatus = static fn(bool $hasKeys, bool $test, string $envNames): string => m
     default => '<span class="badge bg-success">Live keys</span>',
 };
 $rate = static fn(float $value): string => Html::encode(rtrim(rtrim(number_format($value, 4, '.', ''), '0'), '.'));
-$market = (float) $model->usd_market_rate;
 $rateNow = PayPalService::usdRate();
+// As saved, after usdRate() above may just have fetched a new rate ($model may hold a form that failed to save).
+$saved = \common\components\CustomYii::getSetting();
+$market = (float) $saved->usd_market_rate;
+// A daily rate too old to use: the fetch has been failing.
+$stale = $rateNow <= 0 && (bool) $saved->usd_rate_auto && $market > 0;
 
 /** One section: a card with an icon, a title and a line saying what it is for. */
 $section = static fn(string $icon, string $title, string $about): string => '<div class="card settings-card shadow-sm mb-4"><div class="card-header bg-white">'
@@ -88,16 +92,19 @@ $end = '</div></div>';
         <div class="settings-rate d-flex align-items-center mb-4<?= $rateNow > 0 ? '' : ' settings-rate-missing' ?>">
             <i class="fas <?= $rateNow > 0 ? 'fa-calculator' : 'fa-exclamation-triangle' ?> fa-lg me-3"></i>
             <div>
-                <?= $rateNow > 0
-                    ? 'Now: <strong>₹' . $rate($rateNow) . ' per US$1</strong> before fees. A ₹10,000 invoice is <strong>US$' . PayPalService::chargeFor(10000, $rateNow) . '</strong> with PayPal.'
-                    : 'No exchange rate yet: PayPal stays hidden until one is fetched or set by hand.' ?>
+                <?= match (true) {
+                    $rateNow > 0 => 'Now: <strong>₹' . $rate($rateNow) . ' per US$1</strong> before fees. A ₹10,000 invoice is <strong>US$' . PayPalService::chargeFor(10000, $rateNow) . '</strong> with PayPal.',
+                    $stale => 'The daily exchange rate has not updated since ' . Yii::$app->formatter->asDate((int) $saved->usd_rate_fetched_at, 'medium')
+                        . ' (last tried ' . Yii::$app->formatter->asRelativeTime((int) $saved->usd_rate_checked_at) . '). PayPal stays hidden until it updates, or until you enter a rate by hand below.',
+                    default => 'No exchange rate yet: PayPal stays hidden until one is fetched or set by hand.',
+                } ?>
             </div>
         </div>
         <h6 class="settings-subhead">Exchange rate</h6>
         <div class="row">
             <div class="col-md-4">
                 <?= $form->field($model, 'usd_rate_auto')->checkbox(['switch' => true])->hint($market > 0
-                    ? 'Today: ₹' . $rate($market) . ' per US$1 (European Central Bank, updated ' . Yii::$app->formatter->asRelativeTime((int) $model->usd_rate_fetched_at) . ').'
+                    ? 'Last fetched: ₹' . $rate($market) . ' per US$1 (European Central Bank), ' . Yii::$app->formatter->asRelativeTime((int) $saved->usd_rate_fetched_at) . '.'
                     : 'Fetched free from the European Central Bank (Frankfurter) when a PayPal invoice is opened.') ?>
             </div>
             <div class="col-md-4">

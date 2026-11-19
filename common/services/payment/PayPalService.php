@@ -10,7 +10,7 @@ use common\models\Transaction;
 use Yii;
 use yii\httpclient\Client;
 use yii\httpclient\Response;
-use yii\httpclient\StreamTransport;
+use yii\httpclient\CurlTransport;
 use yii\httpclient\Transport;
 
 /**
@@ -509,7 +509,7 @@ final class PayPalService
     {
         return new Client([
             'baseUrl' => $this->isSandbox() ? self::SANDBOX_URL : self::LIVE_URL,
-            'transport' => $this->_transport ?? StreamTransport::class,
+            'transport' => $this->_transport ?? CurlTransport::class,
             'requestConfig' => [
                 'headers' => ['Authorization' => 'Bearer ' . $this->token()],
                 'options' => ['timeout' => 20, 'sslVerifyPeer' => true],
@@ -522,7 +522,7 @@ final class PayPalService
         if ($this->_token !== null) {
             return $this->_token;
         }
-        $client = new Client(['baseUrl' => $this->isSandbox() ? self::SANDBOX_URL : self::LIVE_URL, 'transport' => $this->_transport ?? StreamTransport::class]);
+        $client = new Client(['baseUrl' => $this->isSandbox() ? self::SANDBOX_URL : self::LIVE_URL, 'transport' => $this->_transport ?? CurlTransport::class]);
         /** @var Response $response */
         $response = $client->post('v1/oauth2/token', ['grant_type' => 'client_credentials'], [
             'Authorization' => 'Basic ' . base64_encode($this->getClientId() . ':' . ($this->_config['secret'] ?? '')),

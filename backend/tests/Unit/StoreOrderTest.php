@@ -99,6 +99,8 @@ final class StoreOrderTest extends Unit
         $this->assertTrue($service->save(), json_encode($service->errors));
         $this->assertNull($service->price_unlimited_inr, 'a service has one price');
         $this->assertNull($service->price('unlimited', false));
+        $service->refresh();
+        $this->assertTrue($service->validate(), 'a saved product (4999.00 from the database) saves again: ' . json_encode($service->errors));
 
         try {
             (new StoreOrderService())->buy((int) $this->_user->id, $service, 'single', 'too short');

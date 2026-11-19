@@ -185,6 +185,20 @@ class Product extends base\Product
         return (self::TECHNOLOGIES[$this->technology] ?? $this->technology) . ' ' . strtolower(self::KINDS[$this->kind] ?? $this->kind);
     }
 
+    /** The database gives 6999.00 back: shown, and checked, as the whole rupees it is. */
+    #[\Override]
+    public function afterFind(): void
+    {
+        parent::afterFind();
+        foreach (['price_single_inr', 'price_unlimited_inr'] as $price) {
+            $value = $this->getAttribute($price);
+            if (is_string($value) && preg_match('/^\d+\.0+$/', $value) === 1) {
+                $this->setAttribute($price, (string) (int) $value);
+                $this->setOldAttribute($price, (string) (int) $value);
+            }
+        }
+    }
+
     #[\Override]
     public function afterSave($insert, $changedAttributes): void
     {

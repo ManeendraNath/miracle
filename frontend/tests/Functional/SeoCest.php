@@ -33,6 +33,23 @@ final class SeoCest
         }
     }
 
+    public function theLiveChatShowsOnlyWhenSet(FunctionalTester $I): void
+    {
+        SiteSetting::updateAll(['tawk_chat' => null]);
+        $this->resetSettings();
+        $I->amOnPage('/');
+        $I->dontSeeInSource('embed.tawk.to');
+        SiteSetting::updateAll(['tawk_chat' => '5f8a1b2c3d4e5f6a7b8c9d0e/1hk2abcde']);
+        $this->resetSettings();
+        try {
+            $I->amOnPage('/');
+            $I->seeInSource('embed.tawk.to\\/5f8a1b2c3d4e5f6a7b8c9d0e\\/1hk2abcde');
+        } finally {
+            SiteSetting::updateAll(['tawk_chat' => null]);
+            $this->resetSettings();
+        }
+    }
+
     public function theHomePageNamesTheCompanyAndSignInPagesStayOutOfResults(FunctionalTester $I): void
     {
         $I->amOnPage('/');

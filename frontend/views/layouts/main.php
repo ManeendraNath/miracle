@@ -49,6 +49,14 @@ $this->render('_head');
         <i class="fab fa-whatsapp" aria-hidden="true"></i>
     </a>
 <?php endif; ?>
+<?php $tawk = (string) \common\components\CustomYii::getSetting('tawk_chat'); ?>
+<?php if (preg_match('#^[a-f0-9]{24}/[a-z0-9]+$#i', $tawk) === 1) {
+    // Tawk.to live chat, bottom left: the WhatsApp and back-to-top buttons are on the right. Its script comes with
+    // this page's nonce, and what it loads is allowed by 'strict-dynamic' (common/config/main.php).
+    $this->registerJs('window.Tawk_API = window.Tawk_API || {}; window.Tawk_LoadStart = new Date();'
+        . "window.Tawk_API.customStyle = {visibility: {desktop: {position: 'bl', xOffset: 20, yOffset: 20}, mobile: {position: 'bl', xOffset: 12, yOffset: 12}}};"
+        . "(function () { var s = document.createElement('script'); s.async = true; s.src = " . \yii\helpers\Json::htmlEncode('https://embed.tawk.to/' . $tawk) . "; s.charset = 'UTF-8'; s.setAttribute('crossorigin', '*'); document.body.appendChild(s); })();", \yii\web\View::POS_END);
+} ?>
 <button type="button" class="mw-to-top<?= $whatsapp !== '' ? ' mw-to-top-raised' : '' ?>" aria-label="Back to top" hidden><i class="fas fa-arrow-up" aria-hidden="true"></i></button>
 
 <?php $this->endBody() ?>

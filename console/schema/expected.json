@@ -1,5 +1,5 @@
 {
-    "migrations": 83,
+    "migrations": 84,
     "columns": {
         "admin": {
             "auth_key": {
@@ -2535,6 +2535,12 @@
             "site_url": {
                 "type": "varchar(255)",
                 "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "tawk_chat": {
+                "type": "varchar(100)",
+                "null": true,
                 "default": null,
                 "extra": ""
             },

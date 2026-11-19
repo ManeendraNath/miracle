@@ -9,7 +9,7 @@ use yii\helpers\Html;
 
 $name = Html::encode(CustomYii::getSetting('site_name') ?: 'Miracle Web Technologies');
 
-echo $this->render('_legal', ['title' => 'Privacy Policy', 'updated' => '17 Nov 2026', 'body' => <<<HTML
+echo $this->render('_legal', ['title' => 'Privacy Policy', 'updated' => '19 Nov 2026', 'body' => <<<HTML
 <p>This policy explains what personal data {$name} collects through this website and customer portal, why, and how it is protected.</p>
 
 <h2 class="h5 fw-bold mt-4">1. What we collect</h2>
@@ -21,7 +21,7 @@ echo $this->render('_legal', ['title' => 'Privacy Policy', 'updated' => '17 Nov 
     <li><strong>Blog comments:</strong> the name, email address and comment you send, and your IP address (to stop spam). Only the name and comment are shown, once we approve them.</li>
     <li><strong>Blog newsletter:</strong> your email address, when you subscribed and confirmed, and your IP address. Used only to email you new posts; every email has an unsubscribe link, and we delete your address on request.</li>
     <li><strong>Technical data:</strong> IP address, browser and log data needed to run and secure the site, and a login history (time, IP address and browser) used to alert you to sign-ins from new devices.</li>
-    <li><strong>Cookies:</strong> a session cookie and a security (CSRF) cookie needed to use the site; a "remember me" cookie (up to 30 days) if you choose to stay signed in; and a device cookie (up to 400 days) so we can tell you when your account is used from a new device. We use no advertising or tracking cookies.</li>
+    <li><strong>Cookies:</strong> a session cookie and a security (CSRF) cookie needed to use the site; a "remember me" cookie (up to 30 days) if you choose to stay signed in; and a device cookie (up to 400 days) so we can tell you when your account is used from a new device. When the live chat is shown, our chat provider Tawk.to also sets cookies that recognise a returning visitor. We use no advertising cookies.</li>
 </ul>
 
 <h2 class="h5 fw-bold mt-4">2. Payments</h2>
@@ -31,7 +31,7 @@ echo $this->render('_legal', ['title' => 'Privacy Policy', 'updated' => '17 Nov 
 <p>To provide and renew your services, raise invoices and record payments, send renewal reminders and service notices, answer support requests, and meet legal and accounting obligations. We do not sell your data or use it for third-party advertising.</p>
 
 <h2 class="h5 fw-bold mt-4">4. Who we share it with</h2>
-<p>Only with those needed to deliver the service: domain registrars and registries (registration details, as their rules require), our hosting and email providers, our WhatsApp messaging provider (your name and number, and details of the message such as an invoice number or service name, for reminders and service messages), Razorpay and PayPal for payments, and authorities where the law requires it.</p>
+<p>Only with those needed to deliver the service: domain registrars and registries (registration details, as their rules require), our hosting and email providers, our WhatsApp messaging provider (your name and number, and details of the message such as an invoice number or service name, for reminders and service messages), our live chat provider Tawk.to (on our public pages, your browser details, approximate location and the pages you view, so our staff can see who is on the site; and what you type if you chat with us), Razorpay and PayPal for payments, and authorities where the law requires it.</p>
 
 <h2 class="h5 fw-bold mt-4">5. How long we keep it</h2>
 <p>For as long as you use our services, and afterwards for as long as tax and accounting law requires invoice and payment records to be kept. An account you stop using stays on record until you ask us to close it; a disabled account is kept, not erased.</p>

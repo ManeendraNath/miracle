@@ -137,6 +137,7 @@ $end = '</div></div>';
                     <div class="col-sm-6"><?= $form->field($model, 'mobile_2')->textInput(['type' => 'tel', 'placeholder' => 'Optional'])->label('Second phone') ?></div>
                 </div>
                 <?= $form->field($model, 'whatsapp')->textInput(['type' => 'tel', 'placeholder' => 'Digits with country code, e.g. 919876543210'])->hint('The green chat button on every public page opens WhatsApp with this number. Leave empty to hide the button.') ?>
+                <?= $form->field($model, 'tawk_chat')->textInput(['placeholder' => 'https://tawk.to/chat/…'])->hint('The live chat bubble, bottom left on every public page. In Tawk.to: Administration → Chat Widget, copy the Direct Chat Link (or the widget code) and paste it here. Leave empty to hide the chat.') ?>
                 <?= $form->field($model, 'email_1')->textInput(['placeholder' => 'info@company.com'])->label('Main email')->hint('Also receives the contact-form and audit-request emails.') ?>
                 <div class="row">
                     <div class="col-sm-6"><?= $form->field($model, 'email_2')->textInput(['placeholder' => 'Optional'])->label('Second email') ?></div>

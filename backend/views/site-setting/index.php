@@ -57,6 +57,11 @@ $end = '</div></div>';
                 <?= $form->field($model, 'tagline')->textInput(['maxlength' => 150, 'placeholder' => 'e.g. Upgrade Your Business With Us'])->label('Tagline')->hint('Under the name at the top of emails. Empty = none.') ?>
                 <?= $form->field($model, 'services_line')->textInput(['maxlength' => 200, 'placeholder' => 'e.g. Hosting • Domains • Maintenance'])->label('What you offer, in one line')->hint('At the foot of emails. Empty = none.') ?>
                 <?= $form->field($model, 'founded_year')->textInput(['type' => 'number', 'min' => 1900, 'max' => 2100])->label('Year founded')->hint('Email footers say "© {year}-' . date('Y') . '". Empty = this year only.') ?>
+                <?php if (\common\components\PortalOnly::enabled()): ?>
+                    <?= $form->field($model, 'terms_url')->textInput(['maxlength' => 255, 'placeholder' => 'https://example.com/terms'])->label('Your terms page')->hint('Linked where customers pay, and from the portal footer. Payment gateways ask for these.') ?>
+                    <?= $form->field($model, 'refund_url')->textInput(['maxlength' => 255, 'placeholder' => 'https://example.com/refund-policy'])->label('Your refund policy page') ?>
+                    <?= $form->field($model, 'privacy_url')->textInput(['maxlength' => 255, 'placeholder' => 'https://example.com/privacy-policy'])->label('Your privacy policy page') ?>
+                <?php endif; ?>
                 <?= $form->field($model, 'grievance_name')->textInput(['maxlength' => 100])->label('Grievance Officer')->hint('Named in the privacy policy, as Indian IT rules require.') ?>
                 <?= $form->field($model, 'grievance_email')->textInput(['maxlength' => 255])->label('Grievance Officer email')->hint('One or more addresses, separated by commas.') ?>
             <?= $end ?>

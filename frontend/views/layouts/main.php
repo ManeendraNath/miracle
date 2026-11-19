@@ -45,7 +45,7 @@ $this->render('_head');
 <?php $whatsapp = preg_replace('/\D/', '', (string) \common\components\CustomYii::getSetting('whatsapp')); ?>
 <?php if ($whatsapp !== ''): ?>
     <?php // A chat in WhatsApp with a first message ready; clients abroad often prefer it to a call. ?>
-    <a class="mw-whatsapp" href="https://wa.me/<?= $whatsapp ?>?text=<?= rawurlencode('Hi, I would like to discuss a website / web application project.') ?>" target="_blank" rel="noopener" aria-label="Chat with us on WhatsApp (opens in a new tab)" title="Chat with us on WhatsApp">
+    <a class="mw-whatsapp" href="https://wa.me/<?= $whatsapp ?>?text=<?= rawurlencode(\common\components\PortalOnly::enabled() ? 'Hi, I have a question about my account.' : 'Hi, I would like to discuss a website / web application project.') ?>" target="_blank" rel="noopener" aria-label="Chat with us on WhatsApp (opens in a new tab)" title="Chat with us on WhatsApp">
         <i class="fab fa-whatsapp" aria-hidden="true"></i>
     </a>
 <?php endif; ?>

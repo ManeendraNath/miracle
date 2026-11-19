@@ -16,6 +16,8 @@ return [
     'user.emailVerificationTokenExpire' => 7 * 86400,
     'user.passwordMinLength' => 8,
     'bsVersion' => '5.x',
+    // A copy sold to another business: customer portal and admin billing only (common\components\PortalOnly).
+    'portalOnly' => filter_var($_ENV['PORTAL_ONLY'] ?? false, FILTER_VALIDATE_BOOLEAN),
     'billing' => [
         // Where the business is registered: decides CGST+SGST (same state) or IGST.
         'supplierState' => $_ENV['BILLING_SUPPLIER_STATE'] ?? 'Delhi',

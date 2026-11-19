@@ -1,7 +1,14 @@
 <?php
 
 use common\components\CustomYii;
+use common\components\PortalOnly;
 use yii\bootstrap5\Html;
+
+if (PortalOnly::enabled()) {
+    echo $this->render('_footer-portal');
+
+    return;
+}
 
 $siteName = CustomYii::getSetting('site_name') ?: 'Miracle Web Technologies';
 $address = array_filter(array_map('trim', [

@@ -1,5 +1,5 @@
 {
-    "migrations": 90,
+    "migrations": 91,
     "columns": {
         "admin": {
             "auth_key": {
@@ -2568,6 +2568,12 @@
                 "default": "4.40",
                 "extra": ""
             },
+            "privacy_url": {
+                "type": "varchar(255)",
+                "null": true,
+                "default": null,
+                "extra": ""
+            },
             "razorpay_abroad": {
                 "type": "tinyint",
                 "null": false,
@@ -2578,6 +2584,12 @@
                 "type": "tinyint",
                 "null": false,
                 "default": "0",
+                "extra": ""
+            },
+            "refund_url": {
+                "type": "varchar(255)",
+                "null": true,
+                "default": null,
                 "extra": ""
             },
             "review_invoices": {
@@ -2612,6 +2624,12 @@
             },
             "tawk_chat": {
                 "type": "varchar(100)",
+                "null": true,
+                "default": null,
+                "extra": ""
+            },
+            "terms_url": {
+                "type": "varchar(255)",
                 "null": true,
                 "default": null,
                 "extra": ""

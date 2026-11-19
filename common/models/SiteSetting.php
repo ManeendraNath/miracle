@@ -46,10 +46,11 @@ class SiteSetting extends base\SiteSetting
             // The whole <meta …> tag may be pasted: only its content="…" code is kept.
             [['google_site_verification', 'bing_site_verification'], 'filter', 'filter' => static fn($value) => preg_match('/content\s*=\s*["\']([^"\']*)["\']/i', (string) $value, $m) === 1 ? trim($m[1]) : trim((string) $value), 'skipOnArray' => true],
         ], parent::rules(), [
-            [['site_url', 'email_1', 'email_2', 'email_3', 'tagline', 'services_line', 'grievance_name', 'grievance_email'], 'trim'],
+            [['site_url', 'email_1', 'email_2', 'email_3', 'tagline', 'services_line', 'grievance_name', 'grievance_email', 'terms_url', 'refund_url', 'privacy_url'], 'trim'],
             [['tagline', 'services_line', 'grievance_name', 'grievance_email', 'founded_year'], 'default', 'value' => null],
             ['founded_year', 'integer', 'min' => 1900, 'max' => 2100],
-            ['site_url', 'url', 'defaultScheme' => 'https'],
+            [['site_url', 'terms_url', 'refund_url', 'privacy_url'], 'url', 'defaultScheme' => 'https'],
+            [['terms_url', 'refund_url', 'privacy_url'], 'default', 'value' => null],
             // One or more addresses, separated by commas.
             ['grievance_email', 'validateEmailList'],
             [['email_1', 'email_2', 'email_3'], 'email'],

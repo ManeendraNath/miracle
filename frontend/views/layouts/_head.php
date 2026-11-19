@@ -50,14 +50,17 @@ $suffix = ' | ' . $siteName;
 if (mb_strlen((string) $this->title) > 60 && str_ends_with((string) $this->title, $suffix) && mb_strlen((string) $this->title) > mb_strlen($suffix)) {
     $this->title = mb_substr((string) $this->title, 0, -mb_strlen($suffix));
 }
+$portalOnly = \common\components\PortalOnly::enabled();
 $description = $this->params['meta_description']
-    ?? 'Custom shopping carts, web applications and websites, built to your brief.';
+    ?? ($portalOnly ? 'Customer portal of ' . $siteName . ': services, invoices, payments and support.' : 'Custom shopping carts, web applications and websites, built to your brief.');
 $this->registerMetaTag(['name' => 'description', 'content' => $description]);
 $this->registerMetaTag(['property' => 'og:site_name', 'content' => $siteName]);
 $this->registerMetaTag(['property' => 'og:type', 'content' => $this->params['og_type'] ?? 'website']);
 $this->registerMetaTag(['property' => 'og:title', 'content' => $this->title]);
 $this->registerMetaTag(['property' => 'og:description', 'content' => $description]);
-$this->registerMetaTag(['property' => 'og:image', 'content' => $this->params['og_image'] ?? Url::to('@web/images/og.png', true)]);
+if (!$portalOnly || isset($this->params['og_image'])) {
+    $this->registerMetaTag(['property' => 'og:image', 'content' => $this->params['og_image'] ?? Url::to('@web/images/og.png', true)]);
+}
 // Every page names its one address, so /site/about, /index.php, www. or ?subject=… are not counted as separate
 // pages by search engines. Absolute links use the configured site address (frontendBaseUrl), whatever the host.
 $canonical = $this->params['canonical'] ?? null;

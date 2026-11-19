@@ -26,10 +26,17 @@ use yii\bootstrap5\NavBar;
         ['label' => 'About', 'url' => ['/site/about']],
         ['label' => 'Contact', 'url' => ['/site/contact']],
     ];
+    $portalOnly = \common\components\PortalOnly::enabled();
+    if ($portalOnly) {
+        // A portal-only copy: the business's own website instead of our pages.
+        $menuItems = CustomYii::getSetting('site_url') ? [['label' => 'Our website', 'url' => CustomYii::businessUrl()]] : [];
+    }
 
     if (Yii::$app->user->isGuest) {
         $menuItems[] = ['label' => 'Log in', 'url' => ['/site/login']];
-        $menuItems[] = '<li class="nav-item ms-xl-2">' . Html::a('Get a quote', ['/site/contact', 'subject' => 'Project enquiry'], ['class' => 'btn btn-primary']) . '</li>';
+        if (!$portalOnly) {
+            $menuItems[] = '<li class="nav-item ms-xl-2">' . Html::a('Get a quote', ['/site/contact', 'subject' => 'Project enquiry'], ['class' => 'btn btn-primary']) . '</li>';
+        }
     } else {
         // One account menu: a user icon that opens Dashboard and Sign out (in the phone menu it opens in place).
         $username = Html::encode(Yii::$app->user->identity->username);

@@ -25,7 +25,12 @@ return [
     'name' => \common\components\CustomYii::APPLICATION_NAME,
     'bootstrap' => ['log'],
     'controllerNamespace' => 'frontend\controllers',
-    'on beforeAction' => [\frontend\components\ProfileGate::class, 'check'],
+    'on beforeAction' => static function (\yii\base\ActionEvent $event): void {
+        \common\components\PortalOnly::check($event);
+        if ($event->isValid) {
+            \frontend\components\ProfileGate::check($event);
+        }
+    },
     'components' => [
         // -----------------------------------------------------
         // ASSETS

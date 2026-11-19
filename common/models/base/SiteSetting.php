@@ -14,6 +14,9 @@ use Yii;
  * @property string|null $services_line
  * @property string|null $grievance_name
  * @property string|null $grievance_email
+ * @property string|null $terms_url
+ * @property string|null $refund_url
+ * @property string|null $privacy_url
  * @property int|null $founded_year
  * @property int $mobile_1
  * @property int|null $mobile_2
@@ -63,7 +66,7 @@ class SiteSetting extends \yii\db\ActiveRecord
     public function rules()
     {
         return [
-            [['tagline', 'services_line', 'grievance_name', 'grievance_email', 'founded_year', 'mobile_2', 'whatsapp', 'tawk_chat', 'email_2', 'email_3', 'address_line_1', 'address_line_2', 'address_line_3', 'facebook', 'x', 'youtube', 'linkedin', 'instagram', 'updated_at', 'usd_inr_rate', 'usd_market_rate', 'usd_rate_checked_at', 'usd_rate_fetched_at', 'google_site_verification', 'bing_site_verification', 'indexnow_key'], 'default', 'value' => null],
+            [['tagline', 'services_line', 'grievance_name', 'grievance_email', 'terms_url', 'refund_url', 'privacy_url', 'founded_year', 'mobile_2', 'whatsapp', 'tawk_chat', 'email_2', 'email_3', 'address_line_1', 'address_line_2', 'address_line_3', 'facebook', 'x', 'youtube', 'linkedin', 'instagram', 'updated_at', 'usd_inr_rate', 'usd_market_rate', 'usd_rate_checked_at', 'usd_rate_fetched_at', 'google_site_verification', 'bing_site_verification', 'indexnow_key'], 'default', 'value' => null],
             [['usd_rate_auto'], 'default', 'value' => 1],
             [['paypal_abroad'], 'default', 'value' => 0],
             [['usd_rate_margin'], 'default', 'value' => 3.00],
@@ -72,7 +75,7 @@ class SiteSetting extends \yii\db\ActiveRecord
             [['site_name', 'site_url', 'mobile_1', 'email_1'], 'required'],
             [['founded_year', 'mobile_1', 'mobile_2', 'whatsapp', 'updated_at', 'review_invoices', 'razorpay_india', 'razorpay_abroad', 'paypal_abroad', 'usd_rate_auto', 'usd_rate_checked_at', 'usd_rate_fetched_at'], 'integer'],
             [['usd_rate_margin', 'usd_inr_rate', 'usd_market_rate', 'paypal_fee_percent', 'paypal_fee_fixed_usd'], 'number'],
-            [['site_name', 'site_url', 'grievance_email', 'email_1', 'email_2', 'email_3', 'address_line_1', 'address_line_2', 'address_line_3', 'facebook', 'x', 'youtube', 'linkedin', 'instagram'], 'string', 'max' => 255],
+            [['site_name', 'site_url', 'grievance_email', 'terms_url', 'refund_url', 'privacy_url', 'email_1', 'email_2', 'email_3', 'address_line_1', 'address_line_2', 'address_line_3', 'facebook', 'x', 'youtube', 'linkedin', 'instagram'], 'string', 'max' => 255],
             [['tagline'], 'string', 'max' => 150],
             [['services_line'], 'string', 'max' => 200],
             [['grievance_name', 'tawk_chat', 'google_site_verification', 'bing_site_verification'], 'string', 'max' => 100],
@@ -93,6 +96,9 @@ class SiteSetting extends \yii\db\ActiveRecord
             'services_line' => 'Services Line',
             'grievance_name' => 'Grievance Name',
             'grievance_email' => 'Grievance Email',
+            'terms_url' => 'Terms Url',
+            'refund_url' => 'Refund Url',
+            'privacy_url' => 'Privacy Url',
             'founded_year' => 'Founded Year',
             'mobile_1' => 'Mobile 1',
             'mobile_2' => 'Mobile 2',

@@ -235,6 +235,7 @@ $assets = [
             </div>
             <?php endif; ?>
 
+            <?php if (\backend\controllers\BaseController::canAccess(Yii::$app->user->identity, 'lead')): ?>
             <div class="card">
                 <div class="card-header">
                     <h3 class="card-title"><i class="fas fa-envelope-open-text mr-2"></i>Inbound Pipeline</h3>
@@ -258,6 +259,7 @@ $assets = [
                     </ul>
                 </div>
             </div>
+            <?php endif; ?>
 
             <?php if ($canBilling): ?>
             <div class="card">

@@ -11,7 +11,7 @@ use yii\bootstrap5\Html;
 
 $this->title = 'Log in to your account';
 $this->params['breadcrumbs'][] = $this->title;
-$this->params['meta_description'] = 'Log in to your Miracle Web Technologies customer account.';
+$this->params['meta_description'] = 'Log in to your ' . \common\components\CustomYii::businessName() . ' customer account.';
 $htmlIcon = <<<HTML
 {label}<div class="input-group"><span class="input-group-text" aria-hidden="true">%s</span>{input}</div>{error}{hint}
 HTML;

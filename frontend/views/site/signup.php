@@ -11,7 +11,7 @@ use yii\bootstrap5\Html;
 
 $this->title = 'Create a new account';
 $this->params['breadcrumbs'][] = $this->title;
-$this->params['meta_description'] = 'Create a Miracle Web Technologies customer account.';
+$this->params['meta_description'] = 'Create a ' . \common\components\CustomYii::businessName() . ' customer account.';
 $htmlIcon = <<<HTML
 {label}<div class="input-group"><span class="input-group-text" aria-hidden="true">%s</span>{input}</div>{error}{hint}
 HTML;

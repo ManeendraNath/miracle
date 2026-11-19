@@ -71,6 +71,7 @@ $waitingComments = (int) \common\models\BlogComment::onLivePosts()->andWhere(['s
                     ],
                     [
                         'label' => 'Leads & website',
+                        'visible' => !\common\components\PortalOnly::enabled(),
                         'icon' => 'bullhorn',
                         'items' => [
                         [
@@ -116,6 +117,7 @@ $waitingComments = (int) \common\models\BlogComment::onLivePosts()->andWhere(['s
                     // =====================================================================
                     [
                         'label' => 'Blog',
+                        'visible' => !\common\components\PortalOnly::enabled(),
                         'icon' => 'blog',
                         'badge' => $waitingComments > 0 ? '<span class="right badge badge-warning" title="Comments waiting for approval">' . $waitingComments . '</span>' : '',
                         'items' => [

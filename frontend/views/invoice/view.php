@@ -304,10 +304,17 @@ JS);
                             Paying from outside India? <?= Html::a('Raise a support ticket', ['/support/create', 'subject' => 'Paying from outside India']) ?> and we'll confirm how to pay.
                         </p>
                     <?php endif; ?>
-                    <p class="small text-body-secondary text-center mt-2 mb-0">
-                        By paying you agree to our <?= Html::a('Terms &amp; Conditions', ['/site/terms'], ['target' => '_blank']) ?>
-                        and <?= Html::a('Refund &amp; Cancellation Policy', ['/site/refund-policy'], ['target' => '_blank']) ?>.
-                    </p>
+                    <?php
+                    $portalOnly = \common\components\PortalOnly::enabled();
+                    $termsUrl = $portalOnly ? \common\components\PortalOnly::policyUrl('terms') : \yii\helpers\Url::to(['/site/terms']);
+                    $refundUrl = $portalOnly ? \common\components\PortalOnly::policyUrl('refund') : \yii\helpers\Url::to(['/site/refund-policy']);
+                    ?>
+                    <?php if ($termsUrl !== null && $refundUrl !== null): ?>
+                        <p class="small text-body-secondary text-center mt-2 mb-0">
+                            By paying you agree to our <?= Html::a('Terms &amp; Conditions', $termsUrl, ['target' => '_blank', 'rel' => 'noopener']) ?>
+                            and <?= Html::a('Refund &amp; Cancellation Policy', $refundUrl, ['target' => '_blank', 'rel' => 'noopener']) ?>.
+                        </p>
+                    <?php endif; ?>
                 <?php elseif ($model->status === Invoice::STATUS_CARRIED_FORWARD): ?>
                     <div class="alert alert-info small mt-3 mb-0">
                         <i class="fas fa-share me-1"></i>

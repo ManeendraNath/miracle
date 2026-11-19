@@ -274,6 +274,9 @@ class BaseController extends Controller
     /** Whether $user (an Admin identity) may open the route; also used to hide menu links. */
     public static function canAccess(?object $user, string $controllerId, string $actionId = 'index'): bool
     {
+        if (in_array($controllerId, \common\components\PortalOnly::CLOSED_BACKEND, true) && \common\components\PortalOnly::enabled()) {
+            return false; // website sections: not in a portal-only copy
+        }
         $rank = self::ROLE_RANK[$user->role ?? ''] ?? 0;
         $required = self::MIN_ROLE["{$controllerId}/{$actionId}"] ?? self::MIN_ROLE[$controllerId] ?? 'Manager';
         return $rank > 0 && $rank >= self::ROLE_RANK[$required];

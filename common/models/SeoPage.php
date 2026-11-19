@@ -28,6 +28,7 @@ class SeoPage extends base\SeoPage
         'site/audit' => 'Upgrade your existing website',
         'site/contact' => 'Contact / get a quote',
         'site/terms' => 'Terms & conditions',
+        'site/licence' => 'Licence terms for themes & plugins',
         'blog/index' => 'Blog (list of posts)',
         'store/index' => 'Themes & plugins store',
     ];

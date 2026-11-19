@@ -8,6 +8,7 @@ use common\models\Product;
 use common\models\ProductImage;
 use common\models\ProductOrder;
 use common\services\BlogImageService;
+use common\services\StoreOrderService;
 use Yii;
 use yii\data\ActiveDataProvider;
 use yii\helpers\FileHelper;
@@ -146,9 +147,19 @@ class ProductController extends BaseController
         foreach (array_filter([$cover !== null ? $oldCover : null, ...array_map(static fn(ProductImage $i): string => $i->path, $gone)]) as $file) {
             @unlink(Yii::getAlias('@frontend/web/' . $file));
         }
-        Yii::$app->session->setFlash('success', $model->isPublic()
+        $notice = '';
+        // A new file, and staff asked: every paid buyer hears about it (updates are free for life).
+        if (Yii::$app->request->post('notify_buyers')) {
+            if ($newFile !== null) {
+                [$sent, $failed] = (new StoreOrderService())->notifyUpdate($model);
+                $notice = " Update emailed to {$sent} buyer(s)" . ($failed ? ", {$failed} could not be sent (see the admin log)" : '') . '.';
+            } else {
+                $notice = ' No email was sent to buyers: no new file was chosen.';
+            }
+        }
+        Yii::$app->session->setFlash($notice !== '' && str_contains($notice, 'could not') ? 'warning' : 'success', ($model->isPublic()
             ? 'Saved. It is in the store, and in the sitemap by itself.'
-            : 'Saved as a draft: it is not in the store until you publish it.');
+            : 'Saved as a draft: it is not in the store until you publish it.') . $notice);
 
         return $this->redirect(['update', 'id' => $model->id]);
     }

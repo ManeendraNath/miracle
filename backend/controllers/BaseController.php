@@ -45,6 +45,7 @@ class BaseController extends Controller
         'seo-page' => 'Admin',
         // The store: prices and what is sold.
         'product' => 'Admin',
+        'product-order' => 'Admin',
         'invoice' => 'Admin',
         'transaction' => 'Admin',
         'coupon' => 'Admin',

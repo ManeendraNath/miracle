@@ -105,6 +105,12 @@ $waitingComments = (int) \common\models\BlogComment::onLivePosts()->andWhere(['s
                         'url' => ['/product/index'],
                         'active' => Yii::$app->controller->id === 'product'
                     ],
+                    [
+                        'label' => 'Store Sales',
+                        'icon' => 'receipt',
+                        'url' => ['/product-order/index'],
+                        'active' => Yii::$app->controller->id === 'product-order'
+                    ],
                     // =====================================================================
                     // 📝 1.0.1. BLOG (the public blog at /blog)
                     // =====================================================================

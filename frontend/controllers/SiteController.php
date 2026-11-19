@@ -322,6 +322,12 @@ class SiteController extends Controller
         return $this->render('refund-policy');
     }
 
+    /** Licence terms for store themes and plugins. */
+    public function actionLicence(): string
+    {
+        return $this->render('licence');
+    }
+
     public function actionShippingPolicy(): string
     {
         return $this->render('shipping-policy');

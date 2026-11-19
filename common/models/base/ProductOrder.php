@@ -14,6 +14,7 @@ use Yii;
  * @property int $invoice_id
  * @property string|null $licence_key
  * @property int|null $paid_at
+ * @property int|null $first_downloaded_at
  * @property int $created_at
  * @property int $updated_at
  *
@@ -37,9 +38,9 @@ class ProductOrder extends \yii\db\ActiveRecord
     public function rules()
     {
         return [
-            [['licence_key', 'paid_at'], 'default', 'value' => null],
+            [['licence_key', 'paid_at', 'first_downloaded_at'], 'default', 'value' => null],
             [['user_id', 'product_id', 'licence', 'invoice_id', 'created_at', 'updated_at'], 'required'],
-            [['user_id', 'product_id', 'invoice_id', 'paid_at', 'created_at', 'updated_at'], 'integer'],
+            [['user_id', 'product_id', 'invoice_id', 'paid_at', 'first_downloaded_at', 'created_at', 'updated_at'], 'integer'],
             [['licence'], 'string', 'max' => 10],
             [['licence_key'], 'string', 'max' => 32],
             [['invoice_id'], 'unique'],
@@ -63,6 +64,7 @@ class ProductOrder extends \yii\db\ActiveRecord
             'invoice_id' => 'Invoice ID',
             'licence_key' => 'Licence Key',
             'paid_at' => 'Paid At',
+            'first_downloaded_at' => 'First Downloaded At',
             'created_at' => 'Created At',
             'updated_at' => 'Updated At',
         ];

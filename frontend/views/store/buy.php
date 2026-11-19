@@ -42,7 +42,7 @@ $this->params['robots'] = 'noindex, follow';
                         </p>
                         <ul class="list-unstyled small mb-4">
                             <li class="mb-2"><i class="fas fa-check text-success me-2" aria-hidden="true"></i><?= $licence === 'single' ? 'Use on one website.' : 'Use on any number of your websites.' ?></li>
-                            <li class="mb-2"><i class="fas fa-check text-success me-2" aria-hidden="true"></i>Our help to set it up, and 6 months of support.</li>
+                            <li class="mb-2"><i class="fas fa-check text-success me-2" aria-hidden="true"></i>Our help to set it up, 6 months of support, and every new version free.</li>
                             <li class="mb-2"><i class="fas fa-check text-success me-2" aria-hidden="true"></i><?= $usd ? 'Priced in US dollars for buyers outside India. No GST.' : 'GST is added on the invoice where it applies.' ?></li>
                         </ul>
                         <h3 class="h6">What happens next</h3>
@@ -61,7 +61,10 @@ $this->params['robots'] = 'noindex, follow';
                                 <?= Html::a('Contact us', ['/site/contact', 'subject' => 'Buy ' . $model->name . ' (' . strtolower(Product::LICENCES[$licence]) . ' licence)']) ?> and we will arrange your payment.
                             </div>
                         <?php endif; ?>
-                        <p class="small text-body-secondary mt-3 mb-0">
+                        <p class="small text-body-secondary mt-3 mb-1">
+                            By continuing you agree to our <?= Html::a('licence terms', ['/site/licence']) ?> and <?= Html::a('refund policy', ['/site/refund-policy']) ?>: a full refund until your first download.
+                        </p>
+                        <p class="small text-body-secondary mb-0">
                             Billing details on the invoice come from <?= Html::a('your profile', ['/account/profile']) ?>.
                         </p>
                     </div>

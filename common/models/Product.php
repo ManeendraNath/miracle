@@ -33,6 +33,9 @@ class Product extends base\Product
     public const KINDS = ['theme' => 'Theme', 'plugin' => 'Plugin'];
     public const LICENCES = ['single' => 'Single site', 'unlimited' => 'Unlimited sites'];
 
+    /** Months of support (setup help and questions) from payment; updates are free for life. See site/licence. */
+    public const SUPPORT_MONTHS = 6;
+
     /** Files buyers download, outside the web root (under @storage). */
     public const FILES_DIR = 'store-files';
 
@@ -58,7 +61,7 @@ class Product extends base\Product
     public function rules(): array
     {
         return array_merge([
-            [['name', 'slug', 'summary', 'description', 'features', 'demo_url', 'version', 'seo_title', 'seo_description'], 'trim'],
+            [['name', 'slug', 'summary', 'description', 'features', 'changelog', 'demo_url', 'version', 'seo_title', 'seo_description'], 'trim'],
             ['slug', 'filter', 'filter' => fn($slug): string => Inflector::slug((string) ($slug ?: $this->name))],
             ['slug', 'required', 'message' => 'Use at least one letter or digit in the name.', 'enableClientValidation' => false],
             ['status', 'default', 'value' => self::STATUS_DRAFT],
@@ -86,6 +89,7 @@ class Product extends base\Product
             'kind' => 'Type',
             'summary' => 'Short summary',
             'features' => 'Features (one a line)',
+            'changelog' => "What's new",
             'demo_url' => 'Live demo address',
             'price_single_inr' => 'Single site, ₹',
             'price_single_usd' => 'Single site, US$',

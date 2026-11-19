@@ -203,5 +203,18 @@ final class BlogPostCest
         $I->submitForm('form', $fields);
         $I->seeRecord(\common\models\Product::class, ['slug' => 'nova-shop-theme', 'status' => 1, 'price_unlimited_inr' => null]);
         $I->see('It is in the store');
+
+        $I->amOnRoute('product-order/index');
+        $I->seeResponseCodeIs(200);
+        $I->see('Store Sales');
+        $I->see('No orders yet.');
+        $I->amOnRoute('product-order/index', ['state' => 'paid']);
+        $I->seeResponseCodeIs(200);
+    }
+
+    public function aManagerCannotSeeStoreSales(FunctionalTester $I): void
+    {
+        $I->amOnRoute('product-order/index');
+        $I->seeResponseCodeIs(403);
     }
 }

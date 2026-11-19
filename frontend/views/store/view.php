@@ -88,6 +88,10 @@ $schema = array_filter([
                             <?php endforeach; ?>
                         </ul>
                     <?php endif; ?>
+                    <?php if ((string) $model->changelog !== ''): ?>
+                        <h2 class="h4 mt-4">What's new</h2>
+                        <div class="small" style="white-space: pre-line"><?= Html::encode($model->changelog) ?></div>
+                    <?php endif; ?>
                 </div>
                 <div class="col-lg-5 order-first order-lg-last">
                     <div class="mw-card p-4 mw-sticky-lg">
@@ -111,7 +115,7 @@ $schema = array_filter([
                                 <?php endif; ?>
                             </div>
                         <?php endforeach; ?>
-                        <p class="small mb-2"><i class="fas fa-tools text-primary me-2" aria-hidden="true"></i>Both licences include our help to set up the <?= Html::encode(strtolower(\common\models\Product::KINDS[$model->kind] ?? 'product')) ?>, and 6 months of support.</p>
+                        <p class="small mb-2"><i class="fas fa-tools text-primary me-2" aria-hidden="true"></i>Both licences include our help to set up the <?= Html::encode(strtolower(\common\models\Product::KINDS[$model->kind] ?? 'product')) ?>, 6 months of support, and every new version free. <?= Html::a('Licence terms', ['/site/licence']) ?></p>
                         <p class="small text-body-secondary mb-0">Rupee prices are for buyers in India, US dollar prices for buyers abroad. GST is added where it applies. In India, pay by UPI or bank transfer, or online by card where offered; abroad, pay by PayPal.</p>
                     </div>
                 </div>

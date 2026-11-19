@@ -25,6 +25,7 @@ use yii\httpclient\Response;
 
 final class StoreOrderTest extends Unit
 {
+    protected \backend\tests\Support\UnitTester $tester;
     private ?DbTransaction $_dbTransaction = null;
     private User $_user;
     private Product $_product;
@@ -84,7 +85,20 @@ final class StoreOrderTest extends Unit
         $payment->updateAttributes(['status' => Transaction::STATUS_REFUNDED]);
         (new PaymentProcessingService())->transactionChanged($payment);
         (new \common\services\billing\InvoicePaymentService())->closeAsRefunded(Invoice::findOne($invoice->id));
-        $this->assertFalse(ProductOrder::findOne($order->id)->isPaid());
+        $refunded = ProductOrder::findOne($order->id);
+        $this->assertFalse($refunded->isPaid());
+        $this->assertSame('refunded', $refunded->state(), 'shown as refunded, never as awaiting payment');
+        $this->expectException(\DomainException::class);
+        (new StoreOrderService())->cancel($refunded);
+    }
+
+    public function testSupportEndsOnTheLastDayOfAShortMonth(): void
+    {
+        $at = static fn(string $date): int => (new \DateTimeImmutable($date . ' 10:00', new \DateTimeZone(Yii::$app->timeZone)))->getTimestamp();
+        $order = new ProductOrder(['paid_at' => $at('2026-08-31')]);
+        $this->assertSame($at('2027-02-28'), $order->supportUntil());
+        $order->paid_at = $at('2026-11-19');
+        $this->assertSame($at('2027-05-19'), $order->supportUntil());
     }
 
     public function testABuyerAbroadPaysTheDollarPrice(): void
@@ -137,6 +151,38 @@ final class StoreOrderTest extends Unit
         $coupons->remove(Invoice::findOne($invoice->id));
         $this->coupon('ALL' . $this->_user->id, []);
         $this->assertEquals(299.90, (float) $coupons->apply(Invoice::findOne($invoice->id), 'ALL' . $this->_user->id)->discount_amount, 'an unrestricted coupon applies too');
+    }
+
+    public function testANewVersionIsEmailedToPaidBuyersOnly(): void
+    {
+        $this->profile('India', 'Delhi', '07');
+        $paid = (new StoreOrderService())->buy((int) $this->_user->id, $this->_product, 'single');
+        $payment = new Transaction();
+        $payment->setAttributes(['invoice_id' => $paid->id, 'gateway_id' => Transaction::GATEWAY_UPI_BANK, 'amount' => (float) $paid->total_payable, 'status' => Transaction::STATUS_CAPTURED, 'paid_at' => time(), 'created_at' => time(), 'updated_at' => time()], false);
+        $this->assertTrue($payment->save(false));
+        (new PaymentProcessingService())->transactionChanged($payment);
+        // Bought too, but never paid: no email.
+        $other = new User(['username' => 'unpaid-' . $this->_user->id, 'email' => 'unpaid-' . $this->_user->id . '@example.test', 'status' => User::getStatusActive(), 'created_at' => time(), 'updated_at' => time()]);
+        $other->password = 'StoreTestPassword1';
+        $this->assertTrue($other->save());
+        $profile = new CustomerBillingProfile();
+        $profile->setAttributes(['user_id' => $other->id, 'legal_name' => 'Other', 'address_line_1' => '1 Rd', 'city' => 'Delhi', 'postal_code' => '110001', 'country' => 'India', 'state' => 'Delhi', 'state_code' => '07', 'is_gst_applicable' => 0, 'default_discount_amount' => 0, 'created_at' => time(), 'updated_at' => time()], false);
+        $this->assertTrue($profile->save(false));
+        (new StoreOrderService())->buy((int) $other->id, $this->_product, 'single');
+
+        $order = ProductOrder::findOne(['invoice_id' => $paid->id]);
+        $this->assertSame(strtotime('+6 months', (int) $order->paid_at), $order->supportUntil());
+        $this->_product->updateAttributes(['version' => '1.3', 'changelog' => "1.3\n- Dark mode"]);
+        $this->assertSame([1, 0], (new StoreOrderService())->notifyUpdate($this->_product));
+        $emails = $this->tester->grabSentEmails();
+        $toBuyer = array_values(array_filter($emails, fn($m): bool => array_key_exists($this->_user->email, (array) $m->getTo())));
+        $this->assertCount(1, $toBuyer, 'the paid buyer, once; the unpaid one gets nothing');
+        $this->assertCount(0, array_filter($emails, static fn($m): bool => array_key_exists($other->email, (array) $m->getTo())));
+        $copies = array_filter($emails, static fn($m): bool => str_starts_with((string) $m->getSubject(), '[Copy]'));
+        $this->assertLessThanOrEqual(1, count($copies), 'one copy for staff, when a billing address is set');
+        $text = quoted_printable_decode((string) $toBuyer[0]->toString());
+        $this->assertStringContainsString('version 1.3', $text);
+        $this->assertStringContainsString('Dark mode', $text);
     }
 
     /** @param string[] $appliesTo */

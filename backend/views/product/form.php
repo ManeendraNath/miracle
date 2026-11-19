@@ -37,6 +37,7 @@ $base = rtrim((string) (Yii::$app->params['frontendBaseUrl'] ?? ''), '/');
                 <?= $form->field($model, 'summary')->textInput(['maxlength' => 300])->hint('One sentence for the store list and search results.') ?>
                 <?= $form->field($model, 'description')->textarea(['rows' => 10]) ?>
                 <?= $form->field($model, 'features')->textarea(['rows' => 6, 'placeholder' => "Responsive on phones and tablets\nOne-page and multi-page layouts\nContact form ready"]) ?>
+                <?= $form->field($model, 'changelog')->textarea(['rows' => 5, 'placeholder' => "1.1.0 (Nov 2026)\n- Dark mode\n- Faster loading\n\n1.0.0 (Oct 2026)\n- First release"])->hint('Newest version first. Shown on the store page and in the update email to buyers.') ?>
                 <div class="row">
                     <div class="col-sm-8"><?= $form->field($model, 'demo_url')->textInput(['maxlength' => 255, 'placeholder' => 'https://…']) ?></div>
                     <div class="col-sm-4"><?= $form->field($model, 'version')->textInput(['maxlength' => 20, 'placeholder' => 'e.g. 1.0.0']) ?></div>
@@ -75,7 +76,14 @@ $base = rtrim((string) (Yii::$app->params['frontendBaseUrl'] ?? ''), '/');
                 <?php endif; ?>
                 <label class="form-label" for="product-download"><?= $model->download_file ? 'Replace the file' : 'File (.zip)' ?></label>
                 <input type="file" id="product-download" name="download_file" class="form-control" accept=".zip,application/zip">
-                <div class="form-text">Buyers download it from My purchases once paid. Up to <?= Html::encode(\backend\controllers\ProductController::uploadLimit()) ?>. Not public: only paying buyers can get it.</div>
+                <?php if (!$model->isNewRecord): ?>
+                    <div class="form-check mt-2">
+                        <input type="checkbox" class="form-check-input" id="notify-buyers" name="notify_buyers" value="1">
+                        <label class="form-check-label" for="notify-buyers">Email buyers about this update (<?= (int) \common\services\StoreOrderService::paidBuyers($model)->count() ?> buyer(s))</label>
+                        <div class="form-text">Only when a new file is chosen above. Set the version and What's new first: the email includes them.</div>
+                    </div>
+                <?php endif; ?>
+                <div class="form-text">Buyers download the latest file from My Purchases once paid; updates are free. Up to <?= Html::encode(\backend\controllers\ProductController::uploadLimit()) ?>. Not public: only paying buyers can get it.</div>
             </div>
         </div>
         <div class="card card-outline card-primary shadow-sm">

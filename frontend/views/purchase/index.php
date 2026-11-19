@@ -2,7 +2,6 @@
 
 declare(strict_types=1);
 
-use frontend\controllers\PurchaseController;
 use yii\helpers\Html;
 
 /** @var \common\models\ProductOrder[] $orders */
@@ -26,7 +25,7 @@ $fmt = Yii::$app->formatter;
 <?php endif; ?>
 
 <?php foreach ($orders as $order): ?>
-    <?php $state = PurchaseController::state($order); ?>
+    <?php $state = $order->state(); ?>
     <?php $which = '<span class="visually-hidden">: ' . Html::encode($order->product->name) . '</span>'; ?>
     <div class="card border-0 shadow-sm mb-3">
         <div class="card-body">
@@ -52,6 +51,11 @@ $fmt = Yii::$app->formatter;
             </div>
 
             <?php if ($state === 'paid'): ?>
+                <p class="small mb-3">
+                    <?= $order->product->version ? 'Latest version ' . Html::encode($order->product->version) . ', free to download. ' : 'Updates are free to download. ' ?>
+                    <?= $order->supportUntil() >= time() ? 'Setup help and support until ' . $fmt->asDate($order->supportUntil(), 'medium') . '.' : 'Support ended on ' . $fmt->asDate($order->supportUntil(), 'medium') . '; updates stay free.' ?>
+                    <?= Html::a('Licence terms', ['/site/licence']) ?>
+                </p>
                 <div class="mb-3">
                     <label class="form-label small text-body-secondary mb-1" for="key-<?= $order->id ?>">Licence key</label>
                     <input type="text" readonly class="form-control font-monospace" id="key-<?= $order->id ?>" value="<?= Html::encode($order->licence_key) ?>">

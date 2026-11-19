@@ -4,9 +4,7 @@ declare(strict_types=1);
 
 namespace frontend\controllers;
 
-use common\models\Invoice;
 use common\models\ProductOrder;
-use common\services\billing\InvoicePaymentService;
 use common\services\StoreOrderService;
 use Yii;
 use yii\filters\AccessControl;
@@ -44,6 +42,11 @@ final class PurchaseController extends Controller
             throw new NotFoundHttpException('This download is not available.');
         }
 
+        // The first download ends the full-refund period (site/licence).
+        if ($order->first_downloaded_at === null) {
+            $order->updateAttributes(['first_downloaded_at' => time()]);
+        }
+
         return Yii::$app->response->sendFile($path, $order->product->download_name ?: basename($path));
     }
 
@@ -62,19 +65,5 @@ final class PurchaseController extends Controller
     private function findOwned(int $id): ProductOrder
     {
         return ProductOrder::findOne(['id' => $id, 'user_id' => (int) Yii::$app->user->id]) ?? throw new NotFoundHttpException('Order not found.');
-    }
-
-    /** paid, checking (a proof under review), due, refunded or cancelled */
-    public static function state(ProductOrder $order): string
-    {
-        if ($order->isPaid()) {
-            return 'paid';
-        }
-        $status = $order->invoice->status;
-        if (in_array($status, [Invoice::STATUS_UNPAID, Invoice::STATUS_PARTIALLY_PAID], true)) {
-            return (new InvoicePaymentService())->hasPendingProof((int) $order->invoice_id) ? 'checking' : 'due';
-        }
-
-        return $status === Invoice::STATUS_REFUNDED ? 'refunded' : 'cancelled';
     }
 }

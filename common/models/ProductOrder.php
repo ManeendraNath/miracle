@@ -46,6 +46,41 @@ class ProductOrder extends base\ProductOrder
         return $this->paid_at !== null && $this->invoice->status === Invoice::STATUS_PAID;
     }
 
+    /** End of the support period: Product::SUPPORT_MONTHS from payment (31 Aug + 6 months is 28/29 Feb, not 3 Mar). */
+    public function supportUntil(): ?int
+    {
+        if ($this->paid_at === null) {
+            return null;
+        }
+        $paid = (new \DateTimeImmutable('@' . (int) $this->paid_at))->setTimezone(new \DateTimeZone(\Yii::$app->timeZone));
+        $end = $paid->modify('+' . Product::SUPPORT_MONTHS . ' months');
+        if ($end->format('j') !== $paid->format('j')) {
+            $end = $paid->modify('last day of +' . Product::SUPPORT_MONTHS . ' months')->setTime((int) $paid->format('G'), (int) $paid->format('i'));
+        }
+
+        return $end->getTimestamp();
+    }
+
+    /**
+     * paid; refunded (was paid, its money given back: key and download closed); checking (a payment proof under
+     * review); due; or cancelled.
+     */
+    public function state(): string
+    {
+        if ($this->isPaid()) {
+            return 'paid';
+        }
+        $status = $this->invoice->status;
+        if ($this->paid_at !== null || $status === Invoice::STATUS_REFUNDED) {
+            return 'refunded';
+        }
+        if (in_array($status, [Invoice::STATUS_UNPAID, Invoice::STATUS_PARTIALLY_PAID], true)) {
+            return (new \common\services\billing\InvoicePaymentService())->hasPendingProof((int) $this->invoice_id) ? 'checking' : 'due';
+        }
+
+        return 'cancelled';
+    }
+
     /** e.g. "Single site" */
     public function licenceLabel(): string
     {

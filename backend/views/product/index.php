@@ -18,7 +18,8 @@ $this->params['breadcrumbs'][] = $this->title;
 $this->params['help'] = [
     'Store' => 'Website themes and plugins sold from the public store at /store. Only Published ones are shown there, and in the sitemap.',
     'Prices' => 'Each has a single-site licence and, optionally, an unlimited-sites licence, in rupees (clients in India) and US dollars (abroad).',
-    'Buying' => 'For now the Buy button opens a WhatsApp chat or the quote form about that product. Online checkout and downloads come next.',
+    'Buying' => 'Buy now creates an order and its invoice; once paid the buyer gets a licence key and the download on My Purchases. Orders are listed in Store Sales.',
+    'Updates' => 'Buyers always get the latest file free. Upload a new one, set the version and What\'s new, and tick "Email buyers about this update".',
 ];
 GridViewHelper::register($this);
 $base = rtrim((string) (Yii::$app->params['frontendBaseUrl'] ?? ''), '/');

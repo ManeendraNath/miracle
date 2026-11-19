@@ -10,9 +10,11 @@ use common\models\Invoice;
 use common\models\InvoiceItem;
 use common\models\Product;
 use common\models\ProductOrder;
+use common\models\User;
 use common\services\billing\InvoiceCancellationService;
 use common\services\billing\InvoicePaymentService;
 use common\services\billing\ManualInvoiceService;
+use common\services\mail\CustomerEmailService;
 use Yii;
 
 /**
@@ -82,7 +84,8 @@ final class StoreOrderService
     public function cancel(ProductOrder $order, string $reason = 'Store order cancelled by the customer.'): void
     {
         $payments = new InvoicePaymentService();
-        if ($order->isPaid() || $payments->getCapturedAmount((int) $order->invoice_id) > 0) {
+        // Paid once (even if refunded since): not an abandoned order to cancel.
+        if ($order->paid_at !== null || $order->isPaid() || $payments->getCapturedAmount((int) $order->invoice_id) > 0) {
             throw new \DomainException('A payment was made for this order, so it cannot be cancelled here. Please contact us about a refund.');
         }
         if ($payments->hasPendingProof((int) $order->invoice_id)) {
@@ -109,6 +112,54 @@ final class StoreOrderService
         }
 
         return $cancelled;
+    }
+
+    /**
+     * Tells every buyer with a paid licence that a new version can be downloaded. Sent one by one: a failure is
+     * logged and skipped.
+     * ponytail: sent during the staff request; queue it if a product ever has hundreds of buyers.
+     *
+     * @return array{int, int} sent and failed
+     */
+    public function notifyUpdate(Product $product): array
+    {
+        $buyers = self::paidBuyers($product)->all();
+        $version = $product->version ? ' version ' . $product->version : ' a new version';
+        $body = "Hello {name},\n\n" . $product->name . ' has' . $version . " ready for you. Download it from My Purchases in your account: updates are free.\n\n"
+            . ($product->changelog ? "What's new:\n" . $product->changelog . "\n\n" : '')
+            . 'Need help updating? Reply to this email or raise a support ticket.';
+        $mail = new CustomerEmailService();
+        $subject = $product->name . ':' . $version . ' is ready';
+        $sent = $failed = 0;
+        $sentTo = [];
+        foreach ($buyers as $buyer) {
+            try {
+                $mail->send($buyer, $subject, $body, false, false);
+                $sent++;
+                $sentTo[] = (string) $buyer->email;
+            } catch (\Throwable $e) {
+                $failed++;
+                Yii::error(['message' => 'Store update email failed.', 'userId' => (int) $buyer->id, 'productId' => (int) $product->id, 'error' => $e->getMessage()], __METHOD__);
+            }
+        }
+
+        if ($sentTo !== []) {
+            try {
+                $mail->sendCopy($subject, $body, $sentTo);
+            } catch (\Throwable $e) {
+                Yii::error(['message' => 'Store update copy email failed.', 'error' => $e->getMessage()], __METHOD__);
+            }
+        }
+
+        return [$sent, $failed];
+    }
+
+    /** Customers holding a paid (not refunded) licence of the product, each once; deleted accounts left out. */
+    public static function paidBuyers(Product $product): \yii\db\ActiveQuery
+    {
+        return User::find()->where(['id' => ProductOrder::find()->alias('o')->innerJoinWith('invoice i', false)
+            ->select('o.user_id')->where(['o.product_id' => $product->id, 'i.status' => Invoice::STATUS_PAID])->andWhere(['not', ['o.paid_at' => null]])])
+            ->andWhere(['not', ['status' => User::getStatusDeleted()]]);
     }
 
     private function openOrder(int $userId, int $productId, string $licence): ?ProductOrder

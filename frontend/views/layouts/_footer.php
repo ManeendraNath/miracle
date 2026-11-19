@@ -91,6 +91,7 @@ $socials = array_filter([
                 <?= Html::a('Terms &amp; Conditions', ['/site/terms']) ?>
                 <?= Html::a('Privacy Policy', ['/site/privacy']) ?>
                 <?= Html::a('Refund &amp; Cancellation', ['/site/refund-policy']) ?>
+                <?= Html::a('Licence Terms', ['/site/licence']) ?>
                 <?= Html::a('Shipping &amp; Delivery', ['/site/shipping-policy']) ?>
             </div>
         </div>

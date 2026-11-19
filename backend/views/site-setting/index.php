@@ -145,9 +145,14 @@ $end = '</div></div>';
 
     <?= $section('fa-share-alt', 'Social links', 'Icons in the website footer. Leave one empty to hide it.') ?>
         <div class="row">
-            <?php foreach (['facebook' => ['fa-facebook-f', 'Facebook'], 'x' => ['fa-twitter', 'X (Twitter)'], 'linkedin' => ['fa-linkedin-in', 'LinkedIn'], 'youtube' => ['fa-youtube', 'YouTube'], 'instagram' => ['fa-instagram', 'Instagram']] as $attribute => [$icon, $name]): ?>
+            <?php
+            // X: the same logo as the website footer (Font Awesome 5 has only the old Twitter bird).
+            $xLogo = $this->renderFile('@frontend/views/layouts/_x-logo.php');
+            $icons = ['facebook' => ['<i class="fab fa-facebook-f"></i>', 'Facebook'], 'x' => [$xLogo, 'X'], 'linkedin' => ['<i class="fab fa-linkedin-in"></i>', 'LinkedIn'], 'youtube' => ['<i class="fab fa-youtube"></i>', 'YouTube'], 'instagram' => ['<i class="fab fa-instagram"></i>', 'Instagram']];
+            ?>
+            <?php foreach ($icons as $attribute => [$icon, $name]): ?>
                 <div class="col-md-6 col-xl-4">
-                    <?= $form->field($model, $attribute, ['inputTemplate' => '<div class="input-group"><span class="input-group-text"><i class="fab ' . $icon . '"></i></span>{input}</div>'])->textInput(['placeholder' => 'https://…'])->label($name) ?>
+                    <?= $form->field($model, $attribute, ['inputTemplate' => '<div class="input-group"><span class="input-group-text" aria-hidden="true">' . $icon . '</span>{input}</div>'])->textInput(['placeholder' => 'https://…'])->label($name) ?>
                 </div>
             <?php endforeach; ?>
         </div>

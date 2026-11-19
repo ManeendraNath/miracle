@@ -137,7 +137,7 @@ $end = '</div></div>';
                     <div class="col-sm-6"><?= $form->field($model, 'mobile_2')->textInput(['type' => 'tel', 'placeholder' => 'Optional'])->label('Second phone') ?></div>
                 </div>
                 <?= $form->field($model, 'whatsapp')->textInput(['type' => 'tel', 'placeholder' => 'Digits with country code, e.g. 919876543210'])->hint('The green chat button on every public page opens WhatsApp with this number. Leave empty to hide the button.') ?>
-                <?= $form->field($model, 'tawk_chat')->textInput(['placeholder' => 'https://tawk.to/chat/…'])->hint('The live chat bubble, bottom left on every public page. In Tawk.to: Administration → Chat Widget, copy the Direct Chat Link (or the widget code) and paste it here. Leave empty to hide the chat.') ?>
+                <?= $form->field($model, 'tawk_chat', ['enableClientValidation' => false])->textarea(['rows' => 2, 'placeholder' => 'https://tawk.to/chat/… or the whole widget code'])->hint('The live chat bubble, bottom left on every public page. In Tawk.to: Administration → Chat Widget, copy the Direct Chat Link (or the widget code) and paste it here. Leave empty to hide the chat.') ?>
                 <?= $form->field($model, 'email_1')->textInput(['placeholder' => 'info@company.com'])->label('Main email')->hint('Also receives the contact-form and audit-request emails.') ?>
                 <div class="row">
                     <div class="col-sm-6"><?= $form->field($model, 'email_2')->textInput(['placeholder' => 'Optional'])->label('Second email') ?></div>
@@ -171,8 +171,8 @@ $end = '</div></div>';
 
     <?= $section('fa-search', 'Search engines', 'Proves to Google and Bing that this website is yours, for their webmaster tools.') ?>
         <div class="row">
-            <div class="col-md-6"><?= $form->field($model, 'google_site_verification')->textInput(['placeholder' => 'e.g. aBcD1234…'])->hint('Search Console → Add property → URL prefix → HTML tag. Paste the code or the whole tag.') ?></div>
-            <div class="col-md-6"><?= $form->field($model, 'bing_site_verification')->textInput(['placeholder' => 'e.g. 1A2B3C…'])->hint('Bing Webmaster Tools → Add site → HTML Meta Tag. Paste the code or the whole tag.') ?></div>
+            <div class="col-md-6"><?= $form->field($model, 'google_site_verification', ['enableClientValidation' => false])->textInput(['placeholder' => 'e.g. aBcD1234…'])->hint('Search Console → Add property → URL prefix → HTML tag. Paste the code or the whole tag.') ?></div>
+            <div class="col-md-6"><?= $form->field($model, 'bing_site_verification', ['enableClientValidation' => false])->textInput(['placeholder' => 'e.g. 1A2B3C…'])->hint('Bing Webmaster Tools → Add site → HTML Meta Tag. Paste the code or the whole tag.') ?></div>
         </div>
     <?= $end ?>
 

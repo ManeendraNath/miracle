@@ -39,7 +39,13 @@ class SiteSetting extends base\SiteSetting
 
     public function rules(): array
     {
-        return array_merge(parent::rules(), [
+        return array_merge([
+            // Before the generated rules: a pasted widget code or <meta> tag is longer than the column, the part kept isn't.
+            // Tawk.to's direct chat link or widget code may be pasted: only "propertyId/widgetId" is kept.
+            ['tawk_chat', 'filter', 'filter' => static fn($value) => preg_match('#tawk\.to/(?:chat/)?([a-f0-9]{24})/([a-z0-9]+)#i', (string) $value, $m) === 1 ? $m[1] . '/' . $m[2] : (trim((string) $value) ?: null), 'skipOnArray' => true],
+            // The whole <meta …> tag may be pasted: only its content="…" code is kept.
+            [['google_site_verification', 'bing_site_verification'], 'filter', 'filter' => static fn($value) => preg_match('/content\s*=\s*["\']([^"\']*)["\']/i', (string) $value, $m) === 1 ? trim($m[1]) : trim((string) $value), 'skipOnArray' => true],
+        ], parent::rules(), [
             [['email_1', 'email_2', 'email_3'], 'trim'],
             [['email_1', 'email_2', 'email_3'], 'email'],
             [['review_invoices', 'razorpay_india', 'razorpay_abroad', 'paypal_abroad', 'usd_rate_auto'], 'boolean'],
@@ -48,13 +54,9 @@ class SiteSetting extends base\SiteSetting
             [['paypal_fee_fixed_usd'], 'number', 'min' => 0, 'max' => 5],
             [['usd_rate_margin'], 'number', 'min' => 0, 'max' => 20],
             ['whatsapp', 'match', 'pattern' => '/^[1-9]\d{7,14}$/', 'message' => 'Digits with the country code, e.g. 919876543210.'],
-            // Tawk.to's direct chat link or widget code may be pasted: only "propertyId/widgetId" is kept.
-            ['tawk_chat', 'filter', 'filter' => static fn($value) => preg_match('#tawk\.to/(?:chat/)?([a-f0-9]{24})/([a-z0-9]+)#i', (string) $value, $m) === 1 ? $m[1] . '/' . $m[2] : (trim((string) $value) ?: null)],
             ['tawk_chat', 'match', 'pattern' => '#^[a-f0-9]{24}/[a-z0-9]+$#i', 'message' => 'Paste the Direct Chat Link or the widget code from Tawk.to.'],
             // Also given to search engines as the company's profiles (home page structured data).
             [['facebook', 'x', 'youtube', 'linkedin', 'instagram'], 'url', 'defaultScheme' => 'https'],
-            // The whole <meta …> tag may be pasted: only its content="…" code is kept.
-            [['google_site_verification', 'bing_site_verification'], 'filter', 'filter' => static fn($value) => preg_match('/content\s*=\s*["\']([^"\']*)["\']/i', (string) $value, $m) === 1 ? trim($m[1]) : trim((string) $value)],
             [['google_site_verification', 'bing_site_verification'], 'match', 'pattern' => '/^[A-Za-z0-9_\-]*$/', 'message' => 'Paste the code from the search engine (letters, digits, - and _ only), or its whole <meta> tag.'],
         ]);
     }

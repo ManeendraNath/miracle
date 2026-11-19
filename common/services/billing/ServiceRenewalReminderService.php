@@ -23,6 +23,8 @@ use Yii;
 final class ServiceRenewalReminderService
 {
     private const REMINDER_DAYS = [60, 30, 15, 7, 3, 1];
+    /** A service renewing every month (care plans): staff hear a week before and the day before; the customer gets the invoice's own emails only. */
+    private const MONTHLY_REMINDER_DAYS = [7, 1];
     private const ITEM_TYPES = ['domain' => InvoiceItem::TYPE_DOMAIN, 'hosting' => InvoiceItem::TYPE_HOSTING, 'maintenance' => InvoiceItem::TYPE_MAINTENANCE];
 
     /** Reminders and staff alerts that failed in the last run. */
@@ -73,7 +75,7 @@ final class ServiceRenewalReminderService
         $sent = 0;
         $maintenances = Maintenance::find()->where(['status' => Maintenance::STATUS_ACTIVE])->andWhere(['not in', 'user_id', \common\models\User::deletedIds()])->andWhere(['>=', 'current_expiry_date', $today->format('Y-m-d')])->all();
         foreach ($maintenances as $maintenance) {
-            $serviceProcessed = $this->processService('maintenance', (int) $maintenance->id, (int) $maintenance->user_id, (string) $maintenance->website_url, (string) $maintenance->current_expiry_date, $today, (int) $maintenance->created_at, (float) $maintenance->renewal_base_amount > 0 || (float) $maintenance->next_renewal_amount > 0);
+            $serviceProcessed = $this->processService('maintenance', (int) $maintenance->id, (int) $maintenance->user_id, (string) $maintenance->website_url, (string) $maintenance->current_expiry_date, $today, (int) $maintenance->created_at, (float) $maintenance->renewal_base_amount > 0 || (float) $maintenance->next_renewal_amount > 0, (int) $maintenance->renewal_cycle_months === 1 ? self::MONTHLY_REMINDER_DAYS : self::REMINDER_DAYS, (int) $maintenance->renewal_cycle_months !== 1);
             if ($serviceProcessed) {
                 $sent++;
             }
@@ -81,21 +83,25 @@ final class ServiceRenewalReminderService
         return $sent;
     }
 
-    private function processService(string $type, int $serviceId, int $userId, string $serviceName, string $expiryDate, DateTimeImmutable $today, int $createdAt = 0, bool $hasPrice = true): bool
+    /**
+     * @param int[] $reminderDays
+     * @param bool $remindCustomer false for monthly plans: their renewal invoice, issued a week ahead, has its own reminders
+     */
+    private function processService(string $type, int $serviceId, int $userId, string $serviceName, string $expiryDate, DateTimeImmutable $today, int $createdAt = 0, bool $hasPrice = true, array $reminderDays = self::REMINDER_DAYS, bool $remindCustomer = true): bool
     {
         $expiry = DateTimeImmutable::createFromFormat('!Y-m-d', $expiryDate);
         if (!$expiry) {
             return false;
         }
         $daysUntilExpiry = (int) $today->diff($expiry)->format('%r%a');
-        $threshold = self::dueThreshold($daysUntilExpiry, self::REMINDER_DAYS, $expiry, $createdAt);
+        $threshold = self::dueThreshold($daysUntilExpiry, $reminderDays, $expiry, $createdAt);
         if ($threshold === null) {
             return false;
         }
         // Staff hear about it whatever the customer's email preference.
         $this->alertStaff($type, $serviceId, $userId, $serviceName, $expiryDate, $threshold, $daysUntilExpiry, $hasPrice);
         $preferences = CustomerPreference::forUser($userId);
-        if (!(bool) $preferences->renewal_reminders) {
+        if (!$remindCustomer || !(bool) $preferences->renewal_reminders) {
             return false;
         }
         // As InvoicePaymentService::renewalState(): no invoice is coming for these, so don't promise one.

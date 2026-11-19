@@ -30,9 +30,17 @@ class Product extends base\Product
     public const MAX_IMAGES = 12;
 
     public const TECHNOLOGIES = ['html' => 'HTML', 'wordpress' => 'WordPress', 'yii2' => 'Yii2', 'any' => 'Any website'];
-    /** A service is a fixed-price job (at /services): one price, a delivery time, no file or licence key. */
-    public const KINDS = ['theme' => 'Theme', 'plugin' => 'Plugin', 'service' => 'Service'];
+    /**
+     * A service is a fixed-price job (at /services): one price, a delivery time, no file or licence key. A plan is a
+     * monthly care plan (at /care-plans): one monthly price; paying the first month starts a maintenance service that
+     * renews every month.
+     */
+    public const KINDS = ['theme' => 'Theme', 'plugin' => 'Plugin', 'service' => 'Service', 'plan' => 'Care plan'];
     public const KIND_SERVICE = 'service';
+    public const KIND_PLAN = 'plan';
+    /** Where each kind is listed. */
+    public const SECTIONS = ['store' => ['theme', 'plugin'], 'services' => [self::KIND_SERVICE], 'plans' => [self::KIND_PLAN]];
+    public const SECTION_URLS = ['store' => '/store', 'services' => '/services', 'plans' => '/care-plans'];
     public const LICENCES = ['single' => 'Single site', 'unlimited' => 'Unlimited sites'];
 
     /** Months of support (setup help and questions) from payment; updates are free for life. See site/licence. */
@@ -85,8 +93,8 @@ class Product extends base\Product
             // A service has one price and a delivery time; themes and plugins have neither of those limits.
             ['delivery_days', 'required', 'when' => fn(): bool => $this->isService(), 'enableClientValidation' => false, 'message' => 'Give the working days a service takes.'],
             ['delivery_days', 'integer', 'min' => 1, 'max' => 365],
-            [['price_unlimited_inr', 'price_unlimited_usd'], 'filter', 'filter' => fn($v) => $this->isService() ? null : $v],
-            ['technology', 'compare', 'compareValue' => 'any', 'operator' => '!=', 'when' => fn(): bool => !$this->isService(), 'enableClientValidation' => false, 'message' => '"Any website" is for services; choose the technology of the theme or plugin.'],
+            [['price_unlimited_inr', 'price_unlimited_usd'], 'filter', 'filter' => fn($v) => $this->hasLicence() ? $v : null],
+            ['technology', 'compare', 'compareValue' => 'any', 'operator' => '!=', 'when' => fn(): bool => $this->hasLicence(), 'enableClientValidation' => false, 'message' => '"Any website" is for services and care plans; choose the technology of the theme or plugin.'],
         ], parent::rules());
     }
 
@@ -144,10 +152,33 @@ class Product extends base\Product
         return $this->kind === self::KIND_SERVICE;
     }
 
-    /** Themes and plugins at /store, services at /services. */
-    public static function findPublicOf(bool $services): ActiveQuery
+    public function isPlan(): bool
     {
-        return self::findPublic()->andWhere($services ? ['kind' => self::KIND_SERVICE] : ['<>', 'kind', self::KIND_SERVICE]);
+        return $this->kind === self::KIND_PLAN;
+    }
+
+    /** A theme or plugin: sold with a licence key and a download. Services and plans are work, not files. */
+    public function hasLicence(): bool
+    {
+        return in_array($this->kind, self::SECTIONS['store'], true);
+    }
+
+    /** store, services or plans */
+    public function section(): string
+    {
+        foreach (self::SECTIONS as $section => $kinds) {
+            if (in_array($this->kind, $kinds, true)) {
+                return $section;
+            }
+        }
+
+        return 'store';
+    }
+
+    /** What is listed in a section (see SECTIONS). */
+    public static function findPublicOf(string $section): ActiveQuery
+    {
+        return self::findPublic()->andWhere(['kind' => self::SECTIONS[$section]]);
     }
 
     public function hasUnlimited(): bool
@@ -158,7 +189,7 @@ class Product extends base\Product
     /** The price of a licence, in US dollars for buyers abroad, else in rupees; null when that licence isn't offered. */
     public function price(string $licence, bool $usd): ?float
     {
-        if ($this->isService() && $licence !== 'single') {
+        if (!$this->hasLicence() && $licence !== 'single') {
             return null;
         }
         $price = match ($licence) {
@@ -178,6 +209,9 @@ class Product extends base\Product
     /** e.g. "WordPress theme" */
     public function typeLabel(): string
     {
+        if ($this->isPlan()) {
+            return $this->technology === 'any' ? 'Care plan' : (self::TECHNOLOGIES[$this->technology] ?? $this->technology) . ' care plan';
+        }
         if ($this->isService()) {
             return $this->technology === 'any' ? 'Service' : (self::TECHNOLOGIES[$this->technology] ?? $this->technology) . ' service';
         }
@@ -207,7 +241,7 @@ class Product extends base\Product
         $wasPublic = !$insert && (int) (array_key_exists('status', $changedAttributes) ? $changedAttributes['status'] : $this->status) === self::STATUS_PUBLISHED;
         if ($this->isPublic() || $wasPublic) {
             \common\services\IndexNowService::queue('/store/' . $this->slug);
-            \common\services\IndexNowService::queue($this->isService() ? '/services' : '/store'); // the list changes too
+            \common\services\IndexNowService::queue(self::SECTION_URLS[$this->section()]); // the list changes too
         }
         if ($wasPublic && isset($changedAttributes['slug']) && $changedAttributes['slug'] !== $this->slug) {
             \common\services\IndexNowService::queue('/store/' . $changedAttributes['slug']);

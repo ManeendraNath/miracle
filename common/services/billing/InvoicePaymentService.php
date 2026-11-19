@@ -177,6 +177,12 @@ final class InvoicePaymentService
         // renewal with no money kept must stop counting as paid (RenewalFulfilmentService::fullyRefundedInvoices).
         Invoice::updateAll(['status' => Invoice::STATUS_REFUNDED, 'updated_at' => time(), 'written_off_at' => $writeOff ? time() : null], ['id' => $invoiceIds, 'status' => Invoice::STATUS_CARRIED_FORWARD]);
         $this->releaseCoupons($invoice);
+        // A care plan whose first month is refunded has ended: no renewal invoice next month.
+        $plans = \common\models\ProductOrder::find()->select('maintenance_id')->where(['invoice_id' => $invoiceIds])->andWhere(['not', ['maintenance_id' => null]])->column();
+        foreach (\common\models\Maintenance::find()->where(['id' => $plans])->andWhere(['<>', 'status', \common\models\Maintenance::STATUS_CANCELLED])->all() as $plan) {
+            $plan->updateAttributes(['status' => \common\models\Maintenance::STATUS_CANCELLED, 'updated_at' => time()]);
+            (new RenewalReleaseService())->releaseForDisabledService(InvoiceItem::TYPE_MAINTENANCE, (int) $plan->id);
+        }
         // Release the billed periods (this invoice's and those carried into it) so the next
         // billing run invoices them again, as cancelling does. Fulfilled renewals stay as they are.
         return BillingEvent::updateAll(
@@ -269,7 +275,7 @@ final class InvoicePaymentService
     public function renewalState($service, int $itemType): array
     {
         $settings = BillingSettings::forType($itemType);
-        $days = max(0, (int) $settings->invoice_before_days);
+        $days = \common\services\billing\collector\MaintenanceBillingCollector::leadDays($itemType, $service->renewal_cycle_months !== null ? (int) $service->renewal_cycle_months : null, (int) $settings->invoice_before_days);
 
         return [
             'invoiceNumber' => $this->payableInvoiceForService((int) $service->user_id, $itemType, (int) $service->id)->invoice_number ?? null,

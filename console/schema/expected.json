@@ -1,5 +1,5 @@
 {
-    "migrations": 87,
+    "migrations": 89,
     "columns": {
         "admin": {
             "auth_key": {
@@ -2248,6 +2248,12 @@
                 "default": null,
                 "extra": ""
             },
+            "maintenance_id": {
+                "type": "int",
+                "null": true,
+                "default": null,
+                "extra": ""
+            },
             "paid_at": {
                 "type": "int",
                 "null": true,
@@ -3395,6 +3401,7 @@
             "id": "primary",
             "invoice_id": "unique",
             "licence_key": "unique",
+            "maintenance_id": "index",
             "product_id": "index",
             "support_ticket_id": "index",
             "user_id": "index"
@@ -3557,6 +3564,7 @@
         },
         "product_order": {
             "invoice_id": "invoice(id) ON DELETE RESTRICT ON UPDATE CASCADE",
+            "maintenance_id": "maintenance(id) ON DELETE SET NULL ON UPDATE CASCADE",
             "product_id": "product(id) ON DELETE RESTRICT ON UPDATE CASCADE",
             "support_ticket_id": "support_ticket(id) ON DELETE SET NULL ON UPDATE CASCADE",
             "user_id": "user(id) ON DELETE RESTRICT ON UPDATE CASCADE"

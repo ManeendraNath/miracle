@@ -45,9 +45,18 @@ final class StoreOrderService
         }
         $brief = trim($brief);
         $website = trim($website);
-        if ($product->isService()) {
-            if (mb_strlen($brief) < 20 || mb_strlen($brief) > 5000) {
+        if (!$product->hasLicence()) {
+            if ($product->isService() && (mb_strlen($brief) < 20 || mb_strlen($brief) > 5000)) {
                 throw new \DomainException('Tell us what you need done, in 20 to 5,000 characters.');
+            }
+            if (mb_strlen($brief) > 5000) {
+                throw new \DomainException('Keep the note to 5,000 characters.');
+            }
+            if ($product->isPlan() && !self::plansRenew()) {
+                throw new \DomainException('Care plans cannot be started online right now. Please contact us and we will set yours up.');
+            }
+            if ($product->isPlan() && $website === '') {
+                throw new \DomainException('Give the address of the website the plan is for.');
             }
             if ($website !== '' && !preg_match('#^https?://#i', $website)) {
                 $website = 'https://' . $website;
@@ -67,9 +76,9 @@ final class StoreOrderService
             $db->createCommand('SELECT id FROM {{%user}} WHERE id = :id FOR UPDATE')->bindValue(':id', $userId)->execute();
             $open = $this->openOrder($userId, (int) $product->id, $licence);
             if ($open !== null) {
-                if ($product->isService()) {
+                if (!$product->hasLicence()) {
                     $open->updateAttributes(['brief' => $brief, 'website_url' => $website ?: null]);
-                    $line = InvoiceItem::findOne(['invoice_id' => $open->invoice_id, 'item_type' => InvoiceItem::TYPE_SERVICE_ORDER]);
+                    $line = InvoiceItem::findOne(['invoice_id' => $open->invoice_id, 'item_type' => [InvoiceItem::TYPE_SERVICE_ORDER, InvoiceItem::TYPE_MAINTENANCE]]);
                     $line?->updateAttributes(['description' => $this->serviceLine($product, $website)]);
                 }
                 $transaction->commit();
@@ -78,11 +87,12 @@ final class StoreOrderService
             }
             $invoice = new Invoice(['user_id' => $userId, 'due_date' => date('Y-m-d', strtotime('+' . self::DAYS_TO_PAY . ' days'))]);
             $invoice->priceCurrency = $usd ? Invoice::CURRENCY_USD : Invoice::CURRENCY_INR;
-            $item = new ManualInvoiceItemForm($product->isService() ? [
-                'category' => 'Service',
+            $item = new ManualInvoiceItemForm(!$product->hasLicence() ? [
+                'category' => $product->isPlan() ? 'Maintenance' : 'Service',
                 'description' => $this->serviceLine($product, $website),
                 'unit_price' => $price,
-                'item_type' => InvoiceItem::TYPE_SERVICE_ORDER,
+                // A plan's first month is maintenance: coupons for maintenance apply, and the books file it there.
+                'item_type' => $product->isPlan() ? InvoiceItem::TYPE_MAINTENANCE : InvoiceItem::TYPE_SERVICE_ORDER,
             ] : [
                 'category' => Product::KINDS[$product->kind] . ' licence',
                 'description' => $product->name . ' (' . $product->typeLabel() . '), ' . strtolower(Product::LICENCES[$licence]) . ' licence'
@@ -92,7 +102,7 @@ final class StoreOrderService
             ]);
             $this->invoices->create($invoice, [$item]);
             $order = new ProductOrder(['user_id' => $userId, 'product_id' => (int) $product->id, 'licence' => $licence, 'invoice_id' => (int) $invoice->id]
-                + ($product->isService() ? ['brief' => $brief, 'website_url' => $website ?: null] : []));
+                + (!$product->hasLicence() ? ['brief' => $brief, 'website_url' => $website ?: null] : []));
             if (!$order->save()) {
                 throw new \RuntimeException('Store order could not be saved: ' . json_encode($order->errors));
             }
@@ -183,15 +193,25 @@ final class StoreOrderService
 
     private function serviceLine(Product $product, string $website): string
     {
+        if ($product->isPlan()) {
+            return $product->name . ' (' . $product->typeLabel() . ') for ' . $website . ': the first month, from the day the payment is confirmed. Renews monthly; cancel any time before the next renewal.';
+        }
+
         return $product->name . ' (' . $product->typeLabel() . '), fixed price, delivered in ' . (int) $product->delivery_days . ' working days.'
             . ($website !== '' ? ' Website: ' . $website : '');
     }
 
-        /** Customers holding a paid (not refunded) licence of the product, each once; deleted accounts left out. */
+        /** Whether monthly renewals run (maintenance auto-billing and the daily billing job are on): a plan needs them. */
+    public static function plansRenew(): bool
+    {
+        return (bool) \common\models\BillingSettings::forType(InvoiceItem::TYPE_MAINTENANCE)->is_active && \common\models\CronJob::isEnabled('cron/run-billing');
+    }
+
+    /** Customers holding a paid (not refunded) licence of the product, each once; deleted accounts left out. */
     public static function paidBuyers(Product $product): \yii\db\ActiveQuery
     {
-        if ($product->isService()) {
-            return User::find()->where('0=1'); // a service has no file to update
+        if (!$product->hasLicence()) {
+            return User::find()->where('0=1'); // services and plans have no file to update
         }
 
         return User::find()->where(['id' => ProductOrder::find()->alias('o')->innerJoinWith('invoice i', false)

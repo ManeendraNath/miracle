@@ -13,6 +13,17 @@ use DateTimeImmutable;
 
 final class MaintenanceBillingCollector
 {
+    /** A monthly plan is invoiced at most this many days ahead: the global lead time could be a whole month. */
+    public const MONTHLY_LEAD_DAYS = 7;
+
+    /** Days before expiry a service of this type and cycle is invoiced (renewal pages and staff notes say the same). */
+    public static function leadDays(int $itemType, ?int $cycleMonths, int $globalDays): int
+    {
+        $globalDays = max(0, $globalDays);
+
+        return $itemType === InvoiceItem::TYPE_MAINTENANCE && $cycleMonths === 1 ? min($globalDays, self::MONTHLY_LEAD_DAYS) : $globalDays;
+    }
+
     /**
      * Return Maintenance renewals currently inside their
      * configured automatic-invoice window.
@@ -59,7 +70,11 @@ final class MaintenanceBillingCollector
 
         $renewals = [];
 
+        $monthlyCutoff = $today->modify('+' . self::leadDays(InvoiceItem::TYPE_MAINTENANCE, 1, $invoiceBeforeDays) . ' days')->format('Y-m-d');
         foreach ($models as $model) {
+            if ((int) $model->renewal_cycle_months === 1 && (string) $model->current_expiry_date > $monthlyCutoff) {
+                continue;
+            }
             $renewals[] = new BillableRenewal(
                 userId: (int) $model->user_id,
                 itemType:

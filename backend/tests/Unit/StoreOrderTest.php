@@ -143,6 +143,76 @@ final class StoreOrderTest extends Unit
         }
     }
 
+        public function testAPaidCarePlanStartsAMonthlyMaintenance(): void
+    {
+        $this->profile('India', 'Delhi', '07');
+        $plan = new Product(['name' => 'Care ' . $this->_user->id, 'technology' => 'wordpress', 'kind' => Product::KIND_PLAN, 'summary' => 'Monthly care.', 'description' => 'We look after it.', 'price_single_inr' => 1999, 'price_single_usd' => 59, 'status' => Product::STATUS_PUBLISHED]);
+        $this->assertTrue($plan->save(), json_encode($plan->errors));
+        $this->assertSame('plans', $plan->section());
+        $this->assertFalse($plan->hasLicence());
+
+        $settings = \common\models\BillingSettings::forType(InvoiceItem::TYPE_MAINTENANCE);
+        $settings->is_active = 0;
+        $this->assertTrue($settings->save(false));
+        try {
+            (new StoreOrderService())->buy((int) $this->_user->id, $plan, 'single', '', 'shop.example');
+            $this->fail('no plan is sold while renewals cannot run');
+        } catch (\DomainException $e) {
+            $this->assertStringContainsString('contact us', $e->getMessage());
+        }
+        $settings->is_active = 1;
+        $settings->invoice_before_days = 30;
+        $this->assertTrue($settings->save(false));
+        \common\models\CronJob::updateAll(['is_enabled' => 1], ['job' => 'cron/run-billing']);
+
+        try {
+            (new StoreOrderService())->buy((int) $this->_user->id, $plan, 'single');
+            $this->fail('a plan needs the website');
+        } catch (\DomainException $e) {
+            $this->assertStringContainsString('website', $e->getMessage());
+        }
+        $invoice = (new StoreOrderService())->buy((int) $this->_user->id, $plan, 'single', '', 'shop.example');
+        $line = InvoiceItem::findOne(['invoice_id' => $invoice->id]);
+        $this->assertSame(InvoiceItem::TYPE_MAINTENANCE, (int) $line->item_type, 'maintenance coupons apply to the first month');
+
+        $payment = new Transaction();
+        $payment->setAttributes(['invoice_id' => $invoice->id, 'gateway_id' => Transaction::GATEWAY_UPI_BANK, 'amount' => (float) $invoice->total_payable, 'status' => Transaction::STATUS_CAPTURED, 'paid_at' => time(), 'created_at' => time(), 'updated_at' => time()], false);
+        $this->assertTrue($payment->save(false));
+        (new PaymentProcessingService())->transactionChanged($payment);
+
+        $order = ProductOrder::findOne(['invoice_id' => $invoice->id]);
+        $this->assertTrue($order->isPaid());
+        $this->assertSame('Monthly', $order->licenceLabel());
+        $this->assertNull($order->licence_key);
+        $this->assertNotNull($order->supportTicket);
+        $care = $order->maintenance;
+        $this->assertNotNull($care);
+        $this->assertSame('https://shop.example', $care->website_url);
+        $this->assertSame(1, (int) $care->renewal_cycle_months);
+        $this->assertSame(1999.0, (float) $care->renewal_base_amount);
+        $this->assertSame(date('Y-m-d'), $care->start_date);
+        $this->assertSame(1, \common\services\billing\RenewalPeriodCalculator::months($care->start_date, $care->current_expiry_date), 'the first month is paid');
+
+        // The next month is invoiced a week ahead at most, whatever the global lead time.
+        $this->assertSame(date('Y-m-d', (int) strtotime($care->current_expiry_date . ' -7 days')), (new \common\services\billing\InvoicePaymentService())->renewalState($care, InvoiceItem::TYPE_MAINTENANCE)['issuedFrom']);
+        $expiry = new \DateTimeImmutable($care->current_expiry_date);
+        $ids = static fn(\DateTimeImmutable $today): array => array_map(static fn($r): int => $r->itemId, (new \common\services\billing\collector\MaintenanceBillingCollector())->collect($today));
+        $this->assertNotContains((int) $care->id, $ids($expiry->modify('-8 days')));
+        $this->assertContains((int) $care->id, $ids($expiry->modify('-7 days')));
+
+        // Refunding the first month ends the plan.
+        $payment->updateAttributes(['refunded_amount' => (float) $payment->amount, 'status' => Transaction::STATUS_REFUNDED]);
+        (new \common\services\billing\InvoicePaymentService())->closeAsRefunded(Invoice::findOne($invoice->id));
+        $care->refresh();
+        $this->assertSame(\common\models\Maintenance::STATUS_CANCELLED, (int) $care->status);
+    }
+
+    public function testARenewalAbroadChargesAboutThePlanDollarPrice(): void
+    {
+        $inr = \common\services\payment\PayPalService::inrCharging(59.0, 90.0);
+        $this->assertEqualsWithDelta(59.0, (float) \common\services\payment\PayPalService::chargeFor($inr, 90.0), 0.02);
+    }
+
         public function testSupportEndsOnTheLastDayOfAShortMonth(): void
     {
         $at = static fn(string $date): int => (new \DateTimeImmutable($date . ' 10:00', new \DateTimeZone(Yii::$app->timeZone)))->getTimestamp();

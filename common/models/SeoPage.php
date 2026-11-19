@@ -32,6 +32,7 @@ class SeoPage extends base\SeoPage
         'blog/index' => 'Blog (list of posts)',
         'store/index' => 'Themes & plugins store',
         'store/services' => 'Fixed-price services',
+        'store/plans' => 'Website care plans',
     ];
 
     /**
@@ -56,6 +57,7 @@ class SeoPage extends base\SeoPage
         usort($routes, static fn(string $a, string $b): int => ($b === 'site/index') <=> ($a === 'site/index'));
         $routes[] = 'store/index';
         $routes[] = 'store/services';
+        $routes[] = 'store/plans';
         $routes[] = 'blog/index';
         $pages = [];
         foreach ($routes as $route) {

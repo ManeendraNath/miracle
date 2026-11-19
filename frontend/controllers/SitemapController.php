@@ -18,6 +18,12 @@ class SitemapController extends Controller
     {
         // Every public page of the site (found by itself, see SeoPage::pages()); login, signup and the like are left out.
         $urls = array_map(static fn(string $route): array => ['loc' => $route === 'site/index' ? Url::home(true) : Url::to(['/' . $route], true)], array_keys(\common\models\SeoPage::pages()));
+        // An empty section is not a page worth listing.
+        foreach (['store/services' => 'services', 'store/plans' => 'plans'] as $route => $section) {
+            if (!\common\models\Product::findPublicOf($section)->exists()) {
+                $urls = array_values(array_filter($urls, static fn(array $u): bool => $u['loc'] !== Url::to(['/' . $route], true)));
+            }
+        }
         // A post kept out of search engines stays out of the sitemap too.
         $posts = BlogPost::findPublic()->andWhere(['noindex' => 0])->select(['id', 'slug', 'updated_at', 'category_id'])->asArray()->all();
         foreach (BlogCategory::find()->where(['id' => array_filter(array_column($posts, 'category_id'))])->all() as $category) {

@@ -119,8 +119,13 @@ $questions = [
                 <div class="col-md-6">
                     <div class="mw-panel h-100">
                         <h2 class="h4 fw-bold">Website maintenance</h2>
-                        <p class="text-body-secondary">Updates, fixes and support under an annual maintenance contract.</p>
-                        <?= Html::a('Ask about maintenance', ['site/contact', 'subject' => 'Website maintenance enquiry'], ['class' => 'fw-semibold']) ?>
+                        <?php if (\common\models\Product::findPublicOf('plans')->exists()): ?>
+                            <p class="text-body-secondary">Updates, backups, fixes and support, on a monthly care plan or an annual maintenance contract.</p>
+                            <?= Html::a('See the care plans', ['/store/plans'], ['class' => 'fw-semibold']) ?>
+                        <?php else: ?>
+                            <p class="text-body-secondary">Updates, fixes and support under an annual maintenance contract.</p>
+                            <?= Html::a('Ask about maintenance', ['site/contact', 'subject' => 'Website maintenance enquiry'], ['class' => 'fw-semibold']) ?>
+                        <?php endif; ?>
                     </div>
                 </div>
             </div>

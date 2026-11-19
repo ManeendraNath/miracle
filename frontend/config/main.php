@@ -109,6 +109,7 @@ return [
                 'blog/<slug:[a-z0-9-]+>' => 'blog/view',
                 'store' => 'store/index',
                 'services' => 'store/services',
+                'care-plans' => 'store/plans',
                 'store/buy/<slug:[a-z0-9-]+>' => 'store/buy',
                 'store/<slug:[a-z0-9-]+>' => 'store/view',
                 'sitemap.xml' => 'sitemap/index',

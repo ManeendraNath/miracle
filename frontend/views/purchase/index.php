@@ -12,7 +12,7 @@ $fmt = Yii::$app->formatter;
 ?>
 <div class="mb-4">
     <h1 class="h3 fw-bold mb-1">My Purchases</h1>
-    <div class="text-body-secondary">Themes, plugins and fixed-price services you bought: licence keys, downloads and job tickets.</div>
+    <div class="text-body-secondary">Themes, plugins, services and care plans you bought: licence keys, downloads, job tickets and plans.</div>
 </div>
 
 <?php if (!$orders): ?>
@@ -33,7 +33,7 @@ $fmt = Yii::$app->formatter;
                 <div>
                     <h2 class="h5 mb-1"><?= Html::encode($order->product->name) ?></h2>
                     <div class="small text-body-secondary">
-                        <?= $order->product->isService() ? 'Fixed-price service' : Html::encode($order->licenceLabel()) . ' licence' ?> · ordered <?= $fmt->asDate($order->created_at, 'medium') ?>
+                        <?= $order->product->isPlan() ? 'Monthly care plan' . ($order->website_url ? ' for ' . Html::encode($order->website_url) : '') : ($order->product->isService() ? 'Fixed-price service' : Html::encode($order->licenceLabel()) . ' licence') ?> · ordered <?= $fmt->asDate($order->created_at, 'medium') ?>
                         · invoice <?= Html::a(Html::encode($order->invoice->invoice_number), ['/invoice/view', 'number' => $order->invoice->invoice_number]) ?>
                     </div>
                 </div>
@@ -50,7 +50,22 @@ $fmt = Yii::$app->formatter;
                 </div>
             </div>
 
-            <?php if ($state === 'paid' && $order->product->isService()): ?>
+            <?php if ($state === 'paid' && $order->product->isPlan()): ?>
+                <?php $plan = $order->maintenance; ?>
+                <?php $ticket = $order->supportTicket; ?>
+                <p class="small mb-2">
+                    <?php if ($plan === null || (int) $plan->status === \common\models\Maintenance::STATUS_CANCELLED): ?>
+                        <strong>Ended.</strong> This plan is no longer renewed.
+                    <?php elseif ((int) $plan->status === \common\models\Maintenance::STATUS_OVERDUE || (string) $plan->current_expiry_date < date('Y-m-d')): ?>
+                        <strong>Renewal unpaid.</strong> Pay the open invoice to keep the plan going.
+                    <?php else: ?>
+                        <strong>Active</strong>, paid up to <?= $fmt->asDate((string) $plan->current_expiry_date, 'medium') ?>. The next month is invoiced a week before; to cancel, tell us in the ticket before then.
+                    <?php endif; ?>
+                </p>
+                <?php if ($ticket !== null): ?>
+                    <?= Html::a('Open the plan ticket' . $which, ['/support/view', 'number' => $ticket->ticket_number], ['class' => 'btn btn-primary btn-sm']) ?>
+                <?php endif; ?>
+            <?php elseif ($state === 'paid' && $order->product->isService()): ?>
                 <?php $ticket = $order->supportTicket; ?>
                 <p class="small mb-2">
                     <?php if ($ticket === null): ?>
@@ -85,13 +100,13 @@ $fmt = Yii::$app->formatter;
                     <?= Html::a('Get setup help' . $which, ['/support/create', 'subject' => 'Setup help: ' . $order->product->name], ['class' => 'btn btn-outline-secondary btn-sm']) ?>
                 </div>
             <?php elseif ($state === 'checking'): ?>
-                <p class="small text-body-secondary mb-0">We received your payment proof and are checking it. <?= $order->product->isService() ? 'We open the job ticket' : 'Your licence key and download appear here' ?> once it is confirmed.</p>
+                <p class="small text-body-secondary mb-0">We received your payment proof and are checking it. <?= $order->product->isPlan() ? 'The plan starts' : ($order->product->isService() ? 'We open the job ticket' : 'Your licence key and download appear here') ?> once it is confirmed.</p>
             <?php elseif ($state === 'due'): ?>
                 <div class="d-flex flex-wrap gap-2">
                     <?= Html::a('Pay now' . $which, ['/invoice/view', 'number' => $order->invoice->invoice_number], ['class' => 'btn btn-primary btn-sm']) ?>
                     <?= Html::a('Cancel order' . $which, ['cancel', 'id' => $order->id], ['class' => 'btn btn-outline-danger btn-sm', 'data' => ['method' => 'post', 'confirm' => 'Cancel this order? Its invoice will be cancelled too.']]) ?>
                 </div>
-                <p class="small text-body-secondary mt-2 mb-0"><?= $order->product->isService() ? 'We open the job ticket' : 'Your licence key and download appear here' ?> once the payment is confirmed. Payments by UPI or bank transfer are confirmed once our team checks the proof.</p>
+                <p class="small text-body-secondary mt-2 mb-0"><?= $order->product->isPlan() ? 'The plan starts' : ($order->product->isService() ? 'We open the job ticket' : 'Your licence key and download appear here') ?> once the payment is confirmed. Payments by UPI or bank transfer are confirmed once our team checks the proof.</p>
             <?php endif; ?>
         </div>
     </div>

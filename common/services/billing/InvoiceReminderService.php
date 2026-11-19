@@ -16,6 +16,8 @@ use yii\db\IntegrityException;
 final class InvoiceReminderService
 {
     private const REMINDER_DAYS = [30, 15, 7, 5, 4, 3, 2, 1, 0, -1, -3, -7, -15, -30];
+    /** An invoice given a week or less to pay (a monthly care plan's renewal, a store order): a few reminders, not one a day. */
+    private const SHORT_REMINDER_DAYS = [3, 0, -3];
 
     /** Reminders that failed in the last run. */
     public int $failures = 0;
@@ -49,7 +51,8 @@ final class InvoiceReminderService
                     continue;
                 }
                 $daysUntilDue = (int) $today->diff($dueDate)->format('%r%a');
-                $threshold = ServiceRenewalReminderService::dueThreshold($daysUntilDue, self::REMINDER_DAYS, $dueDate, (int) $invoice->created_at);
+                $short = $dueDate->getTimestamp() - (int) $invoice->created_at <= 8 * 86400;
+                $threshold = ServiceRenewalReminderService::dueThreshold($daysUntilDue, $short ? self::SHORT_REMINDER_DAYS : self::REMINDER_DAYS, $dueDate, (int) $invoice->created_at);
                 if ($threshold === null) {
                     continue;
                 }

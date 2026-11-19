@@ -23,11 +23,11 @@ class StoreController extends Controller
     {
         $this->view->params['storeSection'] = 'store';
         // Only the technologies there is something for; any other filter is not a page.
-        $technologies = array_intersect_key(Product::TECHNOLOGIES, array_flip(Product::findPublicOf(false)->select('technology')->distinct()->column()));
+        $technologies = array_intersect_key(Product::TECHNOLOGIES, array_flip(Product::findPublicOf('store')->select('technology')->distinct()->column()));
         if ($technology !== '' && !isset($technologies[$technology])) {
             throw new NotFoundHttpException('Page not found.');
         }
-        $query = Product::findPublicOf(false)->with('images')->orderBy(['sort_order' => SORT_ASC, 'id' => SORT_DESC]);
+        $query = Product::findPublicOf('store')->with('images')->orderBy(['sort_order' => SORT_ASC, 'id' => SORT_DESC]);
         if ($technology !== '') {
             $query->andWhere(['technology' => $technology]);
         }
@@ -39,12 +39,22 @@ class StoreController extends Controller
         ]);
     }
 
+    /** /care-plans: monthly care plans; the first month is bought like a store item, then it renews monthly. */
+    public function actionPlans(): string
+    {
+        $this->view->params['storeSection'] = 'plans';
+
+        return $this->render('plans', [
+            'plans' => Product::findPublicOf('plans')->orderBy(['sort_order' => SORT_ASC, 'id' => SORT_DESC])->all(),
+        ]);
+    }
+
     /** /services: fixed-price jobs, bought like store items. */
     public function actionServices(): string
     {
         $this->view->params['storeSection'] = 'services';
         return $this->render('services', [
-            'dataProvider' => new ActiveDataProvider(['query' => Product::findPublicOf(true)->with('images')->orderBy(['sort_order' => SORT_ASC, 'id' => SORT_DESC]), 'pagination' => ['pageSize' => 24]]),
+            'dataProvider' => new ActiveDataProvider(['query' => Product::findPublicOf('services')->with('images')->orderBy(['sort_order' => SORT_ASC, 'id' => SORT_DESC]), 'pagination' => ['pageSize' => 24]]),
         ]);
     }
 
@@ -53,7 +63,7 @@ class StoreController extends Controller
         /** @var Product $model */
         $model = Product::findPublic()->andWhere(['slug' => $slug])->with('images')->one()
             ?? throw new NotFoundHttpException('Page not found.');
-        $this->view->params['storeSection'] = $model->isService() ? 'services' : 'store';
+        $this->view->params['storeSection'] = $model->section();
 
         return $this->render('view', ['model' => $model]);
     }
@@ -70,7 +80,7 @@ class StoreController extends Controller
             throw new NotFoundHttpException('Page not found.');
         }
         $here = ['/store/buy', 'slug' => $slug, 'licence' => $licence];
-        $this->view->params['storeSection'] = $model->isService() ? 'services' : 'store';
+        $this->view->params['storeSection'] = $model->section();
         $session = Yii::$app->session;
         if (Yii::$app->user->isGuest) {
             $session->set(self::RESUME, [$here, time()]);

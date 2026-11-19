@@ -17,6 +17,8 @@ use yii\helpers\Html;
 $fmt = Yii::$app->formatter;
 $price = (float) $model->price($licence, $usd);
 $service = $model->isService();
+$plan = $model->isPlan();
+$work = $service || $plan; // no licence: the brief and website are asked for
 $this->title = 'Your order: ' . $model->name;
 $this->params['bare'] = true;
 $this->params['robots'] = 'noindex, follow';
@@ -39,9 +41,11 @@ $this->params['robots'] = 'noindex, follow';
                     <div class="mw-card p-4">
                         <div class="d-flex justify-content-between align-items-baseline gap-3 mb-1">
                             <h2 class="h5 mb-0"><?= Html::encode($model->name) ?></h2>
-                            <p class="fw-bold fs-5 mb-0 text-nowrap"><?= $usd ? 'US$' . $fmt->asDecimal($price, 2) : '₹' . $fmt->asDecimal($price, 0) ?></p>
+                            <p class="fw-bold fs-5 mb-0 text-nowrap"><?= $usd ? 'US$' . $fmt->asDecimal($price, 2) : '₹' . $fmt->asDecimal($price, 0) ?><?= $plan ? ' <span class="fs-6 fw-normal text-body-secondary">first month</span>' : '' ?></p>
                         </div>
-                        <?php if ($service): ?>
+                        <?php if ($plan): ?>
+                            <p class="text-body-secondary mb-3"><?= Html::encode($model->typeLabel()) ?>, monthly</p>
+                        <?php elseif ($service): ?>
                             <p class="text-body-secondary mb-3"><?= Html::encode($model->typeLabel()) ?>, fixed price, done in <?= (int) $model->delivery_days ?> working days</p>
                         <?php else: ?>
                             <p class="text-body-secondary mb-3">
@@ -49,7 +53,12 @@ $this->params['robots'] = 'noindex, follow';
                             </p>
                         <?php endif; ?>
                         <ul class="list-unstyled small mb-4">
-                            <?php if ($service): ?>
+                            <?php if ($plan): ?>
+                                <?php foreach ($model->featureList() as $feature): ?>
+                                    <li class="mb-2"><i class="fas fa-check text-success me-2" aria-hidden="true"></i><?= Html::encode($feature) ?></li>
+                                <?php endforeach; ?>
+                                <li class="mb-2"><i class="fas fa-check text-success me-2" aria-hidden="true"></i>Each next month is invoiced a week before it starts; nothing is charged automatically. Cancel any time before the next renewal.</li>
+                            <?php elseif ($service): ?>
                                 <li class="mb-2"><i class="fas fa-check text-success me-2" aria-hidden="true"></i>We start once the payment is confirmed, and finish within <?= (int) $model->delivery_days ?> working days of it (and of anything we need from you).</li>
                             <?php else: ?>
                                 <li class="mb-2"><i class="fas fa-check text-success me-2" aria-hidden="true"></i><?= $licence === 'single' ? 'Use on one website.' : 'Use on any number of your websites.' ?></li>
@@ -61,7 +70,9 @@ $this->params['robots'] = 'noindex, follow';
                         <ol class="small mb-4 ps-3">
                             <li>We create your invoice and take you to it.</li>
                             <li><?= $usd ? 'Pay online by PayPal, with a card or a PayPal account.' : 'Pay by UPI or bank transfer and upload the payment proof, or pay online by card where offered.' ?></li>
-                            <?php if ($service): ?>
+                            <?php if ($plan): ?>
+                                <li>Once the payment is confirmed, the plan starts and we open a ticket where you send us access to your website: both are on <strong>My Purchases</strong>.</li>
+                            <?php elseif ($service): ?>
                                 <li>Once the payment is confirmed, we open a ticket for the job: follow it, and talk to us, on <strong>My Purchases</strong>.</li>
                             <?php else: ?>
                                 <li>Once the payment is confirmed, your licence key and download appear on <strong>My Purchases</strong>.</li>
@@ -72,7 +83,17 @@ $this->params['robots'] = 'noindex, follow';
                                 <?php if ($error !== null): ?>
                                     <div class="alert alert-danger" role="alert"><?= Html::encode($error) ?></div>
                                 <?php endif; ?>
-                                <?php if ($service): ?>
+                                <?php if ($plan): ?>
+                                    <div class="mb-3">
+                                        <label class="form-label" for="website">Website address</label>
+                                        <?= Html::textInput('website', $website, ['id' => 'website', 'class' => 'form-control', 'type' => 'text', 'inputmode' => 'url', 'maxlength' => 255, 'required' => true, 'placeholder' => 'https://example.com']) ?>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label" for="brief">Anything we should know <span class="text-body-secondary">(optional)</span></label>
+                                        <?= Html::textarea('brief', $brief, ['id' => 'brief', 'class' => 'form-control', 'rows' => 3, 'maxlength' => 5000, 'aria-describedby' => 'brief-help']) ?>
+                                        <div class="form-text" id="brief-help">For example, where it is hosted, or what worries you about it.</div>
+                                    </div>
+                                <?php elseif ($service): ?>
                                     <div class="mb-3">
                                         <label class="form-label" for="brief">What do you need done?</label>
                                         <?= Html::textarea('brief', $brief, ['id' => 'brief', 'class' => 'form-control', 'rows' => 5, 'required' => true, 'minlength' => 20, 'maxlength' => 5000, 'aria-describedby' => 'brief-help']) ?>
@@ -88,11 +109,13 @@ $this->params['robots'] = 'noindex, follow';
                         <?php else: ?>
                             <div class="alert alert-warning mb-0" role="status">
                                 Online payment from outside India is not available right now.
-                                <?= Html::a('Contact us', ['/site/contact', 'subject' => 'Buy ' . $model->name . ($service ? '' : ' (' . strtolower(Product::LICENCES[$licence]) . ' licence)')]) ?> and we will arrange your payment.
+                                <?= Html::a('Contact us', ['/site/contact', 'subject' => 'Buy ' . $model->name . ($work ? '' : ' (' . strtolower(Product::LICENCES[$licence]) . ' licence)')]) ?> and we will arrange your payment.
                             </div>
                         <?php endif; ?>
                         <p class="small text-body-secondary mt-3 mb-1">
-                            <?php if ($service): ?>
+                            <?php if ($plan): ?>
+                                By continuing you agree to our <?= Html::a('refund policy', ['/site/refund-policy']) ?>: a full refund for a month in which no work has been done.
+                            <?php elseif ($service): ?>
                                 By continuing you agree to our <?= Html::a('refund policy', ['/site/refund-policy']) ?>: a full refund until we start the work.
                             <?php else: ?>
                                 By continuing you agree to our <?= Html::a('licence terms', ['/site/licence']) ?> and <?= Html::a('refund policy', ['/site/refund-policy']) ?>: a full refund until your first download.

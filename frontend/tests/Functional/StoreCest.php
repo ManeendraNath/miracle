@@ -158,4 +158,30 @@ final class StoreCest
         $I->seeInCurrentUrl('invoice/view');
         $I->seeRecord(ProductOrder::class, ['brief' => 'My shop takes nine seconds to load on a phone.', 'website_url' => 'https://example.com']);
     }
+
+    public function carePlansHaveTheirOwnPageAndAskForTheWebsite(FunctionalTester $I): void
+    {
+        $this->product($I, 'starter-care', ['kind' => Product::KIND_PLAN, 'price_single_inr' => 1999, 'price_single_usd' => 59]);
+        $I->amOnPage('/care-plans');
+        $I->see('Website care, month by month');
+        $I->see('Starter care');
+        $I->see('₹1,999');
+        $I->see('a month');
+        $I->amOnPage('/store');
+        $I->dontSee('Starter care');
+        $I->amOnPage('/services');
+        $I->dontSee('Starter care');
+        $I->amOnPage('/sitemap.xml');
+        $I->seeInSource('/care-plans</loc>');
+
+        $I->amOnRoute('site/login');
+        $I->submitForm('#login-form', ['LoginForm[username]' => 'erau', 'LoginForm[password]' => 'password_0']);
+        $I->haveRecord(CustomerBillingProfile::class, ['user_id' => (int) User::findOne(['username' => 'erau'])->id, 'legal_name' => 'Erau', 'address_line_1' => '1 Road', 'city' => 'Delhi', 'state' => 'Delhi', 'state_code' => '07', 'country' => 'India', 'postal_code' => '110001', 'created_at' => time(), 'updated_at' => time()]);
+        $I->amOnPage('/store/buy/starter-care');
+        $I->see('Website address');
+        $I->submitForm('form[action*="buy"]', ['website' => '']);
+        $I->see('Give the address of the website the plan is for.');
+        $I->submitForm('form[action*="buy"]', ['website' => 'shop.example']);
+        $I->seeInCurrentUrl('invoice/view');
+    }
 }

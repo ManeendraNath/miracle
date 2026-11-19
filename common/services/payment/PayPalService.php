@@ -135,6 +135,17 @@ final class PayPalService
         return 'US$' . self::chargeFor($inr, (float) $invoice->usd_rate_locked, $invoice) . ' (this price holds until ' . date('d M Y', (int) strtotime((string) $invoice->usd_rate_until)) . ')';
     }
 
+    /**
+     * The rupee price whose PayPal charge (chargeFor, today's fee) is about $usd: so a care plan bought for US$59
+     * renews at about US$59, and brings in what its first month did after PayPal's fee.
+     */
+    public static function inrCharging(float $usd, float $rate): float
+    {
+        [$percent, $fixed] = self::fee(null);
+
+        return round(max(0.0, $usd * (1 - $percent / 100) - $fixed) * $rate, 2);
+    }
+
     /** A dollar amount as PayPal writes it ("41.18"). */
     public static function toUsd(float $inr, float $rate): string
     {

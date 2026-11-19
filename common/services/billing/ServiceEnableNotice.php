@@ -76,7 +76,7 @@ final class ServiceEnableNotice
         if (!\common\models\CronJob::isEnabled('cron/run-billing')) {
             return 'The daily billing job is switched off (Cron Jobs & Logs), so no renewal invoice is made until it is on.';
         }
-        $days = max(0, (int) $settings->invoice_before_days);
+        $days = \common\services\billing\collector\MaintenanceBillingCollector::leadDays($type, $service->renewal_cycle_months !== null ? (int) $service->renewal_cycle_months : null, (int) $settings->invoice_before_days);
         $expiry = new DateTimeImmutable((string) $service->current_expiry_date);
         $formatter = Yii::$app->formatter;
         if ($expiry <= $today->modify('+' . $days . ' days')) {

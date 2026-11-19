@@ -29,8 +29,10 @@ class Product extends base\Product
     /** Screenshots a product can have. */
     public const MAX_IMAGES = 12;
 
-    public const TECHNOLOGIES = ['html' => 'HTML', 'wordpress' => 'WordPress', 'yii2' => 'Yii2'];
-    public const KINDS = ['theme' => 'Theme', 'plugin' => 'Plugin'];
+    public const TECHNOLOGIES = ['html' => 'HTML', 'wordpress' => 'WordPress', 'yii2' => 'Yii2', 'any' => 'Any website'];
+    /** A service is a fixed-price job (at /services): one price, a delivery time, no file or licence key. */
+    public const KINDS = ['theme' => 'Theme', 'plugin' => 'Plugin', 'service' => 'Service'];
+    public const KIND_SERVICE = 'service';
     public const LICENCES = ['single' => 'Single site', 'unlimited' => 'Unlimited sites'];
 
     /** Months of support (setup help and questions) from payment; updates are free for life. See site/licence. */
@@ -68,6 +70,8 @@ class Product extends base\Product
             ['status', 'in', 'range' => [self::STATUS_DRAFT, self::STATUS_PUBLISHED]],
             ['technology', 'in', 'range' => array_keys(self::TECHNOLOGIES)],
             ['kind', 'in', 'range' => array_keys(self::KINDS)],
+            // Buyers' orders are shown by kind (a licence and download, or a job ticket): fixed once anything is ordered.
+            ['kind', fn() => $this->addError('kind', 'The type cannot change once the product has orders: add a new product instead.'), 'when' => fn(): bool => !$this->isNewRecord && $this->isAttributeChanged('kind') && ProductOrder::find()->where(['product_id' => $this->id])->exists()],
             // Only http(s): shown as a link on the website.
             ['demo_url', 'url', 'defaultScheme' => 'https'],
             [['price_single_inr', 'price_single_usd', 'price_unlimited_inr', 'price_unlimited_usd'], 'number', 'min' => 1, 'max' => 9999999],
@@ -78,6 +82,11 @@ class Product extends base\Product
             ['price_unlimited_inr', 'compare', 'compareAttribute' => 'price_single_inr', 'operator' => '>', 'type' => 'number', 'skipOnEmpty' => true, 'message' => 'The unlimited-sites price should be higher than the single-site price.'],
             ['price_unlimited_usd', 'compare', 'compareAttribute' => 'price_single_usd', 'operator' => '>', 'type' => 'number', 'skipOnEmpty' => true, 'message' => 'The unlimited-sites price should be higher than the single-site price.'],
             ['sort_order', 'integer', 'min' => 0, 'max' => 9999],
+            // A service has one price and a delivery time; themes and plugins have neither of those limits.
+            ['delivery_days', 'required', 'when' => fn(): bool => $this->isService(), 'enableClientValidation' => false, 'message' => 'Give the working days a service takes.'],
+            ['delivery_days', 'integer', 'min' => 1, 'max' => 365],
+            [['price_unlimited_inr', 'price_unlimited_usd'], 'filter', 'filter' => fn($v) => $this->isService() ? null : $v],
+            ['technology', 'compare', 'compareValue' => 'any', 'operator' => '!=', 'when' => fn(): bool => !$this->isService(), 'enableClientValidation' => false, 'message' => '"Any website" is for services; choose the technology of the theme or plugin.'],
         ], parent::rules());
     }
 
@@ -90,6 +99,7 @@ class Product extends base\Product
             'summary' => 'Short summary',
             'features' => 'Features (one a line)',
             'changelog' => "What's new",
+            'delivery_days' => 'Delivery (working days)',
             'demo_url' => 'Live demo address',
             'price_single_inr' => 'Single site, ₹',
             'price_single_usd' => 'Single site, US$',
@@ -129,6 +139,17 @@ class Product extends base\Product
         return array_values(array_filter(array_map('trim', preg_split('/\R\s*\R/', (string) $this->description) ?: [])));
     }
 
+    public function isService(): bool
+    {
+        return $this->kind === self::KIND_SERVICE;
+    }
+
+    /** Themes and plugins at /store, services at /services. */
+    public static function findPublicOf(bool $services): ActiveQuery
+    {
+        return self::findPublic()->andWhere($services ? ['kind' => self::KIND_SERVICE] : ['<>', 'kind', self::KIND_SERVICE]);
+    }
+
     public function hasUnlimited(): bool
     {
         return $this->price_unlimited_inr !== null && $this->price_unlimited_usd !== null;
@@ -137,6 +158,9 @@ class Product extends base\Product
     /** The price of a licence, in US dollars for buyers abroad, else in rupees; null when that licence isn't offered. */
     public function price(string $licence, bool $usd): ?float
     {
+        if ($this->isService() && $licence !== 'single') {
+            return null;
+        }
         $price = match ($licence) {
             'single' => $usd ? $this->price_single_usd : $this->price_single_inr,
             'unlimited' => $usd ? $this->price_unlimited_usd : $this->price_unlimited_inr,
@@ -154,6 +178,10 @@ class Product extends base\Product
     /** e.g. "WordPress theme" */
     public function typeLabel(): string
     {
+        if ($this->isService()) {
+            return $this->technology === 'any' ? 'Service' : (self::TECHNOLOGIES[$this->technology] ?? $this->technology) . ' service';
+        }
+
         return (self::TECHNOLOGIES[$this->technology] ?? $this->technology) . ' ' . strtolower(self::KINDS[$this->kind] ?? $this->kind);
     }
 
@@ -165,7 +193,7 @@ class Product extends base\Product
         $wasPublic = !$insert && (int) (array_key_exists('status', $changedAttributes) ? $changedAttributes['status'] : $this->status) === self::STATUS_PUBLISHED;
         if ($this->isPublic() || $wasPublic) {
             \common\services\IndexNowService::queue('/store/' . $this->slug);
-            \common\services\IndexNowService::queue('/store'); // the list changes too
+            \common\services\IndexNowService::queue($this->isService() ? '/services' : '/store'); // the list changes too
         }
         if ($wasPublic && isset($changedAttributes['slug']) && $changedAttributes['slug'] !== $this->slug) {
             \common\services\IndexNowService::queue('/store/' . $changedAttributes['slug']);

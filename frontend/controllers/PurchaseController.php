@@ -30,7 +30,7 @@ final class PurchaseController extends Controller
     public function actionIndex(): string
     {
         return $this->render('index', [
-            'orders' => ProductOrder::find()->where(['user_id' => (int) Yii::$app->user->id])->with(['product', 'invoice'])->orderBy(['id' => SORT_DESC])->all(),
+            'orders' => ProductOrder::find()->where(['user_id' => (int) Yii::$app->user->id])->with(['product', 'invoice', 'supportTicket'])->orderBy(['id' => SORT_DESC])->all(),
         ]);
     }
 
@@ -38,7 +38,7 @@ final class PurchaseController extends Controller
     {
         $order = $this->findOwned($id);
         $path = $order->product->downloadPath();
-        if (!$order->isPaid() || $path === null || !is_file($path)) {
+        if (!$order->isPaid() || $order->product->isService() || $path === null || !is_file($path)) {
             throw new NotFoundHttpException('This download is not available.');
         }
 

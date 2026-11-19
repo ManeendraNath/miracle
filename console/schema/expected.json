@@ -1,5 +1,5 @@
 {
-    "migrations": 85,
+    "migrations": 86,
     "columns": {
         "admin": {
             "auth_key": {
@@ -2046,6 +2046,12 @@
                 "default": null,
                 "extra": ""
             },
+            "delivery_days": {
+                "type": "smallint",
+                "null": true,
+                "default": null,
+                "extra": ""
+            },
             "demo_url": {
                 "type": "varchar(255)",
                 "null": true,
@@ -2200,6 +2206,12 @@
             }
         },
         "product_order": {
+            "brief": {
+                "type": "text",
+                "null": true,
+                "default": null,
+                "extra": ""
+            },
             "created_at": {
                 "type": "int",
                 "null": false,
@@ -2248,6 +2260,12 @@
                 "default": null,
                 "extra": ""
             },
+            "support_ticket_id": {
+                "type": "int",
+                "null": true,
+                "default": null,
+                "extra": ""
+            },
             "updated_at": {
                 "type": "int",
                 "null": false,
@@ -2257,6 +2275,12 @@
             "user_id": {
                 "type": "int",
                 "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "website_url": {
+                "type": "varchar(255)",
+                "null": true,
                 "default": null,
                 "extra": ""
             }
@@ -3372,6 +3396,7 @@
             "invoice_id": "unique",
             "licence_key": "unique",
             "product_id": "index",
+            "support_ticket_id": "index",
             "user_id": "index"
         },
         "seo_page": {
@@ -3533,6 +3558,7 @@
         "product_order": {
             "invoice_id": "invoice(id) ON DELETE RESTRICT ON UPDATE CASCADE",
             "product_id": "product(id) ON DELETE RESTRICT ON UPDATE CASCADE",
+            "support_ticket_id": "support_ticket(id) ON DELETE SET NULL ON UPDATE CASCADE",
             "user_id": "user(id) ON DELETE RESTRICT ON UPDATE CASCADE"
         },
         "service_reminder_log": {

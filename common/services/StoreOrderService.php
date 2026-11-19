@@ -34,11 +34,27 @@ final class StoreOrderService
     {
     }
 
-    /** The invoice to pay: a new one, or the one already open for this same product and licence. */
-    public function buy(int $userId, Product $product, string $licence): Invoice
+    /**
+     * The invoice to pay: a new one, or the one already open for this same product and licence. A service needs the
+     * buyer's brief (and may have their website); an open order for it takes the latest ones.
+     */
+    public function buy(int $userId, Product $product, string $licence, string $brief = '', string $website = ''): Invoice
     {
         if (!$product->isPublic()) {
             throw new \DomainException('This product is no longer for sale.');
+        }
+        $brief = trim($brief);
+        $website = trim($website);
+        if ($product->isService()) {
+            if (mb_strlen($brief) < 20 || mb_strlen($brief) > 5000) {
+                throw new \DomainException('Tell us what you need done, in 20 to 5,000 characters.');
+            }
+            if ($website !== '' && !preg_match('#^https?://#i', $website)) {
+                $website = 'https://' . $website;
+            }
+            if ($website !== '' && (mb_strlen($website) > 255 || !(new \yii\validators\UrlValidator())->validate($website))) {
+                throw new \DomainException('The website address does not look right, e.g. https://example.com');
+            }
         }
         $profile = CustomerBillingProfile::findOne(['user_id' => $userId]) ?? throw new \DomainException('Please complete your billing details first.');
         $usd = $profile->isForeign();
@@ -51,13 +67,23 @@ final class StoreOrderService
             $db->createCommand('SELECT id FROM {{%user}} WHERE id = :id FOR UPDATE')->bindValue(':id', $userId)->execute();
             $open = $this->openOrder($userId, (int) $product->id, $licence);
             if ($open !== null) {
+                if ($product->isService()) {
+                    $open->updateAttributes(['brief' => $brief, 'website_url' => $website ?: null]);
+                    $line = InvoiceItem::findOne(['invoice_id' => $open->invoice_id, 'item_type' => InvoiceItem::TYPE_SERVICE_ORDER]);
+                    $line?->updateAttributes(['description' => $this->serviceLine($product, $website)]);
+                }
                 $transaction->commit();
 
                 return $open->invoice;
             }
             $invoice = new Invoice(['user_id' => $userId, 'due_date' => date('Y-m-d', strtotime('+' . self::DAYS_TO_PAY . ' days'))]);
             $invoice->priceCurrency = $usd ? Invoice::CURRENCY_USD : Invoice::CURRENCY_INR;
-            $item = new ManualInvoiceItemForm([
+            $item = new ManualInvoiceItemForm($product->isService() ? [
+                'category' => 'Service',
+                'description' => $this->serviceLine($product, $website),
+                'unit_price' => $price,
+                'item_type' => InvoiceItem::TYPE_SERVICE_ORDER,
+            ] : [
                 'category' => Product::KINDS[$product->kind] . ' licence',
                 'description' => $product->name . ' (' . $product->typeLabel() . '), ' . strtolower(Product::LICENCES[$licence]) . ' licence'
                     . ($product->version ? ', version ' . $product->version : '') . '. Includes setup help and 6 months of support.',
@@ -65,7 +91,8 @@ final class StoreOrderService
                 'item_type' => InvoiceItem::TYPE_PRODUCT,
             ]);
             $this->invoices->create($invoice, [$item]);
-            $order = new ProductOrder(['user_id' => $userId, 'product_id' => (int) $product->id, 'licence' => $licence, 'invoice_id' => (int) $invoice->id]);
+            $order = new ProductOrder(['user_id' => $userId, 'product_id' => (int) $product->id, 'licence' => $licence, 'invoice_id' => (int) $invoice->id]
+                + ($product->isService() ? ['brief' => $brief, 'website_url' => $website ?: null] : []));
             if (!$order->save()) {
                 throw new \RuntimeException('Store order could not be saved: ' . json_encode($order->errors));
             }
@@ -154,9 +181,19 @@ final class StoreOrderService
         return [$sent, $failed];
     }
 
-    /** Customers holding a paid (not refunded) licence of the product, each once; deleted accounts left out. */
+    private function serviceLine(Product $product, string $website): string
+    {
+        return $product->name . ' (' . $product->typeLabel() . '), fixed price, delivered in ' . (int) $product->delivery_days . ' working days.'
+            . ($website !== '' ? ' Website: ' . $website : '');
+    }
+
+        /** Customers holding a paid (not refunded) licence of the product, each once; deleted accounts left out. */
     public static function paidBuyers(Product $product): \yii\db\ActiveQuery
     {
+        if ($product->isService()) {
+            return User::find()->where('0=1'); // a service has no file to update
+        }
+
         return User::find()->where(['id' => ProductOrder::find()->alias('o')->innerJoinWith('invoice i', false)
             ->select('o.user_id')->where(['o.product_id' => $product->id, 'i.status' => Invoice::STATUS_PAID])->andWhere(['not', ['o.paid_at' => null]])])
             ->andWhere(['not', ['status' => User::getStatusDeleted()]]);

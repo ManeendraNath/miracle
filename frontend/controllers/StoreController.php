@@ -21,10 +21,13 @@ class StoreController extends Controller
     /** /store, or /store?technology=wordpress */
     public function actionIndex(string $technology = ''): string
     {
-        if ($technology !== '' && !isset(Product::TECHNOLOGIES[$technology])) {
+        $this->view->params['storeSection'] = 'store';
+        // Only the technologies there is something for; any other filter is not a page.
+        $technologies = array_intersect_key(Product::TECHNOLOGIES, array_flip(Product::findPublicOf(false)->select('technology')->distinct()->column()));
+        if ($technology !== '' && !isset($technologies[$technology])) {
             throw new NotFoundHttpException('Page not found.');
         }
-        $query = Product::findPublic()->with('images')->orderBy(['sort_order' => SORT_ASC, 'id' => SORT_DESC]);
+        $query = Product::findPublicOf(false)->with('images')->orderBy(['sort_order' => SORT_ASC, 'id' => SORT_DESC]);
         if ($technology !== '') {
             $query->andWhere(['technology' => $technology]);
         }
@@ -32,15 +35,25 @@ class StoreController extends Controller
         return $this->render('index', [
             'dataProvider' => new ActiveDataProvider(['query' => $query, 'pagination' => ['pageSize' => 24]]),
             'technology' => $technology,
-            // Only the technologies there is something for.
-            'technologies' => array_intersect_key(Product::TECHNOLOGIES, array_flip(Product::findPublic()->select('technology')->distinct()->column())),
+            'technologies' => $technologies,
+        ]);
+    }
+
+    /** /services: fixed-price jobs, bought like store items. */
+    public function actionServices(): string
+    {
+        $this->view->params['storeSection'] = 'services';
+        return $this->render('services', [
+            'dataProvider' => new ActiveDataProvider(['query' => Product::findPublicOf(true)->with('images')->orderBy(['sort_order' => SORT_ASC, 'id' => SORT_DESC]), 'pagination' => ['pageSize' => 24]]),
         ]);
     }
 
     public function actionView(string $slug): string
     {
+        /** @var Product $model */
         $model = Product::findPublic()->andWhere(['slug' => $slug])->with('images')->one()
             ?? throw new NotFoundHttpException('Page not found.');
+        $this->view->params['storeSection'] = $model->isService() ? 'services' : 'store';
 
         return $this->render('view', ['model' => $model]);
     }
@@ -57,6 +70,7 @@ class StoreController extends Controller
             throw new NotFoundHttpException('Page not found.');
         }
         $here = ['/store/buy', 'slug' => $slug, 'licence' => $licence];
+        $this->view->params['storeSection'] = $model->isService() ? 'services' : 'store';
         $session = Yii::$app->session;
         if (Yii::$app->user->isGuest) {
             $session->set(self::RESUME, [$here, time()]);
@@ -76,19 +90,25 @@ class StoreController extends Controller
         $usd = $profile !== null && $profile->isForeign();
         // Buyers abroad pay by PayPal only (UPI and Indian bank transfer are for India): no invoice they can't pay.
         $canPay = !$usd || (new PayPalService())->acceptsCustomerPayments();
+        $brief = Yii::$app->request->post('brief', '');
+        $website = Yii::$app->request->post('website', '');
+        $brief = is_string($brief) ? $brief : '';
+        $website = is_string($website) ? $website : '';
+        $error = null;
+        $invoice = null;
         if (Yii::$app->request->isPost && $canPay) {
             try {
-                $invoice = (new StoreOrderService())->buy($userId, $model, $licence);
+                $invoice = (new StoreOrderService())->buy($userId, $model, $licence, $brief, $website);
             } catch (\DomainException $e) {
-                $session->setFlash('error', $e->getMessage());
-
-                return $this->redirect($here);
+                // Shown on the form, with what was typed kept.
+                $error = $e->getMessage();
             }
-
+        }
+        if ($invoice !== null) {
             return $this->redirect(['/invoice/view', 'number' => $invoice->invoice_number]);
         }
 
-        return $this->render('buy', ['model' => $model, 'licence' => $licence, 'usd' => $usd, 'canPay' => $canPay]);
+        return $this->render('buy', ['model' => $model, 'licence' => $licence, 'usd' => $usd, 'canPay' => $canPay, 'brief' => $brief, 'website' => $website, 'error' => $error]);
     }
 
     /** Session key: the order to come back to after signing in or completing billing details, and when it was left. */

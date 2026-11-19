@@ -19,7 +19,9 @@ use yii\bootstrap5\NavBar;
     $menuItems = [
         ['label' => 'What we build', 'url' => ['/site/index', '#' => 'services'], 'active' => false],
         ['label' => 'Our work', 'url' => ['/site/index', '#' => 'work'], 'active' => false],
-        ['label' => 'Themes & Plugins', 'url' => ['/store/index'], 'active' => Yii::$app->controller->id === 'store'],
+        // StoreController says which of its two sections a page is in.
+        ['label' => 'Fixed-price services', 'url' => ['/store/services'], 'active' => ($this->params['storeSection'] ?? null) === 'services'],
+        ['label' => 'Themes & Plugins', 'url' => ['/store/index'], 'active' => ($this->params['storeSection'] ?? null) === 'store'],
         ['label' => 'Blog', 'url' => ['/blog/index'], 'active' => Yii::$app->controller->id === 'blog'],
         ['label' => 'About', 'url' => ['/site/about']],
         ['label' => 'Contact', 'url' => ['/site/contact']],

@@ -92,7 +92,56 @@ final class StoreOrderTest extends Unit
         (new StoreOrderService())->cancel($refunded);
     }
 
-    public function testSupportEndsOnTheLastDayOfAShortMonth(): void
+    public function testAPaidServiceOpensAJobTicketWithTheBrief(): void
+    {
+        $this->profile('India', 'Delhi', '07');
+        $service = new Product(['name' => 'Speed Up ' . $this->_user->id, 'technology' => 'wordpress', 'kind' => Product::KIND_SERVICE, 'summary' => 'Faster site.', 'description' => 'We make it fast.', 'delivery_days' => 3, 'price_single_inr' => 4999, 'price_single_usd' => 79, 'price_unlimited_inr' => 9999, 'price_unlimited_usd' => 150, 'status' => Product::STATUS_PUBLISHED]);
+        $this->assertTrue($service->save(), json_encode($service->errors));
+        $this->assertNull($service->price_unlimited_inr, 'a service has one price');
+        $this->assertNull($service->price('unlimited', false));
+
+        try {
+            (new StoreOrderService())->buy((int) $this->_user->id, $service, 'single', 'too short');
+            $this->fail('a service needs a brief');
+        } catch (\DomainException $e) {
+            $this->assertStringContainsString('20 to 5,000', $e->getMessage());
+        }
+        $invoice = (new StoreOrderService())->buy((int) $this->_user->id, $service, 'single', 'My shop takes 9 seconds to load on phones.', 'example.com');
+        $this->assertSame(InvoiceItem::TYPE_SERVICE_ORDER, (int) InvoiceItem::findOne(['invoice_id' => $invoice->id])->item_type);
+        $again = (new StoreOrderService())->buy((int) $this->_user->id, $service, 'single', 'Also the checkout page is slow, please look at it.', '');
+        $this->assertSame($invoice->id, $again->id, 'the open order is reused, with the latest brief');
+        $order = ProductOrder::findOne(['invoice_id' => $invoice->id]);
+        $this->assertSame('Also the checkout page is slow, please look at it.', $order->brief);
+
+        $payment = new Transaction();
+        $payment->setAttributes(['invoice_id' => $invoice->id, 'gateway_id' => Transaction::GATEWAY_UPI_BANK, 'amount' => (float) $invoice->total_payable, 'status' => Transaction::STATUS_CAPTURED, 'paid_at' => time(), 'created_at' => time(), 'updated_at' => time()], false);
+        $this->assertTrue($payment->save(false));
+        (new PaymentProcessingService())->transactionChanged($payment);
+
+        $order->refresh();
+        $this->assertTrue($order->isPaid());
+        $this->assertNull($order->licence_key, 'no licence key for a service');
+        $ticket = $order->supportTicket;
+        $this->assertNotNull($ticket);
+        $this->assertSame((int) $this->_user->id, (int) $ticket->user_id);
+        $this->assertSame(\common\models\SupportTicket::STATUS_OPEN, $ticket->status);
+        $this->assertStringContainsString('checkout page is slow', $ticket->message);
+        $this->assertSame('Fixed price', $order->licenceLabel());
+        $this->assertSame(0, (int) StoreOrderService::paidBuyers($service)->count(), 'no update emails for a service');
+
+        $service->kind = 'theme';
+        $this->assertFalse($service->validate(['kind']), 'the type is fixed once there are orders');
+        $service->kind = Product::KIND_SERVICE;
+
+        try {
+            (new StoreOrderService())->buy((int) $this->_user->id, $service, 'single', 'A long address that will not fit.', str_repeat('a', 246) . '.com');
+            $this->fail('the scheme counts towards the length');
+        } catch (\DomainException $e) {
+            $this->assertStringContainsString('website address', $e->getMessage());
+        }
+    }
+
+        public function testSupportEndsOnTheLastDayOfAShortMonth(): void
     {
         $at = static fn(string $date): int => (new \DateTimeImmutable($date . ' 10:00', new \DateTimeZone(Yii::$app->timeZone)))->getTimestamp();
         $order = new ProductOrder(['paid_at' => $at('2026-08-31')]);

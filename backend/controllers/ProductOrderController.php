@@ -17,7 +17,7 @@ class ProductOrderController extends BaseController
 
     public function actionIndex(int $product = 0, string $state = ''): string
     {
-        $query = ProductOrder::find()->alias('o')->innerJoinWith('invoice i')->with(['product', 'user'])->orderBy(['o.id' => SORT_DESC]);
+        $query = ProductOrder::find()->alias('o')->innerJoinWith('invoice i')->with(['product', 'user', 'supportTicket'])->orderBy(['o.id' => SORT_DESC]);
         if ($product > 0) {
             $query->andWhere(['o.product_id' => $product]);
         }

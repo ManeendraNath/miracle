@@ -25,7 +25,7 @@ $siteName = CustomYii::getSetting('site_name') ?: 'Miracle Web Technologies';
 $route = Yii::$app->controller?->getRoute();
 // Title and description staff set for this page (Admin → SEO), used as written. Not for a filtered blog list
 // (a category, tag or month, or page 2): those keep their own.
-$seo = $route !== null && (!in_array($route, ['blog/index', 'store/index'], true) || Yii::$app->request->getQueryParams() === []) ? \common\models\SeoPage::forRoute($route) : null;
+$seo = $route !== null && (!in_array($route, ['blog/index', 'store/index', 'store/services'], true) || Yii::$app->request->getQueryParams() === []) ? \common\models\SeoPage::forRoute($route) : null;
 if ($seo !== null && (string) $seo->title !== '') {
     $this->title = $seo->title;
 }

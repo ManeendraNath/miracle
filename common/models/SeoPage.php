@@ -31,6 +31,7 @@ class SeoPage extends base\SeoPage
         'site/licence' => 'Licence terms for themes & plugins',
         'blog/index' => 'Blog (list of posts)',
         'store/index' => 'Themes & plugins store',
+        'store/services' => 'Fixed-price services',
     ];
 
     /**
@@ -54,6 +55,7 @@ class SeoPage extends base\SeoPage
         }
         usort($routes, static fn(string $a, string $b): int => ($b === 'site/index') <=> ($a === 'site/index'));
         $routes[] = 'store/index';
+        $routes[] = 'store/services';
         $routes[] = 'blog/index';
         $pages = [];
         foreach ($routes as $route) {

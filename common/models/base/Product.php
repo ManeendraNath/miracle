@@ -18,6 +18,7 @@ use Yii;
  * @property string|null $cover_image
  * @property string|null $demo_url
  * @property string|null $version
+ * @property int|null $delivery_days
  * @property string|null $download_file
  * @property string|null $download_name
  * @property string|null $changelog
@@ -51,12 +52,12 @@ class Product extends \yii\db\ActiveRecord
     public function rules()
     {
         return [
-            [['features', 'cover_image', 'demo_url', 'version', 'download_file', 'download_name', 'changelog', 'price_unlimited_inr', 'price_unlimited_usd', 'seo_title', 'seo_description'], 'default', 'value' => null],
+            [['features', 'cover_image', 'demo_url', 'version', 'delivery_days', 'download_file', 'download_name', 'changelog', 'price_unlimited_inr', 'price_unlimited_usd', 'seo_title', 'seo_description'], 'default', 'value' => null],
             [['sort_order'], 'default', 'value' => 0],
             [['name', 'slug', 'technology', 'kind', 'summary', 'description', 'price_single_inr', 'price_single_usd', 'created_at', 'updated_at'], 'required'],
             [['description', 'features', 'changelog'], 'string'],
+            [['delivery_days', 'status', 'sort_order', 'created_at', 'updated_at'], 'integer'],
             [['price_single_inr', 'price_single_usd', 'price_unlimited_inr', 'price_unlimited_usd'], 'number'],
-            [['status', 'sort_order', 'created_at', 'updated_at'], 'integer'],
             [['name'], 'string', 'max' => 150],
             [['slug'], 'string', 'max' => 160],
             [['technology', 'version'], 'string', 'max' => 20],
@@ -86,6 +87,7 @@ class Product extends \yii\db\ActiveRecord
             'cover_image' => 'Cover Image',
             'demo_url' => 'Demo Url',
             'version' => 'Version',
+            'delivery_days' => 'Delivery Days',
             'download_file' => 'Download File',
             'download_name' => 'Download Name',
             'changelog' => 'Changelog',

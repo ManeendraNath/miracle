@@ -23,6 +23,7 @@ echo $this->render('_legal', ['title' => 'Refund & Cancellation Policy', 'update
     <li><strong>Maintenance (AMC):</strong> a full refund if you cancel before any work has been done in the paid period. Once work has started, no refund is given for that period.</li>
     <li><strong>Shopping carts, web applications, websites and upgrades:</strong> an advance is refundable in full if you cancel before work begins. After work begins, the amount for work already completed is kept and any balance is refunded.</li>
     <li><strong>Website themes and plugins from our store:</strong> a full refund if you ask before your first download. After downloading, a refund only if the product does not work as described and we cannot fix it. A refund ends the licence, and its licence key and download stop working. See the <a href="{$licence}">licence terms</a>.</li>
+    <li><strong>Fixed-price services:</strong> a full refund if you ask before we start the work. Once work has started, the amount for work already done is kept and the rest is refunded; if we cannot complete the job, you get a full refund.</li>
     <li><strong>Duplicate or excess payments:</strong> always refunded. A payment made on an invoice that was already paid can instead be applied to another unpaid invoice of yours, if you prefer.</li>
 </ul>
 

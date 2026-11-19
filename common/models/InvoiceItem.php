@@ -13,6 +13,8 @@ class InvoiceItem extends base\InvoiceItem
     public const TYPE_ARREARS = 5;
     /** A store licence (theme or plugin): see ProductOrder. */
     public const TYPE_PRODUCT = 6;
+    /** A fixed-price service bought at /services. */
+    public const TYPE_SERVICE_ORDER = 7;
 
     public static function getTypes(): array
     {
@@ -23,6 +25,7 @@ class InvoiceItem extends base\InvoiceItem
             self::TYPE_CUSTOM => 'Custom',
             self::TYPE_ARREARS => 'Previous Outstanding',
             self::TYPE_PRODUCT => 'Themes & Plugins',
+            self::TYPE_SERVICE_ORDER => 'Fixed-price services',
         ];
     }
 

@@ -17,6 +17,7 @@ use yii\helpers\ArrayHelper;
  *
  * @property-read Product $product
  * @property-read Invoice $invoice
+ * @property-read SupportTicket|null $supportTicket the job's ticket (services), opened once paid
  */
 class ProductOrder extends base\ProductOrder
 {
@@ -38,6 +39,12 @@ class ProductOrder extends base\ProductOrder
     public function getInvoice(): ActiveQuery
     {
         return $this->hasOne(Invoice::class, ['id' => 'invoice_id']);
+    }
+
+    #[\Override]
+    public function getSupportTicket(): ActiveQuery
+    {
+        return $this->hasOne(SupportTicket::class, ['id' => 'support_ticket_id']);
     }
 
     /** Paid and still so: a refunded invoice, or a payment taken back, closes the key and download. */
@@ -81,9 +88,13 @@ class ProductOrder extends base\ProductOrder
         return 'cancelled';
     }
 
-    /** e.g. "Single site" */
+    /** e.g. "Single site"; "Fixed price" for a service */
     public function licenceLabel(): string
     {
+        if ($this->product->isService()) {
+            return 'Fixed price';
+        }
+
         return Product::LICENCES[$this->licence] ?? $this->licence;
     }
 
@@ -97,10 +108,17 @@ class ProductOrder extends base\ProductOrder
     {
         foreach (self::find()->where(['invoice_id' => $invoiceIds, 'paid_at' => null])->with('product')->all() as $order) {
             $order->paid_at = time();
-            $order->licence_key = self::newKey();
+            if ($order->product->isService()) {
+                // The job: talked over and delivered in its own ticket, which staff resolve when it is done.
+                $ticket = $order->openTicket();
+                $order->support_ticket_id = (int) $ticket->id;
+                $message = $order->product->name . ' is paid. We have opened ticket ' . $ticket->ticket_number . ' for the job: follow it on My Purchases.';
+            } else {
+                $order->licence_key = self::newKey();
+                $message = $order->product->name . ' (' . strtolower($order->licenceLabel()) . ' licence) is paid. Your licence key and download are on My Purchases.';
+            }
             $order->save(false);
             $userId = (int) $order->user_id;
-            $message = $order->product->name . ' (' . strtolower($order->licenceLabel()) . ' licence) is paid. Your licence key and download are on My Purchases.';
             // After commit, and never able to undo the payment.
             AfterCommit::run(static function () use ($userId, $message): void {
                 try {
@@ -110,6 +128,34 @@ class ProductOrder extends base\ProductOrder
                 }
             });
         }
+    }
+
+    private function openTicket(): SupportTicket
+    {
+        $number = SupportTicket::newNumber();
+        $ticket = new SupportTicket();
+        $ticket->setAttributes([
+            'ticket_number' => $number,
+            'user_id' => (int) $this->user_id,
+            'subject' => mb_substr('Order: ' . $this->product->name, 0, 255),
+            'message' => trim((string) $this->brief) . ($this->website_url ? "\n\nWebsite: " . $this->website_url : '')
+                . "\n\n(Paid order for " . $this->product->name . ', delivery in ' . (int) $this->product->delivery_days . ' working days.)',
+            'priority' => SupportTicket::PRIORITY_NORMAL,
+            'status' => SupportTicket::STATUS_OPEN,
+            'created_at' => time(),
+            'updated_at' => time(),
+        ], false);
+        $ticket->save(false);
+        $username = (string) ($this->user->username ?? '');
+        AfterCommit::run(static function () use ($ticket, $username): void {
+            try {
+                \common\services\admin\AdminAlertService::supportTicketCreated($ticket->ticket_number, $username, $ticket->subject);
+            } catch (\Throwable $e) {
+                \Yii::error(['message' => 'Service order ticket alert failed.', 'ticket' => $ticket->ticket_number, 'error' => $e->getMessage()], __METHOD__);
+            }
+        });
+
+        return $ticket;
     }
 
     /** e.g. 3F9A2-C41B7-0D6E8-B52F1 */

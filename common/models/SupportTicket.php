@@ -108,4 +108,14 @@ class SupportTicket extends base\SupportTicket
 
         return $posts > self::MAX_POSTS_PER_HOUR;
     }
+
+    /** e.g. SUP-20261119-3F9A2C41 */
+    public static function newNumber(): string
+    {
+        do {
+            $number = 'SUP-' . date('Ymd') . '-' . strtoupper(bin2hex(random_bytes(4)));
+        } while (self::find()->where(['ticket_number' => $number])->exists());
+
+        return $number;
+    }
 }

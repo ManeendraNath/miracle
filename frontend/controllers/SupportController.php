@@ -103,14 +103,7 @@ final class SupportController extends Controller
             }
             if (!$model->hasErrors()) {
                 $now = time();
-                do {
-                    $ticketNumber = 'SUP-' . date('Ymd') . '-' . strtoupper(bin2hex(random_bytes(4)));
-                } while (
-                    SupportTicket::find()
-                        ->where(['ticket_number' => $ticketNumber])
-                        ->exists()
-                );
-                $model->ticket_number = $ticketNumber;
+                $model->ticket_number = SupportTicket::newNumber();
                 $model->status = SupportTicket::STATUS_OPEN;
                 $model->created_at = $now;
                 $model->updated_at = $now;

@@ -127,4 +127,35 @@ final class StoreCest
         $I->amOnPage('/sitemap.xml');
         $I->seeInSource('/licence</loc>');
     }
+
+    public function servicesHaveTheirOwnListAndAskForABrief(FunctionalTester $I): void
+    {
+        $this->product($I, 'site-speed-up', ['kind' => Product::KIND_SERVICE, 'technology' => 'any', 'delivery_days' => 3, 'price_single_inr' => 4999, 'price_single_usd' => 79]);
+        $this->product($I, 'plain-theme');
+        $I->amOnPage('/services');
+        $I->see('Website jobs at a fixed price');
+        $I->see('Site speed up');
+        $I->dontSee('Plain theme');
+        $I->see('3 working days');
+        $I->amOnPage('/store');
+        $I->see('Plain theme');
+        $I->dontSee('Site speed up');
+        $I->amOnPage('/store/site-speed-up');
+        $I->see('Fixed price');
+        $I->dontSee('Unlimited sites');
+        $I->amOnPage('/sitemap.xml');
+        $I->seeInSource('/services</loc>');
+
+        $I->amOnRoute('site/login');
+        $I->submitForm('#login-form', ['LoginForm[username]' => 'erau', 'LoginForm[password]' => 'password_0']);
+        $I->haveRecord(CustomerBillingProfile::class, ['user_id' => (int) User::findOne(['username' => 'erau'])->id, 'legal_name' => 'Erau', 'address_line_1' => '1 Road', 'city' => 'Delhi', 'state' => 'Delhi', 'state_code' => '07', 'country' => 'India', 'postal_code' => '110001', 'created_at' => time(), 'updated_at' => time()]);
+        $I->amOnPage('/store/buy/site-speed-up');
+        $I->see('What do you need done?');
+        $I->submitForm('form[action*="buy"]', ['brief' => 'Too short']);
+        $I->see('Tell us what you need done, in 20 to 5,000 characters.');
+        $I->seeInField('brief', 'Too short');
+        $I->submitForm('form[action*="buy"]', ['brief' => 'My shop takes nine seconds to load on a phone.', 'website' => 'example.com']);
+        $I->seeInCurrentUrl('invoice/view');
+        $I->seeRecord(ProductOrder::class, ['brief' => 'My shop takes nine seconds to load on a phone.', 'website_url' => 'https://example.com']);
+    }
 }

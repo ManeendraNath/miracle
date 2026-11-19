@@ -21,6 +21,7 @@ $this->params['breadcrumbs'][] = $this->title;
 $this->params['help'] = [
     'Orders' => 'Each order is one licence of a theme or plugin, with its own invoice. It is paid when the invoice is: a UPI or bank proof approved, or a Razorpay or PayPal payment.',
     'Refunds' => 'Full refund if asked before the first download (shown here); after it, only if the product does not work as described and we cannot fix it. Refund the whole payment on its invoice and tick close invoice: any refund, even part, stops the licence key and download.',
+    'Services' => 'A paid fixed-price service opens a support ticket with the buyer\'s brief. Do the job there, and resolve the ticket when it is delivered.',
     'Updates' => 'Buyers always download the latest file. Upload a new one in Themes & Plugins and tick "Email buyers about this update".',
 ];
 GridViewHelper::register($this);
@@ -76,13 +77,17 @@ $fmt = Yii::$app->formatter;
                     },
                 ],
                 [
-                    'label' => 'Licence key',
+                    'label' => 'Licence key / job',
                     'format' => 'raw',
-                    'value' => static fn(ProductOrder $o): string => $o->licence_key ? '<code>' . Html::encode($o->licence_key) . '</code>' : '<span class="text-body-secondary">–</span>',
+                    'value' => static fn(ProductOrder $o): string => match (true) {
+                        $o->supportTicket !== null => Html::a('Ticket ' . Html::encode($o->supportTicket->ticket_number), ['/support-ticket/view', 'number' => $o->supportTicket->ticket_number]) . '<div class="small text-body-secondary">' . Html::encode($o->supportTicket->status) . '</div>',
+                        (bool) $o->licence_key => '<code>' . Html::encode($o->licence_key) . '</code>',
+                        default => '<span class="text-body-secondary">–</span>',
+                    },
                 ],
                 [
                     'label' => 'First download',
-                    'value' => static fn(ProductOrder $o): string => $o->first_downloaded_at ? $fmt->asDatetime($o->first_downloaded_at, 'medium') : 'Not yet (full refund possible)',
+                    'value' => static fn(ProductOrder $o): string => $o->product->isService() ? '(service)' : ($o->first_downloaded_at ? $fmt->asDatetime($o->first_downloaded_at, 'medium') : 'Not yet (full refund possible)'),
                     'contentOptions' => ['class' => 'small'],
                 ],
             ],

@@ -32,7 +32,7 @@ $base = rtrim((string) (Yii::$app->params['frontendBaseUrl'] ?? ''), '/');
                 <?= $form->field($model, 'slug', ['enableClientValidation' => false])->textInput(['maxlength' => 160, 'placeholder' => 'Made from the name']) ?>
                 <div class="row">
                     <div class="col-sm-6"><?= $form->field($model, 'technology')->dropDownList(Product::TECHNOLOGIES, ['prompt' => 'Choose…']) ?></div>
-                    <div class="col-sm-6"><?= $form->field($model, 'kind')->dropDownList(Product::KINDS, ['prompt' => 'Choose…']) ?></div>
+                    <div class="col-sm-6"><?= $form->field($model, 'kind')->dropDownList(Product::KINDS, ['prompt' => 'Choose…'])->hint('A service is a fixed-price job, listed at /services: one price, a delivery time, no file or licence. "Any website" is for services.') ?></div>
                 </div>
                 <?= $form->field($model, 'summary')->textInput(['maxlength' => 300])->hint('One sentence for the store list and search results.') ?>
                 <?= $form->field($model, 'description')->textarea(['rows' => 10]) ?>
@@ -41,6 +41,7 @@ $base = rtrim((string) (Yii::$app->params['frontendBaseUrl'] ?? ''), '/');
                 <div class="row">
                     <div class="col-sm-8"><?= $form->field($model, 'demo_url')->textInput(['maxlength' => 255, 'placeholder' => 'https://…']) ?></div>
                     <div class="col-sm-4"><?= $form->field($model, 'version')->textInput(['maxlength' => 20, 'placeholder' => 'e.g. 1.0.0']) ?></div>
+                    <div class="col-sm-4"><?= $form->field($model, 'delivery_days')->textInput(['type' => 'number', 'min' => 1, 'max' => 365])->hint('Services only.') ?></div>
                 </div>
             </div>
         </div>
@@ -48,6 +49,7 @@ $base = rtrim((string) (Yii::$app->params['frontendBaseUrl'] ?? ''), '/');
             <div class="card-header"><h2 class="card-title h6 mb-0">Prices</h2></div>
             <div class="card-body">
                 <div class="row">
+                    <div class="col-12"><p class="small text-muted">For a service, the single-site price is its fixed price; the unlimited-sites prices are left out.</p></div>
                     <div class="col-sm-6"><?= $form->field($model, 'price_single_inr')->textInput(['inputmode' => 'decimal']) ?></div>
                     <div class="col-sm-6"><?= $form->field($model, 'price_single_usd')->textInput(['inputmode' => 'decimal']) ?></div>
                     <div class="col-sm-6"><?= $form->field($model, 'price_unlimited_inr')->textInput(['inputmode' => 'decimal', 'placeholder' => 'Empty = not offered']) ?></div>
@@ -69,14 +71,14 @@ $base = rtrim((string) (Yii::$app->params['frontendBaseUrl'] ?? ''), '/');
             </div>
         </div>
         <div class="card card-outline card-primary shadow-sm">
-            <div class="card-header"><h2 class="card-title h6 mb-0">Download for buyers</h2></div>
+            <div class="card-header"><h2 class="card-title h6 mb-0">Download for buyers (themes and plugins)</h2></div>
             <div class="card-body">
                 <?php if ($model->download_file): ?>
                     <p class="small mb-2">Current file: <strong><?= Html::encode($model->download_name) ?></strong><?= is_file((string) $model->downloadPath()) ? ', ' . Yii::$app->formatter->asShortSize((int) filesize((string) $model->downloadPath())) : ' (missing on the server: upload it again)' ?></p>
                 <?php endif; ?>
                 <label class="form-label" for="product-download"><?= $model->download_file ? 'Replace the file' : 'File (.zip)' ?></label>
                 <input type="file" id="product-download" name="download_file" class="form-control" accept=".zip,application/zip">
-                <?php if (!$model->isNewRecord): ?>
+                <?php if (!$model->isNewRecord && !$model->isService()): ?>
                     <div class="form-check mt-2">
                         <input type="checkbox" class="form-check-input" id="notify-buyers" name="notify_buyers" value="1">
                         <label class="form-check-label" for="notify-buyers">Email buyers about this update (<?= (int) \common\services\StoreOrderService::paidBuyers($model)->count() ?> buyer(s))</label>

@@ -99,7 +99,7 @@ final class InvoiceController extends Controller
     public function actionView(string $number)
     {
         $model = $this->findOwnedInvoice($number);
-        $pendingPayment = Transaction::find()->where(['invoice_id' => $model->id, 'status' => Transaction::STATUS_PENDING])->andWhere(\common\services\payment\RazorpayService::notUnpaidOrderCondition())->orderBy(['id' => SORT_DESC])->one();
+        $pendingPayment = Transaction::find()->where(['invoice_id' => $model->id, 'status' => Transaction::STATUS_PENDING])->andWhere(RazorpayService::notUnpaidOrderCondition())->orderBy(['id' => SORT_DESC])->one();
         $paymentService = new InvoicePaymentService();
         $paypal = new PayPalService();
         return $this->render(
@@ -328,14 +328,14 @@ final class InvoiceController extends Controller
         }
         // A Razorpay payment made in another tab with its callback and webhook still on the way: recorded first (the
         // capture below then refuses, the invoice being paid), and nothing captured while one can't be recorded.
-        $razorpay = new \common\services\payment\RazorpayService();
+        $razorpay = new RazorpayService();
         if ($razorpay->isEnabled() && ($razorpay->recoverPaidOrders((int) $invoice->id) > 0 || $razorpay->paidButNotRecorded)) {
             $session->setFlash('warning', 'We found an earlier payment for this invoice, so PayPal has not been charged. Please reload the page to see your balance, or contact support.');
             return ['ok' => false];
         }
         try {
             $captured = (new PayPalService())->captureOrder($orderId);
-            if ($captured->status === Transaction::STATUS_FAILED && $captured->user_payment_notes === \common\services\payment\RazorpayService::CLOSED_NOTE) {
+            if ($captured->status === Transaction::STATUS_FAILED && $captured->user_payment_notes === RazorpayService::CLOSED_NOTE) {
                 $session->setFlash('warning', 'This payment had expired, so PayPal did not take any money. Please reload the page and pay again.');
             } elseif ($captured->status === Transaction::STATUS_FAILED) {
                 $session->setFlash('warning', 'PayPal did not take this payment. ' . ucfirst((string) preg_replace('/^Not taken: /', '', (string) $captured->user_payment_notes)) . ' Please reload the page and check the amount due.');

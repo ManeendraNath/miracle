@@ -86,7 +86,7 @@ $socials = array_filter([
 
         <hr class="my-4 footer-rule">
         <div class="d-flex flex-wrap justify-content-between gap-2 small footer-muted">
-            <div>&copy; <?= date('Y') ?> <?= Html::encode($siteName) ?>. All rights reserved.</div>
+            <div>&copy; <?= \common\components\CustomYii::getSetting('founded_year') && (int) \common\components\CustomYii::getSetting('founded_year') < (int) date('Y') ? (int) \common\components\CustomYii::getSetting('founded_year') . '-' : '' ?><?= date('Y') ?> <?= Html::encode($siteName) ?>. All rights reserved.</div>
             <div class="d-flex flex-wrap gap-3">
                 <?= Html::a('Terms &amp; Conditions', ['/site/terms']) ?>
                 <?= Html::a('Privacy Policy', ['/site/privacy']) ?>

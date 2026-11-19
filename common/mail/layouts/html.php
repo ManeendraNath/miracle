@@ -101,7 +101,7 @@ use yii\helpers\Html;
                                     <a href="<?= \yii\helpers\Html::encode(\common\components\CustomYii::portalUrl()) ?>/dashboard/">Access Customer Portal</a>
                                 <?php endif; ?>
                                 <br><br>
-                                © <?= \common\components\CustomYii::getSetting('founded_year') ? (int) \common\components\CustomYii::getSetting('founded_year') . '-' : '' ?><?= date('Y') ?> <?= \yii\helpers\Html::encode(\common\components\CustomYii::businessName()) ?>
+                                © <?= \common\components\CustomYii::getSetting('founded_year') && (int) \common\components\CustomYii::getSetting('founded_year') < (int) date('Y') ? (int) \common\components\CustomYii::getSetting('founded_year') . '-' : '' ?><?= date('Y') ?> <?= \yii\helpers\Html::encode(\common\components\CustomYii::businessName()) ?>
                             </td>
                         </tr>
                     </table>

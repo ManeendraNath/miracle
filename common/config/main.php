@@ -45,18 +45,18 @@ return [
                     ->set('X-Frame-Options', 'DENY')
                     ->set('X-Content-Type-Options', 'nosniff')
                     ->set('Referrer-Policy', 'strict-origin-when-cross-origin')
-                    ->set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains')
-                    // Safe on every page (no inline-script rules): no plugins, no <base> hijack, never framed.
-                    ->set('Content-Security-Policy', "base-uri 'self'; object-src 'none'; frame-ancestors 'none'");
-                // Only scripts the app registered (nonce, common\components\View) and what they load ('strict-dynamic':
-                // Razorpay, PayPal). Report-only for now: browsers report what it would block to /site/csp-report.
+                    ->set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+                // Safe on every page: no plugins, no <base> hijack, never framed.
+                $policy = "base-uri 'self'; object-src 'none'; frame-ancestors 'none'";
+                // Web pages: only scripts the app registered (nonce, common\components\View) and what they load
+                // ('strict-dynamic': Razorpay, PayPal). Browsers report anything blocked to /site/csp-report (csp.log).
                 // 'unsafe-inline' and https: only matter to browsers too old for nonces, which ignore the rest.
-                // ponytail: report-only; enforce (rename the header) once the CSP log stays empty for a week.
+                // Ran report-only from 2026-11-12 to 2026-11-19 with nothing reported, then enforced.
                 if (\Yii::$app->has('view') && \Yii::$app->view instanceof \common\components\View && \Yii::$app->request instanceof \yii\web\Request) {
-                    $event->sender->headers->set('Content-Security-Policy-Report-Only', "script-src 'nonce-" . \Yii::$app->view->getNonce()
-                        . "' 'strict-dynamic' https: 'unsafe-inline'; object-src 'none'; base-uri 'self'; report-uri "
-                        . \Yii::$app->params['frontendBaseUrl'] . '/site/csp-report');
+                    $policy .= "; script-src 'nonce-" . \Yii::$app->view->getNonce() . "' 'strict-dynamic' https: 'unsafe-inline'; report-uri "
+                        . \Yii::$app->params['frontendBaseUrl'] . '/site/csp-report';
                 }
+                $event->sender->headers->set('Content-Security-Policy', $policy);
             },
         ],
         'formatter' => [

@@ -9,7 +9,7 @@ use Yii;
 use yii\web\UploadedFile;
 
 /**
- * Saves a blog image under the frontend web root, scaled down to at most 1600px wide and re-encoded,
+ * Saves an uploaded image (blog, author photo, store) under the frontend web root, scaled down to at most 1600px wide and re-encoded,
  * which also drops anything hidden in the file (camera data, scripts in disguise).
  */
 final class BlogImageService
@@ -23,10 +23,13 @@ final class BlogImageService
      * @return string the path under the frontend web root, e.g. uploads/blog/2026-11/1f3a9c.jpg
      * @throws \DomainException with a message for staff when the file is not a usable image
      */
-    public function store(UploadedFile $file): string
+    public function store(UploadedFile $file, string $dir = BlogPost::UPLOAD_DIR): string
     {
+        if (in_array($file->error, [UPLOAD_ERR_INI_SIZE, UPLOAD_ERR_FORM_SIZE], true)) {
+            throw new \DomainException('"' . $file->name . '" is larger than the server accepts. Make it smaller, or upload it on its own.');
+        }
         if ($file->error !== UPLOAD_ERR_OK) {
-            throw new \DomainException('The image could not be uploaded. Please try again.');
+            throw new \DomainException('"' . $file->name . '" could not be uploaded. Please try again.');
         }
         if ($file->size > self::MAX_BYTES) {
             throw new \DomainException('The image is larger than 5 MB.');
@@ -53,10 +56,10 @@ final class BlogImageService
             $image = $scaled;
         }
         $extension = self::TYPES[$type];
-        $relative = BlogPost::UPLOAD_DIR . '/' . date('Y-m') . '/' . bin2hex(random_bytes(8)) . '.' . $extension;
+        $relative = $dir . '/' . date('Y-m') . '/' . bin2hex(random_bytes(8)) . '.' . $extension;
         $path = Yii::getAlias('@frontend/web/' . $relative);
         if (!is_dir(dirname($path)) && !mkdir(dirname($path), 0775, true) && !is_dir(dirname($path))) {
-            throw new \RuntimeException('Cannot create the blog image folder.');
+            throw new \RuntimeException('Cannot create the image folder.');
         }
         if ($type !== IMAGETYPE_JPEG) {
             imagesavealpha($image, true);
@@ -68,7 +71,7 @@ final class BlogImageService
         };
         imagedestroy($image);
         if (!$saved) {
-            throw new \RuntimeException('Cannot save the blog image.');
+            throw new \RuntimeException('Cannot save the image.');
         }
 
         return $relative;

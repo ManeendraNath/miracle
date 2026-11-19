@@ -43,6 +43,8 @@ class BaseController extends Controller
         'site-setting' => 'Superadmin',
         // Public website text, like testimonials.
         'seo-page' => 'Admin',
+        // The store: prices and what is sold.
+        'product' => 'Admin',
         'invoice' => 'Admin',
         'transaction' => 'Admin',
         'coupon' => 'Admin',

@@ -1,5 +1,5 @@
 {
-    "migrations": 81,
+    "migrations": 82,
     "columns": {
         "admin": {
             "auth_key": {
@@ -2027,6 +2027,160 @@
                 "extra": ""
             }
         },
+        "product": {
+            "cover_image": {
+                "type": "varchar(255)",
+                "null": true,
+                "default": null,
+                "extra": ""
+            },
+            "created_at": {
+                "type": "int",
+                "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "demo_url": {
+                "type": "varchar(255)",
+                "null": true,
+                "default": null,
+                "extra": ""
+            },
+            "description": {
+                "type": "text",
+                "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "features": {
+                "type": "text",
+                "null": true,
+                "default": null,
+                "extra": ""
+            },
+            "id": {
+                "type": "int",
+                "null": false,
+                "default": null,
+                "extra": "auto_increment"
+            },
+            "kind": {
+                "type": "varchar(10)",
+                "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "name": {
+                "type": "varchar(150)",
+                "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "price_single_inr": {
+                "type": "decimal(10,2)",
+                "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "price_single_usd": {
+                "type": "decimal(10,2)",
+                "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "price_unlimited_inr": {
+                "type": "decimal(10,2)",
+                "null": true,
+                "default": null,
+                "extra": ""
+            },
+            "price_unlimited_usd": {
+                "type": "decimal(10,2)",
+                "null": true,
+                "default": null,
+                "extra": ""
+            },
+            "seo_description": {
+                "type": "varchar(170)",
+                "null": true,
+                "default": null,
+                "extra": ""
+            },
+            "seo_title": {
+                "type": "varchar(70)",
+                "null": true,
+                "default": null,
+                "extra": ""
+            },
+            "slug": {
+                "type": "varchar(160)",
+                "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "sort_order": {
+                "type": "int",
+                "null": false,
+                "default": "0",
+                "extra": ""
+            },
+            "status": {
+                "type": "tinyint",
+                "null": false,
+                "default": "0",
+                "extra": ""
+            },
+            "summary": {
+                "type": "varchar(300)",
+                "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "technology": {
+                "type": "varchar(20)",
+                "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "updated_at": {
+                "type": "int",
+                "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "version": {
+                "type": "varchar(20)",
+                "null": true,
+                "default": null,
+                "extra": ""
+            }
+        },
+        "product_image": {
+            "id": {
+                "type": "int",
+                "null": false,
+                "default": null,
+                "extra": "auto_increment"
+            },
+            "path": {
+                "type": "varchar(255)",
+                "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "product_id": {
+                "type": "int",
+                "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "sort_order": {
+                "type": "int",
+                "null": false,
+                "default": "0",
+                "extra": ""
+            }
+        },
         "seo_page": {
             "description": {
                 "type": "varchar(170)",
@@ -3119,6 +3273,14 @@
             "status,current_expiry_date": "index",
             "user_id": "index"
         },
+        "product": {
+            "id": "primary",
+            "slug": "unique"
+        },
+        "product_image": {
+            "id": "primary",
+            "product_id": "index"
+        },
         "seo_page": {
             "id": "primary",
             "route": "unique"
@@ -3271,6 +3433,9 @@
         },
         "maintenance": {
             "user_id": "user(id) ON DELETE CASCADE ON UPDATE CASCADE"
+        },
+        "product_image": {
+            "product_id": "product(id) ON DELETE CASCADE ON UPDATE CASCADE"
         },
         "service_reminder_log": {
             "user_id": "user(id) ON DELETE CASCADE ON UPDATE CASCADE"

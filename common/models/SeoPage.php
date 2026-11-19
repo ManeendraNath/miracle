@@ -29,6 +29,7 @@ class SeoPage extends base\SeoPage
         'site/contact' => 'Contact / get a quote',
         'site/terms' => 'Terms & conditions',
         'blog/index' => 'Blog (list of posts)',
+        'store/index' => 'Themes & plugins store',
     ];
 
     /**
@@ -51,6 +52,7 @@ class SeoPage extends base\SeoPage
             }
         }
         usort($routes, static fn(string $a, string $b): int => ($b === 'site/index') <=> ($a === 'site/index'));
+        $routes[] = 'store/index';
         $routes[] = 'blog/index';
         $pages = [];
         foreach ($routes as $route) {

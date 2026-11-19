@@ -183,4 +183,25 @@ final class BlogPostCest
         $I->amOnRoute('seo-page/update', ['route' => 'site/login']);
         $I->seeResponseCodeIs(404);
     }
+
+    public function anAdminAddsAStoreProductAndAManagerCannot(FunctionalTester $I): void
+    {
+        $I->amOnRoute('product/index');
+        $I->seeResponseCodeIs(403);
+        $I->haveRecord(Admin::class, ['username' => 'store-admin', 'email' => 'store-admin@example.test', 'auth_key' => Yii::$app->security->generateRandomString(), 'password_hash' => Yii::$app->security->generatePasswordHash(self::PASSWORD), 'role' => 'Admin', 'status' => Admin::getStatusActive(), 'created_at' => time(), 'updated_at' => time()]);
+        $I->sendAjaxPostRequest('/auth/logout', [Yii::$app->request->csrfParam => $I->grabAttributeFrom('meta[name=csrf-token]', 'content')]);
+        $I->amOnRoute('auth/login');
+        $I->submitForm('#login-form', ['LoginForm[username]' => 'store-admin', 'LoginForm[password]' => self::PASSWORD]);
+
+        $fields = ['Product[name]' => 'Nova Shop Theme', 'Product[technology]' => 'wordpress', 'Product[kind]' => 'theme', 'Product[summary]' => 'A store theme.', 'Product[description]' => 'Text.', 'Product[price_single_inr]' => '2999', 'Product[price_single_usd]' => '45', 'Product[status]' => '1'];
+        $I->amOnRoute('product/create');
+        $I->submitForm('form', $fields + ['Product[price_unlimited_inr]' => '7999', 'Product[price_unlimited_usd]' => '']);
+        $I->see('Give both unlimited-sites prices, or leave both empty.');
+        $I->dontSeeRecord(\common\models\Product::class, ['slug' => 'nova-shop-theme']);
+
+        $I->amOnRoute('product/create');
+        $I->submitForm('form', $fields);
+        $I->seeRecord(\common\models\Product::class, ['slug' => 'nova-shop-theme', 'status' => 1, 'price_unlimited_inr' => null]);
+        $I->see('It is in the store');
+    }
 }

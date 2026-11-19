@@ -27,6 +27,9 @@ class SitemapController extends Controller
         foreach ($tags as $tag) {
             $urls[] = ['loc' => Url::to(['/blog/index', 'tag' => $tag->slug], true)];
         }
+        foreach (\common\models\Product::findPublic()->select(['slug', 'updated_at'])->asArray()->all() as $product) {
+            $urls[] = ['loc' => Url::to(['/store/view', 'slug' => $product['slug']], true), 'lastmod' => date('Y-m-d', (int) $product['updated_at'])];
+        }
         foreach ($posts as $post) {
             $urls[] = ['loc' => Url::to(['/blog/view', 'slug' => $post['slug']], true), 'lastmod' => date('Y-m-d', (int) $post['updated_at'])];
         }

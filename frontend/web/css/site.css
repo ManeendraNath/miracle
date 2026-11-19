@@ -236,6 +236,14 @@ a.desc:after {
 }
 
 /* WhatsApp's darker green: white on it passes contrast, the bright green doesn't. */
+/* Store product: the licence card stays in view beside the screenshots on wide screens. */
+@media (min-width: 992px) {
+    .mw-sticky-lg {
+        position: sticky;
+        top: 6rem;
+    }
+}
+
 .mw-whatsapp {
     position: fixed;
     right: 1.25rem;

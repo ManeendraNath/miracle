@@ -106,6 +106,8 @@ return [
                 'blog/feed' => 'blog/feed',
                 'blog/<action:(subscribe|confirm|unsubscribe)>' => 'blog/<action>',
                 'blog/<slug:[a-z0-9-]+>' => 'blog/view',
+                'store' => 'store/index',
+                'store/<slug:[a-z0-9-]+>' => 'store/view',
                 'sitemap.xml' => 'sitemap/index',
                 'indexnow-key.txt' => 'sitemap/indexnow-key',
                 '<action>' => 'site/<action>',

@@ -142,8 +142,17 @@ final class AutoInvoiceService
 
             $invoice = $this->createInvoiceHeader($runId, $user, $profile, $events);
 
+            // Care plans and software subscriptions are billed as maintenance; their lines say what they are.
+            $maintenanceIds = [];
             foreach ($events as $event) {
-                $this->createInvoiceItem($invoice, $event);
+                if ((int) $event->item_type === InvoiceItem::TYPE_MAINTENANCE) {
+                    $maintenanceIds[] = (int) $event->item_id;
+                }
+            }
+            $maintenances = $maintenanceIds === [] ? [] : \common\models\Maintenance::find()->with('productOrder.product')->where(['id' => $maintenanceIds])->indexBy('id')->all();
+            foreach ($events as $event) {
+                $product = (int) $event->item_type === InvoiceItem::TYPE_MAINTENANCE ? ($maintenances[(int) $event->item_id] ?? null)?->storeProduct() : null;
+                $this->createInvoiceItem($invoice, $event, $product);
             }
 
             // Not into an invoice held for review: the customer couldn't see or pay the balance until it is sent.
@@ -301,7 +310,7 @@ final class AutoInvoiceService
         return $invoice;
     }
 
-    private function createInvoiceItem(Invoice $invoice, BillingEvent $event): void
+    private function createInvoiceItem(Invoice $invoice, BillingEvent $event, ?\common\models\Product $product = null): void
     {
         if ((float) $event->amount <= 0) {
             throw new \DomainException('Billing event amount must be greater than zero.');
@@ -314,7 +323,8 @@ final class AutoInvoiceService
         $item->item_id = (int) $event->item_id;
         $item->billing_event_id = (int) $event->id;
         $item->source_invoice_id = null;
-        $item->category = $typeName . ' Renewal';
+        // A care plan stays under Maintenance (that is what it is); a software subscription does not.
+        $item->category = ($product?->isSoftware() ? $product->renewalLabel() : $typeName) . ' Renewal';
         $item->description = sprintf(
             '%s | Renewal period: %s to %s',
             $event->description,

@@ -19,6 +19,8 @@ use common\models\traits\CustomerNotDeletedTrait;
  *
  * @property User $user
  * @property-read string|null $websiteHref
+ *
+ * @property-read ProductOrder|null $productOrder the store order that started it (care plan or software subscription)
  */
 class Maintenance extends base\Maintenance
 {
@@ -61,7 +63,8 @@ class Maintenance extends base\Maintenance
             ['status', 'validateCustomerNotDeleted'],
             [['start_date', 'current_expiry_date'], 'date', 'format' => 'php:Y-m-d'],
             // Rendered as a link for staff: only http(s), never javascript: or app-relative paths.
-            ['website_url', 'url', 'defaultScheme' => 'https'],
+            // International names (bücher.de) too, as checkout accepts them.
+            ['website_url', 'url', 'defaultScheme' => 'https', 'enableIDN' => function_exists('idn_to_ascii')],
             ['renewal_cycle_months', 'integer', 'min' => 1],
             ['renewal_increase_percent', 'number', 'min' => 0, 'max' => 100],
             ['renewal_base_amount', 'number', 'min' => 0],
@@ -69,6 +72,18 @@ class Maintenance extends base\Maintenance
             ['next_renewal_amount', 'default', 'value' => null],
             ['status', 'in', 'range' => [self::STATUS_CANCELLED, self::STATUS_ACTIVE, self::STATUS_OVERDUE]],
         ]);
+    }
+
+    /** The store order that started it (a care plan or a software subscription), if any. */
+    public function getProductOrder(): \yii\db\ActiveQuery
+    {
+        return $this->hasOne(ProductOrder::class, ['maintenance_id' => 'id']);
+    }
+
+    /** The store product it was bought as (eager-load productOrder.product for many rows). */
+    public function storeProduct(): ?Product
+    {
+        return $this->productOrder?->product;
     }
 
     /** website_url as a link target, or null for legacy values that aren't http(s). */

@@ -51,6 +51,7 @@ final class MaintenanceBillingCollector
         );
 
         $models = Maintenance::find()
+                ->with('productOrder.product') // care plans and software subscriptions renew under their own name
                 ->where([
                     'status' => 1,
                 ])
@@ -81,7 +82,7 @@ final class MaintenanceBillingCollector
                     InvoiceItem::TYPE_MAINTENANCE,
                 itemId: (int) $model->id,
                 description:
-                    'Maintenance renewal - '
+                    (($model->storeProduct()?->name ?? 'Maintenance') . ' renewal - ')
                     . $model->website_url,
                 currentExpiryDate:
                     (string) $model->current_expiry_date,

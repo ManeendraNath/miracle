@@ -96,13 +96,7 @@ class BlogSubscriber extends base\BlogSubscriber
         if ($ip === null) {
             return false;
         }
-        $key = 'newsletter-signups:' . $ip;
-        $window = Yii::$app->cache->get($key);
-        [$count, $since] = is_array($window) ? $window : [0, time()];
-        // The hour runs from the first attempt; later attempts don't restart it.
-        Yii::$app->cache->set($key, [$count + 1, $since], max(1, $since + 3600 - time()));
-
-        return $count + 1 > self::RATE_LIMIT;
+        return \common\components\RateLimit::hit('newsletter-signups:' . $ip, self::RATE_LIMIT);
     }
 
     /** Only a waiting sign-up: an unsubscribed reader is never put back by an old link. Returns whether it is subscribed now. */

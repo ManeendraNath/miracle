@@ -35,13 +35,22 @@ class Product extends base\Product
      * monthly care plan (at /care-plans): one monthly price; paying the first month starts a maintenance service that
      * renews every month.
      */
-    public const KINDS = ['theme' => 'Theme', 'plugin' => 'Plugin', 'service' => 'Service', 'plan' => 'Care plan'];
+    public const KINDS = ['theme' => 'Theme', 'plugin' => 'Plugin', 'software' => 'Software (subscription)', 'service' => 'Service', 'plan' => 'Care plan'];
     public const KIND_SERVICE = 'service';
     public const KIND_PLAN = 'plan';
+    /**
+     * Software sold by subscription (e.g. our billing portal): a licence key and download like a theme, renewing
+     * monthly (the single price) or yearly (the "unlimited" price) like a care plan. The key works while it is paid.
+     */
+    public const KIND_SOFTWARE = 'software';
     /** Where each kind is listed. */
-    public const SECTIONS = ['store' => ['theme', 'plugin'], 'services' => [self::KIND_SERVICE], 'plans' => [self::KIND_PLAN]];
+    public const SECTIONS = ['store' => ['theme', 'plugin', self::KIND_SOFTWARE], 'services' => [self::KIND_SERVICE], 'plans' => [self::KIND_PLAN]];
     public const SECTION_URLS = ['store' => '/store', 'services' => '/services', 'plans' => '/care-plans'];
     public const LICENCES = ['single' => 'Single site', 'unlimited' => 'Unlimited sites'];
+    /** The same two prices of a software subscription. */
+    public const SUBSCRIPTIONS = ['single' => 'Monthly', 'unlimited' => 'Yearly'];
+    /** Months a software subscription period covers. */
+    public const SUBSCRIPTION_MONTHS = ['single' => 1, 'unlimited' => 12];
 
     /** Months of support (setup help and questions) from payment; updates are free for life. See site/licence. */
     public const SUPPORT_MONTHS = 6;
@@ -86,9 +95,19 @@ class Product extends base\Product
             // Shown without paise, so search engines see the same price as visitors.
             [['price_single_inr', 'price_unlimited_inr'], 'integer', 'message' => 'Whole rupees, without paise.'],
             // An unlimited-sites licence is offered with both prices, or not at all.
-            [['price_unlimited_inr', 'price_unlimited_usd'], 'required', 'when' => fn(): bool => (string) $this->price_unlimited_inr !== '' || (string) $this->price_unlimited_usd !== '', 'enableClientValidation' => false, 'message' => 'Give both unlimited-sites prices, or leave both empty.'],
-            ['price_unlimited_inr', 'compare', 'compareAttribute' => 'price_single_inr', 'operator' => '>', 'type' => 'number', 'skipOnEmpty' => true, 'message' => 'The unlimited-sites price should be higher than the single-site price.'],
-            ['price_unlimited_usd', 'compare', 'compareAttribute' => 'price_single_usd', 'operator' => '>', 'type' => 'number', 'skipOnEmpty' => true, 'message' => 'The unlimited-sites price should be higher than the single-site price.'],
+            [['price_unlimited_inr', 'price_unlimited_usd'], 'required', 'when' => fn(): bool => !$this->isSoftware() && ((string) $this->price_unlimited_inr !== '' || (string) $this->price_unlimited_usd !== ''), 'enableClientValidation' => false, 'message' => 'Give both unlimited-sites prices, or leave both empty.'],
+            // Software is sold monthly and yearly: the "unlimited" prices are the yearly ones.
+            [['price_unlimited_inr', 'price_unlimited_usd'], 'required', 'when' => fn(): bool => $this->isSoftware(), 'enableClientValidation' => false, 'message' => 'Give the yearly price of the subscription.'],
+            ['price_unlimited_inr', 'compare', 'compareAttribute' => 'price_single_inr', 'operator' => '>', 'type' => 'number', 'skipOnEmpty' => true, 'when' => fn(): bool => !$this->isSoftware(), 'message' => 'The unlimited-sites price should be higher than the single-site price.'],
+            ['price_unlimited_usd', 'compare', 'compareAttribute' => 'price_single_usd', 'operator' => '>', 'type' => 'number', 'skipOnEmpty' => true, 'when' => fn(): bool => !$this->isSoftware(), 'message' => 'The unlimited-sites price should be higher than the single-site price.'],
+            // The store page says a year costs more than a month and less than twelve.
+            [['price_unlimited_inr', 'price_unlimited_usd'], function (string $attribute): void {
+                $month = (float) $this->getAttribute(str_replace('unlimited', 'single', $attribute));
+                $year = (float) $this->getAttribute($attribute);
+                if ($month > 0 && ($year <= $month || $year >= 12 * $month)) {
+                    $this->addError($attribute, 'The yearly price should be more than the monthly price and less than twelve times it.');
+                }
+            }, 'when' => fn(): bool => $this->isSoftware(), 'skipOnEmpty' => true],
             ['sort_order', 'integer', 'min' => 0, 'max' => 9999],
             // A service has one price and a delivery time; themes and plugins have neither of those limits.
             ['delivery_days', 'required', 'when' => fn(): bool => $this->isService(), 'enableClientValidation' => false, 'message' => 'Give the working days a service takes.'],
@@ -109,10 +128,10 @@ class Product extends base\Product
             'changelog' => "What's new",
             'delivery_days' => 'Delivery (working days)',
             'demo_url' => 'Live demo address',
-            'price_single_inr' => 'Single site, ₹',
-            'price_single_usd' => 'Single site, US$',
-            'price_unlimited_inr' => 'Unlimited sites, ₹',
-            'price_unlimited_usd' => 'Unlimited sites, US$',
+            'price_single_inr' => $this->isSoftware() ? 'Monthly, ₹' : 'Single site, ₹',
+            'price_single_usd' => $this->isSoftware() ? 'Monthly, US$' : 'Single site, US$',
+            'price_unlimited_inr' => $this->isSoftware() ? 'Yearly, ₹' : 'Unlimited sites, ₹',
+            'price_unlimited_usd' => $this->isSoftware() ? 'Yearly, US$' : 'Unlimited sites, US$',
             'sort_order' => 'Order in the store',
             'seo_title' => 'Search title',
             'seo_description' => 'Search description',
@@ -155,6 +174,41 @@ class Product extends base\Product
     public function isPlan(): bool
     {
         return $this->kind === self::KIND_PLAN;
+    }
+
+    public function isSoftware(): bool
+    {
+        return $this->kind === self::KIND_SOFTWARE;
+    }
+
+    /** Paid again every period, through a maintenance service the first payment starts: care plans and software. */
+    public function isRecurring(): bool
+    {
+        return $this->isPlan() || $this->isSoftware();
+    }
+
+    /** What a recurring product's renewals are called on invoices and reminders: "Software subscription" / "Care plan". */
+    public function renewalLabel(): string
+    {
+        return $this->isSoftware() ? 'Software subscription' : 'Care plan';
+    }
+
+    /** A subscription's period: "month" or "year". */
+    public static function periodName(string $licence): string
+    {
+        return (self::SUBSCRIPTION_MONTHS[$licence] ?? 1) === 12 ? 'year' : 'month';
+    }
+
+    /** Bought for a website (services, plans), or installed at one (software): checkout asks for its address. */
+    public function needsWebsite(): bool
+    {
+        return !$this->hasLicence() || $this->isSoftware();
+    }
+
+    /** "Single site" / "Unlimited sites"; for software "Monthly" / "Yearly". */
+    public function licenceName(string $licence): string
+    {
+        return ($this->isSoftware() ? self::SUBSCRIPTIONS : self::LICENCES)[$licence] ?? $licence;
     }
 
     /** A theme or plugin: sold with a licence key and a download. Services and plans are work, not files. */
@@ -209,6 +263,9 @@ class Product extends base\Product
     /** e.g. "WordPress theme" */
     public function typeLabel(): string
     {
+        if ($this->isSoftware()) {
+            return (self::TECHNOLOGIES[$this->technology] ?? $this->technology) . ' software';
+        }
         if ($this->isPlan()) {
             return $this->technology === 'any' ? 'Care plan' : (self::TECHNOLOGIES[$this->technology] ?? $this->technology) . ' care plan';
         }

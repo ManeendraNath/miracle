@@ -1,5 +1,5 @@
 {
-    "migrations": 91,
+    "migrations": 93,
     "columns": {
         "admin": {
             "auth_key": {
@@ -2242,8 +2242,20 @@
                 "default": null,
                 "extra": ""
             },
+            "licence_checked_at": {
+                "type": "int",
+                "null": true,
+                "default": null,
+                "extra": ""
+            },
             "licence_key": {
                 "type": "varchar(32)",
+                "null": true,
+                "default": null,
+                "extra": ""
+            },
+            "licence_site": {
+                "type": "varchar(255)",
                 "null": true,
                 "default": null,
                 "extra": ""

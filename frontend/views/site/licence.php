@@ -12,7 +12,7 @@ $name = Html::encode(CustomYii::getSetting('site_name') ?: 'Miracle Web Technolo
 $months = Product::SUPPORT_MONTHS;
 $refund = Html::encode(\yii\helpers\Url::to(['/site/refund-policy']));
 
-echo $this->render('_legal', ['title' => 'Licence Terms for Themes & Plugins', 'updated' => '19 Nov 2026', 'body' => <<<HTML
+echo $this->render('_legal', ['title' => 'Licence Terms for Themes, Plugins & Software', 'updated' => '19 Nov 2026', 'body' => <<<HTML
 <p>These terms apply to the website themes and plugins (HTML, WordPress and Yii2) you buy from the {$name} store. Paying for a product means you accept them.</p>
 
 <h2 class="h5 fw-bold mt-4">1. What each licence allows</h2>
@@ -36,4 +36,14 @@ echo $this->render('_legal', ['title' => 'Licence Terms for Themes & Plugins', '
 
 <h2 class="h5 fw-bold mt-4">6. Ownership</h2>
 <p>{$name}, or the authors named in the product, keep the copyright in the product. Your licence lets you use it as described above.</p>
+
+<h2 class="h5 fw-bold mt-4">7. Software sold by subscription</h2>
+<p>Some software, such as our billing portal, is sold by the month or by the year instead of with a one-time licence. For it, sections 1, 3 and 4 above are replaced by these terms:</p>
+<ul>
+    <li>A subscription is for one installation, at the web address given when you bought it. To move it to another address, ask us in a support ticket. A test or staging copy may run without the key; it then shows a reminder in its admin panel.</li>
+    <li>While the subscription is paid you get every new version and our support. Each next month or year is invoiced before it starts; nothing is charged automatically.</li>
+    <li>Your installation checks its licence key with us once a day. It sends only the key and its web address.</li>
+    <li>You can cancel any time before the next renewal. If a subscription ends, your installation keeps working with the version you have, but downloads, updates and support stop until it is renewed.</li>
+    <li>Refunds follow section 5 for the first period. A renewal already paid is not refunded once its period has started.</li>
+</ul>
 HTML]);

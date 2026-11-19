@@ -17,6 +17,8 @@ use Yii;
  * @property int|null $maintenance_id
  * @property int $invoice_id
  * @property string|null $licence_key
+ * @property string|null $licence_site
+ * @property int|null $licence_checked_at
  * @property int|null $paid_at
  * @property int|null $first_downloaded_at
  * @property int $created_at
@@ -44,12 +46,12 @@ class ProductOrder extends \yii\db\ActiveRecord
     public function rules()
     {
         return [
-            [['brief', 'website_url', 'support_ticket_id', 'maintenance_id', 'licence_key', 'paid_at', 'first_downloaded_at'], 'default', 'value' => null],
+            [['brief', 'website_url', 'support_ticket_id', 'maintenance_id', 'licence_key', 'licence_site', 'licence_checked_at', 'paid_at', 'first_downloaded_at'], 'default', 'value' => null],
             [['user_id', 'product_id', 'licence', 'invoice_id', 'created_at', 'updated_at'], 'required'],
-            [['user_id', 'product_id', 'support_ticket_id', 'maintenance_id', 'invoice_id', 'paid_at', 'first_downloaded_at', 'created_at', 'updated_at'], 'integer'],
+            [['user_id', 'product_id', 'support_ticket_id', 'maintenance_id', 'invoice_id', 'licence_checked_at', 'paid_at', 'first_downloaded_at', 'created_at', 'updated_at'], 'integer'],
             [['brief'], 'string'],
             [['licence'], 'string', 'max' => 10],
-            [['website_url'], 'string', 'max' => 255],
+            [['website_url', 'licence_site'], 'string', 'max' => 255],
             [['licence_key'], 'string', 'max' => 32],
             [['invoice_id'], 'unique'],
             [['licence_key'], 'unique'],
@@ -77,6 +79,8 @@ class ProductOrder extends \yii\db\ActiveRecord
             'maintenance_id' => 'Maintenance ID',
             'invoice_id' => 'Invoice ID',
             'licence_key' => 'Licence Key',
+            'licence_site' => 'Licence Site',
+            'licence_checked_at' => 'Licence Checked At',
             'paid_at' => 'Paid At',
             'first_downloaded_at' => 'First Downloaded At',
             'created_at' => 'Created At',

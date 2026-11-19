@@ -17,7 +17,7 @@ final class PortalOnly
 {
     /** Public website controllers that do not exist in a portal-only copy. */
     /** feedback: customer reviews become testimonials on our website. */
-    private const CLOSED_FRONTEND = ['blog', 'store', 'purchase', 'sitemap', 'feedback'];
+    private const CLOSED_FRONTEND = ['blog', 'store', 'purchase', 'sitemap', 'feedback', 'licence'];
     /** Pages of SiteController that are our marketing and policy pages; site/index goes to sign-in instead. */
     private const CLOSED_SITE = ['contact', 'audit', 'about', 'hosting', 'terms', 'privacy', 'refund-policy', 'licence', 'shipping-policy'];
     /** Admin sections that manage the website rather than billing. */

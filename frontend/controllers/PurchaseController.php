@@ -38,7 +38,7 @@ final class PurchaseController extends Controller
     {
         $order = $this->findOwned($id);
         $path = $order->product->downloadPath();
-        if (!$order->isPaid() || !$order->product->hasLicence() || $path === null || !is_file($path)) {
+        if (!$order->licenceActive() || !$order->product->hasLicence() || $path === null || !is_file($path)) {
             throw new NotFoundHttpException('This download is not available.');
         }
 

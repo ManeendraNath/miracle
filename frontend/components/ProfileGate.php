@@ -20,7 +20,7 @@ use yii\base\ActionEvent;
 final class ProfileGate
 {
     /** Public pages, including logout. */
-    private const OPEN = ['site', 'webhook', 'blog', 'sitemap', 'store'];
+    private const OPEN = ['site', 'webhook', 'blog', 'sitemap', 'store', 'licence'];
     private const OPEN_ROUTES = ['account/profile', 'account/change-password'];
 
     public static function check(ActionEvent $event): void

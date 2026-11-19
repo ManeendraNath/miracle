@@ -18,6 +18,11 @@ return [
     'bsVersion' => '5.x',
     // A copy sold to another business: customer portal and admin billing only (common\components\PortalOnly).
     'portalOnly' => filter_var($_ENV['PORTAL_ONLY'] ?? false, FILTER_VALIDATE_BOOLEAN),
+    // Such a copy's subscription: its key, checked daily with our site (common\services\LicenceService).
+    'licence' => [
+        'key' => $_ENV['LICENCE_KEY'] ?? '',
+        'server' => $_ENV['LICENCE_SERVER'] ?? 'https://miraclewebtechnologies.com',
+    ],
     'billing' => [
         // Where the business is registered: decides CGST+SGST (same state) or IGST.
         'supplierState' => $_ENV['BILLING_SUPPLIER_STATE'] ?? 'Delhi',

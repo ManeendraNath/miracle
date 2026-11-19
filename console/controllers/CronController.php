@@ -220,6 +220,14 @@ class CronController extends Controller
         });
     }
 
+    /** A portal-only copy asks our site whether its licence is paid up (LicenceService). Nothing to do on our own site. */
+    public function actionLicenceCheck(): int
+    {
+        return $this->runLocked('miracle:licence-check', 'Licence check', static fn(): string => \common\components\PortalOnly::enabled()
+            ? \common\services\LicenceService::check()
+            : 'Not a portal-only copy: nothing to check.');
+    }
+
     /** New blog posts to newsletter subscribers, in batches small enough for the mail server's hourly limit. */
     public function actionBlogNewsletter(): int
     {

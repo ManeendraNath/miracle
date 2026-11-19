@@ -56,6 +56,10 @@ final class m261215_100000_starter_services extends Migration
 
     public function safeUp(): void
     {
+        // Our own catalogue: a copy sold to another business (PORTAL_ONLY) gets none of it.
+        if (\common\components\PortalOnly::enabled()) {
+            return;
+        }
         $existing = (new \yii\db\Query())->select('slug')->from('{{%product}}')->column($this->db);
         $order = 100;
         foreach (self::SERVICES as [$slug, $name, $technology, $days, $inr, $usd, $summary, $description, $features]) {

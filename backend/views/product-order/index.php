@@ -81,6 +81,14 @@ $fmt = Yii::$app->formatter;
                     'label' => 'Licence key / job',
                     'format' => 'raw',
                     'value' => static fn(ProductOrder $o): string => match (true) {
+                        // Software: the key, where it works (changeable) and its subscription.
+                        $o->product->isSoftware() && (bool) $o->licence_key => '<code>' . Html::encode($o->licence_key) . '</code>'
+                            . '<div class="small">' . ($o->licenceActive() ? 'Active' : 'Ended') . ($o->maintenance !== null ? ' · ' . Html::a('subscription #' . (int) $o->maintenance->id, ['/maintenance/view', 'id' => $o->maintenance->id]) : '')
+                            . ($o->licence_checked_at ? ' · last checked ' . Yii::$app->formatter->asDate($o->licence_checked_at, 'medium') : ' · never checked') . '</div>'
+                            . Html::beginForm(['site', 'id' => $o->id], 'post', ['class' => 'd-flex gap-1 mt-1'])
+                            . Html::textInput('site', (string) $o->licence_site, ['class' => 'form-control form-control-sm', 'aria-label' => 'Web address the licence works on', 'placeholder' => 'billing.example.com'])
+                            . Html::submitButton('Move', ['class' => 'btn btn-sm btn-outline-secondary'])
+                            . Html::endForm(),
                         $o->maintenance !== null => Html::a('Maintenance #' . (int) $o->maintenance->id, ['/maintenance/view', 'id' => $o->maintenance->id]) . ($o->supportTicket !== null ? '<div class="small">' . Html::a('Ticket ' . Html::encode($o->supportTicket->ticket_number), ['/support-ticket/view', 'number' => $o->supportTicket->ticket_number]) . '</div>' : ''),
                         $o->supportTicket !== null => Html::a('Ticket ' . Html::encode($o->supportTicket->ticket_number), ['/support-ticket/view', 'number' => $o->supportTicket->ticket_number]) . '<div class="small text-body-secondary">' . Html::encode($o->supportTicket->status) . '</div>',
                         (bool) $o->licence_key => '<code>' . Html::encode($o->licence_key) . '</code>',

@@ -213,7 +213,87 @@ final class StoreOrderTest extends Unit
         $this->assertEqualsWithDelta(59.0, (float) \common\services\payment\PayPalService::chargeFor($inr, 90.0), 0.02);
     }
 
-        public function testSupportEndsOnTheLastDayOfAShortMonth(): void
+        public function testASoftwareSubscriptionLicenceWorksWhilePaidOnItsSite(): void
+    {
+        $this->profile('India', 'Delhi', '07');
+        \common\models\BillingSettings::updateAll(['is_active' => 1], ['service_type' => InvoiceItem::TYPE_MAINTENANCE]);
+        \common\models\CronJob::updateAll(['is_enabled' => 1], ['job' => 'cron/run-billing']);
+        $software = new Product(['name' => 'Portal ' . $this->_user->id, 'technology' => 'yii2', 'kind' => Product::KIND_SOFTWARE, 'summary' => 'Billing.', 'description' => 'Billing portal.', 'price_single_inr' => 1499, 'price_single_usd' => 29, 'status' => Product::STATUS_PUBLISHED]);
+        $this->assertFalse($software->save(), 'the yearly price is required');
+        $software->price_unlimited_inr = 14999;
+        $software->price_unlimited_usd = 290;
+        $this->assertTrue($software->save(), json_encode($software->errors));
+        $this->assertSame('Yearly', $software->licenceName('unlimited'));
+
+        try {
+            (new StoreOrderService())->buy((int) $this->_user->id, $software, 'unlimited');
+            $this->fail('software needs the address it is installed at');
+        } catch (\DomainException $e) {
+            $this->assertStringContainsString('install', $e->getMessage());
+        }
+        $invoice = (new StoreOrderService())->buy((int) $this->_user->id, $software, 'unlimited', '', 'https://Billing.Example.com/');
+        $this->assertEquals(14999.0, (float) InvoiceItem::findOne(['invoice_id' => $invoice->id])->unit_price);
+        $payment = new Transaction();
+        $payment->setAttributes(['invoice_id' => $invoice->id, 'gateway_id' => Transaction::GATEWAY_UPI_BANK, 'amount' => (float) $invoice->total_payable, 'status' => Transaction::STATUS_CAPTURED, 'paid_at' => time(), 'created_at' => time(), 'updated_at' => time()], false);
+        $this->assertTrue($payment->save(false));
+        (new PaymentProcessingService())->transactionChanged($payment);
+
+        $order = ProductOrder::findOne(['invoice_id' => $invoice->id]);
+        $this->assertNotNull($order->licence_key);
+        $this->assertSame('billing.example.com', $order->licence_site);
+        $this->assertSame(12, (int) $order->maintenance->renewal_cycle_months, 'yearly');
+        $this->assertEquals(14999.0, (float) $order->maintenance->renewal_base_amount, 'renews at the yearly price');
+        $this->assertEquals(0.0, (float) $order->maintenance->renewal_increase_percent, 'no price rise in the terms');
+        $this->assertSame(12, \common\services\billing\RenewalPeriodCalculator::months($order->maintenance->start_date, $order->maintenance->current_expiry_date));
+        $this->assertSame('Yearly', $order->licenceLabel());
+
+        $status = static fn(string $site): string => \common\services\LicenceService::status(strtolower((string) $order->licence_key), $site)['status'];
+        $this->assertSame('active', $status('https://www.billing.example.com'));
+        $this->assertSame('wrong_site', $status('https://other.example.com'));
+        $this->assertSame('unknown', \common\services\LicenceService::status('NOPE', 'billing.example.com')['status']);
+        $this->assertNotNull(ProductOrder::findOne($order->id)->licence_checked_at);
+
+        // Past its paid period and the grace days: the key stops working (the copy itself carries on).
+        $order->maintenance->updateAttributes(['current_expiry_date' => date('Y-m-d', strtotime('-' . (ProductOrder::LICENCE_GRACE_DAYS + 1) . ' days'))]);
+        $this->assertSame('expired', $status('billing.example.com'));
+
+        // Cancelled but paid up: works to the end of the period.
+        $order->maintenance->updateAttributes(['current_expiry_date' => date('Y-m-d', strtotime('+20 days')), 'status' => \common\models\Maintenance::STATUS_CANCELLED]);
+        $this->assertSame('active', $status('billing.example.com'));
+        $order->maintenance->updateAttributes(['status' => \common\models\Maintenance::STATUS_ACTIVE]);
+
+        // The renewal invoice is named after the product.
+        $order->maintenance->updateAttributes(['current_expiry_date' => date('Y-m-d', strtotime('+5 days'))]);
+        $renewals = (new \common\services\billing\collector\MaintenanceBillingCollector())->collect(new \DateTimeImmutable('today'));
+        $mine = array_values(array_filter($renewals, static fn($r): bool => $r->itemId === (int) $order->maintenance_id));
+        $this->assertStringStartsWith($software->name . ' renewal - ', $mine[0]->description);
+    }
+
+    public function testAnInstalledCopyKeepsTheLastAnswerWhenTheServerIsDown(): void
+    {
+        $params = Yii::$app->params;
+        $file = (string) Yii::getAlias('@common/runtime/licence.json');
+        $saved = is_file($file) ? file_get_contents($file) : null;
+        Yii::$app->params['licence'] = ['key' => 'ABC', 'server' => 'https://licence.example.test'];
+        Yii::$app->params['frontendBaseUrl'] = 'https://billing.example.com';
+        try {
+            $http = new MockTransport();
+            $http->appendResponse(new Response(['content' => json_encode(['status' => 'expired', 'until' => '2026-10-01', 'product' => 'Portal']), 'headers' => ['http-code' => '200', 'content-type' => 'application/json']]));
+            \common\services\LicenceService::check($http);
+            $this->assertSame('expired', \common\services\LicenceService::current()['status']);
+            $this->assertSame('POST', $http->flushRequests()[0]->getMethod(), 'the key is not put in the URL');
+            $down = new MockTransport();
+            $down->appendResponse(new Response(['content' => 'Bad gateway', 'headers' => ['http-code' => '502']]));
+            \common\services\LicenceService::check($down);
+            $this->assertSame('expired', \common\services\LicenceService::current()['status'], 'an outage changes nothing');
+            $this->assertArrayHasKey('failing_since', \common\services\LicenceService::current(), 'the failure is noted for the banner');
+        } finally {
+            Yii::$app->params = $params;
+            $saved !== null ? file_put_contents($file, $saved) : @unlink($file);
+        }
+    }
+
+    public function testSupportEndsOnTheLastDayOfAShortMonth(): void
     {
         $at = static fn(string $date): int => (new \DateTimeImmutable($date . ' 10:00', new \DateTimeZone(Yii::$app->timeZone)))->getTimestamp();
         $order = new ProductOrder(['paid_at' => $at('2026-08-31')]);

@@ -33,7 +33,12 @@ $fmt = Yii::$app->formatter;
                 <div>
                     <h2 class="h5 mb-1"><?= Html::encode($order->product->name) ?></h2>
                     <div class="small text-body-secondary">
-                        <?= $order->product->isPlan() ? 'Monthly care plan' . ($order->website_url ? ' for ' . Html::encode($order->website_url) : '') : ($order->product->isService() ? 'Fixed-price service' : Html::encode($order->licenceLabel()) . ' licence') ?> · ordered <?= $fmt->asDate($order->created_at, 'medium') ?>
+                        <?= match (true) {
+                            $order->product->isPlan() => 'Monthly care plan' . ($order->website_url ? ' for ' . Html::encode($order->website_url) : ''),
+                            $order->product->isService() => 'Fixed-price service',
+                            $order->product->isSoftware() => Html::encode($order->licenceLabel()) . ' subscription' . ($order->licence_site ? ' for ' . Html::encode($order->licence_site) : ''),
+                            default => Html::encode($order->licenceLabel()) . ' licence',
+                        } ?> · ordered <?= $fmt->asDate($order->created_at, 'medium') ?>
                         · invoice <?= Html::a(Html::encode($order->invoice->invoice_number), ['/invoice/view', 'number' => $order->invoice->invoice_number]) ?>
                     </div>
                 </div>
@@ -81,6 +86,32 @@ $fmt = Yii::$app->formatter;
                 <?php if ($ticket !== null): ?>
                     <?= Html::a('Open the job ticket' . $which, ['/support/view', 'number' => $ticket->ticket_number], ['class' => 'btn btn-primary btn-sm']) ?>
                 <?php endif; ?>
+            <?php elseif ($state === 'paid' && $order->product->isSoftware()): ?>
+                <?php $subscription = $order->maintenance; ?>
+                <?php $active = $order->licenceActive(); ?>
+                <p class="small mb-3">
+                    <?php if ($active && (string) $subscription?->current_expiry_date < date('Y-m-d')): ?>
+                        <strong>Renewal due.</strong> Paid up to <?= $fmt->asDate((string) $subscription?->current_expiry_date, 'medium') ?>: pay the renewal invoice by <?= $fmt->asDate(date('Y-m-d', strtotime((string) $subscription?->current_expiry_date . ' +' . \common\models\ProductOrder::LICENCE_GRACE_DAYS . ' days')), 'medium') ?> to keep updates, downloads and support.
+                    <?php elseif ($active && (int) $subscription?->status === \common\models\Maintenance::STATUS_CANCELLED): ?>
+                        <strong>Cancelled.</strong> Updates, downloads and support continue until <?= $fmt->asDate((string) $subscription?->current_expiry_date, 'medium') ?>; it will not be renewed. To restart it, tell us in a support ticket.
+                    <?php elseif ($active): ?>
+                        <strong>Active</strong>, paid up to <?= $fmt->asDate((string) $subscription?->current_expiry_date, 'medium') ?>. Every new version and our support while it is paid; the next <?= \common\models\Product::periodName((string) $order->licence) ?> is invoiced before then. To cancel, tell us in a support ticket.
+                    <?php else: ?>
+                        <strong>Ended.</strong> Your copy keeps working, but updates, downloads and support have stopped. Pay the open renewal invoice, or ask us to restart it.
+                    <?php endif; ?>
+                    <?= $order->product->version ? 'Latest version ' . Html::encode($order->product->version) . '.' : '' ?>
+                    <?= Html::a('Licence terms', ['/site/licence']) ?>
+                </p>
+                <div class="mb-3">
+                    <label class="form-label small text-body-secondary mb-1" for="key-<?= $order->id ?>">Licence key (LICENCE_KEY in your .env file)</label>
+                    <input type="text" readonly class="form-control font-monospace" id="key-<?= $order->id ?>" value="<?= Html::encode($order->licence_key) ?>">
+                </div>
+                <div class="d-flex flex-wrap gap-2">
+                    <?php if ($active && $order->product->download_file): ?>
+                        <?= Html::a('<i class="fas fa-download me-2" aria-hidden="true"></i>Download' . $which, ['download', 'id' => $order->id], ['class' => 'btn btn-primary btn-sm', 'data-pjax' => 0]) ?>
+                    <?php endif; ?>
+                    <?= Html::a('Get help' . $which, ['/support/create', 'subject' => 'Help: ' . $order->product->name], ['class' => 'btn btn-outline-secondary btn-sm']) ?>
+                </div>
             <?php elseif ($state === 'paid'): ?>
                 <p class="small mb-3">
                     <?= $order->product->version ? 'Latest version ' . Html::encode($order->product->version) . ', free to download. ' : 'Updates are free to download. ' ?>

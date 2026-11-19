@@ -29,6 +29,10 @@ final class m261216_110000_starter_care_plans extends Migration
 
     public function safeUp(): void
     {
+        // Our own catalogue: a copy sold to another business (PORTAL_ONLY) gets none of it.
+        if (\common\components\PortalOnly::enabled()) {
+            return;
+        }
         $existing = (new \yii\db\Query())->select('slug')->from('{{%product}}')->column($this->db);
         $order = 50;
         foreach (self::PLANS as [$slug, $name, $inr, $usd, $summary, $description, $features]) {

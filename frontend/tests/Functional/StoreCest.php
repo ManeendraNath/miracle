@@ -117,10 +117,31 @@ final class StoreCest
         }
     }
 
+    public function aPaidSubscriptionShowsItsStatusAndKey(FunctionalTester $I): void
+    {
+        $this->product($I, 'portal-sub', ['kind' => 'software', 'technology' => 'yii2', 'price_unlimited_inr' => 14999, 'price_unlimited_usd' => 290]);
+        $I->amOnRoute('site/login');
+        $I->submitForm('#login-form', ['LoginForm[username]' => 'erau', 'LoginForm[password]' => 'password_0']);
+        $userId = (int) User::findOne(['username' => 'erau'])->id;
+        $I->haveRecord(CustomerBillingProfile::class, ['user_id' => $userId, 'legal_name' => 'Erau', 'address_line_1' => '1 Road', 'city' => 'Delhi', 'state' => 'Delhi', 'state_code' => '07', 'country' => 'India', 'postal_code' => '110001', 'created_at' => time(), 'updated_at' => time()]);
+        $invoiceId = $I->haveRecord(\common\models\Invoice::class, ['user_id' => $userId, 'invoice_number' => 'ST-' . bin2hex(random_bytes(3)), 'client_name' => 'Erau', 'subtotal_amount' => 14999, 'discount_amount' => 0, 'total_payable' => 14999, 'status' => \common\models\Invoice::STATUS_PAID, 'created_at' => time(), 'updated_at' => time()]);
+        $maintenanceId = $I->haveRecord(\common\models\Maintenance::class, ['user_id' => $userId, 'website_url' => 'https://billing.example.com', 'start_date' => date('Y-m-d'), 'current_expiry_date' => date('Y-m-d', strtotime('+1 year')), 'status' => \common\models\Maintenance::STATUS_ACTIVE, 'renewal_cycle_months' => 12, 'created_at' => time(), 'updated_at' => time()]);
+        $orderId = $I->haveRecord(ProductOrder::class, ['user_id' => $userId, 'product_id' => (int) Product::findOne(['slug' => 'portal-sub'])->id, 'licence' => 'unlimited', 'invoice_id' => $invoiceId, 'maintenance_id' => $maintenanceId, 'licence_key' => 'EEEEE-BBBBB-CCCCC-DDDDD', 'licence_site' => 'billing.example.com', 'paid_at' => time(), 'created_at' => time(), 'updated_at' => time()]);
+
+        $I->amOnRoute('purchase/index');
+        $I->seeResponseCodeIs(200);
+        $I->see('Yearly subscription for billing.example.com');
+        $I->see('Active');
+        $I->seeInField('#key-' . $orderId, 'EEEEE-BBBBB-CCCCC-DDDDD');
+        \common\models\Maintenance::updateAll(['status' => \common\models\Maintenance::STATUS_CANCELLED], ['id' => $maintenanceId]);
+        $I->amOnRoute('purchase/index');
+        $I->see('Cancelled.');
+    }
+
     public function theLicenceTermsAreLinkedAndInTheSitemap(FunctionalTester $I): void
     {
         $I->amOnPage('/licence');
-        $I->see('Licence Terms for Themes & Plugins');
+        $I->see('Licence Terms for Themes, Plugins & Software');
         $I->see('full refund if you ask before your first download');
         $I->amOnPage('/refund-policy');
         $I->see('Website themes and plugins from our store');
@@ -183,5 +204,14 @@ final class StoreCest
         $I->see('Give the address of the website the plan is for.');
         $I->submitForm('form[action*="buy"]', ['website' => 'shop.example']);
         $I->seeInCurrentUrl('invoice/view');
+    }
+
+    public function anUnknownLicenceKeyIsSaidToBeUnknown(FunctionalTester $I): void
+    {
+        \Yii::$app->cache->delete('licence-guesses:127.0.0.1');
+        $I->amOnPage('/');
+        $I->sendAjaxPostRequest('/licence/check', ['key' => 'NOT-A-KEY', 'site' => 'billing.example.com']);
+        $I->seeResponseCodeIs(200);
+        $I->seeInSource('"status":"unknown"');
     }
 }

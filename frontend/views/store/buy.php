@@ -19,6 +19,8 @@ $price = (float) $model->price($licence, $usd);
 $service = $model->isService();
 $plan = $model->isPlan();
 $work = $service || $plan; // no licence: the brief and website are asked for
+$software = $model->isSoftware();
+$period = Product::periodName($licence);
 $this->title = 'Your order: ' . $model->name;
 $this->params['bare'] = true;
 $this->params['robots'] = 'noindex, follow';
@@ -41,15 +43,17 @@ $this->params['robots'] = 'noindex, follow';
                     <div class="mw-card p-4">
                         <div class="d-flex justify-content-between align-items-baseline gap-3 mb-1">
                             <h2 class="h5 mb-0"><?= Html::encode($model->name) ?></h2>
-                            <p class="fw-bold fs-5 mb-0 text-nowrap"><?= $usd ? 'US$' . $fmt->asDecimal($price, 2) : '₹' . $fmt->asDecimal($price, 0) ?><?= $plan ? ' <span class="fs-6 fw-normal text-body-secondary">first month</span>' : '' ?></p>
+                            <p class="fw-bold fs-5 mb-0 text-nowrap"><?= $usd ? 'US$' . $fmt->asDecimal($price, 2) : '₹' . $fmt->asDecimal($price, 0) ?><?= $plan ? ' <span class="fs-6 fw-normal text-body-secondary">first month</span>' : ($software ? ' <span class="fs-6 fw-normal text-body-secondary">first ' . $period . '</span>' : '') ?></p>
                         </div>
-                        <?php if ($plan): ?>
+                        <?php if ($software): ?>
+                            <p class="text-body-secondary mb-3"><?= Html::encode($model->typeLabel()) ?>, <?= Html::encode(strtolower($model->licenceName($licence))) ?> subscription<?= $model->version ? ', version ' . Html::encode($model->version) : '' ?></p>
+                        <?php elseif ($plan): ?>
                             <p class="text-body-secondary mb-3"><?= Html::encode($model->typeLabel()) ?>, monthly</p>
                         <?php elseif ($service): ?>
                             <p class="text-body-secondary mb-3"><?= Html::encode($model->typeLabel()) ?>, fixed price, done in <?= (int) $model->delivery_days ?> working days</p>
                         <?php else: ?>
                             <p class="text-body-secondary mb-3">
-                                <?= Html::encode($model->typeLabel()) ?>, <?= Html::encode(strtolower(Product::LICENCES[$licence])) ?> licence<?= $model->version ? ', version ' . Html::encode($model->version) : '' ?>
+                                <?= Html::encode($model->typeLabel()) ?>, <?= Html::encode(strtolower($model->licenceName($licence))) ?> licence<?= $model->version ? ', version ' . Html::encode($model->version) : '' ?>
                             </p>
                         <?php endif; ?>
                         <ul class="list-unstyled small mb-4">
@@ -58,6 +62,10 @@ $this->params['robots'] = 'noindex, follow';
                                     <li class="mb-2"><i class="fas fa-check text-success me-2" aria-hidden="true"></i><?= Html::encode($feature) ?></li>
                                 <?php endforeach; ?>
                                 <li class="mb-2"><i class="fas fa-check text-success me-2" aria-hidden="true"></i>Each next month is invoiced a week before it starts; nothing is charged automatically. Cancel any time before the next renewal.</li>
+                            <?php elseif ($software): ?>
+                                <li class="mb-2"><i class="fas fa-check text-success me-2" aria-hidden="true"></i>For one installation, at the address you give below.</li>
+                                <li class="mb-2"><i class="fas fa-check text-success me-2" aria-hidden="true"></i>Every new version and our support while the subscription is paid.</li>
+                                <li class="mb-2"><i class="fas fa-check text-success me-2" aria-hidden="true"></i>Each next <?= $period ?> is invoiced before it starts; nothing is charged automatically. Cancel any time before the next renewal: your copy keeps working, without updates or support.</li>
                             <?php elseif ($service): ?>
                                 <li class="mb-2"><i class="fas fa-check text-success me-2" aria-hidden="true"></i>We start once the payment is confirmed, and finish within <?= (int) $model->delivery_days ?> working days of it (and of anything we need from you).</li>
                             <?php else: ?>
@@ -83,7 +91,13 @@ $this->params['robots'] = 'noindex, follow';
                                 <?php if ($error !== null): ?>
                                     <div class="alert alert-danger" role="alert"><?= Html::encode($error) ?></div>
                                 <?php endif; ?>
-                                <?php if ($plan): ?>
+                                <?php if ($software): ?>
+                                    <div class="mb-3">
+                                        <label class="form-label" for="website">Where you will install it</label>
+                                        <?= Html::textInput('website', $website, ['id' => 'website', 'class' => 'form-control', 'type' => 'text', 'inputmode' => 'url', 'maxlength' => 255, 'required' => true, 'placeholder' => 'https://billing.example.com', 'aria-describedby' => 'website-help']) ?>
+                                        <div class="form-text" id="website-help">The web address of your copy: the licence works there. To move it later, ask us in a support ticket.</div>
+                                    </div>
+                                <?php elseif ($plan): ?>
                                     <div class="mb-3">
                                         <label class="form-label" for="website">Website address</label>
                                         <?= Html::textInput('website', $website, ['id' => 'website', 'class' => 'form-control', 'type' => 'text', 'inputmode' => 'url', 'maxlength' => 255, 'required' => true, 'placeholder' => 'https://example.com']) ?>
@@ -109,7 +123,7 @@ $this->params['robots'] = 'noindex, follow';
                         <?php else: ?>
                             <div class="alert alert-warning mb-0" role="status">
                                 Online payment from outside India is not available right now.
-                                <?= Html::a('Contact us', ['/site/contact', 'subject' => 'Buy ' . $model->name . ($work ? '' : ' (' . strtolower(Product::LICENCES[$licence]) . ' licence)')]) ?> and we will arrange your payment.
+                                <?= Html::a('Contact us', ['/site/contact', 'subject' => 'Buy ' . $model->name . ($work ? '' : ' (' . strtolower($model->licenceName($licence)) . ($software ? ' subscription)' : ' licence)'))]) ?> and we will arrange your payment.
                             </div>
                         <?php endif; ?>
                         <p class="small text-body-secondary mt-3 mb-1">

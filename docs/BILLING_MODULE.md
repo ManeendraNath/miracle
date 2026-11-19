@@ -264,6 +264,12 @@ Razorpay safety net, every 30 minutes (records payments whose callback and webho
 */30 * * * * /usr/local/bin/php /home/rpocncwk/miracle/yii cron/razorpay-sync >> /home/rpocncwk/miracle/runtime/logs/billing-cron.log 2>&1
 ```
 
+A copy sold to another business (PORTAL_ONLY) also needs its daily licence check; on our own site it does nothing, so it is not in the list above (or in deploy.sh's check):
+
+```bash
+20 5 * * *   /usr/local/bin/php /path/to/portal/yii cron/licence-check >> /path/to/portal/runtime/logs/billing-cron.log 2>&1
+```
+
 Suggested full crontab (times are examples; keep each job's frequency):
 
 ```bash

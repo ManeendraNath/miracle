@@ -25,6 +25,7 @@ final class CronJob extends base\CronJob
         'cron/whatsapp-cleanup' => ['WhatsApp log cleanup', 'Weekly', 'Old WhatsApp log rows stay.'],
         'cron/blog-newsletter' => ['Blog newsletter', 'Every 15 minutes', 'New blog posts are not emailed to subscribers; they go out once it is back on.'],
         'cron/blog-spam-cleanup' => ['Blog cleanup', 'Weekly', 'Blog comments in Spam are kept for good instead of being deleted after ' . BlogComment::SPAM_DAYS . ' days; newsletter sign-ups never confirmed and posts in the trash are kept too.'],
+        'cron/licence-check' => ['Licence check', 'Daily', 'A copy sold to another business stops checking its subscription with us, so its admin banner may be out of date. Does nothing on our own site.'],
         'backup/run' => ['Daily backup', 'Daily', 'No scheduled database or payment proof backups. The backup before a deploy still runs.'],
     ];
 

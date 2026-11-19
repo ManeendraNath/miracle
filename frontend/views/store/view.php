@@ -24,19 +24,27 @@ if ($images !== []) {
 }
 $whatsapp = preg_replace('/\D/', '', (string) CustomYii::getSetting('whatsapp'));
 $service = !$model->hasLicence(); // a service or a care plan: one price, no licence
-$licences = $model->isPlan()
-    ? ['Monthly' => [$model->price_single_inr, $model->price_single_usd, 'A month at a time. Cancel any time before the next renewal.', 'single']]
-    : ($service
-    ? ['Fixed price' => [$model->price_single_inr, $model->price_single_usd, 'Done in ' . (int) $model->delivery_days . ' working days from payment and your details.', 'single']]
-    : ['Single site' => [$model->price_single_inr, $model->price_single_usd, 'Use on one website.', 'single']]);
-if (!$service && $model->hasUnlimited()) {
+$software = $model->isSoftware();
+$licences = match (true) {
+    $software => [
+        'Monthly' => [$model->price_single_inr, $model->price_single_usd, 'Pay month by month. Cancel any time before the next renewal.', 'single'],
+        'Yearly' => [$model->price_unlimited_inr, $model->price_unlimited_usd, 'Pay once a year, for less than twelve months.', 'unlimited'],
+    ],
+    $model->isPlan() => ['Monthly' => [$model->price_single_inr, $model->price_single_usd, 'A month at a time. Cancel any time before the next renewal.', 'single']],
+    $service => ['Fixed price' => [$model->price_single_inr, $model->price_single_usd, 'Done in ' . (int) $model->delivery_days . ' working days from payment and your details.', 'single']],
+    default => ['Single site' => [$model->price_single_inr, $model->price_single_usd, 'Use on one website.', 'single']],
+};
+$noun = $software ? 'subscription' : 'licence';
+// " a month" / " a year" after a subscription's (or a plan's monthly) prices
+$per = static fn(string $licence): string => $software || $model->isPlan() ? ' a ' . \common\models\Product::periodName($licence) : '';
+if (!$service && !$software && $model->hasUnlimited()) {
     $licences['Unlimited sites'] = [$model->price_unlimited_inr, $model->price_unlimited_usd, 'Use on any number of your websites.', 'unlimited'];
 }
 // For search engines: what it is, its pictures and its prices.
 $offers = [];
 foreach ($licences as $name => [$inr, $usd]) {
     foreach (['INR' => $inr, 'USD' => $usd] as $currency => $price) {
-        $offers[] = ['@type' => 'Offer', 'name' => $service ? $name : $name . ' licence', 'price' => number_format((float) $price, 2, '.', ''), 'priceCurrency' => $currency, 'availability' => 'https://schema.org/InStock', 'url' => $url];
+        $offers[] = ['@type' => 'Offer', 'name' => $service ? $name : $name . ' ' . $noun, 'price' => number_format((float) $price, 2, '.', ''), 'priceCurrency' => $currency, 'availability' => 'https://schema.org/InStock', 'url' => $url];
     }
 }
 $schema = array_filter([
@@ -112,25 +120,27 @@ $schema = array_filter([
                         <?php if ($model->demo_url): ?>
                             <?= Html::a('<i class="fas fa-external-link-alt me-2" aria-hidden="true"></i>Try the live demo<span class="visually-hidden"> (opens in a new tab)</span>', $model->demo_url, ['class' => 'btn btn-outline-primary w-100 mb-4', 'target' => '_blank', 'rel' => 'noopener nofollow']) ?>
                         <?php endif; ?>
-                        <h2 class="h5"><?= $service ? 'Price' : 'Licences' ?></h2>
+                        <h2 class="h5"><?= $service ? 'Price' : ($software ? 'Subscription' : 'Licences') ?></h2>
                         <?php foreach ($licences as $name => [$inr, $usd, $about, $licence]): ?>
-                            <?php $ask = 'Hi, I would like to buy ' . $model->name . ($service ? '.' : ' (' . strtolower($name) . ' licence).'); ?>
+                            <?php $ask = 'Hi, I would like to buy ' . $model->name . ($service ? '.' : ' (' . strtolower($name) . ' ' . $noun . ').'); ?>
                             <div class="border rounded p-3 mb-3">
                                 <div class="d-flex justify-content-between align-items-baseline gap-2">
                                     <h3 class="h6 mb-1"><?= Html::encode($name) ?></h3>
-                                    <p class="fw-bold mb-1 text-nowrap">₹<?= $fmt->asDecimal($inr, 0) ?><?= $model->isPlan() ? ' a month' : '' ?></p>
+                                    <p class="fw-bold mb-1 text-nowrap">₹<?= $fmt->asDecimal($inr, 0) ?><?= $per($licence) ?></p>
                                 </div>
-                                <p class="small text-body-secondary mb-2"><?= Html::encode($about) ?> Outside India: US$<?= $fmt->asDecimal($usd, 2) ?><?= $model->isPlan() ? ' a month' : '' ?>.</p>
-                                <?= Html::a(($model->isPlan() ? 'Start this plan' : 'Buy now') . '<span class="visually-hidden">: ' . Html::encode($service ? $model->name : strtolower($name) . ' licence') . '</span>', ['/store/buy', 'slug' => $model->slug, 'licence' => $licence], ['class' => 'btn btn-primary btn-sm', 'rel' => 'nofollow']) ?>
+                                <p class="small text-body-secondary mb-2"><?= Html::encode($about) ?> Outside India: US$<?= $fmt->asDecimal($usd, 2) ?><?= $per($licence) ?>.</p>
+                                <?= Html::a(($model->isPlan() ? 'Start this plan' : 'Buy now') . '<span class="visually-hidden">: ' . Html::encode($service ? $model->name : strtolower($name) . ' ' . $noun) . '</span>', ['/store/buy', 'slug' => $model->slug, 'licence' => $licence], ['class' => 'btn btn-primary btn-sm', 'rel' => 'nofollow']) ?>
                                 <?php if ($whatsapp !== ''): ?>
                                     <?= Html::a('<i class="fab fa-whatsapp me-2" aria-hidden="true"></i>Ask on WhatsApp<span class="visually-hidden"> (opens in a new tab)</span>', 'https://wa.me/' . $whatsapp . '?text=' . rawurlencode($ask), ['class' => 'btn btn-outline-success btn-sm', 'target' => '_blank', 'rel' => 'noopener']) ?>
                                 <?php else: ?>
-                                    <?= Html::a('Ask about it', ['/site/contact', 'subject' => 'Buy ' . $model->name . ($service ? '' : ' (' . strtolower($name) . ' licence)')], ['class' => 'btn btn-link btn-sm']) ?>
+                                    <?= Html::a('Ask about it', ['/site/contact', 'subject' => 'Buy ' . $model->name . ($service ? '' : ' (' . strtolower($name) . ' ' . $noun . ')')], ['class' => 'btn btn-link btn-sm']) ?>
                                 <?php endif; ?>
                             </div>
                         <?php endforeach; ?>
                         <?php if ($model->isPlan()): ?>
                         <p class="small mb-2"><i class="fas fa-calendar-check text-primary me-2" aria-hidden="true"></i>Each month is invoiced a week before it starts, and nothing is charged automatically. Once the first month is paid, we open a ticket in your account for access to your website and your requests. <?= Html::a('Refund policy', ['/site/refund-policy']) ?></p>
+                        <?php elseif ($software): ?>
+                        <p class="small mb-2"><i class="fas fa-sync-alt text-primary me-2" aria-hidden="true"></i>A subscription for one installation: your licence key and download are on My Purchases once paid, with every new version and our support while it is paid. Nothing is charged automatically; if you stop, your copy keeps working without updates. <?= Html::a('Licence terms', ['/site/licence']) ?></p>
                         <?php elseif ($service): ?>
                         <p class="small mb-2"><i class="fas fa-clipboard-list text-primary me-2" aria-hidden="true"></i>At checkout you tell us what you need. Once paid, we open a ticket in your account where we talk it through and deliver the work. <?= Html::a('Refund policy', ['/site/refund-policy']) ?></p>
                         <?php else: ?>

@@ -25,6 +25,8 @@ final class ServiceRenewalReminderService
     private const REMINDER_DAYS = [60, 30, 15, 7, 3, 1];
     /** A service renewing every month (care plans): staff hear a week before and the day before; the customer gets the invoice's own emails only. */
     private const MONTHLY_REMINDER_DAYS = [7, 1];
+    /** @var array<int, true> maintenance ids named after their store product (see processMaintenance) */
+    private array $storeNamed = [];
     private const ITEM_TYPES = ['domain' => InvoiceItem::TYPE_DOMAIN, 'hosting' => InvoiceItem::TYPE_HOSTING, 'maintenance' => InvoiceItem::TYPE_MAINTENANCE];
 
     /** Reminders and staff alerts that failed in the last run. */
@@ -73,9 +75,16 @@ final class ServiceRenewalReminderService
     private function processMaintenance(DateTimeImmutable $today): int
     {
         $sent = 0;
-        $maintenances = Maintenance::find()->where(['status' => Maintenance::STATUS_ACTIVE])->andWhere(['not in', 'user_id', \common\models\User::deletedIds()])->andWhere(['>=', 'current_expiry_date', $today->format('Y-m-d')])->all();
+        $this->storeNamed = [];
+        $maintenances = Maintenance::find()->with('productOrder.product')->where(['status' => Maintenance::STATUS_ACTIVE])->andWhere(['not in', 'user_id', \common\models\User::deletedIds()])->andWhere(['>=', 'current_expiry_date', $today->format('Y-m-d')])->all();
         foreach ($maintenances as $maintenance) {
-            $serviceProcessed = $this->processService('maintenance', (int) $maintenance->id, (int) $maintenance->user_id, (string) $maintenance->website_url, (string) $maintenance->current_expiry_date, $today, (int) $maintenance->created_at, (float) $maintenance->renewal_base_amount > 0 || (float) $maintenance->next_renewal_amount > 0, (int) $maintenance->renewal_cycle_months === 1 ? self::MONTHLY_REMINDER_DAYS : self::REMINDER_DAYS, (int) $maintenance->renewal_cycle_months !== 1);
+            // Care plans and software subscriptions are named after their product.
+            $product = $maintenance->storeProduct();
+            if ($product !== null) {
+                $this->storeNamed[(int) $maintenance->id] = true;
+            }
+            $name = $product !== null ? $product->name . ' (' . strtolower($product->renewalLabel()) . ') for ' . $maintenance->website_url : (string) $maintenance->website_url;
+            $serviceProcessed = $this->processService('maintenance', (int) $maintenance->id, (int) $maintenance->user_id, $name, (string) $maintenance->current_expiry_date, $today, (int) $maintenance->created_at, (float) $maintenance->renewal_base_amount > 0 || (float) $maintenance->next_renewal_amount > 0, (int) $maintenance->renewal_cycle_months === 1 ? self::MONTHLY_REMINDER_DAYS : self::REMINDER_DAYS, (int) $maintenance->renewal_cycle_months !== 1);
             if ($serviceProcessed) {
                 $sent++;
             }
@@ -255,9 +264,10 @@ final class ServiceRenewalReminderService
     /** @param array<string, mixed> $due */
     private function digestLine(array $due): string
     {
-        $labels = ['domain' => 'Domain', 'hosting' => 'Hosting', 'maintenance' => 'Maintenance'];
+        // A care plan or subscription already says what it is in its name.
+        $labels = ['domain' => 'Domain ', 'hosting' => 'Hosting ', 'maintenance' => isset($this->storeNamed[(int) $due['serviceId']]) ? '' : 'Maintenance '];
         $when = $due['daysBefore'] === 0 ? 'today' : ($due['daysBefore'] === 1 ? 'tomorrow' : 'in ' . $due['daysBefore'] . ' days');
-        $line = sprintf('%s %s: expires %s (%s). ', $labels[$due['type']], $due['serviceName'], date('d M Y', (int) strtotime($due['expiryDate'])), $when);
+        $line = sprintf('%s%s: expires %s (%s). ', $labels[$due['type']], $due['serviceName'], date('d M Y', (int) strtotime($due['expiryDate'])), $when);
         $itemType = self::ITEM_TYPES[$due['type']];
         $money = static fn(float $amount): string => '₹' . number_format($amount, 2);
 

@@ -34,8 +34,8 @@ $base = rtrim((string) (Yii::$app->params['frontendBaseUrl'] ?? ''), '/');
                     <div class="col-sm-6"><?= $form->field($model, 'technology')->dropDownList(Product::TECHNOLOGIES, ['prompt' => 'Choose…']) ?></div>
                     <div class="col-sm-6"><?= $form->field($model, 'kind')->dropDownList(Product::KINDS, ['prompt' => 'Choose…'])->hint('A service is a fixed-price job (/services): one price and a delivery time. A care plan (/care-plans) is a monthly price: paying the first month starts a maintenance service that renews monthly. Neither has a file or licence. "Any website" is for these two.') ?></div>
                 </div>
-                <?php if ($model->isPlan() && !\common\services\StoreOrderService::plansRenew()): ?>
-                    <div class="alert alert-warning">Maintenance automatic billing or the daily billing job is off, so care plans cannot renew: customers are told to contact you instead of buying. Turn both on in Billing Settings and Cron Jobs & Logs.</div>
+                <?php if ($model->isRecurring() && !\common\services\StoreOrderService::plansRenew()): ?>
+                    <div class="alert alert-warning">Maintenance automatic billing or the daily billing job is off, so care plans and subscriptions cannot renew: customers are told to contact you instead of buying. Turn both on in Billing Settings and Cron Jobs & Logs.</div>
                 <?php endif; ?>
                 <?= $form->field($model, 'summary')->textInput(['maxlength' => 300])->hint('One sentence for the store list and search results.') ?>
                 <?= $form->field($model, 'description')->textarea(['rows' => 10]) ?>
@@ -52,7 +52,7 @@ $base = rtrim((string) (Yii::$app->params['frontendBaseUrl'] ?? ''), '/');
             <div class="card-header"><h2 class="card-title h6 mb-0">Prices</h2></div>
             <div class="card-body">
                 <div class="row">
-                    <div class="col-12"><p class="small text-muted">For a service, the single-site price is its fixed price; for a care plan, its monthly price. The unlimited-sites prices are left out for both.</p></div>
+                    <div class="col-12"><p class="small text-muted">For a service, the single-site price is its fixed price; for a care plan, its monthly price. The unlimited-sites prices are left out for both. For software, the single-site price is the monthly one and the unlimited-sites price the yearly one (both needed).</p></div>
                     <div class="col-sm-6"><?= $form->field($model, 'price_single_inr')->textInput(['inputmode' => 'decimal']) ?></div>
                     <div class="col-sm-6"><?= $form->field($model, 'price_single_usd')->textInput(['inputmode' => 'decimal']) ?></div>
                     <div class="col-sm-6"><?= $form->field($model, 'price_unlimited_inr')->textInput(['inputmode' => 'decimal', 'placeholder' => 'Empty = not offered']) ?></div>

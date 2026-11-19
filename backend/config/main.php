@@ -43,6 +43,8 @@ return [
                 [
                     'class' => 'yii\log\FileTarget',
                     'levels' => ['error', 'warning'],
+                    // Page not found is mostly bots probing for files: noise that buries real errors.
+                    'except' => ['yii\web\HttpException:404'],
                     'logVars' => [],
                 ],
             ],

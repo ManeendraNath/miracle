@@ -70,7 +70,8 @@ return [
                 [
                     'class' => 'yii\log\FileTarget',
                     'levels' => ['error', 'warning'],
-                    'except' => ['csp'],
+                    // Page not found is mostly bots probing for files (wp-login.php, .env...): Search Console reports real broken links.
+                    'except' => ['csp', 'yii\web\HttpException:404'],
                     'logVars' => [],
                 ],
                 // SiteController::actionCspReport

@@ -68,7 +68,7 @@ $money = static fn(int|float|string|null $amount): string => $invoice->money($am
 </style>
 
 <div class="header">
-    <div class="title">Miracle Web Technologies</div>
+    <div class="title"><?= \yii\helpers\Html::encode(\common\components\CustomYii::businessName()) ?></div>
     <div>PAYMENT RECEIPT</div>
 </div>
 
@@ -108,7 +108,7 @@ $money = static fn(int|float|string|null $amount): string => $invoice->money($am
 </table>
 
 <div class="footer">
-    This receipt confirms that the payment above has been recorded by Miracle Web Technologies.
+    This receipt confirms that the payment above has been recorded by <?= \yii\helpers\Html::encode(\common\components\CustomYii::businessName()) ?>.
     <br><br>
     This is a system-generated payment receipt.
 </div>

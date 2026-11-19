@@ -68,7 +68,7 @@ final class CustomerEmailService
             'project-update' => ['Website project update', 'Update on [EDIT: your website project]',
                 "Here is an update on your website project:\n\n[EDIT: what has been done]\n\nNext steps: [EDIT: what happens next]."],
             // No "any questions" line: a greeting, not a business email.
-            'festival' => ['Festival wishes', 'Happy [EDIT: festival name] from Miracle Web Technologies',
+            'festival' => ['Festival wishes', 'Happy [EDIT: festival name] from ' . \common\components\CustomYii::businessName(),
                 "Wishing you and your family a very happy [EDIT: festival name]. May it bring you joy, good health and success.\n\n"
                 . 'Thank you for your trust in us. We look forward to working with you.', false],
         ];

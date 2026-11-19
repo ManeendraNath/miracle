@@ -67,7 +67,7 @@ class BlogCommentController extends BaseController
                 'post_id' => $comment->post_id,
                 'parent_id' => $comment->id,
                 'admin_id' => $admin->id,
-                'author_name' => $admin->authorName() ?? (Yii::$app->params['senderName'] ?? 'Miracle Web Technologies'),
+                'author_name' => $admin->authorName() ?? (Yii::$app->params['senderName'] ?? \common\components\CustomYii::businessName()),
                 'author_email' => null,
                 'ip' => null,
                 'status' => BlogComment::STATUS_APPROVED,

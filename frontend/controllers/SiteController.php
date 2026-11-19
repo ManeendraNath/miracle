@@ -182,7 +182,7 @@ class SiteController extends Controller
         $caught = Yii::$app->request->isPost && FormGuard::isBot('contact');
         if ($model->load(Yii::$app->request->post()) && $model->validate()) {
             $spam = $caught || $model->looksLikeSpam();
-            $adminEmail = CustomYii::getSetting('email_1', 'info@miraclewebtechnologies.com');
+            $adminEmail = CustomYii::getSetting('email_1', Yii::$app->params['adminEmail']);
 
             // Sent from our own address (visitor addresses fail SPF/DMARC); Reply-To reaches the visitor.
             $saved = false;
@@ -251,7 +251,7 @@ class SiteController extends Controller
             $model->user_ip = Yii::$app->request->userIP;
             $model->status = AuditRequest::STATUS_PENDING;
             if ($model->save()) {
-                $adminEmail = CustomYii::getSetting('email_1', 'info@miraclewebtechnologies.com');
+                $adminEmail = CustomYii::getSetting('email_1', Yii::$app->params['adminEmail']);
 
                 // The request is already saved; a mail failure must not turn into a 500.
                 try {

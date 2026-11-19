@@ -29,7 +29,7 @@ $this->registerJsFile(
             ],
         ]
 );
-$this->title = 'Miracle Corporate Control Center';
+$this->title = \common\components\CustomYii::businessName() . ' Control Center';
 if (\backend\controllers\BaseController::canAccess(Yii::$app->user->identity, 'user', 'email-many')) {
     $this->params['actions'][] = Html::a('<i class="fas fa-envelope me-1"></i> Send email', ['/user/email-many'], ['class' => 'btn btn-primary']);
     $this->params['help']['Send email'] = 'Write one email to the clients you pick, all active clients, or all clients. Each gets their own copy, greeted by name, and billing gets one copy listing who received it.';

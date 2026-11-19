@@ -23,4 +23,4 @@ Accounts with no active service are disabled if the details are not complete wit
 <?php endif; ?>
 
 Regards,
-Miracle Web Technologies
+<?= \common\components\CustomYii::businessName() ?>

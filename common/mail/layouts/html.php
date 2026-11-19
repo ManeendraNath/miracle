@@ -57,7 +57,7 @@ use yii\helpers\Html;
         </style>
     </head>
     <body style=" margin:0; padding:0; background:#f4f7fb; font-family:Arial,Helvetica,sans-serif;">
-        <div style=" display:none; max-height:0; overflow:hidden; opacity:0;">Miracle Web Technologies Notification</div>
+        <div style=" display:none; max-height:0; overflow:hidden; opacity:0;"><?= \yii\helpers\Html::encode(\common\components\CustomYii::businessName()) ?> Notification</div>
         <?php $this->beginBody() ?>
         <table width="100%" cellpadding="0" cellspacing="0" role="presentation">
             <tr>
@@ -66,11 +66,13 @@ use yii\helpers\Html;
                         <!-- Header -->
                         <tr>
                             <td align="center" style="background:#0b1f4d;color:#ffffff;padding:30px;">
-                                <img src="https://miraclewebtechnologies.com/images/logo.png" alt="Miracle Web Technologies" style=" max-height:90px; width:auto; display:block; margin:0 auto 15px;">
-                                <h1 style="margin:0; font-size:28px; color:#ffffff;">Miracle Web Technologies</h1>
-                                <div style="margin-top:8px; font-size:14px; color:#d7e4ff;">
-                                    Upgrade Your Business With Us
-                                </div>
+                                <img src="<?= \yii\helpers\Html::encode(\common\components\CustomYii::portalUrl()) ?>/images/logo.png" alt="<?= \yii\helpers\Html::encode(\common\components\CustomYii::businessName()) ?>" style=" max-height:90px; width:auto; display:block; margin:0 auto 15px;">
+                                <h1 style="margin:0; font-size:28px; color:#ffffff;"><?= \yii\helpers\Html::encode(\common\components\CustomYii::businessName()) ?></h1>
+                                <?php if (\common\components\CustomYii::getSetting('tagline')): ?>
+                                    <div style="margin-top:8px; font-size:14px; color:#d7e4ff;">
+                                        <?= \yii\helpers\Html::encode((string) \common\components\CustomYii::getSetting('tagline')) ?>
+                                    </div>
+                                <?php endif; ?>
                             </td>
                         </tr>
                         <!-- Email Content -->
@@ -82,21 +84,24 @@ use yii\helpers\Html;
                         <!-- Footer -->
                         <tr>
                             <td align="center" style=" background:#f8f9fa; padding:25px; color:#666; font-size:13px;">
-                                <strong>Miracle Web Technologies</strong>
+                                <strong><?= \yii\helpers\Html::encode(\common\components\CustomYii::businessName()) ?></strong>
                                 <br>
-                                Website Development • Hosting • Domains • Maintenance
-                                <br><br>
+                                <?php if (\common\components\CustomYii::getSetting('services_line')): ?>
+                                    <?= \yii\helpers\Html::encode((string) \common\components\CustomYii::getSetting('services_line')) ?>
+                                    <br>
+                                <?php endif; ?>
+                                <br>
                                 <?= Html::encode(Yii::$app->params['supportEmail']) ?>
                                 <br>
-                                https://miraclewebtechnologies.com
+                                <?= \yii\helpers\Html::encode(\common\components\CustomYii::businessUrl()) ?>
                                 <br>
                                 <?php if (!empty($this->params['staffEmail'])): ?>
                                     <a href="<?= Html::encode(Yii::$app->params['backendBaseUrl']) ?>">Open the admin panel</a>
                                 <?php else: ?>
-                                    <a href="https://miraclewebtechnologies.com/dashboard/">Access Customer Portal</a>
+                                    <a href="<?= \yii\helpers\Html::encode(\common\components\CustomYii::portalUrl()) ?>/dashboard/">Access Customer Portal</a>
                                 <?php endif; ?>
                                 <br><br>
-                                © 2015-<?= date('Y') ?> Miracle Web Technologies
+                                © <?= \common\components\CustomYii::getSetting('founded_year') ? (int) \common\components\CustomYii::getSetting('founded_year') . '-' : '' ?><?= date('Y') ?> <?= \yii\helpers\Html::encode(\common\components\CustomYii::businessName()) ?>
                             </td>
                         </tr>
                     </table>

@@ -1,5 +1,5 @@
 {
-    "migrations": 89,
+    "migrations": 90,
     "columns": {
         "admin": {
             "auth_key": {
@@ -2490,7 +2490,25 @@
                 "default": null,
                 "extra": ""
             },
+            "founded_year": {
+                "type": "smallint unsigned",
+                "null": true,
+                "default": null,
+                "extra": ""
+            },
             "google_site_verification": {
+                "type": "varchar(100)",
+                "null": true,
+                "default": null,
+                "extra": ""
+            },
+            "grievance_email": {
+                "type": "varchar(255)",
+                "null": true,
+                "default": null,
+                "extra": ""
+            },
+            "grievance_name": {
                 "type": "varchar(100)",
                 "null": true,
                 "default": null,
@@ -2568,6 +2586,12 @@
                 "default": "1",
                 "extra": ""
             },
+            "services_line": {
+                "type": "varchar(200)",
+                "null": true,
+                "default": null,
+                "extra": ""
+            },
             "site_name": {
                 "type": "varchar(255)",
                 "null": false,
@@ -2577,6 +2601,12 @@
             "site_url": {
                 "type": "varchar(255)",
                 "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "tagline": {
+                "type": "varchar(150)",
+                "null": true,
                 "default": null,
                 "extra": ""
             },

@@ -34,4 +34,4 @@ View invoice:
 
 
 Regards,
-Miracle Web Technologies
+<?= \common\components\CustomYii::businessName() ?>

@@ -11,4 +11,4 @@ Your account has been disabled because your billing details were not completed w
 To use it again, please contact us at <?= Yii::$app->params['supportEmail'] ?>.
 
 Regards,
-Miracle Web Technologies
+<?= \common\components\CustomYii::businessName() ?>

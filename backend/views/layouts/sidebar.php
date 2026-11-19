@@ -12,8 +12,8 @@ $waitingComments = (int) \common\models\BlogComment::onLivePosts()->andWhere(['s
     <!-- Brand Logo Displays Link -->
     <!-- One full logo (white lettering for the dark sidebar): the collapsed sidebar crops it to the round mark, so
          nothing swaps while the sidebar slides. -->
-    <a href="<?= Url::to(['/dashboard/index']) ?>" class="brand-link brand-logo" title="Miracle Web Technologies">
-        <img src="<?= Url::to('@web/images/logo-full-white.svg') ?>" alt="Miracle Web Technologies" class="brand-full">
+    <a href="<?= Url::to(['/dashboard/index']) ?>" class="brand-link brand-logo" title="<?= \yii\helpers\Html::encode(\common\components\CustomYii::businessName()) ?>">
+        <img src="<?= Url::to('@web/images/logo-full-white.svg') ?>" alt="<?= \yii\helpers\Html::encode(\common\components\CustomYii::businessName()) ?>" class="brand-full">
     </a>
 
     <!-- Sidebar Wrapper -->

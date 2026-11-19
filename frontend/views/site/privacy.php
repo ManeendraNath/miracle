@@ -7,7 +7,9 @@ declare(strict_types=1);
 use common\components\CustomYii;
 use yii\helpers\Html;
 
-$name = Html::encode(CustomYii::getSetting('site_name') ?: 'Miracle Web Technologies');
+$name = Html::encode(CustomYii::businessName());
+$officer = Html::encode((string) CustomYii::getSetting('grievance_name'));
+$emails = implode(', ', array_map(static fn(string $e): string => Html::mailto(Html::encode($e), $e), array_filter(array_map('trim', explode(',', (string) (CustomYii::getSetting('grievance_email') ?: CustomYii::getSetting('email_1')))))));
 
 echo $this->render('_legal', ['title' => 'Privacy Policy', 'updated' => '19 Nov 2026', 'body' => <<<HTML
 <p>This policy explains what personal data {$name} collects through this website and customer portal, why, and how it is protected.</p>
@@ -44,8 +46,8 @@ echo $this->render('_legal', ['title' => 'Privacy Policy', 'updated' => '19 Nov 
 
 <h2 class="h5 fw-bold mt-4">8. Grievance Officer</h2>
 <p>For any complaint or request about your personal data, contact our Grievance Officer:<br>
-<strong>Maneendra Nath</strong><br>
-Email: <a href="mailto:support@miraclewebtechnologies.com">support@miraclewebtechnologies.com</a>, <a href="mailto:antmnt.trivedi@gmail.com">antmnt.trivedi@gmail.com</a><br>
+<strong>{$officer}</strong><br>
+Email: {$emails}<br>
 We acknowledge complaints within 2 working days and resolve them within 30 days.</p>
 
 <h2 class="h5 fw-bold mt-4">9. Changes</h2>

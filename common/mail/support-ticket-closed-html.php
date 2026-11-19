@@ -10,7 +10,7 @@ echo $this->render('_card', [
     'tone' => 'info',
     'eyebrow' => 'Support ticket',
     'title' => 'Your ticket is closed',
-    'intro' => 'Your support request has been closed. Thank you for choosing Miracle Web Technologies.',
+    'intro' => 'Your support request has been closed. Thank you for choosing ' . \common\components\CustomYii::businessName() . '.',
     'rows' => [
         ['Ticket', $ticket->ticket_number],
         ['Subject', $ticket->subject],

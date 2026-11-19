@@ -5,7 +5,7 @@
 ?>
 <?php $this->beginPage() ?>
 <?php $this->beginBody() ?>
-Miracle Web Technologies
+<?= \common\components\CustomYii::businessName() . "\n" ?>
 
 ==================================================
 
@@ -19,7 +19,7 @@ Support:
 
 
 Website:
-https://miraclewebtechnologies.com
+<?= \common\components\CustomYii::businessUrl() . "\n" ?>
 
 ==================================================
 

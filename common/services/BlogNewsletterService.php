@@ -123,6 +123,6 @@ final class BlogNewsletterService
 
     private static function siteName(): string
     {
-        return \common\components\CustomYii::getSetting('site_name') ?: 'Miracle Web Technologies';
+        return \common\components\CustomYii::businessName();
     }
 }

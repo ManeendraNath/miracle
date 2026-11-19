@@ -55,8 +55,26 @@ class CustomYii extends \Yii
         return self::$_settings;
     }
 
+    /** The business name (Site Settings), with the original as the fallback while none is set. */
+    public static function businessName(): string
+    {
+        return (string) (self::getSetting('site_name') ?: self::APPLICATION_NAME);
+    }
+
+    /** The business's website (Site Settings), else this portal's address; no trailing slash. */
+    public static function businessUrl(): string
+    {
+        return rtrim((string) (self::getSetting('site_url') ?: self::portalUrl()), '/');
+    }
+
+    /** Where this portal is served (FRONTEND_BASE_URL), for links and images in emails; else the business's website. */
+    public static function portalUrl(): string
+    {
+        return rtrim((string) (Yii::$app->params['frontendBaseUrl'] ?? '') ?: (string) self::getSetting('site_url'), '/');
+    }
+
     public static function powered()
     {
-        echo "Powered by <a href=''>Miracle Web Technologies</a>";
+        echo 'Powered by ' . \yii\helpers\Html::encode(self::businessName());
     }
 }

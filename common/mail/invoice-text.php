@@ -41,4 +41,4 @@ Please sign in to your customer portal
 to review invoice details and payment status.
 
 Regards,
-Miracle Web Technologies
+<?= \common\components\CustomYii::businessName() ?>

@@ -46,7 +46,7 @@ $money = static fn(int|float|string|null $amount): string => $model->money($amou
     <!-- 🏢 Brand Heading & Company Metadata Row -->
     <div class="row align-items-center mb-5">
         <div class="col-md-6">
-            <?= Html::img('@web/images/logo-full.svg', ['alt' => 'Miracle Web Technologies', 'style' => 'height: 64px; width: auto;']) ?>
+            <?= Html::img('@web/images/logo-full.svg', ['alt' => \common\components\CustomYii::businessName(), 'style' => 'height: 64px; width: auto;']) ?>
             <p class="text-muted text-sm mt-2 mb-0">
                 Website development, hosting &amp; maintenance
                 <?php foreach (Invoice::supplierLines() as $line): ?>
@@ -297,7 +297,7 @@ $money = static fn(int|float|string|null $amount): string => $model->money($amou
 
     <hr class="my-5">
     <div class="text-center text-muted text-xs">
-        <p class="m-0">Thank you for your business with Miracle Web Technologies.</p>
+        <p class="m-0">Thank you for your business with <?= \yii\helpers\Html::encode(\common\components\CustomYii::businessName()) ?>.</p>
         <p class="m-0 text-xxs mt-1">This is an automated system generated billing accounting summary document. No physical signature parameters are required.</p>
     </div>
 </div>

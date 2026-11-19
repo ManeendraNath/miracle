@@ -42,7 +42,7 @@ final class LoginCest
     {
         $this->haveAdmin($I, 'test-super', Admin::getRoleSuperAdmin(), Admin::getStatusActive());
         $this->login($I, 'test-super', self::PASSWORD);
-        $I->see('Miracle Corporate Control Center');
+        $I->see(' Control Center');
     }
 
     public function wrongPasswordIsRejected(FunctionalTester $I): void
@@ -50,14 +50,14 @@ final class LoginCest
         $this->haveAdmin($I, 'test-super2', Admin::getRoleSuperAdmin(), Admin::getStatusActive());
         $this->login($I, 'test-super2', 'wrong-password');
         $I->see('Incorrect username or password.');
-        $I->dontSee('Miracle Corporate Control Center');
+        $I->dontSee(' Control Center');
     }
 
     public function managerUsesPanelWithoutBillingOrAdminPages(FunctionalTester $I): void
     {
         $this->haveAdmin($I, 'test-manager', Admin::getRoleManager(), Admin::getStatusActive());
         $this->login($I, 'test-manager', self::PASSWORD);
-        $I->see('Miracle Corporate Control Center');
+        $I->see(' Control Center');
         $I->dontSee('Total Revenue Settled');
         $I->amOnRoute('invoice/index');
         $I->seeResponseCodeIs(403);

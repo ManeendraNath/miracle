@@ -8,4 +8,4 @@ Subject:
 
 Your support request has been closed.
 
-Thank you for choosing Miracle Web Technologies.
+Thank you for choosing <?= \common\components\CustomYii::businessName() ?>.

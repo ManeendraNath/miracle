@@ -17,8 +17,9 @@ return [
     'user.passwordMinLength' => 8,
     'bsVersion' => '5.x',
     'billing' => [
-        'supplierState' => 'Delhi',
-        'supplierStateCode' => '07',
+        // Where the business is registered: decides CGST+SGST (same state) or IGST.
+        'supplierState' => $_ENV['BILLING_SUPPLIER_STATE'] ?? 'Delhi',
+        'supplierStateCode' => $_ENV['BILLING_SUPPLIER_STATE_CODE'] ?? '07',
         // ARN of this financial year's LUT (GST RFD-11). Set = invoices to clients outside India say
         // "Supply meant for export under LUT without payment of IGST".
         'lutArn' => $_ENV['BILLING_LUT_ARN'] ?? '',

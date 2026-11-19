@@ -18,4 +18,4 @@ Set your password: <?= $baseUrl ?>/site/request-password-reset
 Accounts with no active service are disabled if the billing details are not complete within a month, after at least 7 days' notice.
 
 Regards,
-Miracle Web Technologies
+<?= \common\components\CustomYii::businessName() ?>

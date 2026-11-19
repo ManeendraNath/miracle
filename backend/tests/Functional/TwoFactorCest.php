@@ -63,9 +63,9 @@ final class TwoFactorCest
         $this->haveAdmin($I, 'tf-super', Admin::getRoleSuperAdmin(), self::SECRET);
         $this->login($I, 'tf-super');
         $I->see('Two-factor sign-in');
-        $I->dontSee('Miracle Corporate Control Center');
+        $I->dontSee(' Control Center');
         $I->amOnRoute('dashboard/index');
-        $I->dontSee('Miracle Corporate Control Center');
+        $I->dontSee(' Control Center');
     }
 
     public function validCodeLogsInOnceAndCannotBeReplayed(FunctionalTester $I): void
@@ -74,7 +74,7 @@ final class TwoFactorCest
         $code = $this->currentCode();
         $this->login($I, 'tf-super2');
         $I->submitForm('#two-factor-form', ['TwoFactorForm[code]' => $code]);
-        $I->see('Miracle Corporate Control Center');
+        $I->see(' Control Center');
         // A secret saved before encryption existed is encrypted at the first valid code.
         /** @var Admin $admin */
         $admin = $I->grabRecord(Admin::class, ['username' => 'tf-super2']);
@@ -84,7 +84,7 @@ final class TwoFactorCest
         $this->login($I, 'tf-super2');
         $I->submitForm('#two-factor-form', ['TwoFactorForm[code]' => $code]);
         $I->see('That code is not valid.');
-        $I->dontSee('Miracle Corporate Control Center');
+        $I->dontSee(' Control Center');
     }
 
     public function wrongCodeIsRejected(FunctionalTester $I): void
@@ -95,7 +95,7 @@ final class TwoFactorCest
         $I->submitForm('#two-factor-form', ['TwoFactorForm[code]' => $wrong]);
         $I->see('That code is not valid.');
         $I->amOnRoute('dashboard/index');
-        $I->dontSee('Miracle Corporate Control Center');
+        $I->dontSee(' Control Center');
     }
 
     public function codePageWithoutPasswordGoesToLogin(FunctionalTester $I): void
@@ -110,7 +110,7 @@ final class TwoFactorCest
         $rootId = $this->haveAdmin($I, 'tf-root', Admin::getRoleSuperAdmin(), null);
         $id = $this->haveAdmin($I, 'tf-lost', Admin::getRoleAdmin(), self::SECRET);
         $this->login($I, 'tf-root');
-        $I->see('Miracle Corporate Control Center');
+        $I->see(' Control Center');
         $I->amOnRoute('admin/update', ['id' => $id]);
         $I->see('Turn off two-factor');
         $I->dontSee('Backup codes and two-factor settings'); // someone else's page
@@ -256,7 +256,7 @@ final class TwoFactorCest
         $codes = Admin::findOne($id)->generateBackupCodes();
         $this->login($I, 'tf-backup');
         $I->submitForm('#two-factor-form', ['TwoFactorForm[code]' => strtoupper($codes[0])]);
-        $I->see('Miracle Corporate Control Center');
+        $I->see(' Control Center');
         $I->see('You signed in with a backup code. 9 left');
 
         $this->post($I, ['/auth/logout']);
@@ -270,11 +270,11 @@ final class TwoFactorCest
         $this->haveAdmin($I, 'tf-trust', Admin::getRoleSuperAdmin(), self::SECRET);
         $this->login($I, 'tf-trust');
         $I->submitForm('#two-factor-form', ['TwoFactorForm[code]' => $this->currentCode(), 'TwoFactorForm[trustDevice]' => '1']);
-        $I->see('Miracle Corporate Control Center');
+        $I->see(' Control Center');
 
         $this->post($I, ['/auth/logout']);
         $this->login($I, 'tf-trust');
-        $I->see('Miracle Corporate Control Center');
+        $I->see(' Control Center');
         $I->dontSeeElement('#two-factor-form');
 
         // A new password ends the trust.

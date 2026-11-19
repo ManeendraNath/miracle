@@ -112,7 +112,7 @@ $igstAmount = $tax['igstAmount'];
         <tr>
             <td>
                 <?php /* PNG: the PDF library drops the SVG logo's gradients. Made from frontend/web/images/logo-full.svg. */ ?>
-                <img src="<?= Html::encode(Yii::getAlias('@common/mail/images/logo-full.png')) ?>" alt="Miracle Web Technologies" style="height: 16mm;">
+                <img src="<?= Html::encode(Yii::getAlias('@common/mail/images/logo-full.png')) ?>" alt="<?= \yii\helpers\Html::encode(\common\components\CustomYii::businessName()) ?>" style="height: 16mm;">
                 <div>Website development, hosting &amp; maintenance</div>
                 <?php foreach (Invoice::supplierLines() as $line): ?>
                     <div><?= Html::encode($line) ?></div>

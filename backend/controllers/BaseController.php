@@ -338,6 +338,7 @@ class BaseController extends Controller
                 'class' => VerbFilter::class,
                 'actions' => [
                     'delete' => ['POST'],
+                    'fetch-rate' => ['POST'],
                     'restore' => ['POST'],
                     'approve' => ['POST'],
                     'reject' => ['POST'],

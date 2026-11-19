@@ -55,6 +55,7 @@ final class ExchangeRateService
             $rate = $this->fetch();
             $last = (float) $settings->usd_market_rate;
             if ($rate !== null && $last > 0 && abs($rate - $last) / $last > self::MAX_JUMP) {
+                Yii::warning(['message' => 'Exchange rate refused: more than 15% away from the last rate.', 'rate' => $rate, 'last' => $last], __METHOD__);
                 \common\services\admin\AdminAlertService::exchangeRateProblem('The exchange rate service returned ₹' . $rate . ' per US$1, more than 15% away from the last rate (₹' . $last . '), so it was not used.');
                 $rate = null;
             }

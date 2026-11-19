@@ -98,6 +98,9 @@ $end = '</div></div>';
                         . ' (last tried ' . Yii::$app->formatter->asRelativeTime((int) $saved->usd_rate_checked_at) . '). PayPal stays hidden until it updates, or until you enter a rate by hand below.',
                     default => 'No exchange rate yet: PayPal stays hidden until one is fetched or set by hand.',
                 } ?>
+                <?php if ($rateNow <= 0 && (bool) $saved->usd_rate_auto): ?>
+                    <div class="mt-2"><?= Html::submitButton('Fetch the rate now', ['form' => 'fetch-rate-form', 'class' => 'btn btn-sm btn-outline-danger']) ?></div>
+                <?php endif; ?>
             </div>
         </div>
         <h6 class="settings-subhead">Exchange rate</h6>
@@ -178,4 +181,6 @@ $end = '</div></div>';
     </div>
 
     <?php ActiveForm::end(); ?>
+    <?php // Its own form: the button sits inside the settings form above, which it must not submit. ?>
+    <?= Html::beginForm(['fetch-rate'], 'post', ['id' => 'fetch-rate-form']) . Html::endForm() ?>
 </div>

@@ -23,9 +23,9 @@ if ($images !== []) {
     $this->params['og_image'] = Url::to('@web/' . $images[0], true);
 }
 $whatsapp = preg_replace('/\D/', '', (string) CustomYii::getSetting('whatsapp'));
-$licences = ['Single site' => [$model->price_single_inr, $model->price_single_usd, 'Use on one website.']];
+$licences = ['Single site' => [$model->price_single_inr, $model->price_single_usd, 'Use on one website.', 'single']];
 if ($model->hasUnlimited()) {
-    $licences['Unlimited sites'] = [$model->price_unlimited_inr, $model->price_unlimited_usd, 'Use on any number of your websites.'];
+    $licences['Unlimited sites'] = [$model->price_unlimited_inr, $model->price_unlimited_usd, 'Use on any number of your websites.', 'unlimited'];
 }
 // For search engines: what it is, its pictures and its prices.
 $offers = [];
@@ -95,7 +95,7 @@ $schema = array_filter([
                             <?= Html::a('<i class="fas fa-external-link-alt me-2" aria-hidden="true"></i>Try the live demo<span class="visually-hidden"> (opens in a new tab)</span>', $model->demo_url, ['class' => 'btn btn-outline-primary w-100 mb-4', 'target' => '_blank', 'rel' => 'noopener nofollow']) ?>
                         <?php endif; ?>
                         <h2 class="h5">Licences</h2>
-                        <?php foreach ($licences as $name => [$inr, $usd, $about]): ?>
+                        <?php foreach ($licences as $name => [$inr, $usd, $about, $licence]): ?>
                             <?php $ask = 'Hi, I would like to buy ' . $model->name . ' (' . strtolower($name) . ' licence).'; ?>
                             <div class="border rounded p-3 mb-3">
                                 <div class="d-flex justify-content-between align-items-baseline gap-2">
@@ -103,14 +103,16 @@ $schema = array_filter([
                                     <p class="fw-bold mb-1 text-nowrap">₹<?= $fmt->asDecimal($inr, 0) ?></p>
                                 </div>
                                 <p class="small text-body-secondary mb-2"><?= Html::encode($about) ?> Outside India: US$<?= $fmt->asDecimal($usd, 2) ?>.</p>
+                                <?= Html::a('Buy now<span class="visually-hidden">: ' . Html::encode(strtolower($name)) . ' licence</span>', ['/store/buy', 'slug' => $model->slug, 'licence' => $licence], ['class' => 'btn btn-primary btn-sm', 'rel' => 'nofollow']) ?>
                                 <?php if ($whatsapp !== ''): ?>
-                                    <?= Html::a('<i class="fab fa-whatsapp me-2" aria-hidden="true"></i>Buy on WhatsApp<span class="visually-hidden"> (opens in a new tab)</span>', 'https://wa.me/' . $whatsapp . '?text=' . rawurlencode($ask), ['class' => 'btn btn-primary btn-sm', 'target' => '_blank', 'rel' => 'noopener']) ?>
+                                    <?= Html::a('<i class="fab fa-whatsapp me-2" aria-hidden="true"></i>Ask on WhatsApp<span class="visually-hidden"> (opens in a new tab)</span>', 'https://wa.me/' . $whatsapp . '?text=' . rawurlencode($ask), ['class' => 'btn btn-outline-success btn-sm', 'target' => '_blank', 'rel' => 'noopener']) ?>
+                                <?php else: ?>
+                                    <?= Html::a('Ask about it', ['/site/contact', 'subject' => 'Buy ' . $model->name . ' (' . strtolower($name) . ' licence)'], ['class' => 'btn btn-link btn-sm']) ?>
                                 <?php endif; ?>
-                                <?= Html::a('Ask about it', ['/site/contact', 'subject' => 'Buy ' . $model->name . ' (' . strtolower($name) . ' licence)'], ['class' => 'btn btn-link btn-sm']) ?>
                             </div>
                         <?php endforeach; ?>
                         <p class="small mb-2"><i class="fas fa-tools text-primary me-2" aria-hidden="true"></i>Both licences include our help to set up the <?= Html::encode(strtolower(\common\models\Product::KINDS[$model->kind] ?? 'product')) ?>, and 6 months of support.</p>
-                        <p class="small text-body-secondary mb-0">Rupee prices are for buyers in India, US dollar prices for buyers abroad. GST is added where it applies.</p>
+                        <p class="small text-body-secondary mb-0">Rupee prices are for buyers in India, US dollar prices for buyers abroad. GST is added where it applies. In India, pay by UPI or bank transfer, or online by card where offered; abroad, pay by PayPal.</p>
                     </div>
                 </div>
             </div>

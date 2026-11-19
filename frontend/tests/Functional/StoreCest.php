@@ -4,12 +4,21 @@ declare(strict_types=1);
 
 namespace frontend\tests\Functional;
 
+use common\fixtures\UserFixture;
+use common\models\CustomerBillingProfile;
 use common\models\Product;
+use common\models\ProductOrder;
+use common\models\User;
 use frontend\tests\Support\FunctionalTester;
 
 /** The public store: only published products, filtered by technology, in the sitemap, with product data. */
 final class StoreCest
 {
+    public function _fixtures(): array
+    {
+        return ['user' => ['class' => UserFixture::class, 'dataFile' => codecept_data_dir() . 'login_data.php']];
+    }
+
     private function product(FunctionalTester $I, string $slug, array $extra = []): void
     {
         $I->haveRecord(Product::class, $extra + ['name' => ucfirst(str_replace('-', ' ', $slug)), 'slug' => $slug, 'technology' => 'html', 'kind' => 'theme', 'summary' => 'A summary.', 'description' => "First paragraph.\n\nSecond <b>paragraph</b>.", 'features' => "Fast\nResponsive", 'price_single_inr' => 2499, 'price_single_usd' => 39, 'status' => Product::STATUS_PUBLISHED, 'sort_order' => 0, 'created_at' => time(), 'updated_at' => time()]);
@@ -46,5 +55,38 @@ final class StoreCest
         $I->seeInSource('/store/sky-html-theme</loc>');
         $I->seeInSource('/store</loc>');
         $I->dontSeeInSource('hidden-theme');
+    }
+
+    public function aBuyerSignsInGivesBillingDetailsAndGetsAnInvoice(FunctionalTester $I): void
+    {
+        $this->product($I, 'buy-me-theme');
+        $I->amOnPage('/store/buy-me-theme');
+        $I->click('a[href*="/store/buy/buy-me-theme"]');
+        $I->seeInCurrentUrl('login');
+        $I->see('to buy Buy me theme');
+        $I->submitForm('#login-form', ['LoginForm[username]' => 'erau', 'LoginForm[password]' => 'password_0']);
+        // Billing details first: they go on the invoice.
+        $I->seeInCurrentUrl('account/profile');
+        $userId = (int) User::findOne(['username' => 'erau'])->id;
+        $I->haveRecord(CustomerBillingProfile::class, ['user_id' => $userId, 'legal_name' => 'Erau', 'address_line_1' => '1 Road', 'city' => 'Delhi', 'state' => 'Delhi', 'state_code' => '07', 'country' => 'India', 'postal_code' => '110001', 'created_at' => time(), 'updated_at' => time()]);
+
+        $I->amOnPage('/store/buy/buy-me-theme?licence=single');
+        $I->see('Your order');
+        $I->see('₹2,499');
+        $I->see('UPI or bank transfer');
+        $I->click('Continue to payment');
+        $I->seeInCurrentUrl('invoice/view');
+        $order = ProductOrder::findOne(['user_id' => $userId]);
+        $I->assertNotNull($order);
+        $I->assertFalse($order->isPaid());
+
+        $I->amOnRoute('purchase/index');
+        $I->see('Buy me theme');
+        $I->see('Awaiting payment');
+        $I->amOnRoute('purchase/download', ['id' => $order->id]);
+        $I->seeResponseCodeIs(404);
+        // No unlimited licence for this product.
+        $I->amOnPage('/store/buy/buy-me-theme?licence=unlimited');
+        $I->seeResponseCodeIs(404);
     }
 }

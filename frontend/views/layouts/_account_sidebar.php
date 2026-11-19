@@ -10,6 +10,7 @@ $items = [
     ['label' => 'My Services', 'icon' => 'fas fa-cubes', 'url' => ['/service/index'], 'controller' => 'service'],
     ['label' => 'Invoices', 'icon' => 'fas fa-file-invoice', 'url' => ['/invoice/index'], 'controller' => 'invoice'],
     ['label' => 'Payments', 'icon' => 'fas fa-credit-card', 'url' => ['/payment/index'], 'controller' => 'payment'],
+    ['label' => 'My Purchases', 'icon' => 'fas fa-box-open', 'url' => ['/purchase/index'], 'controller' => 'purchase'],
     ['label' => 'Renewals', 'icon' => 'fas fa-sync-alt', 'url' => ['/renewal/index'], 'controller' => 'renewal'],
     ['label' => 'Support Tickets', 'icon' => 'fas fa-headset', 'url' => ['/support/index'], 'controller' => 'support'],
     ['label' => 'Share Feedback', 'icon' => 'fas fa-comment-dots', 'url' => ['/feedback/index'], 'controller' => 'feedback'],

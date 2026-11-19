@@ -6,9 +6,11 @@ namespace backend\controllers;
 
 use common\models\Product;
 use common\models\ProductImage;
+use common\models\ProductOrder;
 use common\services\BlogImageService;
 use Yii;
 use yii\data\ActiveDataProvider;
+use yii\helpers\FileHelper;
 use yii\web\NotFoundHttpException;
 use yii\web\Response;
 use yii\web\UploadedFile;
@@ -39,12 +41,20 @@ class ProductController extends BaseController
     public function actionDelete(int $id): Response
     {
         $model = $this->findModel($id);
+        if (ProductOrder::find()->where(['product_id' => $model->id])->exists()) {
+            Yii::$app->session->setFlash('error', 'This product has orders, so it cannot be deleted: set it to Draft to take it out of the store.');
+
+            return $this->redirect(['update', 'id' => $model->id]);
+        }
         $files = array_filter([$model->cover_image, ...array_map(static fn(ProductImage $i): string => $i->path, $model->images)]);
         $model->delete();
         foreach ($files as $file) {
             @unlink(Yii::getAlias('@frontend/web/' . $file));
         }
-        Yii::$app->session->setFlash('success', 'Product deleted, with its images.');
+        if ($model->downloadPath() !== null) {
+            @unlink($model->downloadPath());
+        }
+        Yii::$app->session->setFlash('success', 'Product deleted, with its images and download file.');
 
         return $this->redirect(['index']);
     }
@@ -52,10 +62,17 @@ class ProductController extends BaseController
     private function saveForm(Product $model): Response|string
     {
         if (!$model->load(Yii::$app->request->post())) {
+            // A file over the server's post limit empties the whole form.
+            if (Yii::$app->request->isPost) {
+                Yii::$app->session->setFlash('error', 'Nothing was saved: the files sent were larger than the server allows (' . self::uploadLimit() . ' in all). Choose a smaller file.');
+            }
+
             return $this->render('form', ['model' => $model]);
         }
         $stored = [];
         $transaction = null;
+        $newFile = null;
+        $oldFile = $model->getOldAttribute('download_file');
         try {
             $cover = UploadedFile::getInstance($model, 'cover_image');
             if ($cover !== null) {
@@ -74,6 +91,10 @@ class ProductController extends BaseController
                 } catch (\DomainException $e) {
                     throw new \DomainException('Screenshot: ' . $e->getMessage());
                 }
+            }
+            $download = UploadedFile::getInstanceByName('download_file');
+            if ($download !== null) {
+                $newFile = $this->storeDownload($download, $model);
             }
             $oldCover = $model->getOldAttribute('cover_image');
             $transaction = Yii::$app->db->beginTransaction();
@@ -98,6 +119,11 @@ class ProductController extends BaseController
             foreach ($stored as $path) {
                 @unlink(Yii::getAlias('@frontend/web/' . $path));
             }
+            if ($newFile !== null) {
+                @unlink($newFile);
+            }
+            $model->download_file = $model->getOldAttribute('download_file');
+            $model->download_name = $model->getOldAttribute('download_name');
             if (!$e instanceof \DomainException) {
                 throw $e;
             }
@@ -105,12 +131,16 @@ class ProductController extends BaseController
             if ($e->getMessage() !== '') {
                 // The rest of the form is checked too, so every problem shows at once.
                 $model->validate();
-                Yii::$app->session->setFlash('error', $e->getMessage() . ' Nothing was saved: choose the images again.');
-            } elseif ($stored !== []) {
-                $model->addError('cover_image', 'Fix the errors above, then choose the images again.');
+                Yii::$app->session->setFlash('error', $e->getMessage() . ' Nothing was saved: choose the images and download file again.');
+            } elseif ($stored !== [] || $newFile !== null) {
+                Yii::$app->session->setFlash('warning', 'Fix the errors below, then choose the ' . ($newFile !== null ? ($stored !== [] ? 'images and download file' : 'download file') : 'images') . ' again: they were not kept.');
             }
 
             return $this->render('form', ['model' => $model]);
+        }
+        // The replaced file: buyers now get the new one.
+        if ($newFile !== null && $oldFile) {
+            @unlink(Yii::getAlias('@storage/' . Product::FILES_DIR . '/' . $oldFile));
         }
         // The replaced cover and removed screenshots are no longer shown anywhere.
         foreach (array_filter([$cover !== null ? $oldCover : null, ...array_map(static fn(ProductImage $i): string => $i->path, $gone)]) as $file) {
@@ -121,6 +151,36 @@ class ProductController extends BaseController
             : 'Saved as a draft: it is not in the store until you publish it.');
 
         return $this->redirect(['update', 'id' => $model->id]);
+    }
+
+    /** The largest upload the server takes: the smaller of PHP's two limits, as PHP writes it (e.g. "60M"). */
+    public static function uploadLimit(): string
+    {
+        $limits = [(string) ini_get('upload_max_filesize'), (string) ini_get('post_max_size')];
+        usort($limits, static fn(string $a, string $b): int => ini_parse_quantity($a) <=> ini_parse_quantity($b));
+
+        return $limits[0];
+    }
+
+    /** The file buyers download: a .zip, kept outside the web root under a name nobody can guess. */
+    private function storeDownload(UploadedFile $file, Product $model): string
+    {
+        if ($file->error !== UPLOAD_ERR_OK) {
+            throw new \DomainException('The download file did not upload. It may be larger than the server allows (' . self::uploadLimit() . ').');
+        }
+        if (strtolower($file->extension) !== 'zip') {
+            throw new \DomainException('The download file must be a .zip file.');
+        }
+        $dir = Yii::getAlias('@storage/' . Product::FILES_DIR);
+        FileHelper::createDirectory($dir, 0750);
+        $name = bin2hex(random_bytes(16)) . '.zip';
+        if (!$file->saveAs($dir . '/' . $name, false)) {
+            throw new \RuntimeException('The download file could not be saved.');
+        }
+        $model->download_file = $name;
+        $model->download_name = (trim((string) preg_replace('/[^\w.-]+/', '-', $file->baseName), '-.') ?: 'download') . '.zip';
+
+        return $dir . '/' . $name;
     }
 
     private function findModel(int $id): Product

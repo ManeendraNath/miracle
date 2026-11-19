@@ -56,6 +56,8 @@ final class RenewalFulfilmentService
             if ($justPaid) {
                 $this->reactivateGranted($covered, (int) $invoice->id);
             }
+            // Store purchases: licence key and download.
+            \common\models\ProductOrder::markPaid($covered);
 
             if ($dbTransaction !== null && $dbTransaction->isActive) {
                 $dbTransaction->commit();

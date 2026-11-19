@@ -348,8 +348,8 @@ fi
 # Each app keeps its own copy of the table definitions, and they may just have changed.
 rm -rf "$APP"/frontend/runtime/schema-cache "$APP"/backend/runtime/schema-cache "$APP"/console/runtime/schema-cache
 
-# Logs and customers' payment proofs: not readable by other accounts on the server.
-for d in runtime frontend/runtime backend/runtime console/runtime common/runtime storage/payment-receipts; do
+# Logs, customers' payment proofs and store downloads: not readable by other accounts on the server.
+for d in runtime frontend/runtime backend/runtime console/runtime common/runtime storage/payment-receipts storage/store-files; do
     # The code and schema are already live: a file the shell user doesn't own must not roll all that back.
     mkdir -p "$APP/$d" && chmod -R u=rwX,g=rwX,o= "$APP/$d" || echo "WARNING: could not set permissions on $APP/$d"
 done

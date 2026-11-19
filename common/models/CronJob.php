@@ -18,7 +18,7 @@ final class CronJob extends base\CronJob
     /** Route => [name, when it runs, what stops while it is off]. */
     public const JOBS = [
         'cron/run-billing' => ['Billing and invoices', 'Daily', 'No renewal invoices are created or emailed.'],
-        'cron/payment-reminders' => ['Payment reminders', 'Daily', 'Customers get no reminders about unpaid invoices.'],
+        'cron/payment-reminders' => ['Payment reminders', 'Daily', 'Customers get no reminders about unpaid invoices, and unpaid store orders are not cancelled.'],
         'cron/send-reminders' => ['Renewal reminders', 'Daily', 'Customers and staff get no expiry reminders.'],
         'cron/profile-reminders' => ['Incomplete profiles', 'Daily', 'Nobody is told about incomplete billing profiles, and inactive accounts are not disabled.'],
         'cron/razorpay-sync' => ['Online payment sync (Razorpay and PayPal)', 'Every 30 minutes', 'A PayPal payment held by PayPal is never recorded when PayPal completes it (the invoice stays unpaid although the client paid). A Razorpay or PayPal payment whose browser was lost stays unrecorded until the customer tries to pay that invoice again, Razorpay fees are not filled in, and refunds made in the Razorpay dashboard are not noticed.'],

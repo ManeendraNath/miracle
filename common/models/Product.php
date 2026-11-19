@@ -31,6 +31,10 @@ class Product extends base\Product
 
     public const TECHNOLOGIES = ['html' => 'HTML', 'wordpress' => 'WordPress', 'yii2' => 'Yii2'];
     public const KINDS = ['theme' => 'Theme', 'plugin' => 'Plugin'];
+    public const LICENCES = ['single' => 'Single site', 'unlimited' => 'Unlimited sites'];
+
+    /** Files buyers download, outside the web root (under @storage). */
+    public const FILES_DIR = 'store-files';
 
     #[\Override]
     public function behaviors(): array
@@ -42,7 +46,7 @@ class Product extends base\Product
     #[\Override]
     public function scenarios(): array
     {
-        $internal = ['cover_image', 'created_at', 'updated_at'];
+        $internal = ['cover_image', 'download_file', 'download_name', 'created_at', 'updated_at'];
 
         return array_map(
             static fn(array $attributes): array => array_map(static fn(string $name): string => in_array($name, $internal, true) ? '!' . $name : $name, $attributes),
@@ -124,6 +128,23 @@ class Product extends base\Product
     public function hasUnlimited(): bool
     {
         return $this->price_unlimited_inr !== null && $this->price_unlimited_usd !== null;
+    }
+
+    /** The price of a licence, in US dollars for buyers abroad, else in rupees; null when that licence isn't offered. */
+    public function price(string $licence, bool $usd): ?float
+    {
+        $price = match ($licence) {
+            'single' => $usd ? $this->price_single_usd : $this->price_single_inr,
+            'unlimited' => $usd ? $this->price_unlimited_usd : $this->price_unlimited_inr,
+            default => null,
+        };
+
+        return $price === null ? null : (float) $price;
+    }
+
+    public function downloadPath(): ?string
+    {
+        return $this->download_file ? \Yii::getAlias('@storage/' . self::FILES_DIR . '/' . $this->download_file) : null;
     }
 
     /** e.g. "WordPress theme" */

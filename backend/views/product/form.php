@@ -68,6 +68,17 @@ $base = rtrim((string) (Yii::$app->params['frontendBaseUrl'] ?? ''), '/');
             </div>
         </div>
         <div class="card card-outline card-primary shadow-sm">
+            <div class="card-header"><h2 class="card-title h6 mb-0">Download for buyers</h2></div>
+            <div class="card-body">
+                <?php if ($model->download_file): ?>
+                    <p class="small mb-2">Current file: <strong><?= Html::encode($model->download_name) ?></strong><?= is_file((string) $model->downloadPath()) ? ', ' . Yii::$app->formatter->asShortSize((int) filesize((string) $model->downloadPath())) : ' (missing on the server: upload it again)' ?></p>
+                <?php endif; ?>
+                <label class="form-label" for="product-download"><?= $model->download_file ? 'Replace the file' : 'File (.zip)' ?></label>
+                <input type="file" id="product-download" name="download_file" class="form-control" accept=".zip,application/zip">
+                <div class="form-text">Buyers download it from My purchases once paid. Up to <?= Html::encode(\backend\controllers\ProductController::uploadLimit()) ?>. Not public: only paying buyers can get it.</div>
+            </div>
+        </div>
+        <div class="card card-outline card-primary shadow-sm">
             <div class="card-header"><h2 class="card-title h6 mb-0">Images</h2></div>
             <div class="card-body">
                 <?php if ($model->cover_image): ?>

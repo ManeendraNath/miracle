@@ -107,6 +107,7 @@ return [
                 'blog/<action:(subscribe|confirm|unsubscribe)>' => 'blog/<action>',
                 'blog/<slug:[a-z0-9-]+>' => 'blog/view',
                 'store' => 'store/index',
+                'store/buy/<slug:[a-z0-9-]+>' => 'store/buy',
                 'store/<slug:[a-z0-9-]+>' => 'store/view',
                 'sitemap.xml' => 'sitemap/index',
                 'indexnow-key.txt' => 'sitemap/indexnow-key',

@@ -18,6 +18,8 @@ use Yii;
  * @property string|null $cover_image
  * @property string|null $demo_url
  * @property string|null $version
+ * @property string|null $download_file
+ * @property string|null $download_name
  * @property float $price_single_inr
  * @property float $price_single_usd
  * @property float|null $price_unlimited_inr
@@ -30,6 +32,7 @@ use Yii;
  * @property int $updated_at
  *
  * @property ProductImage[] $productImages
+ * @property ProductOrder[] $productOrders
  */
 class Product extends \yii\db\ActiveRecord
 {
@@ -47,7 +50,7 @@ class Product extends \yii\db\ActiveRecord
     public function rules()
     {
         return [
-            [['features', 'cover_image', 'demo_url', 'version', 'price_unlimited_inr', 'price_unlimited_usd', 'seo_title', 'seo_description'], 'default', 'value' => null],
+            [['features', 'cover_image', 'demo_url', 'version', 'download_file', 'download_name', 'price_unlimited_inr', 'price_unlimited_usd', 'seo_title', 'seo_description'], 'default', 'value' => null],
             [['sort_order'], 'default', 'value' => 0],
             [['name', 'slug', 'technology', 'kind', 'summary', 'description', 'price_single_inr', 'price_single_usd', 'created_at', 'updated_at'], 'required'],
             [['description', 'features'], 'string'],
@@ -58,7 +61,7 @@ class Product extends \yii\db\ActiveRecord
             [['technology', 'version'], 'string', 'max' => 20],
             [['kind'], 'string', 'max' => 10],
             [['summary'], 'string', 'max' => 300],
-            [['cover_image', 'demo_url'], 'string', 'max' => 255],
+            [['cover_image', 'demo_url', 'download_file', 'download_name'], 'string', 'max' => 255],
             [['seo_title'], 'string', 'max' => 70],
             [['seo_description'], 'string', 'max' => 170],
             [['slug'], 'unique'],
@@ -82,6 +85,8 @@ class Product extends \yii\db\ActiveRecord
             'cover_image' => 'Cover Image',
             'demo_url' => 'Demo Url',
             'version' => 'Version',
+            'download_file' => 'Download File',
+            'download_name' => 'Download Name',
             'price_single_inr' => 'Price Single Inr',
             'price_single_usd' => 'Price Single Usd',
             'price_unlimited_inr' => 'Price Unlimited Inr',
@@ -103,5 +108,15 @@ class Product extends \yii\db\ActiveRecord
     public function getProductImages()
     {
         return $this->hasMany(ProductImage::class, ['product_id' => 'id']);
+    }
+
+    /**
+     * Gets query for [[ProductOrders]].
+     *
+     * @return \yii\db\ActiveQuery
+     */
+    public function getProductOrders()
+    {
+        return $this->hasMany(ProductOrder::class, ['product_id' => 'id']);
     }
 }

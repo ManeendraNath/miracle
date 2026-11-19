@@ -47,7 +47,8 @@ final class AccountController extends Controller
         // Each card is its own form; load() is false for the one that was not posted.
         if (Yii::$app->request->isPost && CustomerBillingDetailsService::save($billingProfile, $post)) {
             Yii::$app->session->setFlash('success', 'Your billing details have been saved.');
-            return $this->redirect(['/dashboard/index']);
+            // Came from the store's checkout: back to the order.
+            return $this->redirect(StoreController::takeResume() ?? ['/dashboard/index']);
         }
         return $this->render('profile', ['model' => $model, 'user' => $user, 'billingProfile' => $billingProfile]);
     }

@@ -149,8 +149,10 @@ class CronController extends Controller
     public function actionPaymentReminders(): int
     {
         return $this->runLocked('miracle:payment-reminders', 'Payment reminders', function (): string {
+            // Abandoned store checkouts first: their invoices are cancelled, not chased.
+            $cancelled = (new \common\services\StoreOrderService())->cancelAbandoned();
             $service = new InvoiceReminderService();
-            return $this->reminderResult($service->sendDueReminders(), $service->failures);
+            return $this->reminderResult($service->sendDueReminders(), $service->failures) . " Cancelled {$cancelled} unpaid store order(s).";
         });
     }
 

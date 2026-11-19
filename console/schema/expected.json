@@ -1,5 +1,5 @@
 {
-    "migrations": 82,
+    "migrations": 83,
     "columns": {
         "admin": {
             "auth_key": {
@@ -2052,6 +2052,18 @@
                 "default": null,
                 "extra": ""
             },
+            "download_file": {
+                "type": "varchar(255)",
+                "null": true,
+                "default": null,
+                "extra": ""
+            },
+            "download_name": {
+                "type": "varchar(255)",
+                "null": true,
+                "default": null,
+                "extra": ""
+            },
             "features": {
                 "type": "text",
                 "null": true,
@@ -2178,6 +2190,62 @@
                 "type": "int",
                 "null": false,
                 "default": "0",
+                "extra": ""
+            }
+        },
+        "product_order": {
+            "created_at": {
+                "type": "int",
+                "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "id": {
+                "type": "int",
+                "null": false,
+                "default": null,
+                "extra": "auto_increment"
+            },
+            "invoice_id": {
+                "type": "int",
+                "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "licence": {
+                "type": "varchar(10)",
+                "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "licence_key": {
+                "type": "varchar(32)",
+                "null": true,
+                "default": null,
+                "extra": ""
+            },
+            "paid_at": {
+                "type": "int",
+                "null": true,
+                "default": null,
+                "extra": ""
+            },
+            "product_id": {
+                "type": "int",
+                "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "updated_at": {
+                "type": "int",
+                "null": false,
+                "default": null,
+                "extra": ""
+            },
+            "user_id": {
+                "type": "int",
+                "null": false,
+                "default": null,
                 "extra": ""
             }
         },
@@ -3281,6 +3349,13 @@
             "id": "primary",
             "product_id": "index"
         },
+        "product_order": {
+            "id": "primary",
+            "invoice_id": "unique",
+            "licence_key": "unique",
+            "product_id": "index",
+            "user_id": "index"
+        },
         "seo_page": {
             "id": "primary",
             "route": "unique"
@@ -3436,6 +3511,11 @@
         },
         "product_image": {
             "product_id": "product(id) ON DELETE CASCADE ON UPDATE CASCADE"
+        },
+        "product_order": {
+            "invoice_id": "invoice(id) ON DELETE RESTRICT ON UPDATE CASCADE",
+            "product_id": "product(id) ON DELETE RESTRICT ON UPDATE CASCADE",
+            "user_id": "user(id) ON DELETE RESTRICT ON UPDATE CASCADE"
         },
         "service_reminder_log": {
             "user_id": "user(id) ON DELETE CASCADE ON UPDATE CASCADE"

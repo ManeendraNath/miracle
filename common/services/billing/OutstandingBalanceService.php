@@ -42,6 +42,8 @@ final class OutstandingBalanceService
           AND created_at < :sentBefore
           -- Priced in US dollars: paid by PayPal in dollars on its own, never moved onto a rupee renewal invoice.
           AND usd_total IS NULL
+          -- A store order is paid on its own or cancelled, never added to a renewal invoice.
+          AND NOT EXISTS (SELECT 1 FROM {{%product_order}} po WHERE po.invoice_id = {{%invoice}}.id)
           AND NOT EXISTS (
               SELECT 1 FROM {{%transaction}} t
               WHERE t.invoice_id = {{%invoice}}.id

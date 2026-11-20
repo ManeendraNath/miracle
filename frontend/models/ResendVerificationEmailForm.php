@@ -60,7 +60,9 @@ class ResendVerificationEmailForm extends Model
                 ['html' => 'emailVerify-html', 'text' => 'emailVerify-text'],
                 ['user' => $user, 'passwordReset' => true],
             )
-            ->setFrom([$supportEmail => $appName . ' robot'])
+            // From the mailbox SMTP signs in as (servers refuse another From); replies go to support.
+            ->setFrom([(Yii::$app->params['senderEmail'] ?: $supportEmail) => $appName . ' robot'])
+            ->setReplyTo($supportEmail ?: (\Yii::$app->params['senderEmail'] ?: $supportEmail))
             ->setTo($this->email)
             ->setSubject('Account registration at ' . $appName)
             ->send();

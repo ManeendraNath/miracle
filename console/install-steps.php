@@ -251,8 +251,8 @@ if (!$canRun) {
     say('  ' . escapeshellarg(PHP_BINARY ?: 'php') . ' yii migrate --interactive=0');
     say('  ' . escapeshellarg(PHP_BINARY ?: 'php') . ' yii install/brand');
 } else {
-    run(escapeshellarg(PHP_BINARY) . ' yii migrate --interactive=0');
-    run(escapeshellarg(PHP_BINARY) . ' yii install/brand');
+    run(escapeshellarg(PHP_BINARY ?: 'php') . ' yii migrate --interactive=0');
+    run(escapeshellarg(PHP_BINARY ?: 'php') . ' yii install/brand');
 }
 
 say("\nDone. Next:");

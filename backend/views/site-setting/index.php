@@ -49,7 +49,8 @@ $end = '</div></div>';
 <div class="setting-index container-fluid pb-5">
     <?php $form = ActiveForm::begin(['id' => 'site-settings-form']); ?>
 
-    <div class="row">
+    <?php // In pairs of about the same height, each card filling its row (admin.css .settings-pair). ?>
+    <div class="row settings-pair">
         <div class="col-xl-6">
             <?= $section('fa-building', 'Business', 'Your business name as the website shows it.') ?>
                 <?= $form->field($model, 'site_name')->textInput(['placeholder' => 'e.g. Sharma Web Services'])->label('Business name')->hint('On invoices, receipts, emails and the website.') ?>
@@ -67,8 +68,32 @@ $end = '</div></div>';
             <?= $end ?>
         </div>
         <div class="col-xl-6">
+            <?= $section('fa-headset', 'Contact details', 'Shown on the home and contact pages and in the footer.') ?>
+                <div class="row">
+                    <div class="col-sm-6"><?= $form->field($model, 'mobile_1')->textInput(['type' => 'tel', 'placeholder' => 'Digits only', 'value' => $model->mobile_1 ?: ''])->label('Main phone')->hint('Needed: digits only, with the country code, e.g. 919876543210.') ?></div>
+                    <div class="col-sm-6"><?= $form->field($model, 'mobile_2')->textInput(['type' => 'tel', 'placeholder' => 'Optional'])->label('Second phone') ?></div>
+                </div>
+                <?= $form->field($model, 'whatsapp')->textInput(['type' => 'tel', 'placeholder' => 'Digits with country code, e.g. 919876543210'])->hint('The green chat button on every public page opens WhatsApp with this number. Leave empty to hide the button.') ?>
+                <?= $form->field($model, 'tawk_chat', ['enableClientValidation' => false])->textarea(['rows' => 2, 'placeholder' => 'https://tawk.to/chat/… or the whole widget code'])->hint('The live chat bubble, bottom left on every public page. In Tawk.to: Administration → Chat Widget, copy the Direct Chat Link (or the widget code) and paste it here. Leave empty to hide the chat.') ?>
+                <?= $form->field($model, 'email_1')->textInput(['placeholder' => 'info@company.com'])->label('Main email')->hint('Also receives the contact-form and audit-request emails.') ?>
+                <div class="row">
+                    <div class="col-sm-6"><?= $form->field($model, 'email_2')->textInput(['placeholder' => 'Optional'])->label('Second email') ?></div>
+                    <div class="col-sm-6"><?= $form->field($model, 'email_3')->textInput(['placeholder' => 'Optional'])->label('Third email')->hint('Kept for reference; not shown anywhere yet.') ?></div>
+                </div>
+            <?= $end ?>
+        </div>
+    </div>
+    <div class="row settings-pair">
+        <div class="col-xl-6">
             <?= $section('fa-file-invoice', 'Invoices', 'How new renewal invoices go out.') ?>
                 <?= $form->field($model, 'review_invoices')->checkbox(['switch' => true])->hint('New renewal invoices wait under Invoices (Waiting for review) until you send them. The customer sees nothing until then. The due date stays the service\'s expiry date.') ?>
+            <?= $end ?>
+        </div>
+        <div class="col-xl-6">
+            <?= $section('fa-map-marker-alt', 'Address', 'Shown on the home and contact pages, the footer and the policy pages.') ?>
+                <?= $form->field($model, 'address_line_1')->textInput(['placeholder' => 'Building, floor'])->label('Address line 1') ?>
+                <?= $form->field($model, 'address_line_2')->textInput(['placeholder' => 'Street, area'])->label('Address line 2') ?>
+                <?= $form->field($model, 'address_line_3')->textInput(['placeholder' => 'City, state, PIN'])->label('Address line 3') ?>
             <?= $end ?>
         </div>
     </div>
@@ -139,30 +164,6 @@ $end = '</div></div>';
         </div>
     <?= $end ?>
 
-    <div class="row">
-        <div class="col-xl-6">
-            <?= $section('fa-headset', 'Contact details', 'Shown on the home and contact pages and in the footer.') ?>
-                <div class="row">
-                    <div class="col-sm-6"><?= $form->field($model, 'mobile_1')->textInput(['type' => 'tel', 'placeholder' => 'Digits only', 'value' => $model->mobile_1 ?: ''])->label('Main phone')->hint('Needed: digits only, with the country code, e.g. 919876543210.') ?></div>
-                    <div class="col-sm-6"><?= $form->field($model, 'mobile_2')->textInput(['type' => 'tel', 'placeholder' => 'Optional'])->label('Second phone') ?></div>
-                </div>
-                <?= $form->field($model, 'whatsapp')->textInput(['type' => 'tel', 'placeholder' => 'Digits with country code, e.g. 919876543210'])->hint('The green chat button on every public page opens WhatsApp with this number. Leave empty to hide the button.') ?>
-                <?= $form->field($model, 'tawk_chat', ['enableClientValidation' => false])->textarea(['rows' => 2, 'placeholder' => 'https://tawk.to/chat/… or the whole widget code'])->hint('The live chat bubble, bottom left on every public page. In Tawk.to: Administration → Chat Widget, copy the Direct Chat Link (or the widget code) and paste it here. Leave empty to hide the chat.') ?>
-                <?= $form->field($model, 'email_1')->textInput(['placeholder' => 'info@company.com'])->label('Main email')->hint('Also receives the contact-form and audit-request emails.') ?>
-                <div class="row">
-                    <div class="col-sm-6"><?= $form->field($model, 'email_2')->textInput(['placeholder' => 'Optional'])->label('Second email') ?></div>
-                    <div class="col-sm-6"><?= $form->field($model, 'email_3')->textInput(['placeholder' => 'Optional'])->label('Third email')->hint('Kept for reference; not shown anywhere yet.') ?></div>
-                </div>
-            <?= $end ?>
-        </div>
-        <div class="col-xl-6">
-            <?= $section('fa-map-marker-alt', 'Address', 'Shown on the home and contact pages, the footer and the policy pages.') ?>
-                <?= $form->field($model, 'address_line_1')->textInput(['placeholder' => 'Building, floor'])->label('Address line 1') ?>
-                <?= $form->field($model, 'address_line_2')->textInput(['placeholder' => 'Street, area'])->label('Address line 2') ?>
-                <?= $form->field($model, 'address_line_3')->textInput(['placeholder' => 'City, state, PIN'])->label('Address line 3') ?>
-            <?= $end ?>
-        </div>
-    </div>
 
     <?= $section('fa-share-alt', 'Social links', 'Icons in the website footer. Leave one empty to hide it.') ?>
         <div class="row">

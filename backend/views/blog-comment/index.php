@@ -42,7 +42,7 @@ $tabs = [BlogComment::STATUS_PENDING => 'Waiting', BlogComment::STATUS_APPROVED 
             <?= GridView::widget([
                 'dataProvider' => $dataProvider,
                 'layout' => GridPaginationHelper::gridLayout(),
-                'emptyText' => 'No comments here.',
+                'emptyText' => $filter === null ? 'No comments yet.' : ($filter === \common\models\BlogComment::STATUS_PENDING ? 'Nothing waiting.' : 'No comments match this filter.'),
                 'tableOptions' => ['class' => 'table table-hover table-striped align-middle mb-0'],
                 'columns' => [
                     [

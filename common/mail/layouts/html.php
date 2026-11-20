@@ -66,7 +66,13 @@ use yii\helpers\Html;
                         <!-- Header -->
                         <tr>
                             <td align="center" style="background:#0b1f4d;color:#ffffff;padding:30px;">
-                                <?= \common\components\CustomYii::logoImg(\common\components\CustomYii::portalUrl() . '/images/logo.png', ['height' => 90, 'style' => 'max-height:90px; max-width:100%; width:auto; display:block; margin:0 auto 15px;'], true, null) ?>
+                                <?php
+                                // A width attribute for 90px high, which Outlook keeps to (it ignores CSS max-height): from the
+                                // copy's own logo, or ours.
+                                $size = @getimagesize((string) Yii::getAlias(\common\components\PortalOnly::enabled() ? '@frontend/web/brand/logo-white.png' : '@frontend/web/images/logo.png'));
+                                $logoWidth = $size !== false && $size[1] > 0 ? ['width' => min(240, (int) round($size[0] * 90 / $size[1]))] : ['height' => 90];
+                                ?>
+                                <?= \common\components\CustomYii::logoImg(\common\components\CustomYii::portalUrl() . '/images/logo.png', $logoWidth + ['style' => 'max-height:90px; max-width:100%; width:auto; display:block; margin:0 auto 15px;'], true, null) ?>
                                 <h1 style="margin:0; font-size:28px; color:#ffffff;"><?= \yii\helpers\Html::encode(\common\components\CustomYii::businessName()) ?></h1>
                                 <?php if (\common\components\CustomYii::getSetting('tagline')): ?>
                                     <div style="margin-top:8px; font-size:14px; color:#d7e4ff;">

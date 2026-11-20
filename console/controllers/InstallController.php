@@ -49,7 +49,13 @@ class InstallController extends Controller
             return ExitCode::OK;
         }
         if ($name === '' || $url === '' || filter_var($admin, FILTER_VALIDATE_EMAIL) === false || filter_var($support, FILTER_VALIDATE_EMAIL) === false) {
-            $this->stderr("Set SENDER_NAME (your business name), FRONTEND_BASE_URL, ADMIN_EMAIL and SUPPORT_EMAIL in .env first.\n");
+            $missing = array_keys(array_filter([
+                'SENDER_NAME (your business name)' => $name === '',
+                'FRONTEND_BASE_URL (the portal address)' => $url === '',
+                'ADMIN_EMAIL (a valid address)' => filter_var($admin, FILTER_VALIDATE_EMAIL) === false,
+                'SUPPORT_EMAIL (a valid address, or leave it out)' => trim((string) ($_ENV['SUPPORT_EMAIL'] ?? '')) !== '' && filter_var($support, FILTER_VALIDATE_EMAIL) === false,
+            ]));
+            $this->stderr('Set ' . implode(', ', $missing) . " in .env first.\n");
 
             return ExitCode::CONFIG;
         }

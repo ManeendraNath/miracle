@@ -50,7 +50,7 @@ $tabs = [BlogSubscriber::STATUS_SUBSCRIBED => 'Subscribed', BlogSubscriber::STAT
             <?= GridView::widget([
                 'dataProvider' => $dataProvider,
                 'layout' => GridPaginationHelper::gridLayout(),
-                'emptyText' => 'No subscribers here yet.',
+                'emptyText' => $filter !== null || $search !== '' ? 'No subscribers match this filter.' : 'No subscribers yet.',
                 'tableOptions' => ['class' => 'table table-hover table-striped align-middle mb-0'],
                 'columns' => [
                     'email:email',

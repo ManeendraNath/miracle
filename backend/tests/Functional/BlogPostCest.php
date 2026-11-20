@@ -210,6 +210,10 @@ final class BlogPostCest
         $I->see('No orders yet.');
         $I->amOnRoute('product-order/index', ['state' => 'paid']);
         $I->seeResponseCodeIs(200);
+        // All products in the filter form sends product= (was a 400)
+        $I->amOnPage('/product-order/index?product=&state=refunded');
+        $I->seeResponseCodeIs(200);
+        $I->see('No orders match this filter.');
     }
 
     public function aManagerCannotSeeStoreSales(FunctionalTester $I): void

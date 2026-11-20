@@ -47,7 +47,7 @@ $fmt = Yii::$app->formatter;
         <?= GridView::widget([
             'dataProvider' => $dataProvider,
             'layout' => GridPaginationHelper::gridLayout(),
-            'emptyText' => 'No orders yet.',
+            'emptyText' => $product > 0 || $state !== '' ? 'No orders match this filter.' : 'No orders yet.',
             'tableOptions' => ['class' => 'table table-hover table-striped align-middle mb-0'],
             'columns' => [
                 ['label' => 'Ordered', 'value' => static fn(ProductOrder $o): string => $fmt->asDate($o->created_at, 'medium')],

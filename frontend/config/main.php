@@ -23,6 +23,7 @@ return [
     'container' => ['definitions' => [\yii\captcha\Captcha::class => ['imageOptions' => ['alt' => 'Verification code']]]],
     'basePath' => dirname(__DIR__),
     'name' => \common\components\CustomYii::APPLICATION_NAME,
+    'on beforeRequest' => [\common\components\CustomYii::class, 'useBusinessName'],
     'bootstrap' => ['log'],
     'controllerNamespace' => 'frontend\controllers',
     'on beforeAction' => static function (\yii\base\ActionEvent $event): void {

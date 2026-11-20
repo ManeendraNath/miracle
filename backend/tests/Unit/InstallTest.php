@@ -77,6 +77,8 @@ final class InstallTest extends Unit
         $this->assertSame('help@acme.test', $settings['grievance_email']);
         $this->assertNull($settings['address_line_1'], 'our address is gone');
         $this->assertSame(0, (int) $settings['mobile_1'], 'our phone is gone');
+        (new \ReflectionProperty(\common\components\CustomYii::class, '_settings'))->setValue(null, null);
+        $this->assertSame(['help@acme.test'], \common\models\Invoice::supplierLines(), 'invoices show no phone for the 0, not +0');
         $this->assertSame('owner@acme.test', (new Query())->select('email')->from('{{%admin}}')->where(['username' => 'superadmin'])->scalar());
 
         // Run again (install.php can be): what the business has set since stays.

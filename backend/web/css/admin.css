@@ -143,3 +143,7 @@
     min-width: 0;
     overflow-wrap: anywhere;
 }
+
+/* Site Settings: the two cards side by side stretch to the taller one, leaving no gap beside the shorter. */
+.settings-pair > [class*="col-"] { display: flex; flex-direction: column; }
+.settings-pair .settings-card { flex: 1 1 auto; }

@@ -5,7 +5,8 @@ declare(strict_types=1);
 return [
     'adminEmail' => $_ENV['ADMIN_EMAIL'],
     'adminBillingEmail' => $_ENV['ADMIN_BILLING_EMAIL'] ?? null, // optional BCC on billing mails
-    'supportEmail' => $_ENV['SUPPORT_EMAIL'],
+    // Optional on a copy (the installer's default): the owner's address then.
+    'supportEmail' => trim((string) ($_ENV['SUPPORT_EMAIL'] ?? '')) ?: (string) ($_ENV['ADMIN_EMAIL'] ?? ''),
     'senderEmail' => $_ENV['SENDER_EMAIL'],
     'senderName' => $_ENV['SENDER_NAME'],
     // Encrypts admin two-factor secrets in the database. Changing it disables everyone's

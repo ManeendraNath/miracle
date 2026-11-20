@@ -23,8 +23,10 @@ class ProductOrderController extends BaseController
         return $behaviors;
     }
 
-    public function actionIndex(int $product = 0, string $state = ''): string
+    // A string: the filter form sends product= for All products, which an int parameter turns into a 400.
+    public function actionIndex(string $product = '', string $state = ''): string
     {
+        $product = (int) $product;
         $query = ProductOrder::find()->alias('o')->innerJoinWith('invoice i')->with(['product', 'user', 'supportTicket', 'maintenance'])->orderBy(['o.id' => SORT_DESC]);
         if ($product > 0) {
             $query->andWhere(['o.product_id' => $product]);

@@ -58,7 +58,7 @@ $tabs = ['all' => 'All', 'due' => 'Due', 'paid' => 'Paid'];
         'tableOptions' => ['class' => 'table table-hover align-middle mb-0'],
         'headerRowOptions' => ['class' => 'small text-body-secondary'],
         'emptyText' => '<div class="text-center py-5 text-body-secondary"><i class="fas fa-file-invoice fa-2x mb-2 opacity-50"></i><div>'
-            . ($filter === 'due' ? 'Nothing due. You are all paid up.' : 'No invoices here yet.') . '</div></div>',
+            . ($filter === 'due' ? 'Nothing due. You are all paid up.' : ($filter === 'all' ? 'No invoices yet.' : 'No invoices match this filter.')) . '</div></div>',
         'emptyTextOptions' => ['class' => ''],
         'columns' => [
             [

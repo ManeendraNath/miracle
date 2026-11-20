@@ -107,7 +107,8 @@ final class ResendVerificationEmailFormTest extends Unit
         verify($mail->getTo())
             ->arrayHasKey('test@mail.com');
         verify($mail->getFrom())
-            ->arrayHasKey(Yii::$app->params['supportEmail']);
+            ->arrayHasKey(Yii::$app->params['senderEmail'] ?: Yii::$app->params['supportEmail']);
+        verify($mail->getReplyTo())->arrayHasKey(Yii::$app->params['supportEmail']);
         verify($mail->getSubject())
             ->equals('Account registration at ' . Yii::$app->name);
         // Resending issues a fresh token (old links may have expired).

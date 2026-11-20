@@ -46,7 +46,7 @@ $money = static fn(int|float|string|null $amount): string => $model->money($amou
     <!-- 🏢 Brand Heading & Company Metadata Row -->
     <div class="row align-items-center mb-5">
         <div class="col-md-6">
-            <?= \common\components\CustomYii::logoImg(\yii\helpers\Url::to('@web/images/logo-full.svg'), ['style' => 'max-height: 64px; width: auto; max-width: 100%; object-fit: contain;'], false, 'h2', ['class' => 'h4 mb-0']) ?>
+            <?= \common\components\CustomYii::logoImg(\yii\helpers\Url::to('@web/images/logo-full.svg'), ['style' => \common\components\PortalOnly::enabled() ? 'max-height: 64px; width: auto; max-width: 100%; object-fit: contain;' : 'height: 64px; width: auto; max-width: 100%;'], false, 'h2', ['class' => 'h4 mb-0']) ?>
             <p class="text-muted text-sm mt-2 mb-0">
                 <?php // One list: no line, the GSTIN either, starts with an empty one (a new copy has no services line or address yet). ?>
                 <?= implode('<br>', array_map(static fn(string $line): string => Html::encode($line), array_values(array_filter([

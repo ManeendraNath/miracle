@@ -15,6 +15,17 @@ class CustomYii extends \Yii
      */
     const APPLICATION_NAME = 'Miracle Web Technologies';
 
+    /**
+     * On a copy, the app name (Yii::$app->name: checkout titles, sign-in emails, the two-factor label) is the
+     * business name in Site Settings, so a rename there reaches them too. Run before each request.
+     */
+    public static function useBusinessName(): void
+    {
+        if (PortalOnly::enabled()) {
+            Yii::$app->name = self::businessName();
+        }
+    }
+
     /** Settings keep phone numbers as digits with the country code: shown as +91 96545 11842. */
     public static function formatPhone(string $digits): string
     {

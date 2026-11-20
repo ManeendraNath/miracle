@@ -10,6 +10,7 @@ $params = array_merge(
 return [
     'id' => 'app-backend',
     'name' => \common\components\CustomYii::APPLICATION_NAME,
+    'on beforeRequest' => [\common\components\CustomYii::class, 'useBusinessName'],
     'basePath' => dirname(__DIR__),
     'controllerNamespace' => 'backend\controllers',
     'defaultRoute' => 'dashboard/index',

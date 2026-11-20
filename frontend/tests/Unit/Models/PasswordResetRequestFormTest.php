@@ -71,6 +71,7 @@ final class PasswordResetRequestFormTest extends Unit
         verify($emailMessage->getTo())
             ->arrayHasKey($model->email);
         verify($emailMessage->getFrom())
-            ->arrayHasKey(Yii::$app->params['supportEmail']);
+            ->arrayHasKey(Yii::$app->params['senderEmail'] ?: Yii::$app->params['supportEmail']);
+        verify($emailMessage->getReplyTo())->arrayHasKey(Yii::$app->params['supportEmail']);
     }
 }

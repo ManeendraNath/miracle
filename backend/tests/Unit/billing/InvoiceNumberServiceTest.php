@@ -25,11 +25,13 @@ final class InvoiceNumberServiceTest extends Unit
     {
         $db = Yii::$app->db;
         $outer = $db->beginTransaction();
+        $prefix = Yii::$app->params['invoicePrefix'] ?? 'MWT';
         try {
             $user = $this->user();
             // A far-off year so the real counter isn't touched.
             $createdAt = strtotime('2036-06-01 10:00:00');
 
+            Yii::$app->params['invoicePrefix'] = 'MWT'; // whatever the local .env says
             $first = $this->numbered($user, $createdAt);
             $savepoint = $db->beginTransaction(); // nested = savepoint
             $this->numbered($user, $createdAt);
@@ -40,6 +42,22 @@ final class InvoiceNumberServiceTest extends Unit
             $this->assertSame('MWT3637-00002', $second);
             $this->assertLessThanOrEqual(16, strlen($second));
         } finally {
+            Yii::$app->params['invoicePrefix'] = $prefix;
+            $outer->rollBack();
+        }
+    }
+
+    public function testACopyNumbersWithItsOwnPrefix(): void
+    {
+        $db = Yii::$app->db;
+        $outer = $db->beginTransaction();
+        $prefix = Yii::$app->params['invoicePrefix'] ?? 'MWT';
+        Yii::$app->params['invoicePrefix'] = 'ACMEH';
+        try {
+            $number = $this->numbered($this->user(), strtotime('2037-06-01 10:00:00'));
+            $this->assertSame('ACMEH3738-00001', $number);
+        } finally {
+            Yii::$app->params['invoicePrefix'] = $prefix;
             $outer->rollBack();
         }
     }

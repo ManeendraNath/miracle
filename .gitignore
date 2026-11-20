@@ -103,3 +103,9 @@ phpunit.phar
 
 # Blog images uploaded from the admin (served by the web server)
 /frontend/web/uploads/
+
+# Packages built by dist.sh
+/dist/
+
+# A copy's own logo (CustomYii::logoUrl): never shipped, so updates keep it
+/frontend/web/brand/

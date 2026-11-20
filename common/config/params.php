@@ -18,6 +18,14 @@ return [
     'bsVersion' => '5.x',
     // A copy sold to another business: customer portal and admin billing only (common\components\PortalOnly).
     'portalOnly' => filter_var($_ENV['PORTAL_ONLY'] ?? false, FILTER_VALIDATE_BOOLEAN),
+    // Invoice numbers <prefix><financial year>-<serial> (InvoiceNumberService); a copy sold to a business uses its own.
+    // 1-5 characters: with the year, a dash and up to 6 serial digits it stays within GST's 16. Without a usable one
+    // a copy gets the neutral INV, never our MWT.
+    'invoicePrefix' => preg_match('/^[A-Z0-9]{1,' . \common\services\billing\InvoiceNumberService::PREFIX_MAX . '}$/', strtoupper(trim((string) ($_ENV['INVOICE_PREFIX'] ?? '')))) === 1
+        ? strtoupper(trim((string) $_ENV['INVOICE_PREFIX']))
+        : (filter_var($_ENV['PORTAL_ONLY'] ?? false, FILTER_VALIDATE_BOOLEAN) ? 'INV' : 'MWT'),
+    // Set but not usable: the admin panel says so (layouts/_licence.php), as invoice numbers cannot be changed later.
+    'invoicePrefixInvalid' => trim((string) ($_ENV['INVOICE_PREFIX'] ?? '')) !== '' && preg_match('/^[A-Z0-9]{1,' . \common\services\billing\InvoiceNumberService::PREFIX_MAX . '}$/', strtoupper(trim((string) $_ENV['INVOICE_PREFIX']))) !== 1,
     // Such a copy's subscription: its key, checked daily with our site (common\services\LicenceService).
     'licence' => [
         'key' => $_ENV['LICENCE_KEY'] ?? '',
@@ -32,10 +40,11 @@ return [
         'lutArn' => $_ENV['BILLING_LUT_ARN'] ?? '',
         // Our GSTIN, printed on invoices once GST-registered.
         'supplierGstin' => $_ENV['BILLING_GSTIN'] ?? '',
+        // GST rates, from .env (a copy's installer writes 9/9/18 for a GST-registered business); none when unset.
         'gst' => [
-            'cgst' => 0.00,
-            'sgst' => 0.00,
-            'igst' => 0.00,
+            'cgst' => (float) ($_ENV['BILLING_GST_CGST'] ?? 0),
+            'sgst' => (float) ($_ENV['BILLING_GST_SGST'] ?? 0),
+            'igst' => (float) ($_ENV['BILLING_GST_IGST'] ?? 0),
         /*
           'cgst' => 9.00,
           'sgst' => 9.00,

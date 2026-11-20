@@ -17,6 +17,10 @@ final class m261129_100000_add_first_blog_posts extends Migration
 
     public function safeUp(): void
     {
+        // Our own posts: a copy sold to another business (PORTAL_ONLY) gets none of them.
+        if (\common\components\PortalOnly::enabled()) {
+            return;
+        }
         $now = time();
         $categoryIds = [];
         foreach (self::CATEGORIES as $slug => $name) {

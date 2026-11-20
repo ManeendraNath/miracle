@@ -13,7 +13,8 @@ $waitingComments = (int) \common\models\BlogComment::onLivePosts()->andWhere(['s
     <!-- One full logo (white lettering for the dark sidebar): the collapsed sidebar crops it to the round mark, so
          nothing swaps while the sidebar slides. -->
     <a href="<?= Url::to(['/dashboard/index']) ?>" class="brand-link brand-logo" title="<?= \yii\helpers\Html::encode(\common\components\CustomYii::businessName()) ?>">
-        <img src="<?= Url::to('@web/images/logo-full-white.svg') ?>" alt="<?= \yii\helpers\Html::encode(\common\components\CustomYii::businessName()) ?>" class="brand-full">
+        <?php // A copy's own logo (any shape) is fitted into the sidebar; ours keeps its fixed layout. ?>
+        <?= \common\components\CustomYii::logoImg(Url::to('@web/images/logo-full-white.svg'), ['class' => \common\components\PortalOnly::enabled() ? 'brand-own' : 'brand-full'], true, 'span', ['class' => 'brand-text font-weight-bold']) ?>
     </a>
 
     <!-- Sidebar Wrapper -->

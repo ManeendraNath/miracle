@@ -25,8 +25,9 @@ $this->registerJs("$('[data-toggle=\"tooltip\"],[data-bs-toggle=\"tooltip\"]').t
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <?php $this->registerCsrfMetaTags() ?>
-    <link rel="shortcut icon" href="<?= Yii::$app->request->baseUrl ?>/favicon.ico" type="image/x-icon" />
-<link rel="icon" href="<?= Yii::$app->request->baseUrl ?>/favicon.ico" type="image/x-icon" />
+    <?php if (($icon = \common\components\CustomYii::faviconUrl(Yii::$app->request->baseUrl . '/favicon.ico')) !== null): ?>
+    <link rel="icon" href="<?= \yii\helpers\Html::encode($icon) ?>" type="image/x-icon" />
+    <?php endif; ?>
     <title><?= Html::encode($this->title) ?></title>
     <?php $this->head() ?>
 </head>

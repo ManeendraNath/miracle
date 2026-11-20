@@ -66,7 +66,7 @@ use yii\helpers\Html;
                         <!-- Header -->
                         <tr>
                             <td align="center" style="background:#0b1f4d;color:#ffffff;padding:30px;">
-                                <img src="<?= \yii\helpers\Html::encode(\common\components\CustomYii::portalUrl()) ?>/images/logo.png" alt="<?= \yii\helpers\Html::encode(\common\components\CustomYii::businessName()) ?>" style=" max-height:90px; width:auto; display:block; margin:0 auto 15px;">
+                                <?= \common\components\CustomYii::logoImg(\common\components\CustomYii::portalUrl() . '/images/logo.png', ['height' => 90, 'style' => 'max-height:90px; max-width:100%; width:auto; display:block; margin:0 auto 15px;'], true, null) ?>
                                 <h1 style="margin:0; font-size:28px; color:#ffffff;"><?= \yii\helpers\Html::encode(\common\components\CustomYii::businessName()) ?></h1>
                                 <?php if (\common\components\CustomYii::getSetting('tagline')): ?>
                                     <div style="margin-top:8px; font-size:14px; color:#d7e4ff;">

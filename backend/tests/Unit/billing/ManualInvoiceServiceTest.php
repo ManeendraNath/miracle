@@ -80,7 +80,7 @@ final class ManualInvoiceServiceTest extends Unit
         );
 
         $this->assertMatchesRegularExpression(
-            '/^MWT' . \common\services\billing\InvoiceNumberService::financialYear((int) $created->created_at) . '-\d{5}$/',
+            '/^' . preg_quote((string) Yii::$app->params['invoicePrefix'], '/') . \common\services\billing\InvoiceNumberService::financialYear((int) $created->created_at) . '-\d{5}$/',
             $created->invoice_number
         );
 

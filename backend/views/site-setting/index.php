@@ -55,7 +55,7 @@ $end = '</div></div>';
                 <?= $form->field($model, 'site_name')->textInput(['placeholder' => 'e.g. Sharma Web Services'])->label('Business name')->hint('On invoices, receipts, emails and the website.') ?>
                 <?= $form->field($model, 'site_url')->textInput(['placeholder' => 'https://example.com'])->label('Website address')->hint('Linked from the emails to customers.') ?>
                 <?= $form->field($model, 'tagline')->textInput(['maxlength' => 150, 'placeholder' => 'e.g. Upgrade Your Business With Us'])->label('Tagline')->hint('Under the name at the top of emails. Empty = none.') ?>
-                <?= $form->field($model, 'services_line')->textInput(['maxlength' => 200, 'placeholder' => 'e.g. Hosting • Domains • Maintenance'])->label('What you offer, in one line')->hint('At the foot of emails. Empty = none.') ?>
+                <?= $form->field($model, 'services_line')->textInput(['maxlength' => 200, 'placeholder' => 'e.g. Hosting • Domains • Maintenance'])->label('What you offer, in one line')->hint(\common\components\PortalOnly::enabled() ? 'Under your name on invoices, and at the foot of emails. Empty = none.' : 'At the foot of emails. Empty = none.') ?>
                 <?= $form->field($model, 'founded_year')->textInput(['type' => 'number', 'min' => 1900, 'max' => 2100])->label('Year founded')->hint('Email footers say "© {year}-' . date('Y') . '". Empty = this year only.') ?>
                 <?php if (\common\components\PortalOnly::enabled()): ?>
                     <?= $form->field($model, 'terms_url')->textInput(['maxlength' => 255, 'placeholder' => 'https://example.com/terms'])->label('Your terms page')->hint('Linked where customers pay, and from the portal footer. Payment gateways ask for these.') ?>
@@ -143,7 +143,7 @@ $end = '</div></div>';
         <div class="col-xl-6">
             <?= $section('fa-headset', 'Contact details', 'Shown on the home and contact pages and in the footer.') ?>
                 <div class="row">
-                    <div class="col-sm-6"><?= $form->field($model, 'mobile_1')->textInput(['type' => 'tel', 'placeholder' => 'Digits only'])->label('Main phone') ?></div>
+                    <div class="col-sm-6"><?= $form->field($model, 'mobile_1')->textInput(['type' => 'tel', 'placeholder' => 'Digits only', 'value' => $model->mobile_1 ?: ''])->label('Main phone')->hint('Needed: digits only, with the country code, e.g. 919876543210.') ?></div>
                     <div class="col-sm-6"><?= $form->field($model, 'mobile_2')->textInput(['type' => 'tel', 'placeholder' => 'Optional'])->label('Second phone') ?></div>
                 </div>
                 <?= $form->field($model, 'whatsapp')->textInput(['type' => 'tel', 'placeholder' => 'Digits with country code, e.g. 919876543210'])->hint('The green chat button on every public page opens WhatsApp with this number. Leave empty to hide the button.') ?>

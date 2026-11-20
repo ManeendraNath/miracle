@@ -20,7 +20,10 @@ $links = array_filter([
     <div class="container d-flex flex-wrap justify-content-between gap-2 small footer-muted">
         <div>&copy; <?= $founded > 0 && $founded < (int) date('Y') ? $founded . '-' : '' ?><?= date('Y') ?> <?= Html::encode(CustomYii::businessName()) ?>. All rights reserved.</div>
         <div class="d-flex flex-wrap gap-3">
-            <?php if (CustomYii::getSetting('site_url')): ?>
+            <?php // Their own website, once Site Settings has one other than this portal (install/brand starts it here). ?>
+            <?php $host = static fn(string $url): string => preg_replace('/^www\./', '', strtolower((string) parse_url($url, PHP_URL_HOST))); ?>
+            <?php // Compared with FRONTEND_BASE_URL itself: portalUrl() falls back to site_url, which would always match. ?>
+            <?php if (CustomYii::getSetting('site_url') && $host(CustomYii::businessUrl()) !== $host((string) (Yii::$app->params['frontendBaseUrl'] ?? '') ?: 'https://' . Yii::$app->request->hostName)): ?>
                 <?= Html::a('Our website', CustomYii::businessUrl()) ?>
             <?php endif; ?>
             <?php foreach ($links as $label => $url): ?>

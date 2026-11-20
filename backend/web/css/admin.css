@@ -92,6 +92,18 @@
     overflow: hidden;
     white-space: nowrap;
 }
+.brand-logo .brand-own {
+    max-height: 48px;
+    max-width: 100%;
+    width: auto;
+    object-fit: contain;
+}
+
+/* A copy's logo has no round mark to show alone: hidden while the sidebar is collapsed (not hovered). */
+.sidebar-mini.sidebar-collapse .main-sidebar:not(:hover) .brand-logo .brand-own {
+    visibility: hidden;
+}
+
 .brand-logo .brand-full {
     height: 48px;
     width: auto;

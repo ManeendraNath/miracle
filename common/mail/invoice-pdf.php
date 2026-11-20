@@ -112,8 +112,15 @@ $igstAmount = $tax['igstAmount'];
         <tr>
             <td>
                 <?php /* PNG: the PDF library drops the SVG logo's gradients. Made from frontend/web/images/logo-full.svg. */ ?>
-                <img src="<?= Html::encode(Yii::getAlias('@common/mail/images/logo-full.png')) ?>" alt="<?= \yii\helpers\Html::encode(\common\components\CustomYii::businessName()) ?>" style="height: 16mm;">
-                <div>Website development, hosting &amp; maintenance</div>
+                <?php $logo = \common\components\CustomYii::logoFile((string) Yii::getAlias('@common/mail/images/logo-full.png')); ?>
+                <?php if ($logo !== null): ?>
+                    <img src="<?= Html::encode($logo) ?>" alt="<?= \yii\helpers\Html::encode(\common\components\CustomYii::businessName()) ?>" style="<?= \common\components\PortalOnly::enabled() ? 'max-height: 16mm; max-width: 80mm;' : 'height: 16mm;' ?>">
+                <?php else: ?>
+                    <div style="font-size: 16pt; font-weight: bold;"><?= \yii\helpers\Html::encode(\common\components\CustomYii::businessName()) ?></div>
+                <?php endif; ?>
+                <?php if (\common\components\CustomYii::invoiceServicesLine() !== ''): ?>
+                    <div><?= \yii\helpers\Html::encode(\common\components\CustomYii::invoiceServicesLine()) ?></div>
+                <?php endif; ?>
                 <?php foreach (Invoice::supplierLines() as $line): ?>
                     <div><?= Html::encode($line) ?></div>
                 <?php endforeach; ?>

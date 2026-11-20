@@ -86,6 +86,8 @@ class BackupController extends Controller
             'blog_images' => ['Blog images', Yii::getAlias('@frontend/web/' . \common\models\BlogPost::UPLOAD_DIR)],
             'product_images' => ['Store images', Yii::getAlias('@frontend/web/' . \common\models\Product::UPLOAD_DIR)],
             'store_files' => ['Store downloads', Yii::getAlias('@storage/' . \common\models\Product::FILES_DIR)],
+            // A copy's own logo and icon (CustomYii::logoUrl); nothing on our site.
+            'brand' => ['Logo', Yii::getAlias('@frontend/web/brand')],
         ];
         foreach ($folders as $name => [$label, $source]) {
             try {

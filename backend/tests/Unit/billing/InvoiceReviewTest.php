@@ -105,7 +105,7 @@ final class InvoiceReviewTest extends Unit
 
         (new InvoiceReviewService())->release(Invoice::findOne($invoice->id));
         $sent = Invoice::findOne($invoice->id);
-        $this->assertStringStartsWith('MWT' . \common\services\billing\InvoiceNumberService::financialYear(time()) . '-', $sent->invoice_number, 'numbered in the financial year it is sent');
+        $this->assertStringStartsWith((string) Yii::$app->params['invoicePrefix'] . \common\services\billing\InvoiceNumberService::financialYear(time()) . '-', $sent->invoice_number, 'numbered in the financial year it is sent');
     }
 
     public function testAHeldInvoiceCancelledBeforeSendingIsNeverShownToTheCustomer(): void

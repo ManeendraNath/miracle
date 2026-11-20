@@ -8,9 +8,24 @@ use yii\helpers\Html;
 
 /** @var yii\web\View $this */
 
-// A copy sold to another business: say so when its subscription is not paid up. Billing carries on regardless.
-if (!PortalOnly::enabled() || !\backend\controllers\BaseController::canAccess(Yii::$app->user->identity, 'site-setting')) {
+if (!\backend\controllers\BaseController::canAccess(Yii::$app->user->identity, 'site-setting')) {
     return;
+}
+// On our site and on copies alike: invoice numbers cannot be changed once issued.
+if (!empty(Yii::$app->params['invoicePrefixInvalid'])) {
+    echo '<div class="alert alert-danger" role="alert"><i class="fas fa-file-invoice mr-2" aria-hidden="true"></i>'
+        . Html::encode('INVOICE_PREFIX in .env is not 1 to 5 letters or digits, so new invoices are numbered ' . Yii::$app->params['invoicePrefix'] . '…. Fix it before the next invoice: numbers cannot be changed once issued.')
+        . '</div>';
+}
+// A copy sold to another business: say so when its subscription is not paid up. Billing carries on regardless.
+if (!PortalOnly::enabled()) {
+    return;
+}
+// Without it the logo, icon and links in emails have no address (CustomYii::brandUrl).
+if (trim((string) (Yii::$app->params['frontendBaseUrl'] ?? '')) === '') {
+    echo '<div class="alert alert-warning" role="alert">'
+        . Html::encode('FRONTEND_BASE_URL in .env is empty: set it to the customer portal address, e.g. https://billing.example.com, so your logo and the links in emails work.')
+        . '</div>';
 }
 $licence = LicenceService::current();
 $week = time() - 7 * 86400;

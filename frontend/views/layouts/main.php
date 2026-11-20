@@ -17,7 +17,9 @@ $this->render('_head');
 <head>
     <?php $this->head() ?>
     <title><?= Html::encode($this->title) ?></title>
-    <link rel="icon" href="<?= Yii::$app->request->baseUrl ?>/favicon.ico" sizes="any" />
+    <?php if (($icon = \common\components\CustomYii::faviconUrl(Yii::$app->request->baseUrl . '/favicon.ico')) !== null): ?>
+    <link rel="icon" href="<?= \yii\helpers\Html::encode($icon) ?>" sizes="any" />
+    <?php endif; ?>
 </head>
 <body class="d-flex flex-column min-vh-100">
 <?php $this->beginBody() ?>

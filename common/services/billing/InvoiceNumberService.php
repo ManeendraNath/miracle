@@ -8,7 +8,8 @@ use common\models\Invoice;
 
 final class InvoiceNumberService
 {
-    private const PREFIX = 'MWT';
+    /** Longest INVOICE_PREFIX (params.php): with the year, a dash and a 6-digit serial, within GST's 16 characters. */
+    public const PREFIX_MAX = 5;
 
     public function createTemporaryNumber(): string
     {
@@ -37,7 +38,7 @@ final class InvoiceNumberService
             throw new \LogicException('Invoice creation timestamp is required.');
         }
 
-        $invoiceNumber = self::PREFIX . self::financialYear($createdAt) . '-' . sprintf('%05d', $this->nextSerial(self::financialYear($createdAt)));
+        $invoiceNumber = (string) (\Yii::$app->params['invoicePrefix'] ?? 'MWT') . self::financialYear($createdAt) . '-' . sprintf('%05d', $this->nextSerial(self::financialYear($createdAt)));
 
         $exists = Invoice::find()
             ->where([

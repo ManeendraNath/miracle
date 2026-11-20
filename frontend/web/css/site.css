@@ -198,6 +198,13 @@ a.desc:after {
     flex: none;
 }
 
+/* A copy's own logo (CustomYii::logoUrl, frontend/web/brand/): any shape, fitted without stretching. */
+.mw-header .navbar-brand img[src*="/brand/"] {
+    width: auto;
+    max-width: 180px;
+    object-fit: contain;
+}
+
 .mw-header .nav-link {
     color: var(--mw-text);
     font-weight: 500;

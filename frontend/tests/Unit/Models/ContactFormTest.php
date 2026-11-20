@@ -41,7 +41,7 @@ final class ContactFormTest extends Unit
             ->arrayHasKey('tester@example.com');
         verify($emailMessage->getSubject())
             ->equals('very important letter subject');
-        verify($emailMessage->toString())
+        verify(quoted_printable_decode($emailMessage->toString()))
             ->stringContainsString('body of current message');
     }
 }

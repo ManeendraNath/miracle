@@ -113,7 +113,8 @@ final class ResendVerificationEmailFormTest extends Unit
         // Resending issues a fresh token (old links may have expired).
         $token = (string) \common\models\User::findOne(['email' => 'test@mail.com'])->verification_token;
         verify($token)->notEquals('4ch0qbfhvWwkcuWqjN8SWRq72SOw1KYT_9999999999');
-        verify($mail->toString())
+        // Decoded: quoted-printable may break a long token across lines.
+        verify(quoted_printable_decode($mail->toString()))
             ->stringContainsString($token);
     }
 }

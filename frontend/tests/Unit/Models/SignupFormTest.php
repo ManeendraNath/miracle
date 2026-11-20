@@ -59,7 +59,8 @@ final class SignupFormTest extends Unit
         verify($mail->getTo())->arrayHasKey('some_email@example.com');
         verify($mail->getFrom())->arrayHasKey(Yii::$app->params['supportEmail']);
         verify($mail->getSubject())->equals('Account registration at ' . Yii::$app->name);
-        verify($mail->toString())->stringContainsString($user->verification_token);
+        // Decoded: quoted-printable may break a long token across lines.
+        verify(quoted_printable_decode($mail->toString()))->stringContainsString($user->verification_token);
     }
 
     public function testNotCorrectSignup(): void

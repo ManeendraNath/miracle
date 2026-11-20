@@ -77,7 +77,7 @@ final class LifecycleRulesTest extends Unit
 
         $this->assertFalse(User::findOne($this->_user->id)->validatePassword('LifecycleTestPassword'));
         $mails = $this->tester->grabSentEmails();
-        $this->assertStringContainsString('Forgot password?', (string) end($mails)->toString());
+        $this->assertStringContainsString('Forgot password?', quoted_printable_decode((string) end($mails)->toString()));
     }
 
     public function testResetLinksDieWithThePasswordOrEmailAndCookiesWithTheSuspension(): void

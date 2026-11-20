@@ -53,9 +53,17 @@ final class SeoCest
     public function theHomePageNamesTheCompanyAndSignInPagesStayOutOfResults(FunctionalTester $I): void
     {
         $I->amOnPage('/');
-        $I->seeInSource('"@type":"Organization"');
+        // A local business once Site Settings have an address (the test data has one).
+        $I->seeInSource('"@type":"ProfessionalService"');
+        $I->seeInSource('"@type":"PostalAddress"');
         $I->seeInSource('"@type":"WebSite"');
         $I->dontSeeElement('meta[name=robots]');
+        $I->dontSeeInSource('"@type":"BreadcrumbList"');
+        // Other pages: Home > the page; hosting also lists its plans.
+        $I->amOnPage('/site/hosting');
+        $I->seeInSource('"@type":"BreadcrumbList"');
+        $I->seeInSource('"@type":"OfferCatalog"');
+        $I->seeInSource('"unitCode":"MON"');
         foreach (['/site/login', '/site/signup', '/site/request-password-reset'] as $page) {
             $I->amOnPage($page);
             $I->seeElement('meta[name=robots][content="noindex, follow"]');

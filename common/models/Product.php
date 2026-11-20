@@ -235,6 +235,12 @@ class Product extends base\Product
         return self::findPublic()->andWhere(['kind' => self::SECTIONS[$section]]);
     }
 
+    /** Whether a store section has anything to show (the header and footer link only those). */
+    public static function hasPublicIn(string $section): bool
+    {
+        return self::findPublicOf($section)->exists();
+    }
+
     public function hasUnlimited(): bool
     {
         return $this->price_unlimited_inr !== null && $this->price_unlimited_usd !== null;

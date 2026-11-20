@@ -17,6 +17,26 @@ $this->render('_head');
 <head>
     <?php $this->head() ?>
     <title><?= Html::encode($this->title) ?></title>
+    <?php
+    // Home > this page, for search results, on each public page of the site (SeoPage::pages()); store items and blog
+    // posts give their own longer trail.
+    $route = Yii::$app->controller?->getRoute();
+    $pages = \common\models\SeoPage::pages();
+    // Not on a filtered list (?category=…, ?technology=…): that page is not the one the trail points at. Tracking
+    // parameters (utm_…, gclid) change nothing.
+    $filters = ['category', 'tag', 'year', 'month', 'q', 'technology', 'page', 'subject'];
+    if ($route !== null && $route !== 'site/index' && isset($pages[$route]) && array_intersect_key(Yii::$app->request->getQueryParams(), array_flip($filters)) === [] && Yii::$app->errorHandler->exception === null && !\common\components\PortalOnly::enabled()):
+        ?>
+    <script type="application/ld+json"><?= \yii\helpers\Json::htmlEncode([
+        '@context' => 'https://schema.org',
+        '@type' => 'BreadcrumbList',
+        'itemListElement' => [
+            ['@type' => 'ListItem', 'position' => 1, 'name' => 'Home', 'item' => \yii\helpers\Url::home(true)],
+            // The page's title as visitors see it (the SeoPage labels are for staff).
+            ['@type' => 'ListItem', 'position' => 2, 'name' => trim(explode(' | ', (string) $this->title)[0]) ?: $pages[$route], 'item' => \yii\helpers\Url::to(['/' . $route], true)],
+        ],
+    ]) ?></script>
+    <?php endif; ?>
     <?php if (($icon = \common\components\CustomYii::faviconUrl(Yii::$app->request->baseUrl . '/favicon.ico')) !== null): ?>
     <link rel="icon" href="<?= \yii\helpers\Html::encode($icon) ?>" sizes="any" />
     <?php endif; ?>

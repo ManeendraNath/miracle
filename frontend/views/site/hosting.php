@@ -65,7 +65,29 @@ $questions = [
     'What if I do not pay a renewal on time?' => 'A service may be suspended if its invoice stays unpaid after the due date. A domain that is not renewed in time may expire, and could be lost or carry a registry recovery fee.',
     'How do I cancel?' => 'Raise a support ticket in the customer portal or email us before the next renewal date. The service is not renewed, and you keep what you have paid for until the end of that period.',
 ];
+// The plans for search engines: a hosting service with its monthly prices (billed yearly), as listed below.
+$home = \yii\helpers\Url::home(true);
+$schema = [
+    '@context' => 'https://schema.org',
+    '@type' => 'Service',
+    'serviceType' => 'Web hosting',
+    'name' => 'cPanel web hosting',
+    // The business as the home page describes it (same @id), without a type of its own to disagree with.
+    'provider' => ['@id' => $home . '#organization', 'name' => \common\components\CustomYii::businessName(), 'url' => $home],
+    'url' => \yii\helpers\Url::to(['/site/hosting'], true),
+    'hasOfferCatalog' => [
+        '@type' => 'OfferCatalog',
+        'name' => 'Hosting plans',
+        'itemListElement' => array_map(static fn(array $plan): array => [
+            '@type' => 'Offer',
+            'name' => $plan['name'] . ' hosting',
+            'description' => $plan['for'],
+            'priceSpecification' => ['@type' => 'UnitPriceSpecification', 'price' => (string) preg_replace('/\D/', '', $plan['price']), 'priceCurrency' => 'INR', 'unitCode' => 'MON'],
+        ], $plans),
+    ],
+];
 ?>
+<script type="application/ld+json"><?= \yii\helpers\Json::htmlEncode($schema) ?></script>
 <div class="site-hosting">
     <div class="mw-glow">
         <div class="container mw-page-head">

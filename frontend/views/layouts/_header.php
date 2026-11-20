@@ -20,9 +20,10 @@ use yii\bootstrap5\NavBar;
     $menuItems = [
         ['label' => 'What we build', 'url' => ['/site/index', '#' => 'services'], 'active' => false],
         ['label' => 'Our work', 'url' => ['/site/index', '#' => 'work'], 'active' => false],
-        // StoreController says which of its two sections a page is in.
-        ['label' => 'Fixed-price services', 'url' => ['/store/services'], 'active' => ($this->params['storeSection'] ?? null) === 'services'],
-        ['label' => 'Themes & Plugins', 'url' => ['/store/index'], 'active' => ($this->params['storeSection'] ?? null) === 'store'],
+        ['label' => 'Hosting', 'url' => ['/site/hosting']],
+        // StoreController says which of its three sections a page is in. Services only once there are some.
+        ['label' => 'Services', 'url' => ['/store/services'], 'active' => ($this->params['storeSection'] ?? null) === 'services', 'visible' => !\common\components\PortalOnly::enabled() && ($this->params['storeHas']['services'] ??= \common\models\Product::hasPublicIn('services'))],
+        ['label' => 'Store', 'url' => ['/store/index'], 'active' => ($this->params['storeSection'] ?? null) === 'store', 'visible' => !\common\components\PortalOnly::enabled() && ($this->params['storeHas']['store'] ??= \common\models\Product::hasPublicIn('store'))],
         ['label' => 'Blog', 'url' => ['/blog/index'], 'active' => Yii::$app->controller->id === 'blog'],
         ['label' => 'About', 'url' => ['/site/about']],
         ['label' => 'Contact', 'url' => ['/site/contact']],

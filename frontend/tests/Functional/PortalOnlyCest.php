@@ -26,7 +26,8 @@ final class PortalOnlyCest
         $I->seeInCurrentUrl('login');
         $I->see('Log in to your account');
         $I->dontSee('Get a quote');
-        $I->dontSee('Themes & Plugins');
+        $I->dontSeeElement('a[href="/store"]');
+        $I->dontSeeElement('a[href="/hosting"]');
         $I->assertSame('noindex, nofollow', Yii::$app->response->headers->get('X-Robots-Tag'));
         foreach (['/site/about', '/site/contact', '/site/terms', '/blog', '/store', '/services', '/care-plans', '/sitemap.xml', '/feedback'] as $page) {
             $I->amOnPage($page);

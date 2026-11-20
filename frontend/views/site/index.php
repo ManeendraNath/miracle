@@ -23,14 +23,32 @@ $email = (string) CustomYii::getSetting('email_1');
 // Who runs this site, for search engines (brand name, logo, contact and profiles in results).
 $siteName = CustomYii::getSetting('site_name') ?: 'Miracle Web Technologies';
 $home = \yii\helpers\Url::home(true);
+// The address for search engines: a last line such as "Delhi-110051" gives the city and PIN code.
+$postal = null;
+if ($address !== []) {
+    $lines = array_values($address);
+    // This page is our own site (a copy sold to others shows no website): India.
+    $postal = ['@type' => 'PostalAddress', 'addressCountry' => 'IN'];
+    if (preg_match('/^(.*?)[\s,\-–—]*(?<!\d)(\d{6})$/u', (string) end($lines), $m) === 1) {
+        array_pop($lines);
+        // "East Krishna Nagar, Delhi-110051": the city is after the last comma, the rest is street.
+        $parts = array_map('trim', explode(',', $m[1]));
+        $postal += array_filter(['addressLocality' => trim((string) array_pop($parts), " -\u{2013}\u{2014}"), 'postalCode' => $m[2]]);
+        $lines = array_merge($lines, array_filter($parts));
+    }
+    $postal += array_filter(['streetAddress' => implode(', ', $lines)]);
+}
+// With an address it is a local business (ProfessionalService), which Google can show for searches near it.
 $organization = array_filter([
-    '@type' => 'Organization',
+    '@type' => $address !== [] ? 'ProfessionalService' : 'Organization',
     '@id' => $home . '#organization',
     'name' => $siteName,
     'url' => $home,
     'logo' => \yii\helpers\Url::to('@web/images/logo.png', true),
     'email' => $email ?: null,
     'telephone' => $phone !== '' ? '+' . $phone : null,
+    'address' => $postal,
+    'image' => \yii\helpers\Url::to('@web/images/og.png', true),
     'sameAs' => array_values(array_filter(array_map(static fn(string $s): string => trim((string) CustomYii::getSetting($s)), ['linkedin', 'facebook', 'x', 'youtube', 'instagram']))) ?: null,
 ]);
 $jsonLd = [

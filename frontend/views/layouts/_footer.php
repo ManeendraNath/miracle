@@ -83,6 +83,12 @@ $socials = array_filter([
                     <li class="mb-2"><?= Html::a('Our work', ['/site/index', '#' => 'work']) ?></li>
                     <li class="mb-2"><?= Html::a('Website upgrades', ['/site/audit']) ?></li>
                     <li class="mb-2"><?= Html::a('Hosting and domains', ['/site/hosting']) ?></li>
+                    <?php // Store sections with something in them (as the sitemap lists them), asked once a page with the header. ?>
+                    <?php foreach (['services' => ['Fixed-price services', '/store/services'], 'plans' => ['Website care plans', '/store/plans'], 'store' => ['Themes and plugins', '/store/index']] as $section => [$label, $route]): ?>
+                        <?php if ($this->params['storeHas'][$section] ??= \common\models\Product::hasPublicIn($section)): ?>
+                            <li class="mb-2"><?= Html::a($label, [$route]) ?></li>
+                        <?php endif; ?>
+                    <?php endforeach; ?>
                     <li class="mb-2"><?= Html::a('About us', ['/site/about']) ?></li>
                     <li class="mb-2"><?= Html::a('Blog', ['/blog/index']) ?></li>
                     <li class="mb-2"><?= Html::a('Contact us', ['/site/contact']) ?></li>
